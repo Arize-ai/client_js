@@ -362,7 +362,17 @@ export interface paths {
          */
         get: operations["prompts_list"];
         put?: never;
-        post?: never;
+        /**
+         * Create a prompt
+         * @description Create a new prompt with an initial version.
+         *
+         *     **Payload Requirements**
+         *     - The prompt name must be unique within the given space.
+         *     - At least one message is required.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["prompts_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -456,6 +466,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v2/spans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * List spans
+         * @description Returns a paginated list of spans.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["spans_list"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -476,6 +508,63 @@ export interface components {
              * @description When the project was created
              */
             created_at: string;
+        };
+        SpanContext: {
+            /** @description Unique identifier for the trace this span belongs to */
+            trace_id: string;
+            /** @description Unique identifier for the span */
+            span_id: string;
+        };
+        SpanEvent: {
+            /** @description Name of the event */
+            name: string;
+            /**
+             * Format: date-time
+             * @description Timestamp when the event occurred
+             */
+            timestamp: string;
+            /** @description Key-value pairs of event attributes */
+            attributes?: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * @description A Span represents a single unit of work within a distributed trace for an LLM application.
+         *     It captures the operation’s input and output, start and end times, and a span kind indicating its role (such as LLM, Tool, Agent, Retriever, Chain, or Embedding).
+         *     Spans are hierarchically related and combine to form a trace, enabling end-to-end visibility into request execution, performance bottlenecks, and errors across complex LLM pipelines.
+         */
+        Span: {
+            /** @description Name of the span */
+            name: string;
+            /** @description The trace and span identifiers for this span */
+            context: components["schemas"]["SpanContext"];
+            /** @description The kind of span (e.g., TOOL, CHAIN, LLM, RETRIEVER, EMBEDDING) */
+            kind: string;
+            /** @description ID of the parent span */
+            parent_id?: string;
+            /**
+             * Format: date-time
+             * @description Timestamp when the span started
+             */
+            start_time: string;
+            /**
+             * Format: date-time
+             * @description Timestamp when the span ended
+             */
+            end_time: string;
+            /**
+             * @description Status code of the span
+             * @enum {string}
+             */
+            status_code?: "OK" | "ERROR" | "UNSET";
+            /** @description Status message associated with the span */
+            status_message?: string;
+            /** @description Key-value pairs of span attributes */
+            attributes?: {
+                [key: string]: unknown;
+            };
+            /** @description List of events that occurred during the span */
+            events?: components["schemas"]["SpanEvent"][];
         };
         /**
          * @description A prompt is a reusable template for LLM interactions. Prompts can be versioned
@@ -505,6 +594,127 @@ export interface components {
             created_by_user_id: string;
             /** @description The tags associated with the prompt */
             tags?: string[];
+        };
+        /**
+         * @description The format for input variables in the prompt messages. There is no default; this field is required.
+         *     - `f_string`: Single curly braces ({variable_name})
+         *     - `mustache`: Double curly braces ({{variable_name}})
+         *     - `none`: No input variable parsing
+         * @enum {string}
+         */
+        InputVariableFormat: "f_string" | "mustache" | "none";
+        /**
+         * @description The LLM provider to use
+         * @enum {string}
+         */
+        LlmProvider: "openAI" | "azureOpenAI" | "awsBedrock" | "vertexAI" | "custom";
+        /**
+         * @description The role of the message author
+         * @enum {string}
+         */
+        MessageRole: "user" | "assistant" | "system" | "tool";
+        /**
+         * @description The type of tool call
+         * @enum {string}
+         */
+        ToolCallType: "function";
+        /**
+         * @description The response format type
+         * @enum {string}
+         */
+        ResponseFormatType: "text" | "json_object" | "json_schema";
+        /** @description The function to call */
+        ToolCallFunction: {
+            /** @description The name of the function */
+            name: string;
+            /** @description The arguments to the function as a JSON string */
+            arguments: string;
+        };
+        /** @description A tool call generated by the model */
+        ToolCall: {
+            /** @description The ID of the tool call */
+            id?: string;
+            type: components["schemas"]["ToolCallType"];
+            function: components["schemas"]["ToolCallFunction"];
+        };
+        /** @description A message in the prompt template */
+        LLMMessage: {
+            role: components["schemas"]["MessageRole"];
+            /** @description The content of the message */
+            content?: string | null;
+            /** @description The ID of the tool call this message is responding to */
+            tool_call_id?: string;
+            /** @description Tool calls generated by the model */
+            tool_calls?: components["schemas"]["ToolCall"][];
+        };
+        /** @description Response format configuration */
+        ResponseFormat: {
+            type?: components["schemas"]["ResponseFormatType"];
+            /** @description JSON schema configuration (when type is json_schema) */
+            json_schema?: {
+                /** @description The name of the JSON schema */
+                name?: string;
+                /** @description A description of the JSON schema */
+                description?: string;
+                /** @description The JSON schema object */
+                schema?: Record<string, unknown>;
+                /** @description Whether to enforce strict schema validation */
+                strict?: boolean;
+            };
+        };
+        /** @description Tool configuration for the LLM invocation */
+        ToolConfig: {
+            /** @description List of tool definitions available to the model */
+            tools?: Record<string, unknown>[];
+            /** @description Tool choice configuration */
+            tool_choice?: unknown;
+        };
+        /** @description Parameters for the LLM invocation */
+        InvocationParams: {
+            /** @description Sampling temperature (higher = more random) */
+            temperature?: number;
+            /** @description Maximum number of tokens to generate */
+            max_tokens?: number;
+            /** @description Maximum number of completion tokens to generate */
+            max_completion_tokens?: number;
+            /** @description Nucleus sampling parameter */
+            top_p?: number;
+            /** @description Frequency penalty (-2.0 to 2.0) */
+            frequency_penalty?: number;
+            /** @description Presence penalty (-2.0 to 2.0) */
+            presence_penalty?: number;
+            /** @description Stop sequences */
+            stop?: string[];
+            response_format?: components["schemas"]["ResponseFormat"];
+            tool_config?: components["schemas"]["ToolConfig"];
+        };
+        /** @description Provider-specific parameters */
+        ProviderParams: {
+            /** @description Azure OpenAI specific parameters */
+            azure_params?: {
+                /** @description The Azure deployment name */
+                azure_deployment_name?: string;
+                /** @description The Azure OpenAI endpoint URL */
+                azure_openai_endpoint?: string;
+                /** @description The Azure OpenAI API version */
+                azure_openai_version?: string;
+            };
+            /** @description Anthropic-specific headers */
+            anthropic_headers?: {
+                /** @description Anthropic beta feature flags */
+                anthropic_beta?: (string | null)[] | null;
+            };
+            /** @description Anthropic API version */
+            anthropic_version?: string;
+            /** @description AWS Bedrock options */
+            bedrock_options?: {
+                /** @description Whether to use the AWS Bedrock Converse endpoint */
+                use_converse_endpoint?: boolean;
+            };
+            /** @description Custom provider parameters */
+            custom_provider_params?: Record<string, unknown>;
+            /** @description Region for the model deployment */
+            region?: string;
         };
         /**
          * @description A dataset is a structured collection of examples used to test and evaluate
@@ -1144,7 +1354,12 @@ export interface components {
         /** @description Rate limit exceeded */
         RateLimitExceeded: {
             headers: {
-                "Retry-After": components["headers"]["Retry-After"];
+                /**
+                 * @description When throttled (429), how long to wait before retrying. Value is
+                 *     either a delta-seconds integer.
+                 * @example 42
+                 */
+                "Retry-After"?: number;
                 [name: string]: unknown;
             };
             content: {
@@ -1158,6 +1373,47 @@ export interface components {
                  *     }
                  */
                 "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description Returns a list of spans */
+        SpanList: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "data": [
+                 *         {
+                 *           "name": "llm.chat.completion",
+                 *           "context": {
+                 *             "trace_id": "trace_001",
+                 *             "span_id": "span_001"
+                 *           },
+                 *           "kind": "LLM",
+                 *           "parent_id": "span_000",
+                 *           "status_code": "OK",
+                 *           "start_time": "2024-01-01T12:00:00Z",
+                 *           "end_time": "2024-01-01T12:00:01Z",
+                 *           "attributes": {
+                 *             "llm.model_name": "gpt-4o",
+                 *             "llm.token_count.prompt": 150,
+                 *             "llm.token_count.completion": 50
+                 *           }
+                 *         }
+                 *       ],
+                 *       "pagination": {
+                 *         "next_cursor": "cursor_12345",
+                 *         "has_more": true
+                 *       }
+                 *     }
+                 */
+                "application/json": {
+                    /** @description A list of spans */
+                    data: components["schemas"]["Span"][];
+                    /** @description Pagination metadata for cursor-based navigation */
+                    pagination: components["schemas"]["PaginationMetadata"];
+                };
             };
         };
     };
@@ -1208,6 +1464,55 @@ export interface components {
                     name: string;
                     /** @description ID of the space to create the project in */
                     space_id: string;
+                };
+            };
+        };
+        /** @description Body containing prompt creation parameters */
+        CreatePromptRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "space_id": "U3BhY2U6MTIzOmFiY2Q=",
+                 *       "name": "My Prompt",
+                 *       "description": "A helpful assistant prompt",
+                 *       "tags": [
+                 *         "customer-support"
+                 *       ],
+                 *       "commit_message": "Initial version",
+                 *       "input_variable_format": "f_string",
+                 *       "provider": "openAI",
+                 *       "model": "gpt-4",
+                 *       "messages": [
+                 *         {
+                 *           "role": "system",
+                 *           "content": "You are a helpful assistant."
+                 *         },
+                 *         {
+                 *           "role": "user",
+                 *           "content": "Hello, {name}!"
+                 *         }
+                 *       ]
+                 *     }
+                 */
+                "application/json": {
+                    /** @description ID of the space to create the prompt in */
+                    space_id: string;
+                    /** @description Name of the prompt (must be unique within the space) */
+                    name: string;
+                    /** @description Description of the prompt */
+                    description?: string;
+                    /** @description Tags to associate with the prompt */
+                    tags?: string[];
+                    /** @description Commit message describing this version */
+                    commit_message: string;
+                    input_variable_format: components["schemas"]["InputVariableFormat"];
+                    provider: components["schemas"]["LlmProvider"];
+                    /** @description The model to use for the call */
+                    model?: string;
+                    /** @description The messages that make up the prompt template */
+                    messages: components["schemas"]["LLMMessage"][];
+                    invocation_params?: components["schemas"]["InvocationParams"];
+                    provider_params?: components["schemas"]["ProviderParams"];
                 };
             };
         };
@@ -1353,6 +1658,40 @@ export interface components {
                     dataset_id: string;
                     /** @description Array of experiment run data */
                     experiment_runs: components["schemas"]["ExperimentRunCreate"][];
+                };
+            };
+        };
+        /** @description Body containing span query parameters */
+        ListSpansRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "project_id": "my-project",
+                 *       "start_time": "2024-01-01T00:00:00Z",
+                 *       "end_time": "2024-01-02T00:00:00Z",
+                 *       "filter": "status_code = 'ERROR'"
+                 *     }
+                 */
+                "application/json": {
+                    /** @description The project ID to list spans for */
+                    project_id: string;
+                    /**
+                     * Format: date-time
+                     * @description Filter to spans starting at or after this timestamp (inclusive).
+                     *     ISO 8601 format (e.g., `2024-01-01T00:00:00Z`).
+                     */
+                    start_time?: string;
+                    /**
+                     * Format: date-time
+                     * @description Filter to spans starting before this timestamp (exclusive).
+                     *     ISO 8601 format (e.g., `2024-01-02T00:00:00Z`).
+                     */
+                    end_time?: string;
+                    /**
+                     * @description Filter expression to apply to the query. Supports SQL-like syntax
+                     *     for filtering spans by attributes (e.g., `status_code = 'ERROR'`).
+                     */
+                    filter?: string;
                 };
             };
         };
@@ -1669,6 +2008,23 @@ export interface operations {
             429: components["responses"]["RateLimitExceeded"];
         };
     };
+    prompts_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["CreatePromptRequestBody"];
+        responses: {
+            201: components["responses"]["Prompt"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
     prompts_get: {
         parameters: {
             query?: never;
@@ -1803,6 +2159,31 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             422: components["responses"]["BadRequest"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    spans_list: {
+        parameters: {
+            query?: {
+                /** @description Maximum items to return */
+                limit?: components["parameters"]["LimitQueryParamMax500"];
+                /**
+                 * @description Opaque pagination cursor returned from a previous response
+                 *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
+                 *     attempt to parse or construct it.
+                 */
+                cursor?: components["parameters"]["CursorQueryParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["ListSpansRequestBody"];
+        responses: {
+            200: components["responses"]["SpanList"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };

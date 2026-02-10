@@ -1,5 +1,17 @@
 # @arizeai/ax-client
 
+## [1.0.4](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.0.3...arize-js-sdk/v1.0.4) (2026-02-10)
+
+### 📚 Documentation
+
+- remove trailing ellipsis in installation command example ([#62588](https://github.com/Arize-ai/arize/issues/62588)) ([0f63026](https://github.com/Arize-ai/arize/commit/0f63026bdf701ef84133da87d2671ad96361a1b2))
+
+## [1.0.3](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.0.2...arize-js-sdk/v1.0.3) (2026-02-06)
+
+### 📚 Documentation
+
+- refine dataset creation instructions ([#62350](https://github.com/Arize-ai/arize/issues/62350)) ([9961152](https://github.com/Arize-ai/arize/commit/9961152b32c87e6d4f1f3007529ec3eb67ba8c8e))
+
 ## [1.0.2](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.0.1...arize-js-sdk/v1.0.2) (2026-02-06)
 
 ### 📚 Documentation
