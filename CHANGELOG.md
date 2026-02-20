@@ -1,5 +1,17 @@
 # @arizeai/ax-client
 
+## [1.2.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.1.0...arize-js-sdk/v1.2.0) (2026-02-20)
+
+### 🎁 New Features
+
+- Add camel cased exampleId for experiment runs ([#63550](https://github.com/Arize-ai/arize/issues/63550)) ([0ab4686](https://github.com/Arize-ai/arize/commit/0ab468637b048ba5be658a399f512484db988b17))
+
+## [1.1.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.0.4...arize-js-sdk/v1.1.0) (2026-02-20)
+
+### 🎁 New Features
+
+- **ts-client:** Annotation configs ([#63326](https://github.com/Arize-ai/arize/issues/63326)) ([8b45238](https://github.com/Arize-ai/arize/commit/8b452381527c488341a333283275cb85f665cfea))
+
 ## [1.0.4](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.0.3...arize-js-sdk/v1.0.4) (2026-02-10)
 
 ### 📚 Documentation

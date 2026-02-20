@@ -13,3 +13,4 @@ export type RawCreateDatasetRequestBodyExample =
   components["requestBodies"]["CreateDatasetRequestBody"]["content"]["application/json"]["examples"][number];
 export type RawUpdateDatasetRequestBodyExample =
   components["requestBodies"]["UpdateDatasetExamplesRequestBody"]["content"]["application/json"]["examples"][number];
+export type RawAnnotationConfig = components["schemas"]["AnnotationConfig"];

@@ -1,4 +1,4 @@
-import { RawExperiment } from "../../types/internal";
+import { RawExperiment, RawExperimentRun } from "../../types/internal";
 
 const mockDateString = "2021-01-01T00:00:00.000Z";
 
@@ -9,4 +9,10 @@ export const mockExperiment: RawExperiment = {
   created_at: mockDateString,
   updated_at: mockDateString,
   dataset_version_id: "dataset_version_id",
+};
+
+export const mockExperimentRun: RawExperimentRun = {
+  id: "run_id",
+  example_id: "example_id",
+  output: "run_output",
 };

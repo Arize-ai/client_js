@@ -2,6 +2,7 @@ import { createClient } from "../client";
 import { WithClient } from "../types";
 import { ExperimentRun } from "../types/experiments";
 import { warnPreRelease } from "../utils/warning";
+import { transformExperimentRun } from "./utils";
 
 export type ListExperimentRunsParams = WithClient<{
   experimentId: string;
@@ -43,5 +44,5 @@ export async function listExperimentRuns({
     const { detail, title } = response.error;
     throw new Error(detail || title);
   }
-  return response.data.experiment_runs;
+  return response.data.experiment_runs.map(transformExperimentRun);
 }

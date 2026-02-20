@@ -4,6 +4,107 @@
  */
 
 export interface paths {
+    "/v2/annotation-configs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List annotation configs
+         * @description List annotation configs the user has access to.
+         *
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
+         */
+        get: operations["annotation_configs_list"];
+        put?: never;
+        /**
+         * Create an annotation config
+         * @description Create a new annotation config.
+         *
+         *     **Payload Requirements**
+         *     - The annotation config name must be unique within the given space.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "name": "my-annotation-config",
+         *       "space_id": "spc_123",
+         *       "annotation_config_type": "categorical",
+         *       "values": [
+         *         {
+         *           "label": "value1",
+         *           "score": 0
+         *         },
+         *         {
+         *           "label": "value2",
+         *           "score": 1
+         *         }
+         *       ],
+         *       "optimization_direction": "maximize"
+         *     }
+         *     ```
+         *
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
+         */
+        post: operations["annotation_configs_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/annotation-configs/{annotation_config_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get an annotation config
+         * @description Get an annotation config object by its ID.
+         *
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
+         */
+        get: operations["annotation_configs_get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete an annotation config
+         * @description Delete an annotation config by its ID. This operation is irreversible.
+         *
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
+         */
+        delete: operations["annotation_configs_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/annotation-queues": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List annotation queues
+         * @description List annotation queues the user has access to.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["annotation_queues_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v2/datasets": {
         parameters: {
             query?: never;
@@ -344,6 +445,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v2/spaces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List spaces
+         * @description List spaces the user has access to.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["spaces_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v2/prompts": {
         parameters: {
             query?: never;
@@ -404,7 +527,14 @@ export interface paths {
         delete: operations["prompts_delete"];
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update a prompt
+         * @description Update a prompt's metadata by its ID. Currently supports updating the
+         *     description and tags. At least one field must be provided.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        patch: operations["prompts_update"];
         trace?: never;
     };
     "/v2/projects": {
@@ -492,6 +622,43 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AnnotationConfig: components["schemas"]["ContinuousAnnotationConfig"] | components["schemas"]["CategoricalAnnotationConfig"] | components["schemas"]["FreeformAnnotationConfig"];
+        AnnotationQueue: {
+            /**
+             * @description The unique identifier for the annotation queue
+             * @example aq_abc123
+             */
+            id: string;
+            /**
+             * @description The name of the annotation queue
+             * @example Quality Review Queue
+             */
+            name: string;
+            /**
+             * @description The space id the annotation queue belongs to
+             * @example spc_xyz789
+             */
+            space_id: string;
+            /**
+             * @description The instructions for the annotation queue
+             * @example Review each response for accuracy and helpfulness
+             */
+            instructions?: string | null;
+            /** @description The annotation configs associated with this queue */
+            annotation_configs?: components["schemas"]["AnnotationConfig"][];
+            /**
+             * Format: date-time
+             * @description The timestamp for when the annotation queue was created
+             * @example 2024-01-15T10:30:00Z
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description The timestamp for when the annotation queue was last updated
+             * @example 2024-01-20T14:45:00Z
+             */
+            updated_at: string;
+        };
         /**
          * @description A project represents an LLM application and serves as the primary container for observability data. Each project collects traces and spans that capture the execution flow of your application, enabling you to debug issues, monitor latency, and analyze token usage.
          *     Projects belong to a space and provide a centralized view of your application's performance. Use projects to organize related traces, run experiments against datasets, and track improvements over time.
@@ -561,6 +728,14 @@ export interface components {
             status_message?: string;
             /** @description Key-value pairs of span attributes */
             attributes?: {
+                [key: string]: unknown;
+            };
+            /** @description Key-value pairs of span annotations */
+            annotations?: {
+                [key: string]: unknown;
+            };
+            /** @description Key-value pairs of span evaluations */
+            evaluations?: {
                 [key: string]: unknown;
             };
             /** @description List of events that occurred during the span */
@@ -715,6 +890,29 @@ export interface components {
             custom_provider_params?: Record<string, unknown>;
             /** @description Region for the model deployment */
             region?: string;
+        };
+        /**
+         * @description A space is a container within an organization for grouping related projects,
+         *     datasets, and experiments. Spaces enable team collaboration or isolated
+         *     experimentation with role-based access control.
+         */
+        Space: {
+            /** @description Unique identifier for the space */
+            id: string;
+            /** @description Name of the space */
+            name: string;
+            /** @description A brief description of the space's purpose */
+            description: string;
+            /**
+             * Format: date-time
+             * @description Timestamp for when the space was created
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description Timestamp for the last update of the space
+             */
+            updated_at: string;
         };
         /**
          * @description A dataset is a structured collection of examples used to test and evaluate
@@ -889,8 +1087,221 @@ export interface components {
         };
         /** @description A universally unique identifier */
         Id: string;
+        AnnotationConfigBase: {
+            /** @description The unique identifier for the annotation config */
+            id: string;
+            /** @description The name of the annotation config */
+            name: string;
+            /**
+             * Format: date-time
+             * @description The timestamp for when the annotation config was created
+             */
+            created_at: string;
+            /** @description The space id the annotation config belongs to */
+            space_id: string;
+        };
+        /**
+         * @description The direction for optimization:
+         *     - maximize: higher scores are better
+         *     - minimize: lower scores are better
+         *     - none: higher or lower scores are neither better nor worse
+         * @enum {string}
+         */
+        OptimizationDirection: "maximize" | "minimize" | "none";
+        ContinuousAnnotationConfig: components["schemas"]["AnnotationConfigBase"] & {
+            /**
+             * @description The type of the annotation config
+             * @enum {string}
+             */
+            type: "continuous";
+            /**
+             * Format: double
+             * @description The minimum score value
+             */
+            minimum_score: number;
+            /**
+             * Format: double
+             * @description The maximum score value
+             */
+            maximum_score: number;
+            optimization_direction?: components["schemas"]["OptimizationDirection"];
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "continuous";
+        };
+        CategoricalAnnotationValue: {
+            /** @description The label value */
+            label: string;
+            /**
+             * Format: double
+             * @description A score to associate with the label
+             */
+            score?: number;
+        };
+        CategoricalAnnotationConfig: components["schemas"]["AnnotationConfigBase"] & {
+            /**
+             * @description The type of the annotation config
+             * @enum {string}
+             */
+            type: "categorical";
+            /** @description An array of categorical annotation values */
+            values: components["schemas"]["CategoricalAnnotationValue"][];
+            optimization_direction?: components["schemas"]["OptimizationDirection"];
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "categorical";
+        };
+        FreeformAnnotationConfig: components["schemas"]["AnnotationConfigBase"] & {
+            /**
+             * @description The type of the annotation config
+             * @enum {string}
+             */
+            type: "freeform";
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "freeform";
+        };
+        /** @description The base annotation config creation parameters */
+        AnnotationConfigCreateBase: {
+            /** @description Name of the new annotation config */
+            name: string;
+            /** @description ID of the space the annotation config will belong to */
+            space_id: string;
+        };
+        ContinuousAnnotationConfigCreate: components["schemas"]["AnnotationConfigCreateBase"] & {
+            /**
+             * @description The type of the annotation config
+             * @enum {string}
+             */
+            annotation_config_type: "continuous";
+            /**
+             * Format: double
+             * @description The minimum score value
+             */
+            minimum_score: number;
+            /**
+             * Format: double
+             * @description The maximum score value
+             */
+            maximum_score: number;
+            optimization_direction?: components["schemas"]["OptimizationDirection"];
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            annotation_config_type: "continuous";
+        };
+        CategoricalAnnotationConfigCreate: components["schemas"]["AnnotationConfigCreateBase"] & {
+            /**
+             * @description The type of the annotation config
+             * @enum {string}
+             */
+            annotation_config_type: "categorical";
+            /** @description An array of categorical annotation values */
+            values: components["schemas"]["CategoricalAnnotationValue"][];
+            optimization_direction?: components["schemas"]["OptimizationDirection"];
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            annotation_config_type: "categorical";
+        };
+        FreeformAnnotationConfigCreate: components["schemas"]["AnnotationConfigCreateBase"] & {
+            /**
+             * @description The type of the annotation config
+             * @enum {string}
+             */
+            annotation_config_type: "freeform";
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            annotation_config_type: "freeform";
+        };
+        CreateAnnotationConfigRequestBody: components["schemas"]["ContinuousAnnotationConfigCreate"] | components["schemas"]["CategoricalAnnotationConfigCreate"] | components["schemas"]["FreeformAnnotationConfigCreate"];
     };
     responses: {
+        /** @description An annotation config object */
+        AnnotationConfig: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["AnnotationConfig"];
+            };
+        };
+        /** @description Returns a list of annotation config objects */
+        AnnotationConfigList: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    /** @description A list of annotation configs */
+                    annotation_configs: components["schemas"]["AnnotationConfig"][];
+                    pagination: components["schemas"]["PaginationMetadata"];
+                };
+            };
+        };
+        /** @description Annotation config successfully deleted */
+        AnnotationConfigDeleted: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
+        /** @description Returns a list of annotation queue objects */
+        AnnotationQueueList: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "annotation_queues": [
+                 *         {
+                 *           "id": "aq_abc123",
+                 *           "name": "Quality Review Queue",
+                 *           "space_id": "spc_xyz789",
+                 *           "instructions": "Review each response for accuracy and helpfulness",
+                 *           "created_at": "2024-01-15T10:30:00Z",
+                 *           "updated_at": "2024-01-20T14:45:00Z"
+                 *         },
+                 *         {
+                 *           "id": "aq_def456",
+                 *           "name": "Safety Evaluation Queue",
+                 *           "space_id": "spc_xyz789",
+                 *           "instructions": null,
+                 *           "created_at": "2024-01-10T08:00:00Z",
+                 *           "updated_at": "2024-01-10T08:00:00Z"
+                 *         }
+                 *       ],
+                 *       "pagination": {
+                 *         "has_more": false,
+                 *         "next_cursor": null
+                 *       }
+                 *     }
+                 */
+                "application/json": {
+                    /** @description A list of annotation queues */
+                    annotation_queues: components["schemas"]["AnnotationQueue"][];
+                    /** @description Pagination metadata for cursor-based navigation */
+                    pagination: components["schemas"]["PaginationMetadata"];
+                };
+            };
+        };
         /** @description A dataset object */
         Dataset: {
             headers: {
@@ -1261,6 +1672,51 @@ export interface components {
             };
             content?: never;
         };
+        /** @description Returns a list of space objects */
+        SpaceList: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "spaces": [
+                 *         {
+                 *           "id": "spc_001",
+                 *           "name": "LLM Evaluation",
+                 *           "description": "Space for evaluating LLM performance",
+                 *           "created_at": "2024-01-01T12:00:00Z",
+                 *           "updated_at": "2024-01-01T12:00:00Z"
+                 *         },
+                 *         {
+                 *           "id": "spc_002",
+                 *           "name": "Customer Support Bot",
+                 *           "description": "Production chatbot monitoring",
+                 *           "created_at": "2024-01-02T12:00:00Z",
+                 *           "updated_at": "2024-01-02T12:00:00Z"
+                 *         },
+                 *         {
+                 *           "id": "spc_003",
+                 *           "name": "RAG Pipeline",
+                 *           "description": "Retrieval-augmented generation experiments",
+                 *           "created_at": "2024-01-03T12:00:00Z",
+                 *           "updated_at": "2024-01-03T12:00:00Z"
+                 *         }
+                 *       ],
+                 *       "pagination": {
+                 *         "next_cursor": "cursor_12345",
+                 *         "has_more": true
+                 *       }
+                 *     }
+                 */
+                "application/json": {
+                    /** @description A list of spaces */
+                    spaces: components["schemas"]["Space"][];
+                    /** @description Pagination metadata for cursor-based navigation */
+                    pagination: components["schemas"]["PaginationMetadata"];
+                };
+            };
+        };
         /** @description Invalid request */
         BadRequest: {
             headers: {
@@ -1383,7 +1839,7 @@ export interface components {
             content: {
                 /**
                  * @example {
-                 *       "data": [
+                 *       "spans": [
                  *         {
                  *           "name": "llm.chat.completion",
                  *           "context": {
@@ -1410,7 +1866,7 @@ export interface components {
                  */
                 "application/json": {
                     /** @description A list of spans */
-                    data: components["schemas"]["Span"][];
+                    spans: components["schemas"]["Span"][];
                     /** @description Pagination metadata for cursor-based navigation */
                     pagination: components["schemas"]["PaginationMetadata"];
                 };
@@ -1418,6 +1874,8 @@ export interface components {
         };
     };
     parameters: {
+        /** @description The unique identifier of the annotation config */
+        AnnotationConfigIdPathParam: components["schemas"]["Id"];
         /** @description The unique identifier of the dataset */
         DatasetIdPathParam: components["schemas"]["Id"];
         /** @description The unique identifier of the experiment */
@@ -1432,6 +1890,8 @@ export interface components {
          * @example prompt_12345
          */
         PromptIdPathParam: components["schemas"]["Id"];
+        /** @description The unique identifier of an organization. When provided, only spaces belonging to this organization are returned. */
+        OrganizationIdQueryParam: components["schemas"]["Id"];
         /** @description Filter search results to a particular space ID */
         SpaceIdQueryParam: components["schemas"]["Id"];
         /** @description Filter experiments to a particular dataset ID */
@@ -1450,6 +1910,30 @@ export interface components {
         CursorQueryParam: string;
     };
     requestBodies: {
+        /** @description Body containing annotation config creation parameters */
+        CreateAnnotationConfigRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "name": "Accuracy",
+                 *       "space_id": "space_12345",
+                 *       "annotation_config_type": "categorical",
+                 *       "values": [
+                 *         {
+                 *           "label": "accurate",
+                 *           "score": 1
+                 *         },
+                 *         {
+                 *           "label": "inaccurate",
+                 *           "score": 0
+                 *         }
+                 *       ],
+                 *       "optimization_direction": "maximize"
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreateAnnotationConfigRequestBody"];
+            };
+        };
         /** @description Body containing project creation parameters */
         CreateProjectRequestBody: {
             content: {
@@ -1513,6 +1997,25 @@ export interface components {
                     messages: components["schemas"]["LLMMessage"][];
                     invocation_params?: components["schemas"]["InvocationParams"];
                     provider_params?: components["schemas"]["ProviderParams"];
+                };
+            };
+        };
+        /** @description Body containing prompt update parameters. At least one field must be provided. */
+        UpdatePromptRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "description": "Updated prompt description",
+                 *       "tags": [
+                 *         "new-tag"
+                 *       ]
+                 *     }
+                 */
+                "application/json": {
+                    /** @description Updated description for the prompt */
+                    description?: string | null;
+                    /** @description Updated tags for the prompt */
+                    tags?: string[];
                 };
             };
         };
@@ -1678,13 +2181,13 @@ export interface components {
                     /**
                      * Format: date-time
                      * @description Filter to spans starting at or after this timestamp (inclusive).
-                     *     ISO 8601 format (e.g., `2024-01-01T00:00:00Z`).
+                     *     ISO 8601 format (e.g., `2024-01-01T00:00:00Z`). Defaults to 1 week ago.
                      */
                     start_time?: string;
                     /**
                      * Format: date-time
                      * @description Filter to spans starting before this timestamp (exclusive).
-                     *     ISO 8601 format (e.g., `2024-01-02T00:00:00Z`).
+                     *     ISO 8601 format (e.g., `2024-01-02T00:00:00Z`). Defaults to the current time.
                      */
                     end_time?: string;
                     /**
@@ -1708,6 +2211,116 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    annotation_configs_list: {
+        parameters: {
+            query?: {
+                /** @description Filter search results to a particular space ID */
+                space_id?: components["parameters"]["SpaceIdQueryParam"];
+                /** @description Maximum items to return */
+                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /**
+                 * @description Opaque pagination cursor returned from a previous response
+                 *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
+                 *     attempt to parse or construct it.
+                 */
+                cursor?: components["parameters"]["CursorQueryParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AnnotationConfigList"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    annotation_configs_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["CreateAnnotationConfigRequestBody"];
+        responses: {
+            201: components["responses"]["AnnotationConfig"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    annotation_configs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The unique identifier of the annotation config */
+                annotation_config_id: components["parameters"]["AnnotationConfigIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AnnotationConfig"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    annotation_configs_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The unique identifier of the annotation config */
+                annotation_config_id: components["parameters"]["AnnotationConfigIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: components["responses"]["AnnotationConfigDeleted"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    annotation_queues_list: {
+        parameters: {
+            query?: {
+                /** @description Filter search results to a particular space ID */
+                space_id?: components["parameters"]["SpaceIdQueryParam"];
+                /** @description Maximum items to return */
+                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /**
+                 * @description Opaque pagination cursor returned from a previous response
+                 *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
+                 *     attempt to parse or construct it.
+                 */
+                cursor?: components["parameters"]["CursorQueryParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AnnotationQueueList"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
     datasets_list: {
         parameters: {
             query?: {
@@ -1981,6 +2594,33 @@ export interface operations {
             429: components["responses"]["RateLimitExceeded"];
         };
     };
+    spaces_list: {
+        parameters: {
+            query?: {
+                /** @description The unique identifier of an organization. When provided, only spaces belonging to this organization are returned. */
+                org_id?: components["parameters"]["OrganizationIdQueryParam"];
+                /** @description Maximum items to return */
+                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /**
+                 * @description Opaque pagination cursor returned from a previous response
+                 *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
+                 *     attempt to parse or construct it.
+                 */
+                cursor?: components["parameters"]["CursorQueryParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["SpaceList"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
     prompts_list: {
         parameters: {
             query?: {
@@ -2064,6 +2704,29 @@ export interface operations {
         requestBody?: never;
         responses: {
             204: components["responses"]["PromptDeleted"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    prompts_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the prompt
+                 * @example prompt_12345
+                 */
+                prompt_id: components["parameters"]["PromptIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["UpdatePromptRequestBody"];
+        responses: {
+            200: components["responses"]["Prompt"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];

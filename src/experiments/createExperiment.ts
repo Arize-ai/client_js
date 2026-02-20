@@ -2,7 +2,7 @@ import { createClient } from "../client";
 import { WithClient } from "../types";
 import { Experiment, ExperimentRunInput } from "../types/experiments";
 import { warnPreRelease } from "../utils/warning";
-import { transformExperiment } from "./utils";
+import { normalizeExperimentRun, transformExperiment } from "./utils";
 
 export type CreateExperimentParams = WithClient<{
   experimentName: string;
@@ -18,7 +18,7 @@ export type CreateExperimentParams = WithClient<{
  * @param datasetId - The base64 encoded dataset ID to create the experiment on.
  * @param experimentRuns - An array of experiment runs to include. At least one run must
  * be provided and each run must contain at least:
- *   - 'example_id': The id of an existing example in the dataset.
+ *   - 'exampleId': The id of an existing example in the dataset.
  *   - 'output': The model or task output for that example.
  * @returns The created {@link Experiment}.
  * @throws Error if the experiment cannot be created or the response is invalid.
@@ -42,7 +42,7 @@ export async function createExperiment({
     body: {
       name: experimentName,
       dataset_id: datasetId,
-      experiment_runs: experimentRuns,
+      experiment_runs: experimentRuns.map(normalizeExperimentRun),
     },
   });
   if (response.error) {

@@ -1,5 +1,3 @@
-import { components } from "../__generated__/api/v2";
-
 export type Experiment = {
   id: string;
   name: string;
@@ -10,7 +8,28 @@ export type Experiment = {
   experimentTracesProjectId?: string;
 };
 
-export type ExperimentRunInput =
-  components["requestBodies"]["CreateExperimentRequestBody"]["content"]["application/json"]["experiment_runs"][number];
+export type ExperimentRunInput = {
+  output: string;
+} & (
+  | {
+      exampleId: string;
+      /** @deprecated Use `exampleId` instead. */
+      example_id?: string;
+    }
+  | {
+      /** @deprecated Use `exampleId` instead. */
+      example_id: string;
+      exampleId?: string;
+    }
+) & {
+    [key: string]: unknown;
+  };
 
-export type ExperimentRun = components["schemas"]["ExperimentRun"];
+export type ExperimentRun = {
+  id: string;
+  /** @deprecated Use `exampleId` instead. */
+  example_id: string;
+  exampleId?: string;
+  output: string;
+  [key: string]: unknown;
+};
