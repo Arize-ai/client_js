@@ -3,9 +3,8 @@ import { transformPrompt } from "../utils";
 import { mockPrompt, mockPromptMinimal } from "./fixtures";
 
 describe("transformPrompt", () => {
-  it("should transform snake_case fields to camelCase and dates to Date objects", () => {
-    const result = transformPrompt(mockPrompt);
-    expect(result).toEqual({
+  it("should transform the snake_case fields of a prompt to camelCase and dates to Date objects", () => {
+    const expectedResult = {
       id: mockPrompt.id,
       name: mockPrompt.name,
       description: mockPrompt.description,
@@ -14,12 +13,15 @@ describe("transformPrompt", () => {
       updatedAt: new Date(mockPrompt.updated_at),
       createdByUserId: mockPrompt.created_by_user_id,
       tags: mockPrompt.tags,
-    });
+    };
+    const result = transformPrompt(mockPrompt);
+    expect(result).toEqual(expectedResult);
   });
+});
 
+describe("transformPrompt with minimal fields", () => {
   it("should handle prompts without optional fields", () => {
-    const result = transformPrompt(mockPromptMinimal);
-    expect(result).toEqual({
+    const expectedResult = {
       id: mockPromptMinimal.id,
       name: mockPromptMinimal.name,
       description: mockPromptMinimal.description,
@@ -28,6 +30,8 @@ describe("transformPrompt", () => {
       updatedAt: new Date(mockPromptMinimal.updated_at),
       createdByUserId: mockPromptMinimal.created_by_user_id,
       tags: mockPromptMinimal.tags,
-    });
+    };
+    const result = transformPrompt(mockPromptMinimal);
+    expect(result).toEqual(expectedResult);
   });
 });

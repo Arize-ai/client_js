@@ -1,5 +1,6 @@
 import createOpenApiClient, { ClientOptions } from "openapi-fetch";
 import { paths } from "./__generated__/api/v2";
+import { GraphQLClientOptions } from "./graphql";
 
 const DEFAULT_BASE_URL = "https://api.arize.com";
 
@@ -16,6 +17,12 @@ interface ArizeClientOptions {
    * Can be overridden by passing a baseUrl option.
    */
   baseUrl?: string;
+
+  /**
+   * Override the GraphQL endpoint base URL. Defaults to "https://app.arize.com".
+   * @default process.env['ARIZE_GRAPHQL_BASE_URL']
+   */
+  graphqlBaseUrl?: string;
 
   /**
    * Default headers to include with every request to the API.
@@ -50,6 +57,10 @@ const getDefaultEnvironmentOptions = (): ArizeClientOptions => {
 
   if (process.env.ARIZE_BASE_URL) {
     config.baseUrl = process.env.ARIZE_BASE_URL;
+  }
+
+  if (process.env.ARIZE_GRAPHQL_BASE_URL) {
+    config.graphqlBaseUrl = process.env.ARIZE_GRAPHQL_BASE_URL;
   }
 
   return config;
@@ -103,4 +114,18 @@ export function createClient(config?: ArizeClientOptions) {
   };
   const clientOptions = arizeConfigToClientOptions(options);
   return createOpenApiClient<paths>(clientOptions);
+}
+
+/**
+ * Build GraphQL client options from Arize client options.
+ */
+export function createGraphQLClientOptions(
+  config?: ArizeClientOptions,
+): GraphQLClientOptions {
+  const merged = getMergedOptions(config);
+  return {
+    apiKey: merged.apiKey,
+    baseUrl: merged.graphqlBaseUrl,
+    defaultHeaders: merged.defaultHeaders,
+  };
 }
