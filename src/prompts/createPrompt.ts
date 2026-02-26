@@ -1,27 +1,34 @@
-import { components } from "../__generated__/api/v2";
 import { createClient } from "../client";
-import { Prompt, WithClient } from "../types";
+import {
+  InvocationParams,
+  InputVariableFormat,
+  LLMMessage,
+  LlmProvider,
+  Prompt,
+  ProviderParams,
+  WithClient,
+} from "../types";
 import { warnPreRelease } from "../utils/warning";
 import { transformPrompt } from "./utils";
 
 export type CreatePromptParams = WithClient<{
   spaceId: string;
   name: string;
-  messages: components["schemas"]["LLMMessage"][];
+  messages: LLMMessage[];
   commitMessage: string;
-  inputVariableFormat: components["schemas"]["InputVariableFormat"];
-  provider: components["schemas"]["LlmProvider"];
+  inputVariableFormat: InputVariableFormat;
+  provider: LlmProvider;
   description?: string;
   tags?: string[];
   model?: string;
-  invocationParams?: components["schemas"]["InvocationParams"];
-  providerParams?: components["schemas"]["ProviderParams"];
+  invocationParams?: InvocationParams;
+  providerParams?: ProviderParams;
 }>;
 
 /**
  * Create a new prompt with an initial version.
  *
- * @param client - An optional ArizeClient instance.
+ * @param client - An optional ArizeClient instance to use for the request.
  * @param spaceId - The space to create the prompt in.
  * @param name - Unique prompt name within the space.
  * @param messages - At least one LLM message (system, user, assistant, tool).
@@ -29,6 +36,24 @@ export type CreatePromptParams = WithClient<{
  * @param inputVariableFormat - Variable syntax: "f_string", "mustache", or "none".
  * @param provider - LLM provider: "openAI", "azureOpenAI", "awsBedrock", "vertexAI", "custom".
  * @returns The created {@link Prompt} metadata.
+ * @throws Error if the prompt cannot be created or the response is invalid.
+ * @example
+ * ```typescript
+ * import { createPrompt } from "@arizeai/ax-client"
+ *
+ * const prompt = await createPrompt({
+ *   spaceId: "your_space_id",
+ *   name: "my-prompt",
+ *   commitMessage: "Initial version",
+ *   inputVariableFormat: "f_string",
+ *   provider: "openAI",
+ *   messages: [
+ *     { role: "system", content: "You are a helpful assistant." },
+ *     { role: "user", content: "Hello, {name}!" },
+ *   ],
+ * });
+ * console.log(prompt);
+ * ```
  *
  * @remarks Returns metadata only. The v2 API does not return the created
  * messages or template content in the response.
