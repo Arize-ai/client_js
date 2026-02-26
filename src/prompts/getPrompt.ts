@@ -10,9 +10,17 @@ export type GetPromptParams = WithClient<{
 /**
  * Get a specific prompt by its ID.
  *
- * @param client - An optional ArizeClient instance.
- * @param promptId - The unique identifier of the prompt.
- * @returns The {@link Prompt} metadata.
+ * @param client - An optional ArizeClient instance to use for the request.
+ * @param promptId - The ID of the prompt to get.
+ * @returns A {@link Prompt} metadata object.
+ * @throws Error if the prompt cannot be found or the response is invalid.
+ * @example
+ * ```typescript
+ * import { getPrompt } from "@arizeai/ax-client"
+ *
+ * const prompt = await getPrompt({ promptId: "your_prompt_id" });
+ * console.log(prompt);
+ * ```
  *
  * @remarks Returns metadata only (id, name, description, tags, timestamps).
  * The v2 API does not include messages, model config, or invocation parameters
