@@ -1,5 +1,11 @@
 # @arizeai/ax-client
 
+## [Unreleased]
+
+### 🎁 New Features
+
+- **ts-client:** Add prompts module — CRUDL support for v2 Prompts API (alpha)
+
 ## [1.2.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.1.0...arize-js-sdk/v1.2.0) (2026-02-20)
 
 ### 🎁 New Features
