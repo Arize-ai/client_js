@@ -35,6 +35,11 @@ export type CreatePromptParams = WithClient<{
  * @param commitMessage - Version description.
  * @param inputVariableFormat - Variable syntax: "f_string", "mustache", or "none".
  * @param provider - LLM provider: "openAI", "azureOpenAI", "awsBedrock", "vertexAI", "custom".
+ * @param description - An optional description for the prompt.
+ * @param tags - An optional array of tags to associate with the prompt.
+ * @param model - An optional model identifier for the prompt.
+ * @param invocationParams - An optional set of invocation parameters.
+ * @param providerParams - An optional set of provider-specific parameters.
  * @returns The created {@link Prompt} metadata.
  * @throws Error if the prompt cannot be created or the response is invalid.
  * @example
@@ -54,9 +59,6 @@ export type CreatePromptParams = WithClient<{
  * });
  * console.log(prompt);
  * ```
- *
- * @remarks Returns metadata only. The v2 API does not return the created
- * messages or template content in the response.
  */
 export async function createPrompt({
   client: clientInstance,

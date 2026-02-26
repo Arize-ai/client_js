@@ -31,9 +31,6 @@ export type ListPromptsParams = WithClient<
  * const prompts = await listPrompts();
  * console.log(prompts);
  * ```
- *
- * @remarks The Arize v2 Prompts API is in alpha. Prompts returned contain
- * metadata only (no messages or template content).
  */
 export async function listPrompts(
   params: ListPromptsParams = {},

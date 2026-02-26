@@ -21,10 +21,6 @@ export type GetPromptParams = WithClient<{
  * const prompt = await getPrompt({ promptId: "your_prompt_id" });
  * console.log(prompt);
  * ```
- *
- * @remarks Returns metadata only (id, name, description, tags, timestamps).
- * The v2 API does not include messages, model config, or invocation parameters
- * in the GET response.
  */
 export async function getPrompt({
   client: clientInstance,

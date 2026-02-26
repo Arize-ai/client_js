@@ -6,26 +6,28 @@ describe("transformPrompt", () => {
   it("should transform snake_case fields to camelCase and dates to Date objects", () => {
     const result = transformPrompt(mockPrompt);
     expect(result).toEqual({
-      id: "prompt_001",
-      name: "test-prompt",
-      description: "A test prompt",
-      spaceId: "space_12345",
-      createdAt: new Date("2024-01-01T12:00:00.000Z"),
-      updatedAt: new Date("2024-01-01T12:00:00.000Z"),
-      createdByUserId: "user_12345",
-      tags: ["test", "evaluation"],
+      id: mockPrompt.id,
+      name: mockPrompt.name,
+      description: mockPrompt.description,
+      spaceId: mockPrompt.space_id,
+      createdAt: new Date(mockPrompt.created_at),
+      updatedAt: new Date(mockPrompt.updated_at),
+      createdByUserId: mockPrompt.created_by_user_id,
+      tags: mockPrompt.tags,
     });
   });
 
   it("should handle prompts without optional fields", () => {
     const result = transformPrompt(mockPromptMinimal);
     expect(result).toEqual({
-      id: "prompt_002",
-      name: "minimal-prompt",
-      spaceId: "space_12345",
-      createdAt: new Date("2024-01-01T12:00:00.000Z"),
-      updatedAt: new Date("2024-01-01T12:00:00.000Z"),
-      createdByUserId: "user_12345",
+      id: mockPromptMinimal.id,
+      name: mockPromptMinimal.name,
+      description: mockPromptMinimal.description,
+      spaceId: mockPromptMinimal.space_id,
+      createdAt: new Date(mockPromptMinimal.created_at),
+      updatedAt: new Date(mockPromptMinimal.updated_at),
+      createdByUserId: mockPromptMinimal.created_by_user_id,
+      tags: mockPromptMinimal.tags,
     });
   });
 });

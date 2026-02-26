@@ -14,8 +14,8 @@ export type UpdatePromptParams = WithClient<{
  *
  * @param client - An optional ArizeClient instance to use for the request.
  * @param promptId - The ID of the prompt to update.
- * @param description - Updated description (pass null to clear).
- * @param tags - Updated tags array.
+ * @param description - An optional updated description (pass null to clear).
+ * @param tags - An optional updated tags array.
  * @returns The updated {@link Prompt} metadata.
  * @throws Error if the prompt cannot be updated or the response is invalid.
  * @example
@@ -29,9 +29,6 @@ export type UpdatePromptParams = WithClient<{
  * });
  * console.log(prompt);
  * ```
- *
- * @remarks Currently only supports updating description and tags.
- * At least one field must be provided or the API will return a 400 error.
  */
 export async function updatePrompt({
   client: clientInstance,
