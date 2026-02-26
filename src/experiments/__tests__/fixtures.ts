@@ -11,6 +11,16 @@ export const mockExperiment: RawExperiment = {
   dataset_version_id: "dataset_version_id",
 };
 
+export const mockExperimentWithTracesProject: RawExperiment = {
+  id: "experiment_id",
+  name: "test-experiment",
+  dataset_id: "dataset_id",
+  created_at: mockDateString,
+  updated_at: mockDateString,
+  dataset_version_id: "dataset_version_id",
+  experiment_traces_project_id: "test-traces-project-id",
+};
+
 export const mockExperimentRun: RawExperimentRun = {
   id: "run_id",
   example_id: "example_id",

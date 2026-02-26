@@ -73,6 +73,14 @@ describe("graphqlFetch", () => {
     expect(capturedHeaders).not.toHaveProperty("authorization");
   });
 
+  it("throws when response has no data and no errors", async () => {
+    nock(BASE_URL).post("/graphql").reply(200, {});
+
+    await expect(
+      graphqlFetch(DEFAULT_OPTIONS, '{ node(id: "1") { id } }'),
+    ).rejects.toThrow("GraphQL response contained no data");
+  });
+
   it("throws when apiKey is missing and env var is not set", async () => {
     const originalKey = process.env.ARIZE_API_KEY;
     delete process.env.ARIZE_API_KEY;

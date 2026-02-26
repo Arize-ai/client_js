@@ -4,7 +4,11 @@ import {
   transformExperiment,
   transformExperimentRun,
 } from "../utils";
-import { mockExperiment, mockExperimentRun } from "./fixtures";
+import {
+  mockExperiment,
+  mockExperimentRun,
+  mockExperimentWithTracesProject,
+} from "./fixtures";
 
 describe("transformExperiment", () => {
   it("should transform the created_at and updated_at fields of an experiment to date objects", () => {
@@ -17,6 +21,21 @@ describe("transformExperiment", () => {
       updatedAt: new Date(mockExperiment.updated_at),
     };
     const experiment = transformExperiment(mockExperiment);
+    expect(experiment).toEqual(expectedResult);
+  });
+
+  it("should include experimentTracesProjectId when experiment_traces_project_id is set", () => {
+    const expectedResult = {
+      id: mockExperimentWithTracesProject.id,
+      name: mockExperimentWithTracesProject.name,
+      datasetId: mockExperimentWithTracesProject.dataset_id,
+      datasetVersionId: mockExperimentWithTracesProject.dataset_version_id,
+      createdAt: new Date(mockExperimentWithTracesProject.created_at),
+      updatedAt: new Date(mockExperimentWithTracesProject.updated_at),
+      experimentTracesProjectId:
+        mockExperimentWithTracesProject.experiment_traces_project_id,
+    };
+    const experiment = transformExperiment(mockExperimentWithTracesProject);
     expect(experiment).toEqual(expectedResult);
   });
 });

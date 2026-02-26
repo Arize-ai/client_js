@@ -3,7 +3,11 @@ import {
   transformDataset,
   transformListDatasetExamplesResponseExample,
 } from "../utils";
-import { mockDataset, mockListExamplesResponseExample } from "./fixtures";
+import {
+  mockDataset,
+  mockDatasetWithoutVersions,
+  mockListExamplesResponseExample,
+} from "./fixtures";
 
 describe("transformDataset", () => {
   it("should transform the created_at and updated_at fields of a dataset and its versions to date objects", () => {
@@ -22,6 +26,18 @@ describe("transformDataset", () => {
       })),
     };
     const dataset = transformDataset(mockDataset);
+    expect(dataset).toEqual(expectedResult);
+  });
+
+  it("should return dataset info without versions when dataset has no versions", () => {
+    const expectedResult = {
+      id: mockDatasetWithoutVersions.id,
+      name: mockDatasetWithoutVersions.name,
+      spaceId: mockDatasetWithoutVersions.space_id,
+      createdAt: new Date(mockDatasetWithoutVersions.created_at),
+      updatedAt: new Date(mockDatasetWithoutVersions.updated_at),
+    };
+    const dataset = transformDataset(mockDatasetWithoutVersions);
     expect(dataset).toEqual(expectedResult);
   });
 });

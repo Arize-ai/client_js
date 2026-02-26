@@ -29,6 +29,14 @@ export const mockDataset: RawDataset = {
   versions: [mockDatasetVersion],
 };
 
+export const mockDatasetWithoutVersions: RawDataset = {
+  id: mockDatasetId,
+  name: mockDatasetName,
+  space_id: mockSpaceId,
+  created_at: mockDateString,
+  updated_at: mockDateString,
+};
+
 export const mockListExamplesResponseExample: RawDatasetExample = {
   id: mockExampleId,
   created_at: mockDateString,
