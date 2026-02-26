@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { transformPrompt } from "../utils";
-import { mockRawPrompt, mockRawPromptMinimal } from "./fixtures";
+import { mockPrompt, mockPromptMinimal } from "./fixtures";
 
 describe("transformPrompt", () => {
   it("should transform snake_case fields to camelCase and dates to Date objects", () => {
-    const result = transformPrompt(mockRawPrompt);
+    const result = transformPrompt(mockPrompt);
     expect(result).toEqual({
       id: "prompt_001",
       name: "test-prompt",
@@ -18,7 +18,7 @@ describe("transformPrompt", () => {
   });
 
   it("should handle prompts without optional fields", () => {
-    const result = transformPrompt(mockRawPromptMinimal);
+    const result = transformPrompt(mockPromptMinimal);
     expect(result).toEqual({
       id: "prompt_002",
       name: "minimal-prompt",

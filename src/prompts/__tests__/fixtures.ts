@@ -2,7 +2,7 @@ import { RawPrompt } from "../../types/internal";
 
 const mockDateString = "2024-01-01T12:00:00.000Z";
 
-export const mockRawPrompt: RawPrompt = {
+export const mockPrompt: RawPrompt = {
   id: "prompt_001",
   name: "test-prompt",
   description: "A test prompt",
@@ -13,7 +13,7 @@ export const mockRawPrompt: RawPrompt = {
   tags: ["test", "evaluation"],
 };
 
-export const mockRawPromptMinimal: RawPrompt = {
+export const mockPromptMinimal: RawPrompt = {
   id: "prompt_002",
   name: "minimal-prompt",
   space_id: "space_12345",
