@@ -12,11 +12,23 @@ export type UpdatePromptParams = WithClient<{
 /**
  * Update a prompt's metadata by its ID.
  *
- * @param client - An optional ArizeClient instance.
- * @param promptId - The unique identifier of the prompt.
+ * @param client - An optional ArizeClient instance to use for the request.
+ * @param promptId - The ID of the prompt to update.
  * @param description - Updated description (pass null to clear).
  * @param tags - Updated tags array.
  * @returns The updated {@link Prompt} metadata.
+ * @throws Error if the prompt cannot be updated or the response is invalid.
+ * @example
+ * ```typescript
+ * import { updatePrompt } from "@arizeai/ax-client"
+ *
+ * const prompt = await updatePrompt({
+ *   promptId: "your_prompt_id",
+ *   description: "Updated description",
+ *   tags: ["updated-tag"],
+ * });
+ * console.log(prompt);
+ * ```
  *
  * @remarks Currently only supports updating description and tags.
  * At least one field must be provided or the API will return a 400 error.
