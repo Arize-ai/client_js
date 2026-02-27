@@ -114,15 +114,27 @@ Full prompt content including messages, LLM parameters, and version history is a
 ```typescript
 import { getPromptContent, listPromptsWithContent } from "@arizeai/ax-client";
 
-// Get full content for a single prompt
-const content = await getPromptContent({ promptId: "your_prompt_id" });
-console.log(content.promptVersions);
+// Get full content by GraphQL node ID (base64-encoded Relay Global ID)
+const content = await getPromptContent({
+  promptNodeId: "your_relay_node_id",
+  versionLimit: 10,
+});
+console.log(content.versions);
+
+// Or look up by name (requires the space's Relay node ID)
+const contentByName = await getPromptContent({
+  promptName: "my-prompt",
+  spaceNodeId: "your_space_relay_node_id",
+  versionLimit: 5,
+});
 
 // List prompts with full content
 const { data: promptsWithContent } = await listPromptsWithContent({
-  spaceId: "space-id",
+  spaceNodeId: "your_space_relay_node_id",
 });
 ```
+
+> **Note:** GraphQL functions require Relay Global IDs (base64-encoded node IDs), which differ from the REST API IDs returned by `getPrompt()`. Relay IDs can be obtained from the Arize AX UI or via the GraphQL API.
 
 ## REST endpoints
 
