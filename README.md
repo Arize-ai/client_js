@@ -60,6 +60,70 @@ const experimentRuns = await listExperimentRuns({
 });
 ```
 
+## Prompts
+
+The `@arizeai/ax-client` package allows you to create and manage prompts.
+
+### Managing prompts
+
+You can list, create, get, update, and delete prompts using the REST API functions.
+
+```typescript
+import {
+  listPrompts,
+  createPrompt,
+  getPrompt,
+  updatePrompt,
+  deletePrompt,
+} from "@arizeai/ax-client";
+
+// List all prompts
+const { data: prompts } = await listPrompts({ spaceId: "space-id" });
+
+// Create a new prompt
+const prompt = await createPrompt({
+  spaceId: "space-id",
+  name: "my-prompt",
+  commitMessage: "Initial version",
+  inputVariableFormat: "f_string",
+  provider: "openAI",
+  messages: [
+    { role: "system", content: "You are a helpful assistant." },
+    { role: "user", content: "Hello, {name}!" },
+  ],
+});
+
+// Get a specific prompt
+const fetched = await getPrompt({ promptId: prompt.id });
+
+// Update prompt metadata
+const updated = await updatePrompt({
+  promptId: prompt.id,
+  description: "Updated description",
+  tags: ["production"],
+});
+
+// Delete a prompt
+await deletePrompt({ promptId: prompt.id });
+```
+
+### Retrieving full prompt content (alpha)
+
+Full prompt content including messages, LLM parameters, and version history is available via GraphQL-backed functions. These are in alpha and may change.
+
+```typescript
+import { getPromptContent, listPromptsWithContent } from "@arizeai/ax-client";
+
+// Get full content for a single prompt
+const content = await getPromptContent({ promptId: "your_prompt_id" });
+console.log(content.promptVersions);
+
+// List prompts with full content
+const { data: promptsWithContent } = await listPromptsWithContent({
+  spaceId: "space-id",
+});
+```
+
 ## REST endpoints
 
 It is recommended to use the methods in this package. If more control is desired, you can use the client directly. The client provides a type-safe fetch for the entire Arize AX REST API.

@@ -1,10 +1,19 @@
 # @arizeai/ax-client
 
-## [Unreleased]
+## [1.3.0](https://github.com/Arize-ai/client_js/compare/v1.2.0...v1.3.0) (2026-02-26)
 
 ### 🎁 New Features
 
-- **ts-client:** Add prompts module — CRUDL support for v2 Prompts API (alpha)
+- **ts-client:** Add `prompts` module — full CRUDL support for v2 Prompts REST API (`listPrompts`, `createPrompt`, `getPrompt`, `updatePrompt`, `deletePrompt`)
+- **ts-client:** Add `getPromptContent` and `listPromptsWithContent` — GraphQL-backed retrieval of full prompt content including messages, LLM parameters, and version history (alpha)
+- **ts-client:** Add `graphql` internal transport layer for GraphQL API access
+
+### 🧪 Tests
+
+- Add comprehensive tests for `client.ts` (getMergedOptions, createClient, createGraphQLClientOptions) — coverage 48% → 96%
+- Add branch coverage tests for `datasets/utils.ts` (no-versions path) and `experiments/utils.ts` (experimentTracesProjectId path)
+- Add `warning.ts` tests covering pre-release warning logic with module-level state isolation
+- Add `graphqlFetch` test for empty-data response handling
 
 ## [1.2.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.1.0...arize-js-sdk/v1.2.0) (2026-02-20)
 
