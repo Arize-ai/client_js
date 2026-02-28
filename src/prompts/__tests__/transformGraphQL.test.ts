@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   transformGraphQLPrompt,
   transformGraphQLPromptVersion,
+  transformMessageToGraphQL,
   RawGraphQLPrompt,
   RawGraphQLPromptVersion,
 } from "../transformGraphQL";
@@ -134,5 +135,51 @@ describe("transformGraphQLPrompt", () => {
     expect(result.toolCalls).toBeUndefined();
     expect(result.tags).toBeUndefined();
     expect(result.versions).toBeUndefined();
+  });
+});
+
+describe("transformMessageToGraphQL", () => {
+  it("should pass through role and content", () => {
+    const result = transformMessageToGraphQL({
+      role: "system",
+      content: "Hello",
+    });
+    expect(result).toEqual({ role: "system", content: "Hello" });
+  });
+
+  it("should rename tool_call_id to toolCallId", () => {
+    const result = transformMessageToGraphQL({
+      role: "assistant",
+      content: "Hi",
+      tool_call_id: "tc_1",
+    });
+    expect(result).toEqual({
+      role: "assistant",
+      content: "Hi",
+      toolCallId: "tc_1",
+    });
+  });
+
+  it("should rename tool_calls to toolCalls", () => {
+    const calls = [{ id: "tc_1", type: "function" }];
+    const result = transformMessageToGraphQL({
+      role: "assistant",
+      content: "Hi",
+      tool_calls: calls,
+    });
+    expect(result).toEqual({
+      role: "assistant",
+      content: "Hi",
+      toolCalls: calls,
+    });
+  });
+
+  it("should not include toolCallId or toolCalls when not present", () => {
+    const result = transformMessageToGraphQL({
+      role: "user",
+      content: "Just text",
+    });
+    expect(result).not.toHaveProperty("toolCallId");
+    expect(result).not.toHaveProperty("toolCalls");
   });
 });

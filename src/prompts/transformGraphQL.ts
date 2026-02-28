@@ -1,4 +1,4 @@
-import { PromptVersion, PromptWithContent } from "../types";
+import { PromptVersion, PromptWithContent, LLMMessage } from "../types";
 
 export type RawGraphQLPromptVersion = {
   id: string;
@@ -79,4 +79,13 @@ export function transformGraphQLPrompt(
   }
 
   return result;
+}
+
+export function transformMessageToGraphQL(msg: LLMMessage) {
+  return {
+    role: msg.role,
+    content: msg.content,
+    ...(msg.tool_call_id != null && { toolCallId: msg.tool_call_id }),
+    ...(msg.tool_calls != null && { toolCalls: msg.tool_calls }),
+  };
 }
