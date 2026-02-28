@@ -89,3 +89,53 @@ export async function getPromptContent(
     "Either promptNodeId or both promptName and spaceNodeId must be provided",
   );
 }
+
+export type FindPromptByNameParams = {
+  /** Prompt name to look up */
+  promptName: string;
+  /** GraphQL node ID of the space (base64-encoded Relay Global ID) */
+  spaceNodeId: string;
+  /** Override API key */
+  apiKey?: string;
+  /** Override GraphQL base URL (default: https://app.arize.com) */
+  baseUrl?: string;
+};
+
+/**
+ * Look up a prompt by name within a space. Returns `null` if no prompt
+ * with the given name exists — unlike {@link getPromptContent}, this
+ * function never throws for a missing prompt.
+ *
+ * @param promptName - Prompt name to look up.
+ * @param spaceNodeId - GraphQL node ID of the space.
+ * @param apiKey - Override API key.
+ * @param baseUrl - Override GraphQL base URL.
+ * @returns A {@link PromptWithContent} or `null` if not found.
+ * @throws Error if the GraphQL request itself fails (auth, network, etc.).
+ */
+export async function findPromptByName({
+  promptName,
+  spaceNodeId,
+  apiKey,
+  baseUrl,
+}: FindPromptByNameParams): Promise<PromptWithContent | null> {
+  const clientOptions: GraphQLClientOptions = { apiKey, baseUrl };
+
+  const data = await graphqlFetch<{
+    node: {
+      prompts: {
+        edges: Array<{ node: RawGraphQLPrompt }>;
+      };
+    };
+  }>(clientOptions, GET_PROMPT_BY_NAME, {
+    spaceId: spaceNodeId,
+    name: promptName,
+  });
+
+  const edges = data.node?.prompts?.edges;
+  if (!edges || edges.length === 0) {
+    return null;
+  }
+
+  return transformGraphQLPrompt(edges[0]!.node);
+}
