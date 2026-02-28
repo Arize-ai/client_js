@@ -1,26 +1,10 @@
 import { afterEach, describe, expect, it } from "vitest";
 import nock from "nock";
 import { pushPrompt } from "../pushPrompt";
+import { mockGraphQLPrompt } from "./fixtures";
 
 const BASE_URL = "https://app.arize.com";
 const API_KEY = "test-api-key";
-
-const mockRawPrompt = {
-  id: "UHJvbXB0OjMwNDQ2Olg1eVk=",
-  name: "test-prompt",
-  description: "A test prompt",
-  messages: [{ role: "system", content: "You are helpful" }],
-  inputVariableFormat: "MUSTACHE",
-  provider: "openAI",
-  modelName: "gpt-4",
-  commitHash: "abc123",
-  commitMessage: "Initial",
-  llmParameters: { temperature: 0.7 },
-  toolCalls: null,
-  tags: ["test"],
-  createdAt: "2024-01-01T12:00:00.000Z",
-  updatedAt: "2024-01-15T12:00:00.000Z",
-};
 
 const defaultParams = {
   spaceNodeId: "U3BhY2U6MTIz",
@@ -69,7 +53,7 @@ describe("pushPrompt", () => {
       .post("/graphql", (body) => body.query.includes("GetPromptByName"))
       .reply(200, {
         data: {
-          node: { prompts: { edges: [{ node: mockRawPrompt }] } },
+          node: { prompts: { edges: [{ node: mockGraphQLPrompt }] } },
         },
       });
 
@@ -87,7 +71,7 @@ describe("pushPrompt", () => {
 
     expect(result).toEqual({
       action: "updated",
-      promptId: mockRawPrompt.id,
+      promptId: mockGraphQLPrompt.id,
       name: "test-prompt",
     });
   });
@@ -151,7 +135,7 @@ describe("pushPrompt", () => {
           role: "assistant",
           content: "Hello",
           tool_call_id: "tc_1",
-          tool_calls: [{ id: "tc_1", type: "function" }],
+          tool_calls: [{ id: "tc_1", type: "function", function: { name: "test", arguments: "{}" } }],
         },
       ],
     });

@@ -161,7 +161,7 @@ describe("transformMessageToGraphQL", () => {
   });
 
   it("should rename tool_calls to toolCalls", () => {
-    const calls = [{ id: "tc_1", type: "function" }];
+    const calls = [{ id: "tc_1", type: "function" as const, function: { name: "test", arguments: "{}" } }];
     const result = transformMessageToGraphQL({
       role: "assistant",
       content: "Hi",
