@@ -136,6 +136,26 @@ const { data: promptsWithContent } = await listPromptsWithContent({
 
 > **Note:** GraphQL functions require Relay Global IDs (base64-encoded node IDs), which differ from the REST API IDs returned by `getPrompt()`. Relay IDs can be obtained from the Arize AX UI or via the GraphQL API.
 
+### Pushing prompts (alpha)
+
+Create a new prompt or add a new version to an existing prompt via the GraphQL API.
+
+```typescript
+import { pushPrompt } from "@arizeai/ax-client";
+
+const result = await pushPrompt({
+  spaceNodeId: "your_space_relay_node_id",
+  name: "my-prompt",
+  messages: [{ role: "system", content: "You are a helpful assistant" }],
+  commitMessage: "Initial version",
+  inputVariableFormat: "mustache",
+  provider: "openAI",
+});
+
+console.log(result.action); // "created" or "updated"
+console.log(result.promptId);
+```
+
 ## REST endpoints
 
 It is recommended to use the methods in this package. If more control is desired, you can use the client directly. The client provides a type-safe fetch for the entire Arize AX REST API.

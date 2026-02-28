@@ -7,6 +7,7 @@
 - **ts-client:** Add `prompts` module — full CRUDL support for v2 Prompts REST API (`listPrompts`, `createPrompt`, `getPrompt`, `updatePrompt`, `deletePrompt`)
 - **ts-client:** Add `getPromptContent` and `listPromptsWithContent` — GraphQL-backed retrieval of full prompt content including messages, LLM parameters, and version history (alpha)
 - **ts-client:** Add `graphql` internal transport layer for GraphQL API access
+- **ts-client:** Add `pushPrompt` — GraphQL-backed upsert that creates a new prompt or appends a new version to an existing prompt (alpha)
 
 ### 🧪 Tests
 
