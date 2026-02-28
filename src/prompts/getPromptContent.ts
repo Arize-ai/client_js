@@ -5,10 +5,15 @@ import {
 } from "../graphql/queries/prompts";
 import { PromptWithContent } from "../types";
 import { warnPreRelease } from "../utils/warning";
-import {
-  transformGraphQLPrompt,
-  RawGraphQLPrompt,
-} from "./transformGraphQL";
+import { transformGraphQLPrompt, RawGraphQLPrompt } from "./transformGraphQL";
+
+type PromptByNameResponse = {
+  node: {
+    prompts: {
+      edges: Array<{ node: RawGraphQLPrompt }>;
+    };
+  };
+};
 
 export type GetPromptContentParams = {
   /** GraphQL node ID of the prompt (base64-encoded Relay Global ID) */
@@ -80,25 +85,20 @@ export async function getPromptContent({
   }
 
   if (promptName && spaceNodeId) {
-    const data = await graphqlFetch<{
-      node: {
-        prompts: {
-          edges: Array<{ node: RawGraphQLPrompt }>;
-        };
-      };
-    }>(clientOptions, GET_PROMPT_BY_NAME, {
-      spaceId: spaceNodeId,
-      name: promptName,
+    const result = await findPromptByName({
+      promptName,
+      spaceNodeId,
+      apiKey,
+      baseUrl,
     });
 
-    const edges = data.node?.prompts?.edges;
-    if (!edges || edges.length === 0) {
+    if (!result) {
       throw new Error(
         `Prompt "${promptName}" not found in space ${spaceNodeId}`,
       );
     }
 
-    return transformGraphQLPrompt(edges[0]!.node);
+    return result;
   }
 
   throw new Error(
@@ -137,13 +137,7 @@ export async function findPromptByName({
 }: FindPromptByNameParams): Promise<PromptWithContent | null> {
   const clientOptions: GraphQLClientOptions = { apiKey, baseUrl };
 
-  const data = await graphqlFetch<{
-    node: {
-      prompts: {
-        edges: Array<{ node: RawGraphQLPrompt }>;
-      };
-    };
-  }>(clientOptions, GET_PROMPT_BY_NAME, {
+  const data = await graphqlFetch<PromptByNameResponse>(clientOptions, GET_PROMPT_BY_NAME, {
     spaceId: spaceNodeId,
     name: promptName,
   });
