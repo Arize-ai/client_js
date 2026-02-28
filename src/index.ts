@@ -5,4 +5,3 @@ export * from "./projects";
 export * from "./annotation_configs";
 export * from "./prompts";
 export * from "./types";
-export * from "./graphql";
