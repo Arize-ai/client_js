@@ -83,3 +83,68 @@ export const LIST_PROMPTS_WITH_CONTENT = `
   }
   ${PROMPT_FIELDS_FRAGMENT}
 `;
+
+export const CREATE_PROMPT_MUTATION = `
+  mutation CreatePrompt(
+    $spaceId: ID!,
+    $name: String!,
+    $description: String,
+    $tags: [String!],
+    $commitMessage: String!,
+    $inputVariableFormat: PromptVersionInputVariableFormatEnum!,
+    $provider: ExternalLLMProvider!,
+    $model: String,
+    $messages: [LLMMessageInput!]!,
+    $invocationParams: InvocationParamsInput!,
+    $providerParams: ProviderParamsInput!
+  ) {
+    createPrompt(input: {
+      spaceId: $spaceId,
+      name: $name,
+      description: $description,
+      tags: $tags,
+      commitMessage: $commitMessage,
+      inputVariableFormat: $inputVariableFormat,
+      provider: $provider,
+      model: $model,
+      messages: $messages,
+      invocationParams: $invocationParams,
+      providerParams: $providerParams
+    }) {
+      prompt {
+        id
+        name
+      }
+    }
+  }
+`;
+
+export const CREATE_PROMPT_VERSION_MUTATION = `
+  mutation CreatePromptVersion(
+    $spaceId: ID!,
+    $promptId: ID!,
+    $commitMessage: String!,
+    $inputVariableFormat: PromptVersionInputVariableFormatEnum!,
+    $provider: ExternalLLMProvider!,
+    $model: String,
+    $messages: [LLMMessageInput!]!,
+    $invocationParams: InvocationParamsInput!,
+    $providerParams: ProviderParamsInput!
+  ) {
+    createPromptVersion(input: {
+      spaceId: $spaceId,
+      promptId: $promptId,
+      commitMessage: $commitMessage,
+      inputVariableFormat: $inputVariableFormat,
+      provider: $provider,
+      model: $model,
+      messages: $messages,
+      invocationParams: $invocationParams,
+      providerParams: $providerParams
+    }) {
+      promptVersion {
+        id
+      }
+    }
+  }
+`;

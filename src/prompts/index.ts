@@ -5,3 +5,4 @@ export * from "./updatePrompt";
 export * from "./deletePrompt";
 export * from "./getPromptContent";
 export * from "./listPromptsWithContent";
+export * from "./pushPrompt";
