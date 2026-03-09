@@ -58,7 +58,8 @@ function isVersionUnchanged(
   if (existing.inputVariableFormat !== graphqlFormat) return false;
   if ((existing.modelName ?? null) !== (model ?? null)) return false;
   if (existing.provider !== provider) return false;
-  if (!isDeepStrictEqual(existing.llmParameters, invocationParams)) return false;
+  if (!isDeepStrictEqual(existing.llmParameters, invocationParams))
+    return false;
   return true;
 }
 
@@ -127,7 +128,16 @@ export async function pushPrompt({
   });
 
   if (existing) {
-    if (isVersionUnchanged(existing, graphqlMessages, graphqlFormat, model, provider, invocationParams)) {
+    if (
+      isVersionUnchanged(
+        existing,
+        graphqlMessages,
+        graphqlFormat,
+        model,
+        provider,
+        invocationParams,
+      )
+    ) {
       return {
         action: "unchanged",
         promptId: existing.id,

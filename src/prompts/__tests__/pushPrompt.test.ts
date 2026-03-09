@@ -140,7 +140,13 @@ describe("pushPrompt", () => {
           role: "assistant",
           content: "Hello",
           tool_call_id: "tc_1",
-          tool_calls: [{ id: "tc_1", type: "function", function: { name: "test", arguments: "{}" } }],
+          tool_calls: [
+            {
+              id: "tc_1",
+              type: "function",
+              function: { name: "test", arguments: "{}" },
+            },
+          ],
         },
       ],
     });
@@ -438,7 +444,12 @@ describe("pushPrompt", () => {
     nock(BASE_URL)
       .post("/graphql")
       .reply(200, {
-        errors: [{ message: "GraphQL errors: Field 'commitHash' not found on type Prompt" }],
+        errors: [
+          {
+            message:
+              "GraphQL errors: Field 'commitHash' not found on type Prompt",
+          },
+        ],
       });
 
     await expect(pushPrompt(defaultParams)).rejects.toThrow("not found");

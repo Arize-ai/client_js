@@ -22,7 +22,8 @@ export async function graphqlFetch<T>(
 ): Promise<T> {
   const merged = getMergedOptions({});
   const apiKey = options.apiKey || merged.apiKey;
-  const baseUrl = options.baseUrl || merged.graphqlBaseUrl || "https://app.arize.com";
+  const baseUrl =
+    options.baseUrl || merged.graphqlBaseUrl || "https://app.arize.com";
 
   if (!apiKey) {
     throw new Error(

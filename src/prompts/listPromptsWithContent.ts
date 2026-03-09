@@ -44,7 +44,9 @@ export async function listPromptsWithContent({
   after,
   apiKey,
   baseUrl,
-}: ListPromptsWithContentParams): Promise<PaginatedResponse<PromptWithContent>> {
+}: ListPromptsWithContentParams): Promise<
+  PaginatedResponse<PromptWithContent>
+> {
   warnPreRelease({ functionName: "listPromptsWithContent" });
 
   const clientOptions: GraphQLClientOptions = {

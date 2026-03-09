@@ -70,7 +70,10 @@ describe("getMergedOptions", () => {
     process.env.ARIZE_API_KEY = "env-api-key";
     process.env.ARIZE_BASE_URL = "https://env.arize.com";
 
-    const result = getMergedOptions({ apiKey: TEST_API_KEY, baseUrl: TEST_BASE_URL });
+    const result = getMergedOptions({
+      apiKey: TEST_API_KEY,
+      baseUrl: TEST_BASE_URL,
+    });
     expect(result.apiKey).toBe(TEST_API_KEY);
     expect(result.baseUrl).toBe(TEST_BASE_URL);
   });
@@ -135,7 +138,9 @@ describe("createClient", () => {
   });
 
   it("throws when config is provided without apiKey and env var is not set", () => {
-    expect(() => createClient({ baseUrl: TEST_BASE_URL })).toThrow("ARIZE_API_KEY");
+    expect(() => createClient({ baseUrl: TEST_BASE_URL })).toThrow(
+      "ARIZE_API_KEY",
+    );
   });
 
   it("creates a client when apiKey is provided explicitly", () => {
@@ -157,7 +162,10 @@ describe("createClient", () => {
   });
 
   it("creates a client with a custom baseUrl", () => {
-    const client = createClient({ apiKey: TEST_API_KEY, baseUrl: TEST_BASE_URL });
+    const client = createClient({
+      apiKey: TEST_API_KEY,
+      baseUrl: TEST_BASE_URL,
+    });
     expect(client).toBeTruthy();
   });
 

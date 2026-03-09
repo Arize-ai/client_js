@@ -138,10 +138,14 @@ export async function findPromptByName({
 }: FindPromptByNameParams): Promise<PromptWithContent | null> {
   const clientOptions: GraphQLClientOptions = { apiKey, baseUrl };
 
-  const data = await graphqlFetch<PromptByNameResponse>(clientOptions, GET_PROMPT_BY_NAME, {
-    spaceId: spaceNodeId,
-    name: promptName,
-  });
+  const data = await graphqlFetch<PromptByNameResponse>(
+    clientOptions,
+    GET_PROMPT_BY_NAME,
+    {
+      spaceId: spaceNodeId,
+      name: promptName,
+    },
+  );
 
   const edges = data.node?.prompts?.edges;
   if (!edges || edges.length === 0) {
