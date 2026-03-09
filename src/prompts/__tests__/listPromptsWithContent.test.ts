@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import nock from "nock";
 import { listPromptsWithContent } from "../listPromptsWithContent";
 import { mockGraphQLPrompt } from "./fixtures";
@@ -6,8 +6,13 @@ import { mockGraphQLPrompt } from "./fixtures";
 const BASE_URL = "https://app.arize.com";
 const API_KEY = "test-api-key";
 
+beforeEach(() => {
+  nock.disableNetConnect();
+});
+
 afterEach(() => {
   nock.cleanAll();
+  nock.enableNetConnect();
 });
 
 describe("listPromptsWithContent", () => {
