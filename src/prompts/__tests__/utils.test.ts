@@ -5,7 +5,12 @@ import {
   transformGraphQLPromptVersion,
   transformMessageToGraphQL,
 } from "../utils";
-import { mockPrompt, mockPromptMinimal } from "./fixtures";
+import {
+  mockPrompt,
+  mockPromptMinimal,
+  mockGraphQLPrompt as mockRawPrompt,
+  mockGraphQLPromptVersion as mockRawVersion,
+} from "./fixtures";
 import {
   RawGraphQLPrompt,
   RawGraphQLPromptVersion,
@@ -44,40 +49,6 @@ describe("transformPrompt with minimal fields", () => {
     expect(result).toEqual(expectedResult);
   });
 });
-
-const mockRawVersion: RawGraphQLPromptVersion = {
-  id: "UHJvbXB0VmVyc2lvbjoxMjM=",
-  commitHash: "abc123",
-  commitMessage: "Initial version",
-  messages: [{ role: "system", content: "You are a helpful assistant" }],
-  inputVariableFormat: "MUSTACHE",
-  provider: "openAI",
-  modelName: "gpt-4",
-  llmParameters: { temperature: 0.7 },
-  labels: ["production"],
-  providerParameters: { topP: 0.9 },
-  createdAt: "2024-01-01T12:00:00.000Z",
-};
-
-const mockRawPrompt: RawGraphQLPrompt = {
-  id: "UHJvbXB0OjMwNDQ2Olg1eVk=",
-  name: "test-prompt",
-  description: "A test prompt",
-  messages: [
-    { role: "system", content: "You are a helpful assistant" },
-    { role: "user", content: "Hello {{name}}" },
-  ],
-  inputVariableFormat: "MUSTACHE",
-  provider: "openAI",
-  modelName: "gpt-4",
-  commitHash: "def456",
-  commitMessage: "Latest version",
-  llmParameters: { temperature: 0.7, maxTokens: 1000 },
-  toolCalls: [{ name: "search", description: "Search the web" }],
-  tags: ["test", "evaluation"],
-  createdAt: "2024-01-01T12:00:00.000Z",
-  updatedAt: "2024-01-15T12:00:00.000Z",
-};
 
 describe("transformGraphQLPromptVersion", () => {
   it("should transform raw version with date conversion", () => {

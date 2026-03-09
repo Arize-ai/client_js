@@ -1,5 +1,8 @@
-import { RawPrompt } from "../../types/internal";
-import { RawGraphQLPrompt } from "../../types/internal";
+import {
+  RawPrompt,
+  RawGraphQLPrompt,
+  RawGraphQLPromptVersion,
+} from "../../types/internal";
 
 const mockDateString = "2024-01-01T12:00:00.000Z";
 const mockPromptId = "test-prompt-id";
@@ -44,4 +47,18 @@ export const mockGraphQLPrompt: RawGraphQLPrompt = {
   tags: ["test"],
   createdAt: "2024-01-01T12:00:00.000Z",
   updatedAt: "2024-01-15T12:00:00.000Z",
+};
+
+export const mockGraphQLPromptVersion: RawGraphQLPromptVersion = {
+  id: "UHJvbXB0VmVyc2lvbjoxMjM=",
+  commitHash: "abc123",
+  commitMessage: "Initial version",
+  messages: [{ role: "system", content: "You are a helpful assistant" }],
+  inputVariableFormat: "MUSTACHE",
+  provider: "openAI",
+  modelName: "gpt-4",
+  llmParameters: { temperature: 0.7 },
+  labels: ["production"],
+  providerParameters: { topP: 0.9 },
+  createdAt: "2024-01-01T12:00:00.000Z",
 };
