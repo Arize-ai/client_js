@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
-import { getMergedOptions, createClient, createGraphQLClientOptions } from "../client";
+import { getMergedOptions, createClient } from "../client";
 
 const TEST_API_KEY = "test-api-key";
 const TEST_BASE_URL = "https://test.arize.com";
@@ -174,100 +174,6 @@ describe("createClient", () => {
     process.env.ARIZE_BASE_URL = TEST_BASE_URL;
     const client = createClient();
     expect(client).toBeTruthy();
-  });
-});
-
-describe("createGraphQLClientOptions", () => {
-  let originalApiKey: string | undefined;
-  let originalGraphqlBaseUrl: string | undefined;
-
-  beforeEach(() => {
-    originalApiKey = process.env.ARIZE_API_KEY;
-    originalGraphqlBaseUrl = process.env.ARIZE_GRAPHQL_BASE_URL;
-    delete process.env.ARIZE_API_KEY;
-    delete process.env.ARIZE_GRAPHQL_BASE_URL;
-  });
-
-  afterEach(() => {
-    if (originalApiKey !== undefined) {
-      process.env.ARIZE_API_KEY = originalApiKey;
-    } else {
-      delete process.env.ARIZE_API_KEY;
-    }
-    if (originalGraphqlBaseUrl !== undefined) {
-      process.env.ARIZE_GRAPHQL_BASE_URL = originalGraphqlBaseUrl;
-    } else {
-      delete process.env.ARIZE_GRAPHQL_BASE_URL;
-    }
-  });
-
-  it("returns apiKey from explicit config", () => {
-    const expectedResult = {
-      apiKey: TEST_API_KEY,
-      baseUrl: undefined,
-      defaultHeaders: undefined,
-    };
-    const result = createGraphQLClientOptions({ apiKey: TEST_API_KEY });
-    expect(result).toEqual(expectedResult);
-  });
-
-  it("returns graphqlBaseUrl as baseUrl", () => {
-    const expectedResult = {
-      apiKey: TEST_API_KEY,
-      baseUrl: TEST_GRAPHQL_BASE_URL,
-      defaultHeaders: undefined,
-    };
-    const result = createGraphQLClientOptions({
-      apiKey: TEST_API_KEY,
-      graphqlBaseUrl: TEST_GRAPHQL_BASE_URL,
-    });
-    expect(result).toEqual(expectedResult);
-  });
-
-  it("returns defaultHeaders", () => {
-    const expectedResult = {
-      apiKey: TEST_API_KEY,
-      baseUrl: undefined,
-      defaultHeaders: TEST_DEFAULT_HEADERS,
-    };
-    const result = createGraphQLClientOptions({
-      apiKey: TEST_API_KEY,
-      defaultHeaders: TEST_DEFAULT_HEADERS,
-    });
-    expect(result).toEqual(expectedResult);
-  });
-
-  it("returns all fields from merged options", () => {
-    const expectedResult = {
-      apiKey: TEST_API_KEY,
-      baseUrl: TEST_GRAPHQL_BASE_URL,
-      defaultHeaders: TEST_DEFAULT_HEADERS,
-    };
-    const result = createGraphQLClientOptions({
-      apiKey: TEST_API_KEY,
-      graphqlBaseUrl: TEST_GRAPHQL_BASE_URL,
-      defaultHeaders: TEST_DEFAULT_HEADERS,
-    });
-    expect(result).toEqual(expectedResult);
-  });
-
-  it("picks up apiKey from ARIZE_API_KEY env var", () => {
-    process.env.ARIZE_API_KEY = TEST_API_KEY;
-    const result = createGraphQLClientOptions();
-    expect(result.apiKey).toBe(TEST_API_KEY);
-  });
-
-  it("picks up graphqlBaseUrl from ARIZE_GRAPHQL_BASE_URL env var", () => {
-    process.env.ARIZE_GRAPHQL_BASE_URL = TEST_GRAPHQL_BASE_URL;
-    const result = createGraphQLClientOptions();
-    expect(result.baseUrl).toBe(TEST_GRAPHQL_BASE_URL);
-  });
-
-  it("returns undefined apiKey when no config and no env vars set", () => {
-    const result = createGraphQLClientOptions();
-    expect(result.apiKey).toBeUndefined();
-    expect(result.baseUrl).toBeUndefined();
-    expect(result.defaultHeaders).toBeUndefined();
   });
 });
 
