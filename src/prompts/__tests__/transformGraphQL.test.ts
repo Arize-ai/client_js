@@ -3,9 +3,11 @@ import {
   transformGraphQLPrompt,
   transformGraphQLPromptVersion,
   transformMessageToGraphQL,
+} from "../transformGraphQL";
+import {
   RawGraphQLPrompt,
   RawGraphQLPromptVersion,
-} from "../transformGraphQL";
+} from "../../types/internal";
 
 const mockRawVersion: RawGraphQLPromptVersion = {
   id: "UHJvbXB0VmVyc2lvbjoxMjM=",

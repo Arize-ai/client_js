@@ -1,5 +1,5 @@
 import { RawPrompt } from "../../types/internal";
-import { RawGraphQLPrompt } from "../transformGraphQL";
+import { RawGraphQLPrompt } from "../../types/internal";
 
 const mockDateString = "2024-01-01T12:00:00.000Z";
 const mockPromptId = "test-prompt-id";
