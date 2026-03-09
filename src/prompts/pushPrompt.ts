@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from "node:util";
 import { graphqlFetch, GraphQLClientOptions } from "../graphql";
 import {
   CREATE_PROMPT_MUTATION,
@@ -8,11 +9,12 @@ import {
   InputVariableFormat,
   LLMMessage,
   LlmProvider,
+  PromptWithContent,
   ProviderParams,
 } from "../types";
 import { warnPreRelease } from "../utils/warning";
 import { findPromptByName } from "./getPromptContent";
-import { transformMessageToGraphQL } from "./transformGraphQL";
+import { transformMessageToGraphQL } from "./utils";
 
 export type PushPromptParams = {
   /** GraphQL node ID of the space (base64-encoded Relay Global ID) */
@@ -45,12 +47,28 @@ export type PushPromptParams = {
 
 export type PushPromptResult = {
   /** Whether the prompt was newly created or an existing prompt was updated with a new version */
-  action: "created" | "updated";
+  action: "created" | "updated" | "unchanged";
   /** The prompt's GraphQL node ID */
   promptId: string;
   /** The prompt name */
   name: string;
 };
+
+function isVersionUnchanged(
+  existing: PromptWithContent,
+  graphqlMessages: Record<string, unknown>[],
+  graphqlFormat: string,
+  model: string | undefined,
+  provider: string,
+  invocationParams: Record<string, unknown>,
+): boolean {
+  if (!isDeepStrictEqual(existing.messages, graphqlMessages)) return false;
+  if (existing.inputVariableFormat !== graphqlFormat) return false;
+  if ((existing.modelName ?? null) !== (model ?? null)) return false;
+  if (existing.provider !== provider) return false;
+  if (!isDeepStrictEqual(existing.llmParameters, invocationParams)) return false;
+  return true;
+}
 
 /**
  * Push a prompt via the GraphQL API. Creates a new prompt if one with the
@@ -117,6 +135,14 @@ export async function pushPrompt({
   });
 
   if (existing) {
+    if (isVersionUnchanged(existing, graphqlMessages, graphqlFormat, model, provider, invocationParams)) {
+      return {
+        action: "unchanged",
+        promptId: existing.id,
+        name: existing.name,
+      };
+    }
+
     await graphqlFetch(clientOptions, CREATE_PROMPT_VERSION_MUTATION, {
       spaceId: spaceNodeId,
       promptId: existing.id,

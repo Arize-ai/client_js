@@ -5,7 +5,8 @@ import {
 } from "../graphql/queries/prompts";
 import { PromptWithContent } from "../types";
 import { warnPreRelease } from "../utils/warning";
-import { transformGraphQLPrompt, RawGraphQLPrompt } from "./transformGraphQL";
+import { transformGraphQLPrompt } from "./utils";
+import { RawGraphQLPrompt } from "../types/internal";
 
 type PromptByNameResponse = {
   node: {

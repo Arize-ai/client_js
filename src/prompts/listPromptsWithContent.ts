@@ -2,10 +2,8 @@ import { graphqlFetch, GraphQLClientOptions } from "../graphql";
 import { LIST_PROMPTS_WITH_CONTENT } from "../graphql/queries/prompts";
 import { PaginatedResponse, PromptWithContent } from "../types";
 import { warnPreRelease } from "../utils/warning";
-import {
-  transformGraphQLPrompt,
-  RawGraphQLPrompt,
-} from "./transformGraphQL";
+import { transformGraphQLPrompt } from "./utils";
+import { RawGraphQLPrompt } from "../types/internal";
 
 export type ListPromptsWithContentParams = {
   /** GraphQL node ID of the space */
