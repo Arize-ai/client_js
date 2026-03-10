@@ -26,10 +26,6 @@ const defaultParams = {
   baseUrl: BASE_URL,
 };
 
-afterEach(() => {
-  nock.cleanAll();
-});
-
 describe("pushPrompt", () => {
   it("should create a new prompt when it does not exist", async () => {
     // First call: lookup returns empty edges (prompt not found)

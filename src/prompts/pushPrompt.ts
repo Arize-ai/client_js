@@ -1,4 +1,3 @@
-import { isDeepStrictEqual } from "node:util";
 import { graphqlFetch, GraphQLClientOptions } from "../graphql";
 import {
   CREATE_PROMPT_MUTATION,
@@ -9,10 +8,10 @@ import {
   InputVariableFormat,
   LLMMessage,
   LlmProvider,
-  PromptWithContent,
   ProviderParams,
   PushPromptResult,
 } from "../types";
+import { deepEqual } from "../utils/deepEqual";
 import { warnPreRelease } from "../utils/warning";
 import { getPromptContent } from "./getPromptContent";
 import { transformMessageToGraphQL } from "./utils";
@@ -45,23 +44,6 @@ export type PushPromptParams = {
   /** Override GraphQL base URL (default: https://app.arize.com) */
   baseUrl?: string;
 };
-
-function isVersionUnchanged(
-  existing: PromptWithContent,
-  graphqlMessages: Record<string, unknown>[],
-  graphqlFormat: string,
-  model: string | undefined,
-  provider: string,
-  invocationParams: Record<string, unknown>,
-): boolean {
-  if (!isDeepStrictEqual(existing.messages, graphqlMessages)) return false;
-  if (existing.inputVariableFormat !== graphqlFormat) return false;
-  if ((existing.modelName ?? null) !== (model ?? null)) return false;
-  if (existing.provider !== provider) return false;
-  if (!isDeepStrictEqual(existing.llmParameters, invocationParams))
-    return false;
-  return true;
-}
 
 /**
  * Push a prompt via the GraphQL API. Creates a new prompt if one with the
@@ -97,37 +79,25 @@ export async function pushPrompt(
   const invocationParams = params.invocationParams ?? {};
   const providerParams = params.providerParams ?? {};
 
-  try {
-    const existing = await getPromptContent({
-      promptName: params.name,
-      spaceNodeId: params.spaceNodeId,
-      apiKey: params.apiKey,
-      baseUrl: params.baseUrl,
-    });
+  const existing = await getPromptContent({
+    promptName: params.name,
+    spaceNodeId: params.spaceNodeId,
+    apiKey: params.apiKey,
+    baseUrl: params.baseUrl,
+  });
 
-    if (
-      isVersionUnchanged(
-        existing,
-        graphqlMessages,
-        graphqlFormat,
-        params.model,
-        params.provider,
-        invocationParams,
-      )
-    ) {
-      return {
-        action: "unchanged",
-        promptId: existing.id,
-        name: existing.name,
-      };
-    }
-
-    // Prompt exists — create a new version
+  if (existing === null) {
+    // Prompt does not exist — create it
     const data = await graphqlFetch<{
-      createPromptVersion: { promptVersion: { id: string } };
-    }>(clientOptions, CREATE_PROMPT_VERSION_MUTATION, {
+      createPrompt: {
+        prompt: { id: string; name: string };
+        promptVersion?: { id: string };
+      };
+    }>(clientOptions, CREATE_PROMPT_MUTATION, {
       spaceId: params.spaceNodeId,
-      promptId: existing.id,
+      name: params.name,
+      description: params.description,
+      tags: params.tags,
       commitMessage: params.commitMessage,
       inputVariableFormat: graphqlFormat,
       provider: params.provider,
@@ -138,44 +108,47 @@ export async function pushPrompt(
     });
 
     return {
-      action: "updated",
+      action: "created",
+      promptId: data.createPrompt.prompt.id,
+      name: data.createPrompt.prompt.name,
+      versionId: data.createPrompt.promptVersion?.id,
+    };
+  }
+
+  if (
+    deepEqual(existing.messages, graphqlMessages) &&
+    existing.inputVariableFormat === graphqlFormat &&
+    (existing.modelName ?? null) === (params.model ?? null) &&
+    existing.provider === params.provider &&
+    deepEqual(existing.llmParameters, invocationParams) &&
+    deepEqual(existing.providerParameters ?? {}, providerParams)
+  ) {
+    return {
+      action: "unchanged",
       promptId: existing.id,
       name: existing.name,
-      versionId: data.createPromptVersion.promptVersion.id,
     };
-  } catch (error: unknown) {
-    const message =
-      error instanceof Error ? error.message : String(error);
-
-    if (message.includes("not found")) {
-      // Prompt does not exist — create it
-      const data = await graphqlFetch<{
-        createPrompt: {
-          prompt: { id: string; name: string };
-          promptVersion?: { id: string };
-        };
-      }>(clientOptions, CREATE_PROMPT_MUTATION, {
-        spaceId: params.spaceNodeId,
-        name: params.name,
-        description: params.description,
-        tags: params.tags,
-        commitMessage: params.commitMessage,
-        inputVariableFormat: graphqlFormat,
-        provider: params.provider,
-        model: params.model,
-        messages: graphqlMessages,
-        invocationParams,
-        providerParams,
-      });
-
-      return {
-        action: "created",
-        promptId: data.createPrompt.prompt.id,
-        name: data.createPrompt.prompt.name,
-        versionId: data.createPrompt.promptVersion?.id,
-      };
-    }
-
-    throw error;
   }
+
+  // Prompt exists — create a new version
+  const data = await graphqlFetch<{
+    createPromptVersion: { promptVersion: { id: string } };
+  }>(clientOptions, CREATE_PROMPT_VERSION_MUTATION, {
+    spaceId: params.spaceNodeId,
+    promptId: existing.id,
+    commitMessage: params.commitMessage,
+    inputVariableFormat: graphqlFormat,
+    provider: params.provider,
+    model: params.model,
+    messages: graphqlMessages,
+    invocationParams,
+    providerParams,
+  });
+
+  return {
+    action: "updated",
+    promptId: existing.id,
+    name: existing.name,
+    versionId: data.createPromptVersion.promptVersion.id,
+  };
 }

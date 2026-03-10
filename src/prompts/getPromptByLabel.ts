@@ -1,6 +1,7 @@
 import { graphqlFetch, GraphQLClientOptions } from "../graphql";
 import { GET_PROMPT_WITH_VERSIONS_BY_NAME } from "../graphql/queries/prompts";
 import { PromptWithContent } from "../types";
+import { warnPreRelease } from "../utils/warning";
 import { transformGraphQLPrompt, transformGraphQLPromptVersion } from "./utils";
 import { RawGraphQLPrompt } from "../types/internal";
 
@@ -16,6 +17,7 @@ export type GetPromptByLabelParams = {
 export async function getPromptByLabel(
   params: GetPromptByLabelParams,
 ): Promise<PromptWithContent> {
+  warnPreRelease({ functionName: "getPromptByLabel" });
   const clientOptions: GraphQLClientOptions = {
     apiKey: params.apiKey,
     baseUrl: params.baseUrl,
@@ -54,11 +56,18 @@ export async function getPromptByLabel(
 
   const v = match.node;
   const base = transformGraphQLPrompt(raw);
-  const { id: _versionNodeId, ...versionFields } = transformGraphQLPromptVersion(v);
+  const version = transformGraphQLPromptVersion(v);
   return {
     ...base,
-    ...versionFields,
+    commitHash: version.commitHash,
+    commitMessage: version.commitMessage,
+    messages: version.messages,
+    inputVariableFormat: version.inputVariableFormat,
+    provider: version.provider,
+    modelName: version.modelName,
+    llmParameters: version.llmParameters,
+    labels: version.labels,
+    providerParameters: version.providerParameters,
     versionId: v.id,
-    updatedAt: new Date(v.createdAt),
   };
 }

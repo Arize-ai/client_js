@@ -41,6 +41,7 @@ export type RawGraphQLPrompt = {
   commitHash: string;
   commitMessage: string;
   llmParameters: Record<string, unknown>;
+  providerParameters?: Record<string, unknown>;
   toolCalls?: Record<string, unknown>[] | null;
   tags?: string[];
   createdAt: string;

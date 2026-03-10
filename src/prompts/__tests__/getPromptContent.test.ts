@@ -27,6 +27,8 @@ describe("getPromptContent", () => {
       baseUrl: BASE_URL,
     });
 
+    expect(result).not.toBeNull();
+    if (!result) throw new Error("unreachable");
     expect(result.id).toBe(mockGraphQLPrompt.id);
     expect(result.name).toBe(mockGraphQLPrompt.name);
     expect(result.createdAt).toBeInstanceOf(Date);
@@ -52,6 +54,8 @@ describe("getPromptContent", () => {
       baseUrl: BASE_URL,
     });
 
+    expect(result).not.toBeNull();
+    if (!result) throw new Error("unreachable");
     expect(result.name).toBe("test-prompt");
   });
 
@@ -69,21 +73,21 @@ describe("getPromptContent", () => {
     ).rejects.toThrow("Prompt not found");
   });
 
-  it("should throw when prompt not found by name", async () => {
+  it("should return null when prompt not found by name", async () => {
     nock(BASE_URL)
       .post("/graphql")
       .reply(200, {
         data: { node: { prompts: { edges: [] } } },
       });
 
-    await expect(
-      getPromptContent({
-        promptName: "nonexistent",
-        spaceNodeId: "U3BhY2U6MTIz",
-        apiKey: API_KEY,
-        baseUrl: BASE_URL,
-      }),
-    ).rejects.toThrow('Prompt "nonexistent" not found');
+    const result = await getPromptContent({
+      promptName: "nonexistent",
+      spaceNodeId: "U3BhY2U6MTIz",
+      apiKey: API_KEY,
+      baseUrl: BASE_URL,
+    });
+
+    expect(result).toBeNull();
   });
 
   it("should throw when neither promptNodeId nor promptName is provided", async () => {

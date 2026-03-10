@@ -32,11 +32,12 @@ export type GetPromptContentParams = {
  * @param params.versionLimit - Number of versions to include.
  * @param params.apiKey - Override API key.
  * @param params.baseUrl - Override GraphQL base URL.
- * @returns A {@link PromptWithContent} object with full prompt data.
+ * @returns A {@link PromptWithContent} object with full prompt data, or `null`
+ *   when looking up by name and no matching prompt is found.
  */
 export async function getPromptContent(
   params: GetPromptContentParams,
-): Promise<PromptWithContent> {
+): Promise<PromptWithContent | null> {
   warnPreRelease({ functionName: "getPromptContent" });
 
   const clientOptions: GraphQLClientOptions = {
@@ -75,9 +76,7 @@ export async function getPromptContent(
 
     const edges = data.node?.prompts?.edges;
     if (!edges || edges.length === 0) {
-      throw new Error(
-        `Prompt "${params.promptName}" not found in space ${params.spaceNodeId}`,
-      );
+      return null;
     }
 
     return transformGraphQLPrompt(edges[0]!.node);

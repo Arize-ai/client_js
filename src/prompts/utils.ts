@@ -50,6 +50,7 @@ export function transformGraphQLPrompt(
     commitHash: raw.commitHash,
     commitMessage: raw.commitMessage,
     llmParameters: raw.llmParameters,
+    providerParameters: raw.providerParameters,
     toolCalls: raw.toolCalls,
     tags: raw.tags,
     createdAt: new Date(raw.createdAt),

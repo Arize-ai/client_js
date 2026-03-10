@@ -1,3 +1,19 @@
+const VERSION_FIELDS_FRAGMENT = `
+  fragment VersionFields on PromptVersion {
+    id
+    commitHash
+    commitMessage
+    messages
+    inputVariableFormat
+    provider
+    modelName
+    llmParameters
+    labels
+    providerParameters
+    createdAt
+  }
+`;
+
 const PROMPT_FIELDS_FRAGMENT = `
   fragment PromptFields on Prompt {
     id
@@ -10,6 +26,7 @@ const PROMPT_FIELDS_FRAGMENT = `
     commitHash
     commitMessage
     llmParameters
+    providerParameters
     toolCalls
     tags
     createdAt
@@ -25,17 +42,7 @@ export const GET_PROMPT_BY_NODE_ID = `
         versionHistory(first: $versionLimit) {
           edges {
             node {
-              id
-              commitHash
-              commitMessage
-              messages
-              inputVariableFormat
-              provider
-              modelName
-              llmParameters
-              labels
-              providerParameters
-              createdAt
+              ...VersionFields
             }
           }
         }
@@ -43,6 +50,7 @@ export const GET_PROMPT_BY_NODE_ID = `
     }
   }
   ${PROMPT_FIELDS_FRAGMENT}
+  ${VERSION_FIELDS_FRAGMENT}
 `;
 
 export const GET_PROMPT_BY_NAME = `
@@ -73,17 +81,7 @@ export const GET_PROMPT_WITH_VERSIONS_BY_NAME = `
               versionHistory(first: $versionLimit) {
                 edges {
                   node {
-                    id
-                    commitHash
-                    commitMessage
-                    messages
-                    inputVariableFormat
-                    provider
-                    modelName
-                    llmParameters
-                    labels
-                    providerParameters
-                    createdAt
+                    ...VersionFields
                   }
                 }
               }
@@ -94,6 +92,7 @@ export const GET_PROMPT_WITH_VERSIONS_BY_NAME = `
     }
   }
   ${PROMPT_FIELDS_FRAGMENT}
+  ${VERSION_FIELDS_FRAGMENT}
 `;
 
 export const LIST_PROMPTS_WITH_CONTENT = `
