@@ -1,26 +1,19 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import nock from "nock";
 import { pushPrompt } from "../pushPrompt";
+import { mockGraphQLPrompt } from "./fixtures";
 
 const BASE_URL = "https://app.arize.com";
 const API_KEY = "test-api-key";
 
-const mockRawPrompt = {
-  id: "UHJvbXB0OjMwNDQ2Olg1eVk=",
-  name: "test-prompt",
-  description: "A test prompt",
-  messages: [{ role: "system", content: "You are helpful" }],
-  inputVariableFormat: "MUSTACHE",
-  provider: "openAI",
-  modelName: "gpt-4",
-  commitHash: "abc123",
-  commitMessage: "Initial",
-  llmParameters: { temperature: 0.7 },
-  toolCalls: null,
-  tags: ["test"],
-  createdAt: "2024-01-01T12:00:00.000Z",
-  updatedAt: "2024-01-15T12:00:00.000Z",
-};
+beforeEach(() => {
+  nock.disableNetConnect();
+});
+
+afterEach(() => {
+  nock.cleanAll();
+  nock.enableNetConnect();
+});
 
 const defaultParams = {
   spaceNodeId: "U3BhY2U6MTIz",
@@ -83,7 +76,7 @@ describe("pushPrompt", () => {
         data: {
           node: {
             prompts: {
-              edges: [{ node: mockRawPrompt }],
+              edges: [{ node: mockGraphQLPrompt }],
             },
           },
         },
@@ -106,7 +99,7 @@ describe("pushPrompt", () => {
 
     expect(result).toEqual({
       action: "updated",
-      promptId: mockRawPrompt.id,
+      promptId: mockGraphQLPrompt.id,
       name: "test-prompt",
       versionId: "UHJvbXB0VmVyc2lvbjoxMjM=",
     });
@@ -148,7 +141,7 @@ describe("pushPrompt", () => {
               edges: [
                 {
                   node: {
-                    ...mockRawPrompt,
+                    ...mockGraphQLPrompt,
                     modelName: "gpt-4",
                     llmParameters: { temperature: 0.7 },
                   },
@@ -167,7 +160,7 @@ describe("pushPrompt", () => {
 
     expect(result).toEqual({
       action: "unchanged",
-      promptId: mockRawPrompt.id,
+      promptId: mockGraphQLPrompt.id,
       name: "test-prompt",
     });
   });
@@ -179,7 +172,7 @@ describe("pushPrompt", () => {
         data: {
           node: {
             prompts: {
-              edges: [{ node: mockRawPrompt }],
+              edges: [{ node: mockGraphQLPrompt }],
             },
           },
         },
@@ -204,7 +197,7 @@ describe("pushPrompt", () => {
 
     expect(result).toEqual({
       action: "updated",
-      promptId: mockRawPrompt.id,
+      promptId: mockGraphQLPrompt.id,
       name: "test-prompt",
       versionId: "UHJvbXB0VmVyc2lvbjoxMjM=",
     });
@@ -217,7 +210,7 @@ describe("pushPrompt", () => {
         data: {
           node: {
             prompts: {
-              edges: [{ node: mockRawPrompt }],
+              edges: [{ node: mockGraphQLPrompt }],
             },
           },
         },
@@ -241,7 +234,7 @@ describe("pushPrompt", () => {
 
     expect(result).toEqual({
       action: "updated",
-      promptId: mockRawPrompt.id,
+      promptId: mockGraphQLPrompt.id,
       name: "test-prompt",
       versionId: "UHJvbXB0VmVyc2lvbjoxMjM=",
     });
@@ -257,7 +250,7 @@ describe("pushPrompt", () => {
               edges: [
                 {
                   node: {
-                    ...mockRawPrompt,
+                    ...mockGraphQLPrompt,
                     llmParameters: { temperature: 0.7 },
                   },
                 },
@@ -285,7 +278,7 @@ describe("pushPrompt", () => {
 
     expect(result).toEqual({
       action: "updated",
-      promptId: mockRawPrompt.id,
+      promptId: mockGraphQLPrompt.id,
       name: "test-prompt",
       versionId: "UHJvbXB0VmVyc2lvbjoxMjM=",
     });
@@ -301,7 +294,7 @@ describe("pushPrompt", () => {
               edges: [
                 {
                   node: {
-                    ...mockRawPrompt,
+                    ...mockGraphQLPrompt,
                     modelName: null,
                     llmParameters: {},
                   },
@@ -319,7 +312,7 @@ describe("pushPrompt", () => {
 
     expect(result).toEqual({
       action: "unchanged",
-      promptId: mockRawPrompt.id,
+      promptId: mockGraphQLPrompt.id,
       name: "test-prompt",
     });
   });

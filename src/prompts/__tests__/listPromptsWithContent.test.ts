@@ -1,28 +1,18 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import nock from "nock";
 import { listPromptsWithContent } from "../listPromptsWithContent";
+import { mockGraphQLPrompt } from "./fixtures";
 
 const BASE_URL = "https://app.arize.com";
 const API_KEY = "test-api-key";
 
-const mockRawPrompt = {
-  id: "UHJvbXB0OjEyMw==",
-  name: "test-prompt",
-  description: "A test prompt",
-  messages: [{ role: "user", content: "Hello" }],
-  inputVariableFormat: "NONE",
-  provider: "openAI",
-  modelName: "gpt-4",
-  commitHash: "abc",
-  commitMessage: "init",
-  llmParameters: {},
-  tags: [],
-  createdAt: "2024-01-01T00:00:00.000Z",
-  updatedAt: "2024-01-01T00:00:00.000Z",
-};
+beforeEach(() => {
+  nock.disableNetConnect();
+});
 
 afterEach(() => {
   nock.cleanAll();
+  nock.enableNetConnect();
 });
 
 describe("listPromptsWithContent", () => {
@@ -35,7 +25,7 @@ describe("listPromptsWithContent", () => {
             prompts: {
               totalCount: 2,
               pageInfo: { hasNextPage: true, endCursor: "cursor_abc" },
-              edges: [{ node: mockRawPrompt }],
+              edges: [{ node: mockGraphQLPrompt }],
             },
           },
         },

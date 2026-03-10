@@ -1,36 +1,25 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import nock from "nock";
 import { getPromptContent } from "../getPromptContent";
+import { mockGraphQLPrompt } from "./fixtures";
 
 const BASE_URL = "https://app.arize.com";
 const API_KEY = "test-api-key";
 
-const mockRawPrompt = {
-  id: "UHJvbXB0OjMwNDQ2Olg1eVk=",
-  name: "test-prompt",
-  description: "A test prompt",
-  messages: [{ role: "system", content: "You are helpful" }],
-  inputVariableFormat: "MUSTACHE",
-  provider: "openAI",
-  modelName: "gpt-4",
-  commitHash: "abc123",
-  commitMessage: "Initial",
-  llmParameters: { temperature: 0.7 },
-  toolCalls: null,
-  tags: ["test"],
-  createdAt: "2024-01-01T12:00:00.000Z",
-  updatedAt: "2024-01-15T12:00:00.000Z",
-};
+beforeEach(() => {
+  nock.disableNetConnect();
+});
 
 afterEach(() => {
   nock.cleanAll();
+  nock.enableNetConnect();
 });
 
 describe("getPromptContent", () => {
   it("should fetch prompt by node ID", async () => {
     nock(BASE_URL)
       .post("/graphql")
-      .reply(200, { data: { node: mockRawPrompt } });
+      .reply(200, { data: { node: mockGraphQLPrompt } });
 
     const result = await getPromptContent({
       promptNodeId: "UHJvbXB0OjMwNDQ2Olg1eVk=",
@@ -38,8 +27,8 @@ describe("getPromptContent", () => {
       baseUrl: BASE_URL,
     });
 
-    expect(result.id).toBe(mockRawPrompt.id);
-    expect(result.name).toBe(mockRawPrompt.name);
+    expect(result.id).toBe(mockGraphQLPrompt.id);
+    expect(result.name).toBe(mockGraphQLPrompt.name);
     expect(result.createdAt).toBeInstanceOf(Date);
   });
 
@@ -50,7 +39,7 @@ describe("getPromptContent", () => {
         data: {
           node: {
             prompts: {
-              edges: [{ node: mockRawPrompt }],
+              edges: [{ node: mockGraphQLPrompt }],
             },
           },
         },
