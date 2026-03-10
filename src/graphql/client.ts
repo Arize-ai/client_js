@@ -20,18 +20,17 @@ export async function graphqlFetch<T>(
   query: string,
   variables?: Record<string, unknown>,
 ): Promise<T> {
-  const merged = getMergedOptions({
-    apiKey: options.apiKey,
-    baseUrl: options.baseUrl,
-  });
+  const merged = getMergedOptions({});
+  const apiKey = options.apiKey || merged.apiKey;
+  const baseUrl =
+    options.baseUrl || merged.graphqlBaseUrl || "https://app.arize.com";
 
-  if (!merged.apiKey) {
+  if (!apiKey) {
     throw new Error(
       "The ARIZE_API_KEY environment variable is missing or empty; either provide it, or pass an apiKey option.",
     );
   }
 
-  const baseUrl = options.baseUrl || "https://app.arize.com";
   const graphqlPath = options.graphqlPath || "/graphql";
   const url = `${baseUrl}${graphqlPath}`;
 
@@ -39,7 +38,7 @@ export async function graphqlFetch<T>(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-api-key": merged.apiKey,
+      "x-api-key": apiKey,
       ...options.defaultHeaders,
     },
     body: JSON.stringify({ query, variables }),
