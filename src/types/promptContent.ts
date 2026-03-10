@@ -26,6 +26,7 @@ export type PromptWithContent = {
   toolCalls?: Record<string, unknown>[] | null;
   tags?: string[];
   createdAt: Date;
+  versionId?: string;
   updatedAt: Date;
   versions?: PromptVersion[];
 };

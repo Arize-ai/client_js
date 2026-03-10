@@ -11,6 +11,7 @@ import {
   LlmProvider,
   PromptWithContent,
   ProviderParams,
+  PushPromptResult,
 } from "../types";
 import { warnPreRelease } from "../utils/warning";
 import { getPromptContent } from "./getPromptContent";
@@ -43,16 +44,6 @@ export type PushPromptParams = {
   apiKey?: string;
   /** Override GraphQL base URL (default: https://app.arize.com) */
   baseUrl?: string;
-};
-
-export type PushPromptResult = {
-  /** Whether the prompt was newly created or an existing prompt was updated with a new version */
-  action: "created" | "updated" | "unchanged";
-  /** The prompt's GraphQL node ID */
-  promptId: string;
-  /** The prompt name */
-  name: string;
-  versionId?: string;
 };
 
 function isVersionUnchanged(

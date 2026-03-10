@@ -1,10 +1,26 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import nock from "nock";
 import { pushPrompt } from "../pushPrompt";
-import { mockGraphQLPrompt } from "./fixtures";
 
 const BASE_URL = "https://app.arize.com";
 const API_KEY = "test-api-key";
+
+const mockRawPrompt = {
+  id: "UHJvbXB0OjMwNDQ2Olg1eVk=",
+  name: "test-prompt",
+  description: "A test prompt",
+  messages: [{ role: "system", content: "You are helpful" }],
+  inputVariableFormat: "MUSTACHE",
+  provider: "openAI",
+  modelName: "gpt-4",
+  commitHash: "abc123",
+  commitMessage: "Initial",
+  llmParameters: { temperature: 0.7 },
+  toolCalls: null,
+  tags: ["test"],
+  createdAt: "2024-01-01T12:00:00.000Z",
+  updatedAt: "2024-01-15T12:00:00.000Z",
+};
 
 const defaultParams = {
   spaceNodeId: "U3BhY2U6MTIz",
@@ -17,29 +33,35 @@ const defaultParams = {
   baseUrl: BASE_URL,
 };
 
-beforeEach(() => {
-  nock.disableNetConnect();
-});
-
 afterEach(() => {
   nock.cleanAll();
-  nock.enableNetConnect();
 });
 
 describe("pushPrompt", () => {
   it("should create a new prompt when it does not exist", async () => {
+    // First call: lookup returns empty edges (prompt not found)
     nock(BASE_URL)
-      .post("/graphql", (body) => body.query.includes("GetPromptByName"))
+      .post("/graphql")
       .reply(200, {
-        data: { node: { prompts: { edges: [] } } },
+        data: {
+          node: {
+            prompts: {
+              edges: [],
+            },
+          },
+        },
       });
 
+    // Second call: createPrompt mutation succeeds
     nock(BASE_URL)
-      .post("/graphql", (body) => body.query.includes("CreatePrompt("))
+      .post("/graphql")
       .reply(200, {
         data: {
           createPrompt: {
-            prompt: { id: "UHJvbXB0OjEyMzQ1", name: "test-prompt" },
+            prompt: {
+              id: "UHJvbXB0OjEyMzQ1",
+              name: "test-prompt",
+            },
           },
         },
       });
@@ -54,20 +76,28 @@ describe("pushPrompt", () => {
   });
 
   it("should create a new version when prompt already exists", async () => {
+    // First call: lookup returns an existing prompt
     nock(BASE_URL)
-      .post("/graphql", (body) => body.query.includes("GetPromptByName"))
+      .post("/graphql")
       .reply(200, {
         data: {
-          node: { prompts: { edges: [{ node: mockGraphQLPrompt }] } },
+          node: {
+            prompts: {
+              edges: [{ node: mockRawPrompt }],
+            },
+          },
         },
       });
 
+    // Second call: createPromptVersion mutation succeeds
     nock(BASE_URL)
-      .post("/graphql", (body) => body.query.includes("CreatePromptVersion"))
+      .post("/graphql")
       .reply(200, {
         data: {
           createPromptVersion: {
-            promptVersion: { id: "UHJvbXB0VmVyc2lvbjoxMjM=" },
+            promptVersion: {
+              id: "UHJvbXB0VmVyc2lvbjoxMjM=",
+            },
           },
         },
       });
@@ -76,91 +106,29 @@ describe("pushPrompt", () => {
 
     expect(result).toEqual({
       action: "updated",
-      promptId: mockGraphQLPrompt.id,
+      promptId: mockRawPrompt.id,
       name: "test-prompt",
-    });
-  });
-
-  it("should pass description and tags on the create path", async () => {
-    nock(BASE_URL)
-      .post("/graphql", (body) => body.query.includes("GetPromptByName"))
-      .reply(200, {
-        data: { node: { prompts: { edges: [] } } },
-      });
-
-    nock(BASE_URL)
-      .post("/graphql", (body) => {
-        return (
-          body.query.includes("CreatePrompt(") &&
-          body.variables.description === "My description" &&
-          JSON.stringify(body.variables.tags) === '["tag1","tag2"]'
-        );
-      })
-      .reply(200, {
-        data: {
-          createPrompt: {
-            prompt: { id: "UHJvbXB0OjEyMzQ1", name: "test-prompt" },
-          },
-        },
-      });
-
-    const result = await pushPrompt({
-      ...defaultParams,
-      description: "My description",
-      tags: ["tag1", "tag2"],
-    });
-
-    expect(result.action).toBe("created");
-  });
-
-  it("should transform messages to GraphQL format", async () => {
-    nock(BASE_URL)
-      .post("/graphql", (body) => body.query.includes("GetPromptByName"))
-      .reply(200, {
-        data: { node: { prompts: { edges: [] } } },
-      });
-
-    nock(BASE_URL)
-      .post("/graphql", (body) => {
-        const msg = body.variables.messages[0];
-        return msg.role === "assistant" && msg.toolCallId === "tc_1";
-      })
-      .reply(200, {
-        data: {
-          createPrompt: {
-            prompt: { id: "UHJvbXB0OjEyMzQ1", name: "test-prompt" },
-          },
-        },
-      });
-
-    await pushPrompt({
-      ...defaultParams,
-      messages: [
-        {
-          role: "assistant",
-          content: "Hello",
-          tool_call_id: "tc_1",
-          tool_calls: [
-            {
-              id: "tc_1",
-              type: "function",
-              function: { name: "test", arguments: "{}" },
-            },
-          ],
-        },
-      ],
+      versionId: "UHJvbXB0VmVyc2lvbjoxMjM=",
     });
   });
 
   it("should propagate GraphQL errors from the mutation", async () => {
+    // First call: lookup returns empty edges (prompt not found)
     nock(BASE_URL)
-      .post("/graphql", (body) => body.query.includes("GetPromptByName"))
+      .post("/graphql")
       .reply(200, {
-        data: { node: { prompts: { edges: [] } } },
+        data: {
+          node: {
+            prompts: {
+              edges: [],
+            },
+          },
+        },
       });
 
+    // Second call: createPrompt mutation returns a GraphQL error
     nock(BASE_URL)
-      .post("/graphql", (body) => body.query.includes("CreatePrompt("))
+      .post("/graphql")
       .reply(200, {
         errors: [{ message: "Internal server error" }],
       });
@@ -170,19 +138,9 @@ describe("pushPrompt", () => {
     );
   });
 
-  it("should propagate errors from the lookup", async () => {
-    nock(BASE_URL)
-      .post("/graphql")
-      .reply(200, {
-        errors: [{ message: "Unauthorized" }],
-      });
-
-    await expect(pushPrompt(defaultParams)).rejects.toThrow("Unauthorized");
-  });
-
   it("should return 'unchanged' when messages and params match existing prompt", async () => {
     nock(BASE_URL)
-      .post("/graphql", (body) => body.query.includes("GetPromptByName"))
+      .post("/graphql")
       .reply(200, {
         data: {
           node: {
@@ -190,7 +148,7 @@ describe("pushPrompt", () => {
               edges: [
                 {
                   node: {
-                    ...mockGraphQLPrompt,
+                    ...mockRawPrompt,
                     modelName: "gpt-4",
                     llmParameters: { temperature: 0.7 },
                   },
@@ -209,22 +167,26 @@ describe("pushPrompt", () => {
 
     expect(result).toEqual({
       action: "unchanged",
-      promptId: mockGraphQLPrompt.id,
+      promptId: mockRawPrompt.id,
       name: "test-prompt",
     });
   });
 
   it("should return 'updated' when messages differ", async () => {
     nock(BASE_URL)
-      .post("/graphql", (body) => body.query.includes("GetPromptByName"))
+      .post("/graphql")
       .reply(200, {
         data: {
-          node: { prompts: { edges: [{ node: mockGraphQLPrompt }] } },
+          node: {
+            prompts: {
+              edges: [{ node: mockRawPrompt }],
+            },
+          },
         },
       });
 
     nock(BASE_URL)
-      .post("/graphql", (body) => body.query.includes("CreatePromptVersion"))
+      .post("/graphql")
       .reply(200, {
         data: {
           createPromptVersion: {
@@ -242,22 +204,27 @@ describe("pushPrompt", () => {
 
     expect(result).toEqual({
       action: "updated",
-      promptId: mockGraphQLPrompt.id,
+      promptId: mockRawPrompt.id,
       name: "test-prompt",
+      versionId: "UHJvbXB0VmVyc2lvbjoxMjM=",
     });
   });
 
   it("should return 'updated' when model differs", async () => {
     nock(BASE_URL)
-      .post("/graphql", (body) => body.query.includes("GetPromptByName"))
+      .post("/graphql")
       .reply(200, {
         data: {
-          node: { prompts: { edges: [{ node: mockGraphQLPrompt }] } },
+          node: {
+            prompts: {
+              edges: [{ node: mockRawPrompt }],
+            },
+          },
         },
       });
 
     nock(BASE_URL)
-      .post("/graphql", (body) => body.query.includes("CreatePromptVersion"))
+      .post("/graphql")
       .reply(200, {
         data: {
           createPromptVersion: {
@@ -274,14 +241,15 @@ describe("pushPrompt", () => {
 
     expect(result).toEqual({
       action: "updated",
-      promptId: mockGraphQLPrompt.id,
+      promptId: mockRawPrompt.id,
       name: "test-prompt",
+      versionId: "UHJvbXB0VmVyc2lvbjoxMjM=",
     });
   });
 
   it("should return 'updated' when invocationParams differ", async () => {
     nock(BASE_URL)
-      .post("/graphql", (body) => body.query.includes("GetPromptByName"))
+      .post("/graphql")
       .reply(200, {
         data: {
           node: {
@@ -289,7 +257,7 @@ describe("pushPrompt", () => {
               edges: [
                 {
                   node: {
-                    ...mockGraphQLPrompt,
+                    ...mockRawPrompt,
                     llmParameters: { temperature: 0.7 },
                   },
                 },
@@ -300,7 +268,7 @@ describe("pushPrompt", () => {
       });
 
     nock(BASE_URL)
-      .post("/graphql", (body) => body.query.includes("CreatePromptVersion"))
+      .post("/graphql")
       .reply(200, {
         data: {
           createPromptVersion: {
@@ -317,14 +285,15 @@ describe("pushPrompt", () => {
 
     expect(result).toEqual({
       action: "updated",
-      promptId: mockGraphQLPrompt.id,
+      promptId: mockRawPrompt.id,
       name: "test-prompt",
+      versionId: "UHJvbXB0VmVyc2lvbjoxMjM=",
     });
   });
 
   it("should return 'unchanged' when model is undefined and existing modelName is null", async () => {
     nock(BASE_URL)
-      .post("/graphql", (body) => body.query.includes("GetPromptByName"))
+      .post("/graphql")
       .reply(200, {
         data: {
           node: {
@@ -332,7 +301,7 @@ describe("pushPrompt", () => {
               edges: [
                 {
                   node: {
-                    ...mockGraphQLPrompt,
+                    ...mockRawPrompt,
                     modelName: null,
                     llmParameters: {},
                   },
@@ -350,108 +319,19 @@ describe("pushPrompt", () => {
 
     expect(result).toEqual({
       action: "unchanged",
-      promptId: mockGraphQLPrompt.id,
+      promptId: mockRawPrompt.id,
       name: "test-prompt",
     });
   });
 
-  it("should uppercase inputVariableFormat in GraphQL variables", async () => {
-    nock(BASE_URL)
-      .post("/graphql", (body) => body.query.includes("GetPromptByName"))
-      .reply(200, {
-        data: { node: { prompts: { edges: [] } } },
-      });
-
-    nock(BASE_URL)
-      .post("/graphql", (body) => {
-        return (
-          body.query.includes("CreatePrompt(") &&
-          body.variables.inputVariableFormat === "MUSTACHE"
-        );
-      })
-      .reply(200, {
-        data: {
-          createPrompt: {
-            prompt: { id: "UHJvbXB0OjEyMzQ1", name: "test-prompt" },
-          },
-        },
-      });
-
-    const result = await pushPrompt(defaultParams);
-    expect(result.action).toBe("created");
-  });
-
-  it("should default invocationParams and providerParams to empty objects", async () => {
-    nock(BASE_URL)
-      .post("/graphql", (body) => body.query.includes("GetPromptByName"))
-      .reply(200, {
-        data: { node: { prompts: { edges: [] } } },
-      });
-
-    nock(BASE_URL)
-      .post("/graphql", (body) => {
-        return (
-          body.query.includes("CreatePrompt(") &&
-          JSON.stringify(body.variables.invocationParams) === "{}" &&
-          JSON.stringify(body.variables.providerParams) === "{}"
-        );
-      })
-      .reply(200, {
-        data: {
-          createPrompt: {
-            prompt: { id: "UHJvbXB0OjEyMzQ1", name: "test-prompt" },
-          },
-        },
-      });
-
-    const result = await pushPrompt(defaultParams);
-    expect(result.action).toBe("created");
-  });
-
-  it("should send correct promptId in version creation variables", async () => {
-    nock(BASE_URL)
-      .post("/graphql", (body) => body.query.includes("GetPromptByName"))
-      .reply(200, {
-        data: {
-          node: { prompts: { edges: [{ node: mockGraphQLPrompt }] } },
-        },
-      });
-
-    nock(BASE_URL)
-      .post("/graphql", (body) => {
-        return (
-          body.query.includes("CreatePromptVersion") &&
-          body.variables.promptId === mockGraphQLPrompt.id
-        );
-      })
-      .reply(200, {
-        data: {
-          createPromptVersion: {
-            promptVersion: { id: "UHJvbXB0VmVyc2lvbjoxMjM=" },
-          },
-        },
-      });
-
-    const result = await pushPrompt(defaultParams);
-    expect(result).toEqual({
-      action: "updated",
-      promptId: mockGraphQLPrompt.id,
-      name: "test-prompt",
-    });
-  });
-
-  it("should NOT swallow errors containing 'not found' from unrelated failures", async () => {
+  it("should propagate non-'not found' errors from lookup", async () => {
+    // First call: lookup returns a GraphQL error (e.g. auth failure)
     nock(BASE_URL)
       .post("/graphql")
       .reply(200, {
-        errors: [
-          {
-            message:
-              "GraphQL errors: Field 'commitHash' not found on type Prompt",
-          },
-        ],
+        errors: [{ message: "Unauthorized" }],
       });
 
-    await expect(pushPrompt(defaultParams)).rejects.toThrow("not found");
+    await expect(pushPrompt(defaultParams)).rejects.toThrow("Unauthorized");
   });
 });

@@ -26,4 +26,5 @@ export type PushPromptResult = {
   promptId: string;
   /** The prompt name */
   name: string;
+  versionId?: string;
 };

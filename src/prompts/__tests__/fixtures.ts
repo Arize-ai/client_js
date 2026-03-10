@@ -1,8 +1,4 @@
-import {
-  RawPrompt,
-  RawGraphQLPrompt,
-  RawGraphQLPromptVersion,
-} from "../../types/internal";
+import { RawPrompt } from "../../types/internal";
 
 const mockDateString = "2024-01-01T12:00:00.000Z";
 const mockPromptId = "test-prompt-id";
@@ -30,35 +26,4 @@ export const mockPromptMinimal: RawPrompt = {
   created_at: mockDateString,
   updated_at: mockDateString,
   created_by_user_id: mockUserId,
-};
-
-export const mockGraphQLPrompt: RawGraphQLPrompt = {
-  id: "UHJvbXB0OjMwNDQ2Olg1eVk=",
-  name: "test-prompt",
-  description: "A test prompt",
-  messages: [{ role: "system", content: "You are helpful" }],
-  inputVariableFormat: "MUSTACHE",
-  provider: "openAI",
-  modelName: "gpt-4",
-  commitHash: "abc123",
-  commitMessage: "Initial",
-  llmParameters: { temperature: 0.7 },
-  toolCalls: null,
-  tags: ["test"],
-  createdAt: "2024-01-01T12:00:00.000Z",
-  updatedAt: "2024-01-15T12:00:00.000Z",
-};
-
-export const mockGraphQLPromptVersion: RawGraphQLPromptVersion = {
-  id: "UHJvbXB0VmVyc2lvbjoxMjM=",
-  commitHash: "abc123",
-  commitMessage: "Initial version",
-  messages: [{ role: "system", content: "You are a helpful assistant" }],
-  inputVariableFormat: "MUSTACHE",
-  provider: "openAI",
-  modelName: "gpt-4",
-  llmParameters: { temperature: 0.7 },
-  labels: ["production"],
-  providerParameters: { topP: 0.9 },
-  createdAt: "2024-01-01T12:00:00.000Z",
 };

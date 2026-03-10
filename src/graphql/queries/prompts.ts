@@ -62,6 +62,40 @@ export const GET_PROMPT_BY_NAME = `
   ${PROMPT_FIELDS_FRAGMENT}
 `;
 
+export const GET_PROMPT_WITH_VERSIONS_BY_NAME = `
+  query GetPromptWithVersionsByName($spaceId: ID!, $name: String!, $versionLimit: Int) {
+    node(id: $spaceId) {
+      ... on Space {
+        prompts(name: $name, first: 1) {
+          edges {
+            node {
+              ...PromptFields
+              versionHistory(first: $versionLimit) {
+                edges {
+                  node {
+                    id
+                    commitHash
+                    commitMessage
+                    messages
+                    inputVariableFormat
+                    provider
+                    modelName
+                    llmParameters
+                    labels
+                    providerParameters
+                    createdAt
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  ${PROMPT_FIELDS_FRAGMENT}
+`;
+
 export const LIST_PROMPTS_WITH_CONTENT = `
   query ListPromptsWithContent($spaceId: ID!, $first: Int, $after: String) {
     node(id: $spaceId) {
@@ -115,6 +149,9 @@ export const CREATE_PROMPT_MUTATION = `
         id
         name
       }
+      promptVersion {
+        id
+      }
     }
   }
 `;
@@ -144,6 +181,20 @@ export const CREATE_PROMPT_VERSION_MUTATION = `
     }) {
       promptVersion {
         id
+      }
+    }
+  }
+`;
+
+export const PATCH_PROMPT_VERSION_MUTATION = `
+  mutation PatchPromptVersion($versionId: ID!, $labels: [String!]) {
+    patchPromptVersion(input: {
+      promptVersionId: $versionId,
+      labels: $labels
+    }) {
+      promptVersion {
+        id
+        labels
       }
     }
   }

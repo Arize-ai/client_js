@@ -1,5 +1,7 @@
 import createOpenApiClient, { ClientOptions } from "openapi-fetch";
 import { paths } from "./__generated__/api/v2";
+import { GraphQLClientOptions } from "./graphql";
+
 const DEFAULT_BASE_URL = "https://api.arize.com";
 
 interface ArizeClientOptions {
@@ -112,4 +114,18 @@ export function createClient(config?: ArizeClientOptions) {
   };
   const clientOptions = arizeConfigToClientOptions(options);
   return createOpenApiClient<paths>(clientOptions);
+}
+
+/**
+ * Build GraphQL client options from Arize client options.
+ */
+export function createGraphQLClientOptions(
+  config?: ArizeClientOptions,
+): GraphQLClientOptions {
+  const merged = getMergedOptions(config);
+  return {
+    apiKey: merged.apiKey,
+    baseUrl: merged.graphqlBaseUrl,
+    defaultHeaders: merged.defaultHeaders,
+  };
 }

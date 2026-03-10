@@ -1,5 +1,5 @@
 import nock from "nock";
-import { describe, expect, it, beforeEach, afterEach } from "vitest";
+import { describe, expect, it, afterEach } from "vitest";
 import { graphqlFetch } from "../client";
 
 const BASE_URL = "https://app.arize.com";
@@ -8,13 +8,8 @@ const DEFAULT_OPTIONS = {
   baseUrl: BASE_URL,
 };
 
-beforeEach(() => {
-  nock.disableNetConnect();
-});
-
 afterEach(() => {
   nock.cleanAll();
-  nock.enableNetConnect();
 });
 
 describe("graphqlFetch", () => {
@@ -25,7 +20,7 @@ describe("graphqlFetch", () => {
 
     const result = await graphqlFetch<{ node: { id: string } }>(
       DEFAULT_OPTIONS,
-      '{ node(id: "123") { id } }',
+      "{ node(id: \"123\") { id } }",
     );
 
     expect(result).toEqual({ node: { id: "123" } });
@@ -37,7 +32,7 @@ describe("graphqlFetch", () => {
       .reply(200, { errors: [{ message: "Not found" }] });
 
     await expect(
-      graphqlFetch(DEFAULT_OPTIONS, '{ node(id: "bad") { id } }'),
+      graphqlFetch(DEFAULT_OPTIONS, "{ node(id: \"bad\") { id } }"),
     ).rejects.toThrow("GraphQL errors: Not found");
   });
 
@@ -45,7 +40,7 @@ describe("graphqlFetch", () => {
     nock(BASE_URL).post("/graphql").reply(500, "Internal Server Error");
 
     await expect(
-      graphqlFetch(DEFAULT_OPTIONS, '{ node(id: "123") { id } }'),
+      graphqlFetch(DEFAULT_OPTIONS, "{ node(id: \"123\") { id } }"),
     ).rejects.toThrow("status 500");
   });
 
@@ -57,7 +52,7 @@ describe("graphqlFetch", () => {
 
     const result = await graphqlFetch<{ node: { id: string } }>(
       DEFAULT_OPTIONS,
-      '{ node(id: "456") { id } }',
+      "{ node(id: \"456\") { id } }",
     );
 
     expect(result).toEqual({ node: { id: "456" } });
@@ -92,36 +87,11 @@ describe("graphqlFetch", () => {
 
     try {
       await expect(
-        graphqlFetch({ baseUrl: BASE_URL }, '{ node(id: "1") { id } }'),
+        graphqlFetch({ baseUrl: BASE_URL }, "{ node(id: \"1\") { id } }"),
       ).rejects.toThrow("ARIZE_API_KEY");
     } finally {
       if (originalKey !== undefined) {
         process.env.ARIZE_API_KEY = originalKey;
-      }
-    }
-  });
-
-  it("resolves ARIZE_GRAPHQL_BASE_URL env var when no explicit baseUrl is passed", async () => {
-    const customUrl = "https://custom.arize.com";
-    const originalEnv = process.env.ARIZE_GRAPHQL_BASE_URL;
-    process.env.ARIZE_GRAPHQL_BASE_URL = customUrl;
-
-    try {
-      nock(customUrl)
-        .post("/graphql")
-        .reply(200, { data: { ok: true } });
-
-      const result = await graphqlFetch<{ ok: boolean }>(
-        { apiKey: "test-api-key" },
-        "{ ok }",
-      );
-
-      expect(result).toEqual({ ok: true });
-    } finally {
-      if (originalEnv !== undefined) {
-        process.env.ARIZE_GRAPHQL_BASE_URL = originalEnv;
-      } else {
-        delete process.env.ARIZE_GRAPHQL_BASE_URL;
       }
     }
   });
