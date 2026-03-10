@@ -25,7 +25,7 @@ describe("graphqlFetch", () => {
 
     const result = await graphqlFetch<{ node: { id: string } }>(
       DEFAULT_OPTIONS,
-      "{ node(id: \"123\") { id } }",
+      '{ node(id: "123") { id } }',
     );
 
     expect(result).toEqual({ node: { id: "123" } });
@@ -37,7 +37,7 @@ describe("graphqlFetch", () => {
       .reply(200, { errors: [{ message: "Not found" }] });
 
     await expect(
-      graphqlFetch(DEFAULT_OPTIONS, "{ node(id: \"bad\") { id } }"),
+      graphqlFetch(DEFAULT_OPTIONS, '{ node(id: "bad") { id } }'),
     ).rejects.toThrow("GraphQL errors: Not found");
   });
 
@@ -45,7 +45,7 @@ describe("graphqlFetch", () => {
     nock(BASE_URL).post("/graphql").reply(500, "Internal Server Error");
 
     await expect(
-      graphqlFetch(DEFAULT_OPTIONS, "{ node(id: \"123\") { id } }"),
+      graphqlFetch(DEFAULT_OPTIONS, '{ node(id: "123") { id } }'),
     ).rejects.toThrow("status 500");
   });
 
@@ -57,7 +57,7 @@ describe("graphqlFetch", () => {
 
     const result = await graphqlFetch<{ node: { id: string } }>(
       DEFAULT_OPTIONS,
-      "{ node(id: \"456\") { id } }",
+      '{ node(id: "456") { id } }',
     );
 
     expect(result).toEqual({ node: { id: "456" } });
@@ -92,7 +92,7 @@ describe("graphqlFetch", () => {
 
     try {
       await expect(
-        graphqlFetch({ baseUrl: BASE_URL }, "{ node(id: \"1\") { id } }"),
+        graphqlFetch({ baseUrl: BASE_URL }, '{ node(id: "1") { id } }'),
       ).rejects.toThrow("ARIZE_API_KEY");
     } finally {
       if (originalKey !== undefined) {

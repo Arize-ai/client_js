@@ -44,9 +44,7 @@ export async function getPromptByLabel(
 
   const raw = edges[0]!.node;
   const versionEdges = raw.versionHistory?.edges ?? [];
-  const match = versionEdges.find((e) =>
-    e.node.labels?.includes(params.label),
-  );
+  const match = versionEdges.find((e) => e.node.labels?.includes(params.label));
 
   if (!match) {
     throw new Error(
