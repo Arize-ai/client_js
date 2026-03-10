@@ -21,37 +21,21 @@ export type ListPromptsWithContentParams = {
 /**
  * List prompts with full content via the GraphQL API.
  *
- * @param spaceNodeId - GraphQL node ID of the space.
- * @param first - Number of prompts to return (default: 50).
- * @param after - Pagination cursor.
- * @param apiKey - Override API key.
- * @param baseUrl - Override GraphQL base URL.
+ * @param params.spaceNodeId - GraphQL node ID of the space.
+ * @param params.first - Number of prompts to return (default: 50).
+ * @param params.after - Pagination cursor.
+ * @param params.apiKey - Override API key.
+ * @param params.baseUrl - Override GraphQL base URL.
  * @returns A paginated list of {@link PromptWithContent} objects.
- * @throws Error if the space cannot be found or the GraphQL request fails.
- * @example
- * ```typescript
- * import { listPromptsWithContent } from "@arizeai/ax-client"
- *
- * const { data: prompts } = await listPromptsWithContent({
- *   spaceNodeId: "your_space_relay_node_id",
- * });
- * console.log(prompts);
- * ```
  */
-export async function listPromptsWithContent({
-  spaceNodeId,
-  first,
-  after,
-  apiKey,
-  baseUrl,
-}: ListPromptsWithContentParams): Promise<
-  PaginatedResponse<PromptWithContent>
-> {
+export async function listPromptsWithContent(
+  params: ListPromptsWithContentParams,
+): Promise<PaginatedResponse<PromptWithContent>> {
   warnPreRelease({ functionName: "listPromptsWithContent" });
 
   const clientOptions: GraphQLClientOptions = {
-    apiKey,
-    baseUrl,
+    apiKey: params.apiKey,
+    baseUrl: params.baseUrl,
   };
 
   const data = await graphqlFetch<{
@@ -66,14 +50,14 @@ export async function listPromptsWithContent({
       };
     };
   }>(clientOptions, LIST_PROMPTS_WITH_CONTENT, {
-    spaceId: spaceNodeId,
-    first: first ?? 50,
-    after,
+    spaceId: params.spaceNodeId,
+    first: params.first ?? 50,
+    after: params.after,
   });
 
   const prompts = data.node?.prompts;
   if (!prompts) {
-    throw new Error(`Space not found with node ID: ${spaceNodeId}`);
+    throw new Error(`Space not found with node ID: ${params.spaceNodeId}`);
   }
 
   return {

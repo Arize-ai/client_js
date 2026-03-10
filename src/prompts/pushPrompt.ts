@@ -11,10 +11,9 @@ import {
   LlmProvider,
   PromptWithContent,
   ProviderParams,
-  PushPromptResult,
 } from "../types";
 import { warnPreRelease } from "../utils/warning";
-import { findPromptByName } from "./getPromptContent";
+import { getPromptContent } from "./getPromptContent";
 import { transformMessageToGraphQL } from "./utils";
 
 export type PushPromptParams = {
@@ -46,6 +45,16 @@ export type PushPromptParams = {
   baseUrl?: string;
 };
 
+export type PushPromptResult = {
+  /** Whether the prompt was newly created or an existing prompt was updated with a new version */
+  action: "created" | "updated" | "unchanged";
+  /** The prompt's GraphQL node ID */
+  promptId: string;
+  /** The prompt name */
+  name: string;
+  versionId?: string;
+};
+
 function isVersionUnchanged(
   existing: PromptWithContent,
   graphqlMessages: Record<string, unknown>[],
@@ -67,74 +76,51 @@ function isVersionUnchanged(
  * Push a prompt via the GraphQL API. Creates a new prompt if one with the
  * given name does not exist, or creates a new version if it does.
  *
- * @param spaceNodeId - GraphQL node ID of the space.
- * @param name - Prompt name (unique within the space).
- * @param messages - At least one LLM message.
- * @param commitMessage - Version description.
- * @param inputVariableFormat - Variable syntax: "f_string", "mustache", or "none".
- * @param provider - LLM provider.
- * @param description - Optional prompt description (used on create only).
- * @param tags - Optional tags (used on create only).
- * @param model - Optional model identifier.
- * @param invocationParams - Optional invocation parameters.
- * @param providerParams - Optional provider-specific parameters.
- * @param apiKey - Override API key.
- * @param baseUrl - Override GraphQL base URL.
+ * @param params.spaceNodeId - GraphQL node ID of the space.
+ * @param params.name - Prompt name (unique within the space).
+ * @param params.messages - At least one LLM message.
+ * @param params.commitMessage - Version description.
+ * @param params.inputVariableFormat - Variable syntax: "f_string", "mustache", or "none".
+ * @param params.provider - LLM provider.
+ * @param params.description - Optional prompt description (used on create only).
+ * @param params.tags - Optional tags (used on create only).
+ * @param params.model - Optional model identifier.
+ * @param params.invocationParams - Optional invocation parameters.
+ * @param params.providerParams - Optional provider-specific parameters.
+ * @param params.apiKey - Override API key.
+ * @param params.baseUrl - Override GraphQL base URL.
  * @returns A {@link PushPromptResult} indicating the action taken.
- * @throws Error if the GraphQL request fails (auth, network, mutation error).
- * @example
- * ```typescript
- * import { pushPrompt } from "@arizeai/ax-client"
- *
- * const result = await pushPrompt({
- *   spaceNodeId: "your_space_relay_node_id",
- *   name: "my-prompt",
- *   messages: [{ role: "system", content: "You are helpful" }],
- *   commitMessage: "Initial version",
- *   inputVariableFormat: "mustache",
- *   provider: "openAI",
- * });
- * console.log(result); // { action: "created", promptId: "...", name: "my-prompt" }
- * ```
  */
-export async function pushPrompt({
-  spaceNodeId,
-  name,
-  messages,
-  commitMessage,
-  inputVariableFormat,
-  provider,
-  description,
-  tags,
-  model,
-  invocationParams: invocationParamsInput,
-  providerParams: providerParamsInput,
-  apiKey,
-  baseUrl,
-}: PushPromptParams): Promise<PushPromptResult> {
+export async function pushPrompt(
+  params: PushPromptParams,
+): Promise<PushPromptResult> {
   warnPreRelease({ functionName: "pushPrompt" });
 
-  const clientOptions: GraphQLClientOptions = { apiKey, baseUrl };
-  const graphqlMessages = messages.map(transformMessageToGraphQL);
-  const graphqlFormat = inputVariableFormat.toUpperCase();
-  const invocationParams = invocationParamsInput ?? {};
-  const providerParams = providerParamsInput ?? {};
+  const clientOptions: GraphQLClientOptions = {
+    apiKey: params.apiKey,
+    baseUrl: params.baseUrl,
+  };
 
-  const existing = await findPromptByName({
-    promptName: name,
-    spaceNodeId,
-    apiKey,
-    baseUrl,
-  });
+  const graphqlMessages = params.messages.map(transformMessageToGraphQL);
+  const graphqlFormat = params.inputVariableFormat.toUpperCase();
+  const invocationParams = params.invocationParams ?? {};
+  const providerParams = params.providerParams ?? {};
 
-  if (existing) {
+  try {
+    const existing = await getPromptContent({
+      promptName: params.name,
+      spaceNodeId: params.spaceNodeId,
+      apiKey: params.apiKey,
+      baseUrl: params.baseUrl,
+    });
+
     if (
       isVersionUnchanged(
         existing,
         graphqlMessages,
         graphqlFormat,
-        model,
-        provider,
+        params.model,
+        params.provider,
         invocationParams,
       )
     ) {
@@ -145,13 +131,16 @@ export async function pushPrompt({
       };
     }
 
-    await graphqlFetch(clientOptions, CREATE_PROMPT_VERSION_MUTATION, {
-      spaceId: spaceNodeId,
+    // Prompt exists — create a new version
+    const data = await graphqlFetch<{
+      createPromptVersion: { promptVersion: { id: string } };
+    }>(clientOptions, CREATE_PROMPT_VERSION_MUTATION, {
+      spaceId: params.spaceNodeId,
       promptId: existing.id,
-      commitMessage,
+      commitMessage: params.commitMessage,
       inputVariableFormat: graphqlFormat,
-      provider,
-      model,
+      provider: params.provider,
+      model: params.model,
       messages: graphqlMessages,
       invocationParams,
       providerParams,
@@ -161,28 +150,41 @@ export async function pushPrompt({
       action: "updated",
       promptId: existing.id,
       name: existing.name,
+      versionId: data.createPromptVersion.promptVersion.id,
     };
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : String(error);
+
+    if (message.includes("not found")) {
+      // Prompt does not exist — create it
+      const data = await graphqlFetch<{
+        createPrompt: {
+          prompt: { id: string; name: string };
+          promptVersion?: { id: string };
+        };
+      }>(clientOptions, CREATE_PROMPT_MUTATION, {
+        spaceId: params.spaceNodeId,
+        name: params.name,
+        description: params.description,
+        tags: params.tags,
+        commitMessage: params.commitMessage,
+        inputVariableFormat: graphqlFormat,
+        provider: params.provider,
+        model: params.model,
+        messages: graphqlMessages,
+        invocationParams,
+        providerParams,
+      });
+
+      return {
+        action: "created",
+        promptId: data.createPrompt.prompt.id,
+        name: data.createPrompt.prompt.name,
+        versionId: data.createPrompt.promptVersion?.id,
+      };
+    }
+
+    throw error;
   }
-
-  const data = await graphqlFetch<{
-    createPrompt: { prompt: { id: string; name: string } };
-  }>(clientOptions, CREATE_PROMPT_MUTATION, {
-    spaceId: spaceNodeId,
-    name,
-    description,
-    tags,
-    commitMessage,
-    inputVariableFormat: graphqlFormat,
-    provider,
-    model,
-    messages: graphqlMessages,
-    invocationParams,
-    providerParams,
-  });
-
-  return {
-    action: "created",
-    promptId: data.createPrompt.prompt.id,
-    name: data.createPrompt.prompt.name,
-  };
 }
