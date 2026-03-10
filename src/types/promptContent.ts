@@ -25,6 +25,8 @@ export type PromptWithContent = {
   llmParameters: Record<string, unknown>;
   toolCalls?: Record<string, unknown>[] | null;
   tags?: string[];
+  labels?: string[];
+  providerParameters?: Record<string, unknown>;
   createdAt: Date;
   versionId?: string;
   updatedAt: Date;
