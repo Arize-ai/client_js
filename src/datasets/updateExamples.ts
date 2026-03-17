@@ -2,6 +2,7 @@ import { createClient } from "../client";
 import { WithClient } from "../types";
 import { Dataset, DatasetExampleUpdate } from "../types/datasets";
 import { warnPreRelease } from "../utils/warning";
+import { handleApiError } from "../errors";
 import { transformDataset } from "./utils";
 
 export type UpdateExamplesParams = WithClient<{
@@ -84,8 +85,7 @@ export async function updateExamples({
     },
   });
   if (response.error) {
-    const { detail, title } = response.error;
-    throw new Error(detail || title);
+    return handleApiError(response);
   }
   return transformDataset(response.data);
 }

@@ -4,3 +4,7 @@ export * from "./datasets";
 export * from "./experiments";
 export * from "./projects";
 export * from "./annotation_configs";
+export * from "./spaces";
+export * from "./prompts";
+export * from "./ai_integrations";
+export * from "./api_keys";

@@ -6,6 +6,7 @@ import {
 } from "../types";
 import { assertUnreachable } from "../utils/assertUnreachable";
 import { warnPreRelease } from "../utils/warning";
+import { handleApiError } from "../errors";
 import { transformAnnotationConfig } from "./utils";
 
 export type CreateAnnotationConfigParams =
@@ -86,8 +87,7 @@ export async function createAnnotationConfig({
     body,
   });
   if (response.error) {
-    const { detail, title } = response.error;
-    throw new Error(detail || title);
+    return handleApiError(response);
   }
   return transformAnnotationConfig(response.data);
 }

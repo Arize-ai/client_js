@@ -2,6 +2,7 @@ import { createClient } from "../client";
 import { WithClient } from "../types";
 import { Experiment, ExperimentRunInput } from "../types/experiments";
 import { warnPreRelease } from "../utils/warning";
+import { handleApiError } from "../errors";
 import { normalizeExperimentRun, transformExperiment } from "./utils";
 
 export type CreateExperimentParams = WithClient<{
@@ -46,8 +47,7 @@ export async function createExperiment({
     },
   });
   if (response.error) {
-    const { detail, title } = response.error;
-    throw new Error(detail || title);
+    return handleApiError(response);
   }
   return transformExperiment(response.data);
 }

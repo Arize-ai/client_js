@@ -1,6 +1,7 @@
 import { createClient } from "../client";
 import { Project, WithClient } from "../types";
 import { warnPreRelease } from "../utils/warning";
+import { handleApiError } from "../errors";
 import { transformProject } from "./utils";
 
 export type CreateProjectParams = WithClient<{
@@ -41,8 +42,7 @@ export async function createProject({
     },
   });
   if (response.error) {
-    const { detail, title } = response.error;
-    throw new Error(detail || title);
+    return handleApiError(response);
   }
   return transformProject(response.data);
 }

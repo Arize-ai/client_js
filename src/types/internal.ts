@@ -14,3 +14,10 @@ export type RawCreateDatasetRequestBodyExample =
 export type RawUpdateDatasetRequestBodyExample =
   components["requestBodies"]["UpdateDatasetExamplesRequestBody"]["content"]["application/json"]["examples"][number];
 export type RawAnnotationConfig = components["schemas"]["AnnotationConfig"];
+export type RawSpace = components["schemas"]["Space"];
+export type RawPrompt = components["schemas"]["Prompt"];
+export type RawPromptVersion = components["schemas"]["PromptVersion"];
+export type RawPromptWithVersion = components["schemas"]["PromptWithVersion"];
+export type RawAiIntegration = components["schemas"]["AiIntegration"];
+export type RawApiKey = components["schemas"]["ApiKey"];
+export type RawApiKeyCreated = components["schemas"]["ApiKeyCreated"];

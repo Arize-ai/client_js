@@ -1,6 +1,7 @@
 import { createClient } from "../client";
 import { WithClient } from "../types";
 import { warnPreRelease } from "../utils/warning";
+import { handleApiError } from "../errors";
 
 export type DeleteAnnotationConfigParams = WithClient<{
   annotationConfigId: string;
@@ -39,7 +40,6 @@ export async function deleteAnnotationConfig({
     },
   );
   if (response.error) {
-    const { detail, title } = response.error;
-    throw new Error(detail || title);
+    return handleApiError(response);
   }
 }

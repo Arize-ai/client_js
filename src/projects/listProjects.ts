@@ -3,6 +3,7 @@ import { PaginatedResponse, PaginationParams, WithClient } from "../types";
 import { Project } from "../types/projects";
 import { transformPaginationMetadata } from "../utils/pagination";
 import { warnPreRelease } from "../utils/warning";
+import { handleApiError } from "../errors";
 import { transformProject } from "./utils";
 
 export type ListProjectsParams = WithClient<
@@ -44,8 +45,7 @@ export async function listProjects(
     },
   });
   if (response.error) {
-    const { detail, title } = response.error;
-    throw new Error(detail || title);
+    return handleApiError(response);
   }
   return {
     data: response.data.projects.map(transformProject),

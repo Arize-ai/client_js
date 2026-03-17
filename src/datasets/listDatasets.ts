@@ -7,6 +7,7 @@ import {
 } from "../types";
 import { transformPaginationMetadata } from "../utils/pagination";
 import { warnPreRelease } from "../utils/warning";
+import { handleApiError } from "../errors";
 import { transformDataset } from "./utils";
 
 export type ListDatasetsParams = WithClient<
@@ -48,8 +49,7 @@ export async function listDatasets(
     },
   });
   if (response.error) {
-    const { detail, title } = response.error;
-    throw new Error(detail || title);
+    return handleApiError(response);
   }
   return {
     data: response.data.datasets.map(transformDataset),

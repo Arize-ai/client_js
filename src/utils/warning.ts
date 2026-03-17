@@ -1,6 +1,4 @@
-import packageJson from "../../package.json";
-
-const ARIZE_SDK_VERSION = packageJson.version;
+import { ARIZE_SDK_VERSION } from "../__generated__/version/version.generated.js";
 const DISABLE_PRERELEASE_WARNING = "DISABLE_PRERELEASE_WARNING";
 
 const isPreRelease = /-(alpha|beta|rc|pre)/i.test(ARIZE_SDK_VERSION);

@@ -4,6 +4,118 @@
  */
 
 export interface paths {
+    "/v2/ai-integrations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List AI integrations
+         * @description List AI integrations the user has access to.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["ai_integrations_list"];
+        put?: never;
+        /**
+         * Create an AI integration
+         * @description Create a new AI integration for an external LLM provider.
+         *
+         *     **Payload Requirements**
+         *     - `name` and `provider` are required.
+         *     - The integration name must be unique within the account.
+         *     - `provider` must be one of: `openAI`, `azureOpenAI`, `awsBedrock`, `vertexAI`, `anthropic`, `custom`.
+         *     - If `scopings` is omitted, the integration defaults to account-wide visibility.
+         *     - `enable_default_models` defaults to `false` if not provided.
+         *     - `function_calling_enabled` defaults to `true` if not provided.
+         *     - `auth_type` defaults to `default` if not provided.
+         *     - For `awsBedrock` provider, `provider_metadata` must include `role_arn`.
+         *     - For `vertexAI` provider, `provider_metadata` must include `project_id`, `location`, and `project_access_label`.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "name": "Production OpenAI",
+         *       "provider": "openAI",
+         *       "api_key": "sk-abc123...",
+         *       "model_names": ["gpt-4", "gpt-4o"],
+         *       "enable_default_models": true
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (missing required `provider`)
+         *     ```json
+         *     {
+         *       "name": "My Integration"
+         *     }
+         *     ```
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["ai_integrations_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/ai-integrations/{integration_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get an AI integration
+         * @description Get a specific AI integration by its ID.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["ai_integrations_get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete an AI integration
+         * @description Delete an AI integration by its ID. This operation is irreversible.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        delete: operations["ai_integrations_delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update an AI integration
+         * @description Update an AI integration's configuration. At least one field must be provided.
+         *     Omitted fields are left unchanged.
+         *
+         *     **Payload Requirements**
+         *     - At least one of the updatable fields must be provided.
+         *     - `name`, if provided, must be unique within the account.
+         *     - `api_key` can be set to `null` to remove the existing key, or omitted to keep it unchanged.
+         *     - `scopings`, if provided, replaces all existing scoping rules.
+         *     - `provider_metadata`, if provided, replaces existing metadata. Set to `null` to remove.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "name": "Updated Integration",
+         *       "model_names": ["gpt-4o", "gpt-4o-mini"]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (empty body)
+         *     ```json
+         *     {}
+         *     ```
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        patch: operations["ai_integrations_update"];
+        trace?: never;
+    };
     "/v2/annotation-configs": {
         parameters: {
             query?: never;
@@ -98,7 +210,146 @@ export interface paths {
          */
         get: operations["annotation_queues_list"];
         put?: never;
+        /**
+         * Create an annotation queue
+         * @description Create a new annotation queue.
+         *
+         *     **Payload Requirements**
+         *     - The annotation queue name must be unique within the given space (among active queues).
+         *     - At least one `annotation_config_id` is required, and all configs must belong to the specified space.
+         *     - Do not include system-managed fields on input: `id`, `created_at`, `updated_at`.
+         *     - If `assignment_method` is not provided, it defaults to `"all"`.
+         *     - If `annotator_emails` are provided, all emails must resolve to existing users with access to the space.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "name": "Quality Review Queue",
+         *       "space_id": "spc_xyz789",
+         *       "annotation_config_ids": ["ac_abc123"],
+         *       "assignment_method": "all"
+         *     }
+         *     ```
+         *
+         *     **Valid example with records**
+         *     ```json
+         *     {
+         *       "name": "Quality Review Queue",
+         *       "space_id": "spc_xyz789",
+         *       "annotation_config_ids": ["ac_abc123"],
+         *       "annotator_emails": ["reviewer@example.com"],
+         *       "records": [
+         *         {"record_type": "span", "project_id": "prj_abc", "start_time": "2024-01-15T00:00:00Z", "end_time": "2024-01-16T00:00:00Z", "span_ids": ["span_001"]},
+         *         {"record_type": "example", "dataset_id": "ds_xyz", "example_ids": ["ex_001", "ex_002"]}
+         *       ]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (missing required annotation_config_ids)
+         *     ```json
+         *     {
+         *       "name": "My Queue",
+         *       "space_id": "spc_xyz789"
+         *     }
+         *     ```
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["annotation_queues_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/annotation-queues/{annotation_queue_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get an annotation queue
+         * @description Get an annotation queue object by its ID.
+         *
+         *     This includes the annotation queue's annotation configs, which define the
+         *     structure of annotations that can be created in this queue.
+         *
+         *     This endpoint does not include queue records or annotation progress. To
+         *     manage records in a queue, use the Annotation Queue Items endpoints.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["annotation_queues_get"];
+        put?: never;
         post?: never;
+        /**
+         * Delete an annotation queue
+         * @description Delete an annotation queue by its ID. This operation is irreversible.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        delete: operations["annotation_queues_delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update an annotation queue
+         * @description Update an annotation queue by its ID. At least one field must be provided.
+         *
+         *     **Payload Requirements:**
+         *     - At least one of `name`, `instructions`, `annotation_config_ids`, or `annotator_emails` must be provided
+         *     - `name` must be unique within the space (409 Conflict if duplicate)
+         *     - `annotation_config_ids` replaces all existing config associations; all configs must belong to the same space as the queue
+         *     - `annotator_emails` replaces all existing user assignments; all users must have active accounts
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        patch: operations["annotation_queues_update"];
+        trace?: never;
+    };
+    "/v2/annotation-queues/{annotation_queue_id}/records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List annotation queue records
+         * @description List the records in an annotation queue with their data and annotations.
+         *
+         *     Each record includes:
+         *     - The record's data as flat key-value pairs
+         *     - Any annotations that have been added to the record
+         *     - The users assigned to annotate the record and their completion status
+         *
+         *     **Pagination**:
+         *     - Response includes `pagination` with `has_more` and `next_cursor`.
+         *     - Use cursor-based pagination by passing the returned `next_cursor`
+         *     value as the `cursor` query parameter in subsequent requests.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["annotation_queue_records_list"];
+        put?: never;
+        /**
+         * Create annotation queue records
+         * @description Add new records from either spans (a project) or from dataset examples to an existing annotation queue.
+         *
+         *     **Payload Requirements**
+         *       - At least one record source is required.
+         *       - At most 2 record sources are allowed per request
+         *       - For span record source: `start_time` must be before `end_time`, and the range must not exceed 7 days.
+         *       - For dataset record source: all `example_ids` must be non-empty strings.
+         *       - For spans record source: all `span_ids` must be non-empty strings.
+         *       - At most 500 records total may be added in one request
+         *
+         *     <Note>If no example_ids are provided for a dataset record source, all examples in the dataset will be added to the queue.</Note>
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["annotation_queues_records_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -456,15 +707,249 @@ export interface paths {
          * List spaces
          * @description List spaces the user has access to.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["spaces_list"];
+        put?: never;
+        /**
+         * Create a space
+         * @description Create a new space within an organization.
+         *
+         *     **Payload Requirements**
+         *     - `name` and `organization_id` are required.
+         *     - The space name must be unique within the organization.
+         *     - `description` is optional and defaults to an empty string if omitted.
+         *     - System-managed fields (`id`, `created_at`) are generated
+         *       automatically and rejected if provided.
+         *
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
+         */
+        post: operations["spaces_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/spaces/{space_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a space
+         * @description Get a specific space by its ID.
+         *
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
+         */
+        get: operations["spaces_get"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
+        /**
+         * Update a space
+         * @description Update a space's metadata by its ID. Currently supports updating the
+         *     name and description. At least one field must be provided.
+         *
+         *     **Payload Requirements**
+         *     - At least one of `name` or `description` must be provided.
+         *     - If `name` is provided, it must be unique within the organization.
+         *     - System-managed fields (`id`, `created_at`) cannot be modified.
+         *
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
+         */
+        patch: operations["spaces_update"];
+        trace?: never;
+    };
+    "/v2/api-keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List API keys
+         * @description List API keys for the authenticated user. Returns metadata for each key (id, name, description,
+         *     key_type, status, redacted_key, created_at, expires_at, created_by_user_id). The raw key
+         *     secret is never returned after creation.
+         *
+         *     Results can be filtered by key type, status, and created-by user ID. Responses are
+         *     paginated; use `limit` and `cursor` and the response `pagination.next_cursor` for
+         *     subsequent pages.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["api_keys_list"];
+        put?: never;
+        /**
+         * Create an API key
+         * @description Create a new API key for the authenticated user.
+         *
+         *     - `key_type` defaults to `user` when omitted.
+         *     - For `service` keys, `space_id` is required. The service key is
+         *       scoped to the given space, and a bot user will be created with the specified roles.
+         *     - For `user` keys, `space_id` and `roles` must not be set — passing either returns `400`.
+         *       The key inherits the authenticated user's own permissions.
+         *     - You may only assign roles at or below your own privilege level. Attempting to
+         *       assign a role higher than your own returns `400 Bad Request`.
+         *     - All roles default to the minimum privilege when omitted: `space_role` → `member`,
+         *       `org_role` → `read-only`, `account_role` → `member`.
+         *
+         *     The full API key value (`key`) is **only returned once** in the creation response.
+         *     Store it securely — it cannot be retrieved again. Use the `redacted_key` field on
+         *     subsequent reads.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["api_keys_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/v2/api-keys/{api_key_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete an API key
+         * @description Delete an API key by its ID (soft-delete). This operation is irreversible. The key will
+         *     immediately stop working for authentication.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        delete: operations["api_keys_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/api-keys/{api_key_id}/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh an API key
+         * @description Atomically revoke an existing API key and issue a replacement with the same
+         *     metadata (name, description, and key type). Attempting to refresh a key
+         *     you did not create returns a `400` error.
+         *
+         *     The old key is invalidated and the new key is activated in a single transaction —
+         *     there is no window where neither key is valid. The full new key value (`key`) is
+         *     **only returned once** in the response. Store it securely.
+         *
+         *     **Expiry behaviour:** Supply `expires_at` in the request body to set an expiration
+         *     on the replacement key. Omit `expires_at` (or send an empty body `{}`) to create
+         *     the replacement key with no expiration (infinite lifetime).
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["api_keys_refresh"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List roles
+         * @description List custom and predefined roles for the authenticated user's account.
+         *     Results are paginated; use `limit` and `cursor` for subsequent pages.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["roles_list"];
+        put?: never;
+        /**
+         * Create a role
+         * @description Create a new custom role for the authenticated user's account.
+         *
+         *     **Payload Requirements**
+         *     - `name` is required and must be unique within the account.
+         *     - `permissions` is required and must contain at least one valid permission
+         *       identifier (e.g. `PROJECT_READ`, `DATASET_CREATE`).
+         *     - System-managed fields (`id`, `created_at`, `updated_at`, `is_predefined`)
+         *       are rejected if provided.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "name": "Data Scientist",
+         *       "description": "Can read and create datasets and experiments.",
+         *       "permissions": ["PROJECT_READ", "DATASET_READ", "DATASET_CREATE"]
+         *     }
+         *     ```
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["roles_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/roles/{role_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a role
+         * @description Get a role by its ID.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["roles_get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a role
+         * @description Delete a custom role by its ID (soft-delete). Predefined roles cannot
+         *     be deleted.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        delete: operations["roles_delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update a role
+         * @description Update a custom role by its ID. At least one field must be provided.
+         *     Predefined roles cannot be updated.
+         *
+         *     When `permissions` is provided, the existing permissions are fully replaced
+         *     with the new set.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        patch: operations["roles_update"];
         trace?: never;
     };
     "/v2/prompts": {
@@ -511,7 +996,10 @@ export interface paths {
         };
         /**
          * Get a prompt
-         * @description Get a specific prompt by its ID.
+         * @description Get a specific prompt by its ID. The response always includes a resolved
+         *     version. By default, the latest version is returned. Use the `version_id`
+         *     or `label` query parameter to resolve a specific version instead. You
+         *     cannot supply both `version_id` and `label`.
          *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
@@ -522,7 +1010,7 @@ export interface paths {
          * Delete a prompt
          * @description Delete a prompt by its ID. This operation is irreversible.
          *
-         *     <Warning>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
         delete: operations["prompts_delete"];
         options?: never;
@@ -530,11 +1018,304 @@ export interface paths {
         /**
          * Update a prompt
          * @description Update a prompt's metadata by its ID. Currently supports updating the
-         *     description and tags. At least one field must be provided.
+         *     description.
          *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
         patch: operations["prompts_update"];
+        trace?: never;
+    };
+    "/v2/evaluators": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List evaluators
+         * @description List evaluators the user has access to, sorted by update date (most recent first).
+         *
+         *     When `space_id` is provided, results are limited to that space. When omitted,
+         *     evaluators from all permitted spaces are returned.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["evaluators_list"];
+        put?: never;
+        /**
+         * Create evaluator
+         * @description Creates a new evaluator with an initial version.
+         *
+         *     **Payload Requirements**
+         *     - The evaluator `name` must be unique within the given space.
+         *     - `type` must be `template` (the only supported type in this iteration).
+         *     - `version.template_config.name` is the eval column name; must match `^[a-zA-Z0-9_\s\-&()]+$`.
+         *     - `version.template_config.template` is the prompt template; use `{{variable}}` for placeholders.
+         *     - `version.template_config.classification_choices` maps choice labels to numeric scores (e.g. `{"relevant": 1, "irrelevant": 0}`). When omitted, the evaluator produces freeform output.
+         *     - System-managed fields (`id`, `created_at`, `updated_at`, `created_by_user_id`) are rejected on input.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["evaluators_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/evaluators/{evaluator_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get evaluator
+         * @description Returns an evaluator and a resolved version. By default, the latest version
+         *     is included. Use the version_id query parameter to resolve a specific version.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["evaluators_get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete evaluator
+         * @description Deletes an evaluator and all its versions. This operation is irreversible.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        delete: operations["evaluators_delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update evaluator
+         * @description Update an evaluator's metadata. At least one field must be provided.
+         *     Omitted fields are left unchanged.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        patch: operations["evaluators_update"];
+        trace?: never;
+    };
+    "/v2/evaluators/{evaluator_id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List evaluator versions
+         * @description List all versions of an evaluator with cursor-based pagination.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["evaluator_versions_list"];
+        put?: never;
+        /**
+         * Create evaluator version
+         * @description Create a new version of an existing evaluator. The new version becomes the latest
+         *     version immediately (versioning is append-only).
+         *
+         *     **Payload Requirements**
+         *     - `commit_message` describes the changes in this version.
+         *     - `template_config` follows the same schema and constraints as in Create Evaluator.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["evaluator_versions_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/evaluator-versions/{version_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get evaluator version
+         * @description Get a specific evaluator version by its global ID.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["evaluator_versions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/prompts/{prompt_id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List prompt versions
+         * @description List all versions of a prompt, sorted by creation date with the most
+         *     recently created versions first.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["prompt_versions_list"];
+        put?: never;
+        /**
+         * Create a prompt version
+         * @description Create a new version of an existing prompt.
+         *
+         *     **Payload Requirements**
+         *     - A `commit_message` is required.
+         *     - At least one message is required in `messages`.
+         *     - Do not include system-managed fields on input: `id`, `commit_hash`, `created_at`, `created_by_user_id`.
+         *       Requests that contain these fields will be rejected.
+         *     - `input_variable_format` and `provider` are required.
+         *
+         *     **Valid example** (create)
+         *     ```json
+         *     {
+         *       "commit_message": "Updated system prompt for better responses",
+         *       "input_variable_format": "f_string",
+         *       "provider": "openAI",
+         *       "model": "gpt-4",
+         *       "messages": [
+         *         {
+         *           "role": "system",
+         *           "content": "You are a helpful assistant."
+         *         },
+         *         {
+         *           "role": "user",
+         *           "content": "Hello, {name}!"
+         *         }
+         *       ]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (missing required `commit_message`)
+         *     ```json
+         *     {
+         *       "input_variable_format": "f_string",
+         *       "provider": "openAI",
+         *       "messages": [
+         *         {
+         *           "role": "user",
+         *           "content": "Hello!"
+         *         }
+         *       ]
+         *     }
+         *     ```
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["prompt_versions_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/prompts/{prompt_id}/labels/{label_name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resolve a label to a prompt version
+         * @description Resolve a label on a prompt to the version it points to. Returns the
+         *     full `PromptVersion` object that this label currently references.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["prompt_labels_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/prompt-versions/{version_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a prompt version
+         * @description Get a specific prompt version by its ID.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["prompt_versions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/prompt-versions/{version_id}/labels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set labels on a prompt version
+         * @description Set (replace) all labels on a prompt version. This is an idempotent
+         *     operation. If a label already exists on another version of the same
+         *     prompt, it will be moved to this version.
+         *
+         *     Labels not included in the request will be removed from this version.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        put: operations["prompt_version_labels_set"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/prompt-versions/{version_id}/labels/{label_name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove a label from a prompt version
+         * @description Remove a specific label from a prompt version.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        delete: operations["prompt_version_labels_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v2/projects": {
@@ -622,6 +1403,254 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * @description An AI integration configures access to an external LLM provider (e.g. OpenAI,
+         *     Azure OpenAI, AWS Bedrock, Vertex AI). Integrations can be scoped to the entire
+         *     account, a specific organization, or a specific space.
+         */
+        AiIntegration: {
+            /** @description The integration ID */
+            id: string;
+            /** @description The integration name */
+            name: string;
+            provider: components["schemas"]["AiIntegrationProvider"];
+            /** @description Whether an API key is configured (the key itself is never returned) */
+            has_api_key: boolean;
+            /** @description Custom base URL for the provider */
+            base_url?: string | null;
+            /** @description Supported model names */
+            model_names?: string[] | null;
+            /** @description Custom headers included in requests */
+            headers?: {
+                [key: string]: string;
+            } | null;
+            /** @description Whether the provider's default model list is enabled */
+            enable_default_models: boolean;
+            /** @description Whether function/tool calling is enabled */
+            function_calling_enabled: boolean;
+            auth_type: components["schemas"]["AiIntegrationAuthType"];
+            /** @description Provider-specific configuration (AWS or GCP metadata) */
+            provider_metadata?: {
+                [key: string]: unknown;
+            } | null;
+            /** @description Visibility scoping rules */
+            scopings: components["schemas"]["AiIntegrationScoping"][];
+            /**
+             * Format: date-time
+             * @description When the integration was created
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description When the integration was last updated
+             */
+            updated_at: string;
+            /** @description The user ID of the user who created the integration */
+            created_by_user_id: string;
+        };
+        /**
+         * @description The AI provider for this integration
+         * @enum {string}
+         */
+        AiIntegrationProvider: "openAI" | "azureOpenAI" | "awsBedrock" | "vertexAI" | "anthropic" | "custom" | "nvidiaNim" | "gemini";
+        /**
+         * @description The authentication method for this integration
+         * @enum {string}
+         */
+        AiIntegrationAuthType: "default" | "proxy_with_headers" | "bearer_token";
+        /** @description Visibility scoping for the integration */
+        AiIntegrationScoping: {
+            /** @description Organization global ID. Null means account-wide. */
+            organization_id?: string | null;
+            /** @description Space global ID. Null means organization-wide (or account-wide if organization_id is also null). */
+            space_id?: string | null;
+        };
+        /** @description AWS Bedrock provider metadata */
+        AwsProviderMetadata: {
+            /** @description AWS IAM role ARN for cross-account access */
+            role_arn: string;
+            /** @description External ID for the assume-role policy */
+            external_id?: string | null;
+        };
+        /** @description Vertex AI (GCP) provider metadata */
+        GcpProviderMetadata: {
+            /** @description GCP project ID */
+            project_id: string;
+            /** @description GCP region (e.g. us-central1) */
+            location: string;
+            /** @description Display label for the project */
+            project_access_label: string;
+        };
+        ApiKey: {
+            /** @description Unique identifier for the API key. */
+            id: string;
+            /** @description User-defined name for the API key. */
+            name: string;
+            /** @description Optional user-defined description for the API key. */
+            description?: string;
+            /**
+             * @description Type of the API key.
+             *     - user - Key associated with a specific user.
+             *     - service - Key associated with a bot user for service authentication.
+             * @enum {string}
+             */
+            key_type: "user" | "service";
+            /**
+             * @description Current status of the API key.
+             *     - active - The key is valid for use.
+             *     - deleted - The key has been deleted by a user.
+             * @enum {string}
+             */
+            status: "active" | "deleted";
+            /** @description Redacted version of the key suitable for display (e.g., "ak-abc...xyz"). */
+            redacted_key: string;
+            /**
+             * Format: date-time
+             * @description Timestamp when the key was created.
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description Optional timestamp when the key will expire.
+             */
+            expires_at?: string;
+            /** @description ID of the user who created the key. */
+            created_by_user_id: string;
+        };
+        ApiKeyCreate: {
+            /**
+             * @description User-defined name for the API key.
+             * @example CI pipeline key
+             */
+            name: string;
+            /**
+             * @description Optional user-defined description for the API key.
+             * @example Key used by the CI pipeline to upload evaluation results.
+             */
+            description?: string;
+            /**
+             * @description Type of the API key to create. Defaults to `user`.
+             *     - user - Key that authenticates as the creating user with their full permissions.
+             *       `space_id` and `roles` must not be set (returns `400`).
+             *     - service - Key scoped to a specific space backed by a dedicated bot user.
+             *       Requires `space_id`. All roles default to minimum privilege when omitted.
+             * @default user
+             * @example user
+             * @enum {string}
+             */
+            key_type?: "user" | "service";
+            /**
+             * Format: date-time
+             * @description Optional expiration timestamp. If omitted the key never expires.
+             * @example 2026-01-01T00:00:00Z
+             */
+            expires_at?: string;
+            /**
+             * @description ID of the space this service key is scoped to. Required when `key_type` is `service`;
+             *     invalid for `user` keys (returns `400`).
+             * @example U3BhY2UxMjM
+             */
+            space_id?: string;
+            /**
+             * @description Role assignments for the service key's bot user. Only valid when `key_type` is `service`;
+             *     invalid for `user` keys (returns `400`).
+             */
+            roles?: components["schemas"]["ApiKeyRoles"];
+        };
+        /** @description Role assignments for the bot user created with a service key. */
+        ApiKeyRoles: {
+            /**
+             * @description Role to assign the bot user within the space. Defaults to `member` when omitted.
+             *     Must be at or below the caller's own effective space role.
+             * @default member
+             * @enum {string}
+             */
+            space_role?: "admin" | "member" | "read-only";
+            /**
+             * @description Role to assign the bot user within the organization. Defaults to `read-only` when
+             *     omitted. Must be at or below the caller's own organization role.
+             * @default read-only
+             * @enum {string}
+             */
+            org_role?: "admin" | "member" | "read-only";
+            /**
+             * @description Account-level role to assign the bot user. Defaults to `member` when omitted.
+             *     Must be at or below the caller's own account role.
+             * @default member
+             * @enum {string}
+             */
+            account_role?: "admin" | "member";
+        };
+        ApiKeyCreated: components["schemas"]["ApiKey"] & {
+            /**
+             * @description The full API key value. **Only returned once** at creation or refresh time.
+             *     Store it securely — it cannot be retrieved again.
+             */
+            key: string;
+        };
+        Role: {
+            /** @description Unique identifier for the role. */
+            id: string;
+            /** @description Human-readable name of the role. */
+            name: string;
+            /** @description A brief description of the role's purpose. */
+            description?: string;
+            /**
+             * @description List of permissions granted by this role. Each value corresponds to a
+             *     permission identifier (e.g. `PROJECT_READ`, `DATASET_CREATE`).
+             */
+            permissions: string[];
+            /**
+             * @description Whether this role is a system-defined predefined role. Predefined roles
+             *     cannot be updated or deleted.
+             */
+            is_predefined: boolean;
+            /**
+             * Format: date-time
+             * @description Timestamp when the role was created.
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description Timestamp when the role was last updated.
+             */
+            updated_at: string;
+        };
+        RoleCreate: {
+            /**
+             * @description Human-readable name for the role. Must be unique within the account.
+             * @example Data Scientist
+             */
+            name: string;
+            /**
+             * @description Optional description of the role's purpose. Omitted from the response if empty.
+             * @example Can read and create datasets and experiments but cannot manage spaces.
+             */
+            description?: string;
+            /**
+             * @description List of permissions to grant. At least one permission is required. Each value
+             *     must be a valid permission identifier (e.g. `PROJECT_READ`, `DATASET_CREATE`).
+             * @example [
+             *       "PROJECT_READ",
+             *       "DATASET_READ",
+             *       "DATASET_CREATE",
+             *       "EXPERIMENT_READ",
+             *       "EXPERIMENT_CREATE"
+             *     ]
+             */
+            permissions: string[];
+        };
+        RoleUpdate: {
+            /** @description Updated name for the role. Must be unique within the account. */
+            name?: string;
+            /** @description Updated description of the role. */
+            description?: string;
+            /**
+             * @description Replacement set of permissions. When provided, the existing permissions are
+             *     fully replaced. Each value must be a valid permission identifier.
+             */
+            permissions?: string[];
+        };
         AnnotationConfig: components["schemas"]["ContinuousAnnotationConfig"] | components["schemas"]["CategoricalAnnotationConfig"] | components["schemas"]["FreeformAnnotationConfig"];
         AnnotationQueue: {
             /**
@@ -646,6 +1675,8 @@ export interface components {
             instructions?: string | null;
             /** @description The annotation configs associated with this queue */
             annotation_configs?: components["schemas"]["AnnotationConfig"][];
+            /** @description Users assigned as annotators to this queue */
+            annotators: components["schemas"]["AnnotatorUser"][];
             /**
              * Format: date-time
              * @description The timestamp for when the annotation queue was created
@@ -658,6 +1689,152 @@ export interface components {
              * @example 2024-01-20T14:45:00Z
              */
             updated_at: string;
+        };
+        /** @description A user assigned to a record with their completion status */
+        AnnotationQueueAssignedUser: {
+            user: components["schemas"]["AnnotatorUser"];
+            /**
+             * @description The completion status for this user on this record
+             * @enum {string}
+             */
+            completion_status: "pending" | "completed";
+        };
+        /** @description A record in an annotation queue with its data */
+        AnnotationQueueRecord: {
+            /** @description The unique identifier for the record */
+            id: string;
+            /** @description The annotation queue this record belongs to */
+            annotation_queue_id: string;
+            /**
+             * @description The source type of the record (spans or dataset)
+             * @enum {string}
+             */
+            source_type: "spans" | "dataset";
+            /** @description Record data as flat key-value pairs containing span or dataset fields. Does not include annotation or evaluation columns. */
+            data: {
+                [key: string]: unknown;
+            };
+            /** @description Human annotations on this record */
+            annotations: components["schemas"]["Annotation"][];
+            /** @description Evaluation results on this record */
+            evaluations: components["schemas"]["Evaluation"][];
+            /** @description Users assigned to this record */
+            assigned_users: components["schemas"]["AnnotationQueueAssignedUser"][];
+        };
+        UpdateAnnotationQueueRequestBody: {
+            /**
+             * @description The name of the annotation queue. Must be unique within the space.
+             * @example Updated Queue Name
+             */
+            name?: string;
+            /**
+             * @description The instructions for annotators working on this queue.
+             *     Send an empty string to clear the instructions.
+             * @example Review each response for accuracy and helpfulness
+             */
+            instructions?: string;
+            /**
+             * @description The full list of annotation config IDs to associate with this queue.
+             *     This replaces all existing annotation config associations.
+             *     All annotation configs must belong to the same space as the queue.
+             * @example [
+             *       "ac_abc123",
+             *       "ac_def456"
+             *     ]
+             */
+            annotation_config_ids?: string[];
+            /**
+             * @description The full list of user emails to assign to this queue.
+             *     This replaces all existing user assignments.
+             *     All users must have an active account and access to the queue's space.
+             * @example [
+             *       "reviewer@example.com",
+             *       "annotator@example.com"
+             *     ]
+             */
+            annotator_emails?: string[];
+        };
+        CreateAnnotationQueueRequestBody: {
+            /**
+             * @description The name of the annotation queue. Must be unique within the space for active queues.
+             * @example Quality Review Queue
+             */
+            name: string;
+            /**
+             * @description The space ID that the annotation queue belongs to
+             * @example spc_xyz789
+             */
+            space_id: string;
+            /**
+             * @description Instructions for annotators working on this queue
+             * @example Review each response for accuracy and helpfulness
+             */
+            instructions?: string;
+            /**
+             * @description IDs of annotation configs to associate with this queue. All configs must belong to the same space.
+             * @example [
+             *       "ac_abc123",
+             *       "ac_def456"
+             *     ]
+             */
+            annotation_config_ids: string[];
+            /**
+             * @description Email addresses of annotators to assign to the queue. Emails are resolved to user IDs server-side.
+             * @example [
+             *       "annotator1@example.com",
+             *       "annotator2@example.com"
+             *     ]
+             */
+            annotator_emails: string[];
+            /**
+             * @description How records are assigned to annotators. Defaults to "all".
+             *     - `all`: Every annotator is assigned to every record.
+             *     - `random`: Each record is randomly assigned to one annotator.
+             * @default all
+             * @enum {string}
+             */
+            assignment_method?: "all" | "random";
+            /** @description Record sources to add to the annotation queue on creation. At most 2 record sources (projects or datasets) may be provided in a single create request. Additional records from other sources can be added after creation. */
+            record_sources?: components["schemas"]["AnnotationQueueRecordInput"][];
+        };
+        AnnotationQueueRecordInput: components["schemas"]["AnnotationQueueExampleRecordInput"] | components["schemas"]["AnnotationQueueSpanRecordInput"];
+        AnnotationQueueExampleRecordInput: {
+            /**
+             * @description The type of record (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            record_type: "example";
+            /** @description The dataset ID these examples belong to */
+            dataset_id: string;
+            /** @description Optional. The specific dataset version to use. If omitted, the latest version is used. */
+            dataset_version_id?: string;
+            /** @description Optional. List of example IDs within the dataset to add to the queue. If omitted, all examples in the dataset (or dataset version) are added. */
+            example_ids?: string[];
+        };
+        AnnotationQueueSpanRecordInput: {
+            /**
+             * @description The type of record (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            record_type: "span";
+            /** @description The project ID these spans belong to */
+            project_id: string;
+            /**
+             * Format: date-time
+             * @description Start of the time range to search for spans in Druid. The range (end_time - start_time) must not exceed 7 days.
+             */
+            start_time: string;
+            /**
+             * Format: date-time
+             * @description End of the time range. Must be after start_time.
+             */
+            end_time: string;
+            /** @description List of span IDs to add to the queue */
+            span_ids: string[];
+        };
+        AddAnnotationQueueRecordsRequestBody: {
+            /** @description Record sources to add to the annotation queue. At most 2 record sources (projects or datasets) may be provided in a single request. */
+            record_sources: components["schemas"]["AnnotationQueueRecordInput"][];
         };
         /**
          * @description A project represents an LLM application and serves as the primary container for observability data. Each project collects traces and spans that capture the execution flow of your application, enabling you to debug issues, monitor latency, and analyze token usage.
@@ -767,8 +1944,39 @@ export interface components {
             updated_at: string;
             /** @description The user ID of the user who created the prompt */
             created_by_user_id: string;
-            /** @description The tags associated with the prompt */
-            tags?: string[];
+        };
+        /**
+         * @description A prompt version represents a specific snapshot of a prompt's configuration.
+         *     Each version captures the messages, model settings, and parameters at a point
+         *     in time. Versions are immutable once created and are identified by a commit hash.
+         */
+        PromptVersion: {
+            /** @description The prompt version ID */
+            id: string;
+            /** @description The prompt ID this version belongs to */
+            prompt_id: string;
+            /** @description The commit hash of this version */
+            commit_hash: string;
+            /** @description The commit message describing the changes in this version */
+            commit_message: string;
+            /** @description The messages that make up the prompt template */
+            messages: components["schemas"]["LLMMessage"][];
+            input_variable_format: components["schemas"]["InputVariableFormat"];
+            provider: components["schemas"]["LlmProvider"];
+            /** @description The model to use for the call */
+            model: string;
+            invocation_params?: components["schemas"]["InvocationParams"];
+            provider_params?: components["schemas"]["ProviderParams"];
+            tool_config?: components["schemas"]["ToolConfig"];
+            /**
+             * Format: date-time
+             * @description When the version was created
+             */
+            created_at: string;
+            /** @description The user ID of the user who created this version */
+            created_by_user_id: string;
+            /** @description Label names currently pointing to this version (e.g., "production", "staging") */
+            labels?: string[];
         };
         /**
          * @description The format for input variables in the prompt messages. There is no default; this field is required.
@@ -892,6 +2100,49 @@ export interface components {
             region?: string;
         };
         /**
+         * @description A prompt with a resolved version. Returned by Create Prompt and Get Prompt.
+         *     The version is the initial version on create, or the resolved version
+         *     (latest, by ID, or by label) on get.
+         */
+        PromptWithVersion: {
+            /** @description The prompt ID */
+            id: string;
+            /** @description The prompt name */
+            name: string;
+            /** @description The prompt description */
+            description?: string | null;
+            /** @description The space ID the prompt belongs to */
+            space_id: string;
+            /**
+             * Format: date-time
+             * @description When the prompt was created
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description When the prompt was last updated
+             */
+            updated_at: string;
+            /** @description The user ID of the user who created the prompt */
+            created_by_user_id: string;
+            version: components["schemas"]["PromptVersion"];
+        };
+        /** @description Initial version configuration for a new prompt */
+        PromptVersionCreateRequest: {
+            /** @description Commit message describing this version */
+            commit_message: string;
+            input_variable_format: components["schemas"]["InputVariableFormat"];
+            provider: components["schemas"]["LlmProvider"];
+            /** @description The model to use for the call. Optional. If omitted, no default model is set on the prompt version. */
+            model?: string;
+            /** @description The messages that make up the prompt template */
+            messages: components["schemas"]["LLMMessage"][];
+            /** @description Parameters for the LLM invocation. Optional. Defaults to empty (no invocation parameters). */
+            invocation_params?: components["schemas"]["InvocationParams"];
+            /** @description Provider-specific parameters. Optional. Defaults to empty (no provider-specific parameters). */
+            provider_params?: components["schemas"]["ProviderParams"];
+        };
+        /**
          * @description A space is a container within an organization for grouping related projects,
          *     datasets, and experiments. Spaces enable team collaboration or isolated
          *     experimentation with role-based access control.
@@ -908,11 +2159,6 @@ export interface components {
              * @description Timestamp for when the space was created
              */
             created_at: string;
-            /**
-             * Format: date-time
-             * @description Timestamp for the last update of the space
-             */
-            updated_at: string;
         };
         /**
          * @description A dataset is a structured collection of examples used to test and evaluate
@@ -997,6 +2243,102 @@ export interface components {
             experiment_traces_project_id?: string;
         };
         /**
+         * @description An evaluator defines reusable evaluation logic that can be attached to
+         *     evaluation tasks. The type field determines the kind of evaluation:
+         *     template (LLM-based template evaluation) or code (custom code evaluation).
+         */
+        Evaluator: {
+            /** @description The unique identifier for the evaluator */
+            id: string;
+            /** @description The name of the evaluator */
+            name: string;
+            /** @description The description of the evaluator */
+            description?: string | null;
+            /**
+             * @description The evaluator type: template (LLM-based) or code (custom code)
+             * @enum {string}
+             */
+            type: "template" | "code";
+            /** @description The unique identifier for the space the evaluator belongs to */
+            space_id: string;
+            /**
+             * Format: date-time
+             * @description When the evaluator was created
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description When the evaluator was last updated
+             */
+            updated_at: string;
+            /** @description The unique identifier for the user who created the evaluator */
+            created_by_user_id: string | null;
+        };
+        EvaluatorWithVersion: components["schemas"]["Evaluator"] & {
+            /** @description The resolved version of the evaluator */
+            version: components["schemas"]["EvaluatorVersion"];
+        };
+        /** @description A versioned snapshot of an evaluator's configuration. */
+        EvaluatorVersion: {
+            /** @description The unique identifier for this version */
+            id: string;
+            /** @description The parent evaluator ID */
+            evaluator_id: string;
+            /** @description A unique hash identifying this version */
+            commit_hash: string;
+            /** @description A message describing the changes in this version */
+            commit_message: string | null;
+            /** @description The template configuration for this version */
+            template_config: components["schemas"]["TemplateConfig"];
+            /**
+             * Format: date-time
+             * @description When this version was created
+             */
+            created_at: string;
+            /** @description The unique identifier for the user who created this version */
+            created_by_user_id: string | null;
+        };
+        TemplateConfig: {
+            /** @description Eval column name. Must match ^[a-zA-Z0-9_\s\-&()]+$ */
+            name: string;
+            /** @description The prompt template with variable placeholders */
+            template: string;
+            /** @description Whether to include explanations in the evaluation output */
+            include_explanations: boolean;
+            /** @description Whether to use function calling if the model supports it */
+            use_function_calling_if_available: boolean;
+            /** @description Map of choice label to numeric score (e.g. {"relevant": 1, "irrelevant": 0}). When omitted, the evaluator produces freeform (non-classification) output. */
+            classification_choices?: {
+                [key: string]: number;
+            } | null;
+            /**
+             * @description Optimization direction for annotation scores. When omitted, no optimization preference is set.
+             * @enum {string|null}
+             */
+            direction?: "maximize" | "minimize" | null;
+            /**
+             * @description Data granularity level. Defaults to null when omitted.
+             * @enum {string|null}
+             */
+            data_granularity?: "span" | "trace" | "session" | null;
+            /** @description The LLM configuration for executing the template */
+            llm_config: components["schemas"]["EvaluatorLlmConfig"];
+        };
+        EvaluatorLlmConfig: {
+            /** @description AI integration global ID (base64) */
+            ai_integration_id: string;
+            /** @description Model name (e.g. gpt-4o) */
+            model_name: string;
+            /** @description Parameters for the LLM call (e.g. temperature, max_tokens) */
+            invocation_parameters: {
+                [key: string]: unknown;
+            };
+            /** @description Provider-specific parameters */
+            provider_parameters: {
+                [key: string]: unknown;
+            };
+        };
+        /**
          * @description Cursor-based pagination metadata. Use `next_cursor` in the subsequent
          *     request's `cursor` query parameter.
          */
@@ -1065,6 +2407,51 @@ export interface components {
             output: string;
         } & {
             [key: string]: unknown;
+        };
+        /** @description A human annotation on a record. */
+        Annotation: {
+            /** @description The name of the annotation */
+            name: string;
+            /**
+             * Format: double
+             * @description Numeric score for the annotation
+             */
+            score?: number;
+            /** @description Categorical label for the annotation */
+            label?: string;
+            /** @description Free-form text note for the annotation */
+            text?: string;
+            /**
+             * Format: date-time
+             * @description Timestamp when the annotation was last updated
+             */
+            updated_at?: string;
+            /** @description The user who made this annotation */
+            annotator?: components["schemas"]["AnnotatorUser"];
+        };
+        /** @description An evaluation result on a record. */
+        Evaluation: {
+            /** @description The name of the evaluation */
+            name: string;
+            /**
+             * Format: double
+             * @description Numeric score for the evaluation
+             */
+            score?: number;
+            /** @description Categorical label for the evaluation */
+            label?: string;
+            /** @description Explanation for the evaluation result */
+            explanation?: string;
+        };
+        /** @description A reference to a user by their ID and optionally their email address. */
+        User: {
+            /** @description The unique identifier for the user */
+            id: string;
+            /**
+             * Format: email
+             * @description The email address of the user
+             */
+            email?: string;
         };
         /** @description RFC 9457 Problem Details */
         Problem: {
@@ -1231,8 +2618,288 @@ export interface components {
             annotation_config_type: "freeform";
         };
         CreateAnnotationConfigRequestBody: components["schemas"]["ContinuousAnnotationConfigCreate"] | components["schemas"]["CategoricalAnnotationConfigCreate"] | components["schemas"]["FreeformAnnotationConfigCreate"];
+        /** @description A user assigned as an annotator, identified by ID and email. */
+        AnnotatorUser: {
+            /** @description The unique identifier for the user */
+            id: string;
+            /**
+             * Format: email
+             * @description The email address of the user
+             */
+            email: string;
+        };
+        ApiKeyRefresh: {
+            /**
+             * Format: date-time
+             * @description Expiration timestamp for the refreshed key. If omitted, the refreshed key
+             *     has no expiration (infinite lifetime).
+             * @example 2027-01-01T00:00:00Z
+             */
+            expires_at?: string;
+        };
     };
     responses: {
+        /** @description An AI integration object */
+        AiIntegration: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "TGxtSW50ZWdyYXRpb246MTI6YUJjRA==",
+                 *       "name": "My OpenAI Integration",
+                 *       "provider": "openAI",
+                 *       "has_api_key": true,
+                 *       "model_names": [
+                 *         "gpt-4",
+                 *         "gpt-4o"
+                 *       ],
+                 *       "enable_default_models": true,
+                 *       "function_calling_enabled": true,
+                 *       "auth_type": "default",
+                 *       "scopings": [
+                 *         {}
+                 *       ],
+                 *       "created_at": "2026-02-13T21:27:19.055Z",
+                 *       "updated_at": "2026-02-13T21:27:19.279Z",
+                 *       "created_by_user_id": "VXNlcjoxOm5OYkM="
+                 *     }
+                 */
+                "application/json": components["schemas"]["AiIntegration"];
+            };
+        };
+        /** @description Returns a list of AI integration objects */
+        AiIntegrationList: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "ai_integrations": [
+                 *         {
+                 *           "id": "TGxtSW50ZWdyYXRpb246MTI6YUJjRA==",
+                 *           "name": "My OpenAI Integration",
+                 *           "provider": "openAI",
+                 *           "has_api_key": true,
+                 *           "model_names": [
+                 *             "gpt-4",
+                 *             "gpt-4o"
+                 *           ],
+                 *           "enable_default_models": true,
+                 *           "function_calling_enabled": true,
+                 *           "auth_type": "default",
+                 *           "scopings": [
+                 *             {}
+                 *           ],
+                 *           "created_at": "2026-02-13T21:27:19.055Z",
+                 *           "updated_at": "2026-02-13T21:27:19.279Z",
+                 *           "created_by_user_id": "VXNlcjoxOm5OYkM="
+                 *         }
+                 *       ],
+                 *       "pagination": {
+                 *         "has_more": false
+                 *       }
+                 *     }
+                 */
+                "application/json": {
+                    /** @description A list of AI integrations */
+                    ai_integrations: components["schemas"]["AiIntegration"][];
+                    /** @description Pagination metadata for cursor-based navigation */
+                    pagination: components["schemas"]["PaginationMetadata"];
+                };
+            };
+        };
+        /** @description AI integration successfully deleted */
+        AiIntegrationDeleted: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
+        /** @description Returns a list of API keys for the authenticated user. The raw key secret is never returned. */
+        ApiKeyList: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "api_keys": [
+                 *         {
+                 *           "id": "QXBp1001",
+                 *           "name": "My API Key",
+                 *           "description": "My API Key description",
+                 *           "key_type": "user",
+                 *           "status": "active",
+                 *           "redacted_key": "ak-xxx...yyy",
+                 *           "created_by_user_id": "Usr1001",
+                 *           "created_at": "2024-01-15T10:30:00Z",
+                 *           "expires_at": "2025-01-15T10:30:00Z"
+                 *         },
+                 *         {
+                 *           "id": "QXBp1002",
+                 *           "name": "My API Key 2",
+                 *           "description": "My API Key 2 description",
+                 *           "key_type": "service",
+                 *           "status": "active",
+                 *           "redacted_key": "ak-aaa...bbb",
+                 *           "created_by_user_id": "Usr1001",
+                 *           "created_at": "2024-01-10T08:00:00Z",
+                 *           "expires_at": "2025-01-10T08:00:00Z"
+                 *         }
+                 *       ],
+                 *       "pagination": {
+                 *         "next_cursor": "cursor_12345",
+                 *         "has_more": true
+                 *       }
+                 *     }
+                 */
+                "application/json": {
+                    /** @description API keys owned by the authenticated user. */
+                    api_keys: components["schemas"]["ApiKey"][];
+                    /** @description Pagination metadata for cursor-based navigation. */
+                    pagination: components["schemas"]["PaginationMetadata"];
+                };
+            };
+        };
+        /** @description API key successfully deleted */
+        ApiKeyDeleted: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
+        /** @description API key successfully created or refreshed. The raw key is only returned once. */
+        ApiKeyCreated: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "QXBp1001",
+                 *       "name": "CI pipeline key",
+                 *       "key_type": "user",
+                 *       "status": "active",
+                 *       "key": "ak-abc123def456ghi789jkl012mno345pqr678stu901vwx234yz",
+                 *       "redacted_key": "ak-abc...xyz",
+                 *       "created_by_user_id": "Usr1001",
+                 *       "created_at": "2024-01-15T10:30:00Z",
+                 *       "expires_at": "2025-01-15T10:30:00Z"
+                 *     }
+                 */
+                "application/json": components["schemas"]["ApiKeyCreated"];
+            };
+        };
+        /** @description A role object. */
+        RoleResponse: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "Rol001",
+                 *       "name": "Data Scientist",
+                 *       "description": "Can read and create datasets and experiments.",
+                 *       "permissions": [
+                 *         "PROJECT_READ",
+                 *         "DATASET_READ",
+                 *         "DATASET_CREATE",
+                 *         "EXPERIMENT_READ",
+                 *         "EXPERIMENT_CREATE"
+                 *       ],
+                 *       "is_predefined": false,
+                 *       "created_at": "2024-06-01T10:00:00Z",
+                 *       "updated_at": "2024-06-01T10:00:00Z"
+                 *     }
+                 */
+                "application/json": components["schemas"]["Role"];
+            };
+        };
+        /** @description Returns a list of role objects. */
+        RoleList: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "roles": [
+                 *         {
+                 *           "id": "Rol001",
+                 *           "name": "Data Scientist",
+                 *           "description": "Can read and create datasets and experiments.",
+                 *           "permissions": [
+                 *             "PROJECT_READ",
+                 *             "DATASET_READ",
+                 *             "DATASET_CREATE"
+                 *           ],
+                 *           "is_predefined": false,
+                 *           "created_at": "2024-06-01T10:00:00Z",
+                 *           "updated_at": "2024-06-01T10:00:00Z"
+                 *         },
+                 *         {
+                 *           "id": "Rol002",
+                 *           "name": "Annotator",
+                 *           "description": "Can access annotation queues.",
+                 *           "permissions": [
+                 *             "QUEUE_READ",
+                 *             "QUEUE_RECORD_READ",
+                 *             "QUEUE_RECORD_ANNOTATE"
+                 *           ],
+                 *           "is_predefined": true,
+                 *           "created_at": "2024-01-01T00:00:00Z",
+                 *           "updated_at": "2024-01-01T00:00:00Z"
+                 *         }
+                 *       ],
+                 *       "pagination": {
+                 *         "next_cursor": "cursor_12345",
+                 *         "has_more": true
+                 *       }
+                 *     }
+                 */
+                "application/json": {
+                    /** @description A list of roles. */
+                    roles: components["schemas"]["Role"][];
+                    /** @description Pagination metadata for cursor-based navigation. */
+                    pagination: components["schemas"]["PaginationMetadata"];
+                };
+            };
+        };
+        /** @description Role successfully created. */
+        RoleCreated: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "Rol001",
+                 *       "name": "Data Scientist",
+                 *       "description": "Can read and create datasets and experiments.",
+                 *       "permissions": [
+                 *         "PROJECT_READ",
+                 *         "DATASET_READ",
+                 *         "DATASET_CREATE"
+                 *       ],
+                 *       "is_predefined": false,
+                 *       "created_at": "2024-06-01T10:00:00Z",
+                 *       "updated_at": "2024-06-01T10:00:00Z"
+                 *     }
+                 */
+                "application/json": components["schemas"]["Role"];
+            };
+        };
+        /** @description Role successfully deleted. */
+        RoleDeleted: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
         /** @description An annotation config object */
         AnnotationConfig: {
             headers: {
@@ -1262,6 +2929,132 @@ export interface components {
             };
             content?: never;
         };
+        /** @description Returns the created annotation queue */
+        AnnotationQueueCreate: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "aq_abc123",
+                 *       "name": "Quality Review Queue",
+                 *       "space_id": "spc_xyz789",
+                 *       "instructions": "Review each response for accuracy and helpfulness",
+                 *       "annotation_configs": [
+                 *         {
+                 *           "id": "ac_001",
+                 *           "name": "accuracy",
+                 *           "type": "continuous",
+                 *           "space_id": "spc_xyz789",
+                 *           "minimum_score": 0,
+                 *           "maximum_score": 10,
+                 *           "optimization_direction": "maximize",
+                 *           "created_at": "2024-01-10T08:00:00Z"
+                 *         },
+                 *         {
+                 *           "id": "ac_002",
+                 *           "name": "sentiment",
+                 *           "type": "categorical",
+                 *           "space_id": "spc_xyz789",
+                 *           "values": [
+                 *             {
+                 *               "label": "positive",
+                 *               "score": 1
+                 *             },
+                 *             {
+                 *               "label": "neutral",
+                 *               "score": 0
+                 *             },
+                 *             {
+                 *               "label": "negative",
+                 *               "score": -1
+                 *             }
+                 *           ],
+                 *           "optimization_direction": "maximize",
+                 *           "created_at": "2024-01-10T08:00:00Z"
+                 *         }
+                 *       ],
+                 *       "annotators": [
+                 *         {
+                 *           "id": "usr_001",
+                 *           "email": "reviewer@example.com"
+                 *         },
+                 *         {
+                 *           "id": "usr_002",
+                 *           "email": "annotator@example.com"
+                 *         }
+                 *       ],
+                 *       "created_at": "2024-01-15T10:30:00Z",
+                 *       "updated_at": "2024-01-15T10:30:00Z"
+                 *     }
+                 */
+                "application/json": components["schemas"]["AnnotationQueue"];
+            };
+        };
+        /** @description An annotation queue object */
+        AnnotationQueue: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "aq_abc123",
+                 *       "name": "Quality Review Queue",
+                 *       "space_id": "spc_xyz789",
+                 *       "instructions": "Review each response for accuracy and helpfulness",
+                 *       "annotation_configs": [
+                 *         {
+                 *           "id": "ac_001",
+                 *           "name": "accuracy",
+                 *           "type": "continuous",
+                 *           "space_id": "spc_xyz789",
+                 *           "minimum_score": 0,
+                 *           "maximum_score": 10,
+                 *           "optimization_direction": "maximize",
+                 *           "created_at": "2024-01-10T08:00:00Z"
+                 *         },
+                 *         {
+                 *           "id": "ac_002",
+                 *           "name": "sentiment",
+                 *           "type": "categorical",
+                 *           "space_id": "spc_xyz789",
+                 *           "values": [
+                 *             {
+                 *               "label": "positive",
+                 *               "score": 1
+                 *             },
+                 *             {
+                 *               "label": "neutral",
+                 *               "score": 0
+                 *             },
+                 *             {
+                 *               "label": "negative",
+                 *               "score": -1
+                 *             }
+                 *           ],
+                 *           "optimization_direction": "maximize",
+                 *           "created_at": "2024-01-10T08:00:00Z"
+                 *         }
+                 *       ],
+                 *       "annotators": [
+                 *         {
+                 *           "id": "usr_001",
+                 *           "email": "reviewer@example.com"
+                 *         },
+                 *         {
+                 *           "id": "usr_002",
+                 *           "email": "annotator@example.com"
+                 *         }
+                 *       ],
+                 *       "created_at": "2024-01-15T10:30:00Z",
+                 *       "updated_at": "2024-01-20T14:45:00Z"
+                 *     }
+                 */
+                "application/json": components["schemas"]["AnnotationQueue"];
+            };
+        };
         /** @description Returns a list of annotation queue objects */
         AnnotationQueueList: {
             headers: {
@@ -1276,6 +3069,24 @@ export interface components {
                  *           "name": "Quality Review Queue",
                  *           "space_id": "spc_xyz789",
                  *           "instructions": "Review each response for accuracy and helpfulness",
+                 *           "annotation_configs": [
+                 *             {
+                 *               "id": "ac_001",
+                 *               "name": "accuracy",
+                 *               "type": "continuous",
+                 *               "space_id": "spc_xyz789",
+                 *               "minimum_score": 0,
+                 *               "maximum_score": 10,
+                 *               "optimization_direction": "maximize",
+                 *               "created_at": "2024-01-10T08:00:00Z"
+                 *             }
+                 *           ],
+                 *           "annotators": [
+                 *             {
+                 *               "id": "usr_001",
+                 *               "email": "reviewer@example.com"
+                 *             }
+                 *           ],
                  *           "created_at": "2024-01-15T10:30:00Z",
                  *           "updated_at": "2024-01-20T14:45:00Z"
                  *         },
@@ -1284,6 +3095,8 @@ export interface components {
                  *           "name": "Safety Evaluation Queue",
                  *           "space_id": "spc_xyz789",
                  *           "instructions": null,
+                 *           "annotation_configs": [],
+                 *           "annotators": [],
                  *           "created_at": "2024-01-10T08:00:00Z",
                  *           "updated_at": "2024-01-10T08:00:00Z"
                  *         }
@@ -1298,6 +3111,165 @@ export interface components {
                     /** @description A list of annotation queues */
                     annotation_queues: components["schemas"]["AnnotationQueue"][];
                     /** @description Pagination metadata for cursor-based navigation */
+                    pagination: components["schemas"]["PaginationMetadata"];
+                };
+            };
+        };
+        /** @description Annotation queue successfully updated */
+        AnnotationQueueUpdated: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "aq_abc123",
+                 *       "name": "Updated Queue Name",
+                 *       "space_id": "spc_xyz789",
+                 *       "instructions": "Review each response for accuracy and helpfulness",
+                 *       "annotation_configs": [],
+                 *       "annotators": [
+                 *         {
+                 *           "id": "usr_001",
+                 *           "email": "reviewer@example.com"
+                 *         },
+                 *         {
+                 *           "id": "usr_002",
+                 *           "email": "annotator@example.com"
+                 *         }
+                 *       ],
+                 *       "created_at": "2024-01-15T10:30:00Z",
+                 *       "updated_at": "2024-01-20T14:45:00Z"
+                 *     }
+                 */
+                "application/json": components["schemas"]["AnnotationQueue"];
+            };
+        };
+        /** @description Annotation queue successfully deleted */
+        AnnotationQueueDeleted: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
+        /** @description Returns the created annotation queue records */
+        AnnotationQueueRecordCreate: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "record_sources": [
+                 *         {
+                 *           "id": "aqr_001",
+                 *           "annotation_queue_id": "aq_abc123",
+                 *           "source_type": "spans",
+                 *           "data": {
+                 *             "input": "What is the capital of France?",
+                 *             "output": "Paris"
+                 *           },
+                 *           "annotations": [],
+                 *           "evaluations": [],
+                 *           "assigned_users": [
+                 *             {
+                 *               "user": {
+                 *                 "id": "usr_123",
+                 *                 "email": "reviewer@example.com"
+                 *               },
+                 *               "completion_status": "incomplete"
+                 *             }
+                 *           ]
+                 *         },
+                 *         {
+                 *           "id": "aqr_002",
+                 *           "annotation_queue_id": "aq_abc123",
+                 *           "source_type": "dataset",
+                 *           "data": {
+                 *             "input": "Summarize this article in one sentence.",
+                 *             "output": "The article discusses climate change impacts."
+                 *           },
+                 *           "annotations": [],
+                 *           "evaluations": [],
+                 *           "assigned_users": [
+                 *             {
+                 *               "user": {
+                 *                 "id": "usr_123",
+                 *                 "email": "reviewer@example.com"
+                 *               },
+                 *               "completion_status": "incomplete"
+                 *             }
+                 *           ]
+                 *         }
+                 *       ]
+                 *     }
+                 */
+                "application/json": {
+                    /** @description The created annotation queue records */
+                    record_sources: components["schemas"]["AnnotationQueueRecord"][];
+                };
+            };
+        };
+        /** @description Returns a list of annotation queue record objects */
+        AnnotationQueueRecordList: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "records": [
+                 *         {
+                 *           "id": "aqr_001",
+                 *           "annotation_queue_id": "aq_abc123",
+                 *           "source_type": "spans",
+                 *           "data": {
+                 *             "input": "What is the capital of France?",
+                 *             "output": "Paris"
+                 *           },
+                 *           "annotations": [
+                 *             {
+                 *               "name": "accuracy",
+                 *               "label": "correct",
+                 *               "score": 1,
+                 *               "annotator": {
+                 *                 "id": "usr_123"
+                 *               }
+                 *             },
+                 *             {
+                 *               "name": "quality",
+                 *               "label": "good"
+                 *             }
+                 *           ],
+                 *           "evaluations": [
+                 *             {
+                 *               "name": "relevance",
+                 *               "label": "relevant",
+                 *               "score": 0.95,
+                 *               "explanation": "The response directly answers the question"
+                 *             }
+                 *           ],
+                 *           "assigned_users": [
+                 *             {
+                 *               "user": {
+                 *                 "id": "usr_123",
+                 *                 "email": "reviewer@example.com"
+                 *               },
+                 *               "completion_status": "completed"
+                 *             }
+                 *           ]
+                 *         }
+                 *       ],
+                 *       "pagination": {
+                 *         "has_more": false,
+                 *         "next_cursor": null
+                 *       }
+                 *     }
+                 */
+                "application/json": {
+                    /** @description A list of annotation queue records */
+                    records: components["schemas"]["AnnotationQueueRecord"][];
+                    /** @description Pagination metadata */
                     pagination: components["schemas"]["PaginationMetadata"];
                 };
             };
@@ -1550,6 +3522,294 @@ export interface components {
                 };
             };
         };
+        /** @description Returns a list of evaluator objects */
+        EvaluatorList: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "evaluators": [
+                 *         {
+                 *           "id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
+                 *           "name": "Hallucination Eval",
+                 *           "description": "Detects hallucinated content in LLM responses",
+                 *           "type": "template",
+                 *           "space_id": "U3BhY2U6NDkzOkJaSkc=",
+                 *           "created_at": "2026-02-13T21:27:19.055Z",
+                 *           "updated_at": "2026-02-13T21:27:19.279Z",
+                 *           "created_by_user_id": "VXNlcjoxOm5OYkM="
+                 *         }
+                 *       ],
+                 *       "pagination": {
+                 *         "has_more": false
+                 *       }
+                 *     }
+                 */
+                "application/json": {
+                    /** @description A list of evaluators */
+                    evaluators: components["schemas"]["Evaluator"][];
+                    /** @description Pagination metadata for cursor-based navigation */
+                    pagination: components["schemas"]["PaginationMetadata"];
+                };
+            };
+        };
+        /** @description Returns an evaluator with a resolved version */
+        EvaluatorWithVersion: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
+                 *       "name": "Hallucination Eval",
+                 *       "description": "Detects hallucinated content in LLM responses",
+                 *       "type": "template",
+                 *       "space_id": "U3BhY2U6NDkzOkJaSkc=",
+                 *       "created_at": "2026-02-16T22:05:47.900Z",
+                 *       "updated_at": "2026-02-16T22:05:48.150Z",
+                 *       "created_by_user_id": "VXNlcjoxOm5OYkM=",
+                 *       "version": {
+                 *         "id": "RXZhbHVhdG9yVmVyc2lvbjoxMDpYeVp3",
+                 *         "evaluator_id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
+                 *         "commit_hash": "a3b1c9e4f7d2a0518e6c3bb9217f87d1c4e810f2",
+                 *         "commit_message": "Initial version",
+                 *         "template_config": {
+                 *           "name": "hallucination",
+                 *           "template": "You are an evaluation assistant...",
+                 *           "include_explanations": true,
+                 *           "use_function_calling_if_available": true,
+                 *           "classification_choices": {
+                 *             "hallucinated": 0,
+                 *             "factual": 1
+                 *           },
+                 *           "direction": "maximize",
+                 *           "data_granularity": "span",
+                 *           "llm_config": {
+                 *             "ai_integration_id": "TGxtSW50ZWdyYXRpb246MTI6YUJjRA==",
+                 *             "model_name": "gpt-4o",
+                 *             "invocation_parameters": {
+                 *               "temperature": 0
+                 *             },
+                 *             "provider_parameters": {}
+                 *           }
+                 *         },
+                 *         "created_at": "2026-02-16T22:05:48.143Z",
+                 *         "created_by_user_id": "VXNlcjoxOm5OYkM="
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["EvaluatorWithVersion"];
+            };
+        };
+        /** @description Returns the created evaluator with its initial version */
+        EvaluatorWithVersionCreated: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
+                 *       "name": "Hallucination Eval",
+                 *       "description": "Detects hallucinated content in LLM responses",
+                 *       "type": "template",
+                 *       "space_id": "U3BhY2U6NDkzOkJaSkc=",
+                 *       "created_at": "2026-02-16T22:05:47.900Z",
+                 *       "updated_at": "2026-02-16T22:05:48.150Z",
+                 *       "created_by_user_id": "VXNlcjoxOm5OYkM=",
+                 *       "version": {
+                 *         "id": "RXZhbHVhdG9yVmVyc2lvbjoxMDpYeVp3",
+                 *         "evaluator_id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
+                 *         "commit_hash": "a3b1c9e4f7d2a0518e6c3bb9217f87d1c4e810f2",
+                 *         "commit_message": "Initial version",
+                 *         "template_config": {
+                 *           "name": "hallucination",
+                 *           "template": "You are an evaluation assistant...",
+                 *           "include_explanations": true,
+                 *           "use_function_calling_if_available": true,
+                 *           "classification_choices": {
+                 *             "hallucinated": 0,
+                 *             "factual": 1
+                 *           },
+                 *           "direction": "maximize",
+                 *           "data_granularity": "span",
+                 *           "llm_config": {
+                 *             "ai_integration_id": "TGxtSW50ZWdyYXRpb246MTI6YUJjRA==",
+                 *             "model_name": "gpt-4o",
+                 *             "invocation_parameters": {
+                 *               "temperature": 0
+                 *             },
+                 *             "provider_parameters": {}
+                 *           }
+                 *         },
+                 *         "created_at": "2026-02-16T22:05:48.143Z",
+                 *         "created_by_user_id": "VXNlcjoxOm5OYkM="
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["EvaluatorWithVersion"];
+            };
+        };
+        /** @description Returns the updated evaluator */
+        EvaluatorUpdated: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
+                 *       "name": "Updated Evaluator Name",
+                 *       "description": "Updated description",
+                 *       "type": "template",
+                 *       "space_id": "U3BhY2U6NDkzOkJaSkc=",
+                 *       "created_at": "2026-02-16T22:05:47.900Z",
+                 *       "updated_at": "2026-02-17T10:30:00.000Z",
+                 *       "created_by_user_id": "VXNlcjoxOm5OYkM="
+                 *     }
+                 */
+                "application/json": components["schemas"]["Evaluator"];
+            };
+        };
+        /** @description Evaluator deleted successfully */
+        EvaluatorDeleted: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
+        /** @description Returns a list of evaluator version objects */
+        EvaluatorVersionList: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "evaluator_versions": [
+                 *         {
+                 *           "id": "RXZhbHVhdG9yVmVyc2lvbjoxMDpYeVp3",
+                 *           "evaluator_id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
+                 *           "commit_hash": "a3b1c9e4f7d2a0518e6c3bb9217f87d1c4e810f2",
+                 *           "commit_message": "Initial version",
+                 *           "template_config": {
+                 *             "name": "hallucination",
+                 *             "template": "You are an evaluation assistant...",
+                 *             "include_explanations": true,
+                 *             "use_function_calling_if_available": true,
+                 *             "classification_choices": {
+                 *               "hallucinated": 0,
+                 *               "factual": 1
+                 *             },
+                 *             "direction": "maximize",
+                 *             "data_granularity": "span",
+                 *             "llm_config": {
+                 *               "ai_integration_id": "TGxtSW50ZWdyYXRpb246MTI6YUJjRA==",
+                 *               "model_name": "gpt-4o",
+                 *               "invocation_parameters": {
+                 *                 "temperature": 0
+                 *               },
+                 *               "provider_parameters": {}
+                 *             }
+                 *           },
+                 *           "created_at": "2026-02-16T22:05:48.143Z",
+                 *           "created_by_user_id": "VXNlcjoxOm5OYkM="
+                 *         }
+                 *       ],
+                 *       "pagination": {
+                 *         "has_more": false
+                 *       }
+                 *     }
+                 */
+                "application/json": {
+                    /** @description A list of evaluator versions */
+                    evaluator_versions: components["schemas"]["EvaluatorVersion"][];
+                    /** @description Pagination metadata for cursor-based navigation */
+                    pagination: components["schemas"]["PaginationMetadata"];
+                };
+            };
+        };
+        /** @description Returns the created evaluator version */
+        EvaluatorVersionCreated: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "RXZhbHVhdG9yVmVyc2lvbjoxMTpBYkNk",
+                 *       "evaluator_id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
+                 *       "commit_hash": "b4c2d0e5f8a3b1629f7d4cc0328g98e2d5f921g3",
+                 *       "commit_message": "Improve template wording",
+                 *       "template_config": {
+                 *         "name": "hallucination",
+                 *         "template": "Evaluate whether the output is factually grounded...",
+                 *         "include_explanations": true,
+                 *         "use_function_calling_if_available": true,
+                 *         "classification_choices": {
+                 *           "hallucinated": 0,
+                 *           "factual": 1
+                 *         },
+                 *         "direction": "maximize",
+                 *         "data_granularity": "span",
+                 *         "llm_config": {
+                 *           "ai_integration_id": "TGxtSW50ZWdyYXRpb246MTI6YUJjRA==",
+                 *           "model_name": "gpt-4o",
+                 *           "invocation_parameters": {
+                 *             "temperature": 0
+                 *           },
+                 *           "provider_parameters": {}
+                 *         }
+                 *       },
+                 *       "created_at": "2026-02-17T10:30:00.000Z",
+                 *       "created_by_user_id": "VXNlcjoxOm5OYkM="
+                 *     }
+                 */
+                "application/json": components["schemas"]["EvaluatorVersion"];
+            };
+        };
+        /** @description Returns an evaluator version */
+        EvaluatorVersion: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "RXZhbHVhdG9yVmVyc2lvbjoxMDpYeVp3",
+                 *       "evaluator_id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
+                 *       "commit_hash": "a3b1c9e4f7d2a0518e6c3bb9217f87d1c4e810f2",
+                 *       "commit_message": "Initial version",
+                 *       "template_config": {
+                 *         "name": "hallucination",
+                 *         "template": "You are an evaluation assistant...",
+                 *         "include_explanations": true,
+                 *         "use_function_calling_if_available": true,
+                 *         "classification_choices": {
+                 *           "hallucinated": 0,
+                 *           "factual": 1
+                 *         },
+                 *         "direction": "maximize",
+                 *         "data_granularity": "span",
+                 *         "llm_config": {
+                 *           "ai_integration_id": "TGxtSW50ZWdyYXRpb246MTI6YUJjRA==",
+                 *           "model_name": "gpt-4o",
+                 *           "invocation_parameters": {
+                 *             "temperature": 0
+                 *           },
+                 *           "provider_parameters": {}
+                 *         }
+                 *       },
+                 *       "created_at": "2026-02-16T22:05:48.143Z",
+                 *       "created_by_user_id": "VXNlcjoxOm5OYkM="
+                 *     }
+                 */
+                "application/json": components["schemas"]["EvaluatorVersion"];
+            };
+        };
         /** @description A project object */
         Project: {
             headers: {
@@ -1611,11 +3871,7 @@ export interface components {
                  *       "space_id": "space_12345",
                  *       "created_at": "2024-01-01T12:00:00Z",
                  *       "updated_at": "2024-01-02T12:00:00Z",
-                 *       "created_by_user_id": "user_12345",
-                 *       "tags": [
-                 *         "customer-support",
-                 *         "help-desk"
-                 *       ]
+                 *       "created_by_user_id": "user_12345"
                  *     }
                  */
                 "application/json": components["schemas"]["Prompt"];
@@ -1637,11 +3893,7 @@ export interface components {
                  *           "space_id": "space_12345",
                  *           "created_at": "2024-01-01T12:00:00Z",
                  *           "updated_at": "2024-01-02T12:00:00Z",
-                 *           "created_by_user_id": "user_12345",
-                 *           "tags": [
-                 *             "customer-support",
-                 *             "help-desk"
-                 *           ]
+                 *           "created_by_user_id": "user_12345"
                  *         }
                  *       ],
                  *       "pagination": {
@@ -1672,6 +3924,189 @@ export interface components {
             };
             content?: never;
         };
+        /** @description A prompt version object */
+        PromptVersion: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "pv_001",
+                 *       "prompt_id": "prompt_001",
+                 *       "commit_hash": "abc123def456",
+                 *       "commit_message": "Updated system prompt",
+                 *       "messages": [
+                 *         {
+                 *           "role": "system",
+                 *           "content": "You are a helpful assistant."
+                 *         },
+                 *         {
+                 *           "role": "user",
+                 *           "content": "Hello, {name}!"
+                 *         }
+                 *       ],
+                 *       "input_variable_format": "f_string",
+                 *       "provider": "openAI",
+                 *       "model": "gpt-4",
+                 *       "invocation_params": {
+                 *         "temperature": 0.7,
+                 *         "max_tokens": 1000
+                 *       },
+                 *       "provider_params": {},
+                 *       "created_at": "2024-01-02T12:00:00Z",
+                 *       "created_by_user_id": "user_12345"
+                 *     }
+                 */
+                "application/json": components["schemas"]["PromptVersion"];
+            };
+        };
+        /** @description Returns a list of prompt version objects */
+        PromptVersionList: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "prompt_versions": [
+                 *         {
+                 *           "id": "pv_002",
+                 *           "prompt_id": "prompt_001",
+                 *           "commit_hash": "def789ghi012",
+                 *           "commit_message": "Updated system prompt",
+                 *           "messages": [
+                 *             {
+                 *               "role": "system",
+                 *               "content": "You are a helpful assistant."
+                 *             }
+                 *           ],
+                 *           "input_variable_format": "f_string",
+                 *           "provider": "openAI",
+                 *           "model": "gpt-4",
+                 *           "created_at": "2024-01-02T12:00:00Z",
+                 *           "created_by_user_id": "user_12345"
+                 *         },
+                 *         {
+                 *           "id": "pv_001",
+                 *           "prompt_id": "prompt_001",
+                 *           "commit_hash": "abc123def456",
+                 *           "commit_message": "Initial version",
+                 *           "messages": [
+                 *             {
+                 *               "role": "system",
+                 *               "content": "You are an assistant."
+                 *             }
+                 *           ],
+                 *           "input_variable_format": "f_string",
+                 *           "provider": "openAI",
+                 *           "model": "gpt-4",
+                 *           "created_at": "2024-01-01T12:00:00Z",
+                 *           "created_by_user_id": "user_12345"
+                 *         }
+                 *       ],
+                 *       "pagination": {
+                 *         "next_cursor": "cursor_12345",
+                 *         "has_more": true
+                 *       }
+                 *     }
+                 */
+                "application/json": {
+                    /** @description A list of prompt versions */
+                    prompt_versions: components["schemas"]["PromptVersion"][];
+                    /** @description Pagination metadata for cursor-based navigation */
+                    pagination: components["schemas"]["PaginationMetadata"];
+                };
+            };
+        };
+        /** @description A prompt object with a resolved version */
+        PromptWithVersion: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "prompt_001",
+                 *       "name": "My Prompt",
+                 *       "description": "A prompt for customer support",
+                 *       "space_id": "space_12345",
+                 *       "created_at": "2024-01-01T12:00:00Z",
+                 *       "updated_at": "2024-01-02T12:00:00Z",
+                 *       "created_by_user_id": "user_12345",
+                 *       "version": {
+                 *         "id": "pv_001",
+                 *         "prompt_id": "prompt_001",
+                 *         "commit_hash": "abc123def456",
+                 *         "commit_message": "Initial version",
+                 *         "messages": [
+                 *           {
+                 *             "role": "system",
+                 *             "content": "You are a helpful assistant."
+                 *           },
+                 *           {
+                 *             "role": "user",
+                 *             "content": "Hello, {name}!"
+                 *           }
+                 *         ],
+                 *         "input_variable_format": "f_string",
+                 *         "provider": "openAI",
+                 *         "model": "gpt-4",
+                 *         "invocation_params": {},
+                 *         "provider_params": {},
+                 *         "created_at": "2024-01-01T12:00:00Z",
+                 *         "created_by_user_id": "user_12345",
+                 *         "labels": []
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["PromptWithVersion"];
+            };
+        };
+        /** @description Returns the labels set on a prompt version */
+        PromptVersionLabelsSet: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "labels": [
+                 *         "production",
+                 *         "staging"
+                 *       ]
+                 *     }
+                 */
+                "application/json": {
+                    /** @description Label names on the version */
+                    labels: string[];
+                };
+            };
+        };
+        /** @description Label successfully removed from version */
+        PromptVersionLabelDeleted: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
+        /** @description A space object */
+        Space: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "spc_001",
+                 *       "name": "LLM Evaluation",
+                 *       "description": "Space for evaluating LLM performance",
+                 *       "created_at": "2024-01-01T12:00:00Z"
+                 *     }
+                 */
+                "application/json": components["schemas"]["Space"];
+            };
+        };
         /** @description Returns a list of space objects */
         SpaceList: {
             headers: {
@@ -1685,22 +4120,19 @@ export interface components {
                  *           "id": "spc_001",
                  *           "name": "LLM Evaluation",
                  *           "description": "Space for evaluating LLM performance",
-                 *           "created_at": "2024-01-01T12:00:00Z",
-                 *           "updated_at": "2024-01-01T12:00:00Z"
+                 *           "created_at": "2024-01-01T12:00:00Z"
                  *         },
                  *         {
                  *           "id": "spc_002",
                  *           "name": "Customer Support Bot",
                  *           "description": "Production chatbot monitoring",
-                 *           "created_at": "2024-01-02T12:00:00Z",
-                 *           "updated_at": "2024-01-02T12:00:00Z"
+                 *           "created_at": "2024-01-02T12:00:00Z"
                  *         },
                  *         {
                  *           "id": "spc_003",
                  *           "name": "RAG Pipeline",
                  *           "description": "Retrieval-augmented generation experiments",
-                 *           "created_at": "2024-01-03T12:00:00Z",
-                 *           "updated_at": "2024-01-03T12:00:00Z"
+                 *           "created_at": "2024-01-03T12:00:00Z"
                  *         }
                  *       ],
                  *       "pagination": {
@@ -1874,12 +4306,25 @@ export interface components {
         };
     };
     parameters: {
+        /**
+         * @description The unique identifier of the AI integration
+         * @example TGxtSW50ZWdyYXRpb246MTI6YUJjRA==
+         */
+        AiIntegrationIdPathParam: components["schemas"]["Id"];
         /** @description The unique identifier of the annotation config */
         AnnotationConfigIdPathParam: components["schemas"]["Id"];
+        /** @description The unique identifier of the annotation queue */
+        AnnotationQueueIdPathParam: components["schemas"]["Id"];
         /** @description The unique identifier of the dataset */
         DatasetIdPathParam: components["schemas"]["Id"];
         /** @description The unique identifier of the experiment */
         ExperimentIdPathParam: components["schemas"]["Id"];
+        /** @description The evaluator global ID (base64) */
+        EvaluatorIdPathParam: components["schemas"]["Id"];
+        /** @description The evaluator version global ID (base64) */
+        EvaluatorVersionIdPathParam: components["schemas"]["Id"];
+        /** @description Return the evaluator with this specific version (base64 global ID). If omitted, returns the latest version. */
+        EvaluatorVersionIdQueryParam: components["schemas"]["Id"];
         /**
          * @description The unique identifier of the project
          * @example project_12345
@@ -1890,6 +4335,28 @@ export interface components {
          * @example prompt_12345
          */
         PromptIdPathParam: components["schemas"]["Id"];
+        /**
+         * @description The unique identifier of the prompt version
+         * @example pv_12345
+         */
+        PromptVersionIdPathParam: components["schemas"]["Id"];
+        /** @description The name of the label (e.g., "production", "staging") */
+        LabelNamePathParam: string;
+        /**
+         * @description Return the prompt with this specific version. Mutually exclusive with `label`.
+         * @example pv_12345
+         */
+        VersionIdQueryParam: components["schemas"]["Id"];
+        /**
+         * @description Return the prompt with the version pointed to by this label (e.g., "production"). Mutually exclusive with `version_id`.
+         * @example production
+         */
+        LabelQueryParam: string;
+        /**
+         * @description The unique identifier of the space
+         * @example spc_12345
+         */
+        SpaceIdPathParam: components["schemas"]["Id"];
         /** @description The unique identifier of an organization. When provided, only spaces belonging to this organization are returned. */
         OrganizationIdQueryParam: components["schemas"]["Id"];
         /** @description Filter search results to a particular space ID */
@@ -1898,6 +4365,35 @@ export interface components {
         DatasetIdQueryParam: components["schemas"]["Id"];
         /** @description The unique identifier of the dataset version */
         DatasetVersionIdQueryParam: components["schemas"]["Id"];
+        /** @description The unique identifier of the API key */
+        ApiKeyIdPathParam: components["schemas"]["Id"];
+        /**
+         * @description Filter by API key type.
+         *     - user - Key associated with a specific user.
+         *     - service - Key associated with a bot user for service authentication.
+         */
+        ApiKeyTypeQueryParam: "user" | "service";
+        /**
+         * @description Filter by API key status.
+         *     - active - Only return keys that are valid for use.
+         *     - deleted - Only return keys that have been deleted.
+         *
+         *     When not specified, defaults to `active`.
+         */
+        ApiKeyStatusQueryParam: "active" | "deleted";
+        /**
+         * @description The unique identifier of the role.
+         * @example Rol001
+         */
+        RoleIdPathParam: components["schemas"]["Id"];
+        /**
+         * @description Filter roles by predefined status.
+         *     - `true` - Return only system-defined predefined roles.
+         *     - `false` - Return only custom (account-defined) roles.
+         *
+         *     When not specified, returns all roles (both predefined and custom).
+         */
+        RolesIsPredefinedQueryParam: boolean;
         /** @description Maximum items to return */
         LimitQueryParamMax100: number;
         /** @description Maximum items to return */
@@ -1908,8 +4404,169 @@ export interface components {
          *     attempt to parse or construct it.
          */
         CursorQueryParam: string;
+        /**
+         * @description Case-insensitive substring filter on the resource name. Returns only
+         *     resources whose name contains the given string. For example,
+         *     `name=prod` matches "production", "my-prod-dataset", etc.
+         *     When omitted, no name filter is applied and all resources are returned.
+         */
+        NameSearchQueryParam: string;
     };
     requestBodies: {
+        /** @description Body containing AI integration creation parameters */
+        CreateAiIntegrationRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "name": "Production OpenAI",
+                 *       "provider": "openAI",
+                 *       "api_key": "sk-abc123...",
+                 *       "model_names": [
+                 *         "gpt-4",
+                 *         "gpt-4o"
+                 *       ],
+                 *       "enable_default_models": true,
+                 *       "scopings": [
+                 *         {
+                 *           "organization_id": "QWNjb3VudE9yZzoxMjM6YWJj",
+                 *           "space_id": null
+                 *         }
+                 *       ]
+                 *     }
+                 */
+                "application/json": {
+                    /** @description Integration name */
+                    name: string;
+                    provider: components["schemas"]["AiIntegrationProvider"];
+                    /** @description API key for the provider (write-only, never returned) */
+                    api_key?: string;
+                    /** @description Custom base URL for the provider */
+                    base_url?: string;
+                    /** @description Supported model names */
+                    model_names?: string[];
+                    /** @description Custom headers to include in requests */
+                    headers?: {
+                        [key: string]: string;
+                    };
+                    /** @description Enable provider's default model list (default false) */
+                    enable_default_models?: boolean;
+                    /** @description Enable function/tool calling (default true) */
+                    function_calling_enabled?: boolean;
+                    auth_type?: components["schemas"]["AiIntegrationAuthType"];
+                    /** @description Provider-specific configuration (AWS or GCP metadata) */
+                    provider_metadata?: {
+                        [key: string]: unknown;
+                    };
+                    /** @description Visibility scoping rules. Defaults to account-wide. */
+                    scopings?: components["schemas"]["AiIntegrationScoping"][];
+                };
+            };
+        };
+        /** @description Body containing AI integration update parameters. At least one field must be provided. */
+        UpdateAiIntegrationRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "name": "Updated OpenAI Integration",
+                 *       "api_key": null,
+                 *       "model_names": [
+                 *         "gpt-4o",
+                 *         "gpt-4o-mini"
+                 *       ]
+                 *     }
+                 */
+                "application/json": {
+                    /** @description New integration name */
+                    name?: string;
+                    provider?: components["schemas"]["AiIntegrationProvider"];
+                    /** @description New API key. Pass null to remove the existing key. Omit to keep unchanged. */
+                    api_key?: string | null;
+                    /** @description Custom base URL. Pass null to remove. */
+                    base_url?: string | null;
+                    /** @description Supported model names (replaces all) */
+                    model_names?: string[];
+                    /** @description Custom headers. Pass null to remove. */
+                    headers?: {
+                        [key: string]: string;
+                    } | null;
+                    /** @description Enable provider's default model list */
+                    enable_default_models?: boolean;
+                    /** @description Enable function/tool calling */
+                    function_calling_enabled?: boolean;
+                    auth_type?: components["schemas"]["AiIntegrationAuthType"];
+                    /** @description Provider-specific configuration */
+                    provider_metadata?: {
+                        [key: string]: unknown;
+                    } | null;
+                    /** @description Visibility scoping rules (replaces all existing scopings) */
+                    scopings?: components["schemas"]["AiIntegrationScoping"][];
+                };
+            };
+        };
+        /** @description Optional body for overriding expiry on a refreshed API key. */
+        RefreshApiKeyRequestBody: {
+            content: {
+                "application/json": components["schemas"]["ApiKeyRefresh"];
+            };
+        };
+        /** @description Body containing API key creation parameters */
+        CreateApiKeyRequestBody: {
+            content: {
+                "application/json": components["schemas"]["ApiKeyCreate"];
+            };
+        };
+        /** @description Body containing role creation parameters. */
+        CreateRoleRequestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleCreate"];
+            };
+        };
+        /** @description Body containing role update parameters. At least one field must be provided. */
+        UpdateRoleRequestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleUpdate"];
+            };
+        };
+        /** @description Body containing annotation queue update parameters. At least one field must be provided. */
+        UpdateAnnotationQueueRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "name": "Updated Queue Name",
+                 *       "instructions": "Review each response for accuracy and helpfulness",
+                 *       "annotation_config_ids": [
+                 *         "ac_abc123"
+                 *       ],
+                 *       "annotator_emails": [
+                 *         "reviewer@example.com"
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["UpdateAnnotationQueueRequestBody"];
+            };
+        };
+        /** @description Body containing annotation queue creation parameters */
+        CreateAnnotationQueueRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "name": "Quality Review Queue",
+                 *       "space_id": "spc_xyz789",
+                 *       "annotation_config_ids": [
+                 *         "ac_abc123"
+                 *       ],
+                 *       "assignment_method": "all"
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreateAnnotationQueueRequestBody"];
+            };
+        };
+        /** @description Body containing records to add to an annotation queue */
+        AddAnnotationQueueRecordsRequestBody: {
+            content: {
+                "application/json": components["schemas"]["AddAnnotationQueueRecordsRequestBody"];
+            };
+        };
         /** @description Body containing annotation config creation parameters */
         CreateAnnotationConfigRequestBody: {
             content: {
@@ -1951,7 +4608,7 @@ export interface components {
                 };
             };
         };
-        /** @description Body containing prompt creation parameters */
+        /** @description Body containing prompt creation parameters with an initial version */
         CreatePromptRequestBody: {
             content: {
                 /**
@@ -1959,10 +4616,55 @@ export interface components {
                  *       "space_id": "U3BhY2U6MTIzOmFiY2Q=",
                  *       "name": "My Prompt",
                  *       "description": "A helpful assistant prompt",
-                 *       "tags": [
-                 *         "customer-support"
-                 *       ],
-                 *       "commit_message": "Initial version",
+                 *       "version": {
+                 *         "commit_message": "Initial version",
+                 *         "input_variable_format": "f_string",
+                 *         "provider": "openAI",
+                 *         "model": "gpt-4",
+                 *         "messages": [
+                 *           {
+                 *             "role": "system",
+                 *             "content": "You are a helpful assistant."
+                 *           },
+                 *           {
+                 *             "role": "user",
+                 *             "content": "Hello, {name}!"
+                 *           }
+                 *         ]
+                 *       }
+                 *     }
+                 */
+                "application/json": {
+                    /** @description ID of the space to create the prompt in */
+                    space_id: string;
+                    /** @description Name of the prompt (must be unique within the space) */
+                    name: string;
+                    /** @description Description of the prompt. Optional. If omitted, the prompt has no description. */
+                    description?: string;
+                    version: components["schemas"]["PromptVersionCreateRequest"];
+                };
+            };
+        };
+        /** @description Body containing prompt update parameters. At least one field must be provided. */
+        UpdatePromptRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "description": "Updated prompt description"
+                 *     }
+                 */
+                "application/json": {
+                    /** @description Updated description for the prompt */
+                    description?: string | null;
+                };
+            };
+        };
+        /** @description Body containing prompt version creation parameters */
+        CreatePromptVersionRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "commit_message": "Updated system prompt for better responses",
                  *       "input_variable_format": "f_string",
                  *       "provider": "openAI",
                  *       "model": "gpt-4",
@@ -1979,43 +4681,144 @@ export interface components {
                  *     }
                  */
                 "application/json": {
-                    /** @description ID of the space to create the prompt in */
-                    space_id: string;
-                    /** @description Name of the prompt (must be unique within the space) */
-                    name: string;
-                    /** @description Description of the prompt */
-                    description?: string;
-                    /** @description Tags to associate with the prompt */
-                    tags?: string[];
                     /** @description Commit message describing this version */
                     commit_message: string;
                     input_variable_format: components["schemas"]["InputVariableFormat"];
                     provider: components["schemas"]["LlmProvider"];
-                    /** @description The model to use for the call */
+                    /** @description The model to use for the call. Optional. If omitted, no default model is set on the version. */
                     model?: string;
                     /** @description The messages that make up the prompt template */
                     messages: components["schemas"]["LLMMessage"][];
+                    /** @description Parameters for the LLM invocation. Optional. Defaults to empty (no invocation parameters). */
                     invocation_params?: components["schemas"]["InvocationParams"];
+                    /** @description Provider-specific parameters. Optional. Defaults to empty (no provider-specific parameters). */
                     provider_params?: components["schemas"]["ProviderParams"];
                 };
             };
         };
-        /** @description Body containing prompt update parameters. At least one field must be provided. */
-        UpdatePromptRequestBody: {
+        /** @description Body containing the labels to set on a prompt version */
+        SetPromptVersionLabelsRequestBody: {
             content: {
                 /**
                  * @example {
-                 *       "description": "Updated prompt description",
-                 *       "tags": [
-                 *         "new-tag"
+                 *       "labels": [
+                 *         "production",
+                 *         "staging"
                  *       ]
                  *     }
                  */
                 "application/json": {
-                    /** @description Updated description for the prompt */
+                    /** @description Array of label names to set on the version (replaces all existing labels) */
+                    labels: string[];
+                };
+            };
+        };
+        /** @description Body containing evaluator creation parameters with an initial version */
+        CreateEvaluatorRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "space_id": "U3BhY2U6NDkzOkJaSkc=",
+                 *       "name": "Hallucination Eval",
+                 *       "description": "Detects hallucinated content in LLM responses",
+                 *       "type": "template",
+                 *       "version": {
+                 *         "commit_message": "Initial version",
+                 *         "template_config": {
+                 *           "name": "hallucination",
+                 *           "template": "You are an evaluation assistant. Given the following input and output, determine if the output contains hallucinated content.\n\nInput: {{input}}\nOutput: {{output}}\nReference: {{reference}}",
+                 *           "include_explanations": true,
+                 *           "use_function_calling_if_available": true,
+                 *           "classification_choices": {
+                 *             "hallucinated": 0,
+                 *             "factual": 1
+                 *           },
+                 *           "direction": "maximize",
+                 *           "data_granularity": "span",
+                 *           "llm_config": {
+                 *             "ai_integration_id": "TGxtSW50ZWdyYXRpb246MTI6YUJjRA==",
+                 *             "model_name": "gpt-4o",
+                 *             "invocation_parameters": {
+                 *               "temperature": 0
+                 *             },
+                 *             "provider_parameters": {}
+                 *           }
+                 *         }
+                 *       }
+                 *     }
+                 */
+                "application/json": {
+                    /** @description Space global ID (base64) */
+                    space_id: string;
+                    /** @description Evaluator name (must be unique within the space) */
+                    name: string;
+                    /** @description Evaluator description */
+                    description?: string;
+                    /**
+                     * @description Evaluator type. Only template is supported in this iteration.
+                     * @enum {string}
+                     */
+                    type: "template" | "code";
+                    /** @description The initial version for the evaluator */
+                    version: {
+                        /** @description Commit message for the initial version */
+                        commit_message: string;
+                        /** @description The template configuration for the initial version */
+                        template_config: components["schemas"]["TemplateConfig"];
+                    };
+                };
+            };
+        };
+        /** @description Body containing evaluator update parameters */
+        UpdateEvaluatorRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "name": "Updated Evaluator Name",
+                 *       "description": "Updated description"
+                 *     }
+                 */
+                "application/json": {
+                    /** @description New evaluator name */
+                    name?: string;
+                    /** @description New description */
                     description?: string | null;
-                    /** @description Updated tags for the prompt */
-                    tags?: string[];
+                };
+            };
+        };
+        /** @description Body containing evaluator version creation parameters */
+        CreateEvaluatorVersionRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "commit_message": "Improve template wording",
+                 *       "template_config": {
+                 *         "name": "hallucination",
+                 *         "template": "Evaluate whether the output is factually grounded.\n\nInput: {{input}}\nOutput: {{output}}",
+                 *         "include_explanations": true,
+                 *         "use_function_calling_if_available": true,
+                 *         "classification_choices": {
+                 *           "hallucinated": 0,
+                 *           "factual": 1
+                 *         },
+                 *         "direction": "maximize",
+                 *         "data_granularity": "span",
+                 *         "llm_config": {
+                 *           "ai_integration_id": "TGxtSW50ZWdyYXRpb246MTI6YUJjRA==",
+                 *           "model_name": "gpt-4o",
+                 *           "invocation_parameters": {
+                 *             "temperature": 0
+                 *           },
+                 *           "provider_parameters": {}
+                 *         }
+                 *       }
+                 *     }
+                 */
+                "application/json": {
+                    /** @description Commit message describing the changes */
+                    commit_message: string;
+                    /** @description The template configuration for this version */
+                    template_config: components["schemas"]["TemplateConfig"];
                 };
             };
         };
@@ -2164,6 +4967,43 @@ export interface components {
                 };
             };
         };
+        /** @description Body containing space creation parameters */
+        CreateSpaceRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "name": "LLM Evaluation",
+                 *       "organization_id": "org_12345",
+                 *       "description": "Space for evaluating LLM performance"
+                 *     }
+                 */
+                "application/json": {
+                    /** @description Name of the space (must be unique within the organization) */
+                    name: string;
+                    /** @description ID of the organization to create the space in */
+                    organization_id: string;
+                    /** @description A brief description of the space's purpose. Defaults to an empty string if omitted. */
+                    description?: string;
+                };
+            };
+        };
+        /** @description Body containing space update parameters. At least one field must be provided. */
+        UpdateSpaceRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "name": "Updated Space Name",
+                 *       "description": "Updated space description"
+                 *     }
+                 */
+                "application/json": {
+                    /** @description Updated name for the space (must be unique within the organization) */
+                    name?: string;
+                    /** @description Updated description for the space. Set to an empty string to clear it. */
+                    description?: string;
+                };
+            };
+        };
         /** @description Body containing span query parameters */
         ListSpansRequestBody: {
             content: {
@@ -2211,11 +5051,140 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    ai_integrations_list: {
+        parameters: {
+            query?: {
+                /** @description Filter search results to a particular space ID */
+                space_id?: components["parameters"]["SpaceIdQueryParam"];
+                /**
+                 * @description Case-insensitive substring filter on the resource name. Returns only
+                 *     resources whose name contains the given string. For example,
+                 *     `name=prod` matches "production", "my-prod-dataset", etc.
+                 *     When omitted, no name filter is applied and all resources are returned.
+                 */
+                name?: components["parameters"]["NameSearchQueryParam"];
+                /** @description Maximum items to return */
+                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /**
+                 * @description Opaque pagination cursor returned from a previous response
+                 *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
+                 *     attempt to parse or construct it.
+                 */
+                cursor?: components["parameters"]["CursorQueryParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AiIntegrationList"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    ai_integrations_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["CreateAiIntegrationRequestBody"];
+        responses: {
+            201: components["responses"]["AiIntegration"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    ai_integrations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the AI integration
+                 * @example TGxtSW50ZWdyYXRpb246MTI6YUJjRA==
+                 */
+                integration_id: components["parameters"]["AiIntegrationIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AiIntegration"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    ai_integrations_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the AI integration
+                 * @example TGxtSW50ZWdyYXRpb246MTI6YUJjRA==
+                 */
+                integration_id: components["parameters"]["AiIntegrationIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: components["responses"]["AiIntegrationDeleted"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    ai_integrations_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the AI integration
+                 * @example TGxtSW50ZWdyYXRpb246MTI6YUJjRA==
+                 */
+                integration_id: components["parameters"]["AiIntegrationIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["UpdateAiIntegrationRequestBody"];
+        responses: {
+            200: components["responses"]["AiIntegration"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
     annotation_configs_list: {
         parameters: {
             query?: {
                 /** @description Filter search results to a particular space ID */
                 space_id?: components["parameters"]["SpaceIdQueryParam"];
+                /**
+                 * @description Case-insensitive substring filter on the resource name. Returns only
+                 *     resources whose name contains the given string. For example,
+                 *     `name=prod` matches "production", "my-prod-dataset", etc.
+                 *     When omitted, no name filter is applied and all resources are returned.
+                 */
+                name?: components["parameters"]["NameSearchQueryParam"];
                 /** @description Maximum items to return */
                 limit?: components["parameters"]["LimitQueryParamMax100"];
                 /**
@@ -2299,6 +5268,13 @@ export interface operations {
             query?: {
                 /** @description Filter search results to a particular space ID */
                 space_id?: components["parameters"]["SpaceIdQueryParam"];
+                /**
+                 * @description Case-insensitive substring filter on the resource name. Returns only
+                 *     resources whose name contains the given string. For example,
+                 *     `name=prod` matches "production", "my-prod-dataset", etc.
+                 *     When omitted, no name filter is applied and all resources are returned.
+                 */
+                name?: components["parameters"]["NameSearchQueryParam"];
                 /** @description Maximum items to return */
                 limit?: components["parameters"]["LimitQueryParamMax100"];
                 /**
@@ -2321,11 +5297,146 @@ export interface operations {
             429: components["responses"]["RateLimitExceeded"];
         };
     };
+    annotation_queues_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["CreateAnnotationQueueRequestBody"];
+        responses: {
+            201: components["responses"]["AnnotationQueueCreate"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    annotation_queues_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The unique identifier of the annotation queue */
+                annotation_queue_id: components["parameters"]["AnnotationQueueIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AnnotationQueue"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    annotation_queues_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The unique identifier of the annotation queue */
+                annotation_queue_id: components["parameters"]["AnnotationQueueIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: components["responses"]["AnnotationQueueDeleted"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    annotation_queues_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The unique identifier of the annotation queue */
+                annotation_queue_id: components["parameters"]["AnnotationQueueIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["UpdateAnnotationQueueRequestBody"];
+        responses: {
+            200: components["responses"]["AnnotationQueueUpdated"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    annotation_queue_records_list: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Opaque pagination cursor returned from a previous response
+                 *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
+                 *     attempt to parse or construct it.
+                 */
+                cursor?: components["parameters"]["CursorQueryParam"];
+                /** @description Maximum items to return */
+                limit?: components["parameters"]["LimitQueryParamMax500"];
+            };
+            header?: never;
+            path: {
+                /** @description The unique identifier of the annotation queue */
+                annotation_queue_id: components["parameters"]["AnnotationQueueIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AnnotationQueueRecordList"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    annotation_queues_records_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The unique identifier of the annotation queue */
+                annotation_queue_id: components["parameters"]["AnnotationQueueIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["AddAnnotationQueueRecordsRequestBody"];
+        responses: {
+            201: components["responses"]["AnnotationQueueRecordCreate"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
     datasets_list: {
         parameters: {
             query?: {
                 /** @description Filter search results to a particular space ID */
                 space_id?: components["parameters"]["SpaceIdQueryParam"];
+                /**
+                 * @description Case-insensitive substring filter on the resource name. Returns only
+                 *     resources whose name contains the given string. For example,
+                 *     `name=prod` matches "production", "my-prod-dataset", etc.
+                 *     When omitted, no name filter is applied and all resources are returned.
+                 */
+                name?: components["parameters"]["NameSearchQueryParam"];
                 /** @description Maximum items to return */
                 limit?: components["parameters"]["LimitQueryParamMax100"];
                 /**
@@ -2487,6 +5598,13 @@ export interface operations {
             query?: {
                 /** @description Filter experiments to a particular dataset ID */
                 dataset_id?: components["parameters"]["DatasetIdQueryParam"];
+                /**
+                 * @description Case-insensitive substring filter on the resource name. Returns only
+                 *     resources whose name contains the given string. For example,
+                 *     `name=prod` matches "production", "my-prod-dataset", etc.
+                 *     When omitted, no name filter is applied and all resources are returned.
+                 */
+                name?: components["parameters"]["NameSearchQueryParam"];
                 /** @description Maximum items to return */
                 limit?: components["parameters"]["LimitQueryParamMax100"];
                 /**
@@ -2599,6 +5717,13 @@ export interface operations {
             query?: {
                 /** @description The unique identifier of an organization. When provided, only spaces belonging to this organization are returned. */
                 org_id?: components["parameters"]["OrganizationIdQueryParam"];
+                /**
+                 * @description Case-insensitive substring filter on the resource name. Returns only
+                 *     resources whose name contains the given string. For example,
+                 *     `name=prod` matches "production", "my-prod-dataset", etc.
+                 *     When omitted, no name filter is applied and all resources are returned.
+                 */
+                name?: components["parameters"]["NameSearchQueryParam"];
                 /** @description Maximum items to return */
                 limit?: components["parameters"]["LimitQueryParamMax100"];
                 /**
@@ -2621,11 +5746,300 @@ export interface operations {
             429: components["responses"]["RateLimitExceeded"];
         };
     };
+    spaces_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["CreateSpaceRequestBody"];
+        responses: {
+            201: components["responses"]["Space"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    spaces_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the space
+                 * @example spc_12345
+                 */
+                space_id: components["parameters"]["SpaceIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Space"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    spaces_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the space
+                 * @example spc_12345
+                 */
+                space_id: components["parameters"]["SpaceIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["UpdateSpaceRequestBody"];
+        responses: {
+            200: components["responses"]["Space"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    api_keys_list: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Filter by API key type.
+                 *     - user - Key associated with a specific user.
+                 *     - service - Key associated with a bot user for service authentication.
+                 */
+                key_type?: components["parameters"]["ApiKeyTypeQueryParam"];
+                /**
+                 * @description Filter by API key status.
+                 *     - active - Only return keys that are valid for use.
+                 *     - deleted - Only return keys that have been deleted.
+                 *
+                 *     When not specified, defaults to `active`.
+                 */
+                status?: components["parameters"]["ApiKeyStatusQueryParam"];
+                /** @description Maximum items to return */
+                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /**
+                 * @description Opaque pagination cursor returned from a previous response
+                 *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
+                 *     attempt to parse or construct it.
+                 */
+                cursor?: components["parameters"]["CursorQueryParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ApiKeyList"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["BadRequest"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    api_keys_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["CreateApiKeyRequestBody"];
+        responses: {
+            201: components["responses"]["ApiKeyCreated"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["BadRequest"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    api_keys_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The unique identifier of the API key */
+                api_key_id: components["parameters"]["ApiKeyIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: components["responses"]["ApiKeyDeleted"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    api_keys_refresh: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The unique identifier of the API key */
+                api_key_id: components["parameters"]["ApiKeyIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: components["requestBodies"]["RefreshApiKeyRequestBody"];
+        responses: {
+            200: components["responses"]["ApiKeyCreated"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    roles_list: {
+        parameters: {
+            query?: {
+                /** @description Maximum items to return */
+                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /**
+                 * @description Opaque pagination cursor returned from a previous response
+                 *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
+                 *     attempt to parse or construct it.
+                 */
+                cursor?: components["parameters"]["CursorQueryParam"];
+                /**
+                 * @description Filter roles by predefined status.
+                 *     - `true` - Return only system-defined predefined roles.
+                 *     - `false` - Return only custom (account-defined) roles.
+                 *
+                 *     When not specified, returns all roles (both predefined and custom).
+                 */
+                is_predefined?: components["parameters"]["RolesIsPredefinedQueryParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["RoleList"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    roles_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["CreateRoleRequestBody"];
+        responses: {
+            201: components["responses"]["RoleCreated"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    roles_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the role.
+                 * @example Rol001
+                 */
+                role_id: components["parameters"]["RoleIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["RoleResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    roles_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the role.
+                 * @example Rol001
+                 */
+                role_id: components["parameters"]["RoleIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: components["responses"]["RoleDeleted"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    roles_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the role.
+                 * @example Rol001
+                 */
+                role_id: components["parameters"]["RoleIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["UpdateRoleRequestBody"];
+        responses: {
+            200: components["responses"]["RoleResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
     prompts_list: {
         parameters: {
             query?: {
                 /** @description Filter search results to a particular space ID */
                 space_id?: components["parameters"]["SpaceIdQueryParam"];
+                /**
+                 * @description Case-insensitive substring filter on the resource name. Returns only
+                 *     resources whose name contains the given string. For example,
+                 *     `name=prod` matches "production", "my-prod-dataset", etc.
+                 *     When omitted, no name filter is applied and all resources are returned.
+                 */
+                name?: components["parameters"]["NameSearchQueryParam"];
                 /** @description Maximum items to return */
                 limit?: components["parameters"]["LimitQueryParamMax100"];
                 /**
@@ -2657,7 +6071,7 @@ export interface operations {
         };
         requestBody: components["requestBodies"]["CreatePromptRequestBody"];
         responses: {
-            201: components["responses"]["Prompt"];
+            201: components["responses"]["PromptWithVersion"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
@@ -2667,7 +6081,18 @@ export interface operations {
     };
     prompts_get: {
         parameters: {
-            query?: never;
+            query?: {
+                /**
+                 * @description Return the prompt with this specific version. Mutually exclusive with `label`.
+                 * @example pv_12345
+                 */
+                version_id?: components["parameters"]["VersionIdQueryParam"];
+                /**
+                 * @description Return the prompt with the version pointed to by this label (e.g., "production"). Mutually exclusive with `version_id`.
+                 * @example production
+                 */
+                label?: components["parameters"]["LabelQueryParam"];
+            };
             header?: never;
             path: {
                 /**
@@ -2680,7 +6105,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            200: components["responses"]["Prompt"];
+            200: components["responses"]["PromptWithVersion"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
@@ -2734,11 +6159,347 @@ export interface operations {
             429: components["responses"]["RateLimitExceeded"];
         };
     };
+    evaluators_list: {
+        parameters: {
+            query?: {
+                /** @description Filter search results to a particular space ID */
+                space_id?: components["parameters"]["SpaceIdQueryParam"];
+                /** @description Maximum items to return */
+                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /**
+                 * @description Opaque pagination cursor returned from a previous response
+                 *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
+                 *     attempt to parse or construct it.
+                 */
+                cursor?: components["parameters"]["CursorQueryParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["EvaluatorList"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    evaluators_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["CreateEvaluatorRequestBody"];
+        responses: {
+            201: components["responses"]["EvaluatorWithVersionCreated"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    evaluators_get: {
+        parameters: {
+            query?: {
+                /** @description Return the evaluator with this specific version (base64 global ID). If omitted, returns the latest version. */
+                version_id?: components["parameters"]["EvaluatorVersionIdQueryParam"];
+            };
+            header?: never;
+            path: {
+                /** @description The evaluator global ID (base64) */
+                evaluator_id: components["parameters"]["EvaluatorIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["EvaluatorWithVersion"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    evaluators_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The evaluator global ID (base64) */
+                evaluator_id: components["parameters"]["EvaluatorIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: components["responses"]["EvaluatorDeleted"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    evaluators_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The evaluator global ID (base64) */
+                evaluator_id: components["parameters"]["EvaluatorIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["UpdateEvaluatorRequestBody"];
+        responses: {
+            200: components["responses"]["EvaluatorUpdated"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    evaluator_versions_list: {
+        parameters: {
+            query?: {
+                /** @description Maximum items to return */
+                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /**
+                 * @description Opaque pagination cursor returned from a previous response
+                 *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
+                 *     attempt to parse or construct it.
+                 */
+                cursor?: components["parameters"]["CursorQueryParam"];
+            };
+            header?: never;
+            path: {
+                /** @description The evaluator global ID (base64) */
+                evaluator_id: components["parameters"]["EvaluatorIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["EvaluatorVersionList"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    evaluator_versions_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The evaluator global ID (base64) */
+                evaluator_id: components["parameters"]["EvaluatorIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["CreateEvaluatorVersionRequestBody"];
+        responses: {
+            201: components["responses"]["EvaluatorVersionCreated"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    evaluator_versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The evaluator version global ID (base64) */
+                version_id: components["parameters"]["EvaluatorVersionIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["EvaluatorVersion"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    prompt_versions_list: {
+        parameters: {
+            query?: {
+                /** @description Maximum items to return */
+                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /**
+                 * @description Opaque pagination cursor returned from a previous response
+                 *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
+                 *     attempt to parse or construct it.
+                 */
+                cursor?: components["parameters"]["CursorQueryParam"];
+            };
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the prompt
+                 * @example prompt_12345
+                 */
+                prompt_id: components["parameters"]["PromptIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["PromptVersionList"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    prompt_versions_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the prompt
+                 * @example prompt_12345
+                 */
+                prompt_id: components["parameters"]["PromptIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["CreatePromptVersionRequestBody"];
+        responses: {
+            201: components["responses"]["PromptVersion"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    prompt_labels_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the prompt
+                 * @example prompt_12345
+                 */
+                prompt_id: components["parameters"]["PromptIdPathParam"];
+                /** @description The name of the label (e.g., "production", "staging") */
+                label_name: components["parameters"]["LabelNamePathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["PromptVersion"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    prompt_versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the prompt version
+                 * @example pv_12345
+                 */
+                version_id: components["parameters"]["PromptVersionIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["PromptVersion"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    prompt_version_labels_set: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the prompt version
+                 * @example pv_12345
+                 */
+                version_id: components["parameters"]["PromptVersionIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["SetPromptVersionLabelsRequestBody"];
+        responses: {
+            200: components["responses"]["PromptVersionLabelsSet"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    prompt_version_labels_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the prompt version
+                 * @example pv_12345
+                 */
+                version_id: components["parameters"]["PromptVersionIdPathParam"];
+                /** @description The name of the label (e.g., "production", "staging") */
+                label_name: components["parameters"]["LabelNamePathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: components["responses"]["PromptVersionLabelDeleted"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
     projects_list: {
         parameters: {
             query?: {
                 /** @description Filter search results to a particular space ID */
                 space_id?: components["parameters"]["SpaceIdQueryParam"];
+                /**
+                 * @description Case-insensitive substring filter on the resource name. Returns only
+                 *     resources whose name contains the given string. For example,
+                 *     `name=prod` matches "production", "my-prod-dataset", etc.
+                 *     When omitted, no name filter is applied and all resources are returned.
+                 */
+                name?: components["parameters"]["NameSearchQueryParam"];
                 /** @description Maximum items to return */
                 limit?: components["parameters"]["LimitQueryParamMax100"];
                 /**

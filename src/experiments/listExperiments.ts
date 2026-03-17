@@ -3,6 +3,7 @@ import { PaginatedResponse, PaginationParams, WithClient } from "../types";
 import { Experiment } from "../types/experiments";
 import { transformPaginationMetadata } from "../utils/pagination";
 import { warnPreRelease } from "../utils/warning";
+import { handleApiError } from "../errors";
 import { transformExperiment } from "./utils";
 
 export type ListExperimentsParams = WithClient<
@@ -44,8 +45,7 @@ export async function listExperiments(
     },
   });
   if (response.error) {
-    const { detail, title } = response.error;
-    throw new Error(detail || title);
+    return handleApiError(response);
   }
   return {
     data: response.data.experiments.map(transformExperiment),

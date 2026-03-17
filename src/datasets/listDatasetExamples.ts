@@ -3,6 +3,7 @@ import { DatasetExample } from "../types/datasets";
 import { createClient } from "../client";
 import { transformListDatasetExamplesResponseExample } from "./utils";
 import { warnPreRelease } from "../utils/warning";
+import { handleApiError } from "../errors";
 
 export type ListDatasetExamplesParams = WithClient<{
   datasetId: string;
@@ -49,8 +50,7 @@ export async function listDatasetExamples({
     },
   });
   if (response.error) {
-    const { detail, title } = response.error;
-    throw new Error(detail || title);
+    return handleApiError(response);
   }
   return response.data.examples.map(
     transformListDatasetExamplesResponseExample,

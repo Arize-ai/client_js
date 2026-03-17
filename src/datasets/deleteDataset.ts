@@ -1,6 +1,7 @@
 import { createClient } from "../client";
 import { WithClient } from "../types/client";
 import { warnPreRelease } from "../utils/warning";
+import { handleApiError } from "../errors";
 
 export type DeleteDatasetParams = WithClient<{
   datasetId: string;
@@ -34,7 +35,6 @@ export async function deleteDataset({
     },
   });
   if (response.error) {
-    const { detail, title } = response.error;
-    throw new Error(detail || title);
+    return handleApiError(response);
   }
 }

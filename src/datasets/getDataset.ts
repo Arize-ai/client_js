@@ -1,6 +1,7 @@
 import { createClient } from "../client";
 import { Dataset, WithClient } from "../types";
 import { warnPreRelease } from "../utils/warning";
+import { handleApiError } from "../errors";
 import { transformDataset } from "./utils";
 
 export type GetDatasetParams = WithClient<{
@@ -39,8 +40,7 @@ export async function getDataset({
     },
   });
   if (response.error) {
-    const { detail, title } = response.error;
-    throw new Error(detail || title);
+    return handleApiError(response);
   }
   return transformDataset(response.data);
 }

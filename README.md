@@ -60,6 +60,73 @@ const experimentRuns = await listExperimentRuns({
 });
 ```
 
+## API Keys
+
+The `@arizeai/ax-client` package allows you to create, list, delete, and refresh API keys.
+
+### Creating an API key
+
+```typescript
+import { createApiKey } from "@arizeai/ax-client";
+
+const apiKey = await createApiKey({ name: "CI pipeline key" });
+// Store apiKey.key securely — the full key value is only returned once
+console.log(apiKey.key);
+```
+
+Service keys can be scoped to a specific space with optional role assignments:
+
+```typescript
+const apiKey = await createApiKey({
+  name: "service-key",
+  keyType: "service",
+  spaceId: "your-space-id",
+  roles: { spaceRole: "member" },
+  expiresAt: new Date("2027-01-01"),
+});
+```
+
+### Listing API keys
+
+```typescript
+import { listApiKeys } from "@arizeai/ax-client";
+
+const { data } = await listApiKeys();
+console.log(data.map((k) => k.name));
+
+// Filter by key type or status
+const { data: userKeys } = await listApiKeys({ keyType: "user" });
+```
+
+### Deleting an API key
+
+```typescript
+import { deleteApiKey } from "@arizeai/ax-client";
+
+await deleteApiKey({ apiKeyId: "your-api-key-id" });
+```
+
+### Refreshing an API key
+
+Atomically revokes an existing key and issues a replacement with the same metadata (name, description, key type). The old key is invalidated and the new key is activated in a single transaction.
+
+```typescript
+import { refreshApiKey } from "@arizeai/ax-client";
+
+const refreshed = await refreshApiKey({ apiKeyId: "your-api-key-id" });
+// Store refreshed.key securely — the full key value is only returned once
+console.log(refreshed.key);
+```
+
+Supply `expiresAt` to set an expiration on the replacement key:
+
+```typescript
+const refreshed = await refreshApiKey({
+  apiKeyId: "your-api-key-id",
+  expiresAt: new Date("2027-01-01"),
+});
+```
+
 ## REST endpoints
 
 It is recommended to use the methods in this package. If more control is desired, you can use the client directly. The client provides a type-safe fetch for the entire Arize AX REST API.

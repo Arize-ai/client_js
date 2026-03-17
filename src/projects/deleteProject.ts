@@ -1,6 +1,7 @@
 import { createClient } from "../client";
 import { WithClient } from "../types";
 import { warnPreRelease } from "../utils/warning";
+import { handleApiError } from "../errors";
 
 export type DeleteProjectParams = WithClient<{
   projectId: string;
@@ -36,7 +37,6 @@ export async function deleteProject({
     },
   });
   if (response.error) {
-    const { detail, title } = response.error;
-    throw new Error(detail || title);
+    return handleApiError(response);
   }
 }

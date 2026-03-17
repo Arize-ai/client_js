@@ -1,6 +1,7 @@
 import { createClient } from "../client";
 import { AnnotationConfig, WithClient } from "../types";
 import { warnPreRelease } from "../utils/warning";
+import { handleApiError } from "../errors";
 import { transformAnnotationConfig } from "./utils";
 
 export type GetAnnotationConfigParams = WithClient<{
@@ -39,8 +40,7 @@ export async function getAnnotationConfig({
     },
   );
   if (response.error) {
-    const { detail, title } = response.error;
-    throw new Error(detail || title);
+    return handleApiError(response);
   }
   return transformAnnotationConfig(response.data);
 }
