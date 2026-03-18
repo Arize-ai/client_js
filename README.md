@@ -18,7 +18,8 @@ The following environment variables are used:
 - `ARIZE_API_KEY` - The API key to use for authentication.
 - `ARIZE_BASE_URL` - The base URL of the Arize AX API.
 
-Alternatively, you can pass configuration options to the client directly, and they will be prioritized over environment variables and default values.
+Alternatively, you can pass configuration options to the client directly,
+and they will be prioritized over environment variables and default values.
 
 ## Datasets
 

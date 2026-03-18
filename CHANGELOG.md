@@ -1,5 +1,12 @@
 # @arizeai/ax-client
 
+## [1.3.1](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.3.0...arize-js-sdk/v1.3.1) (2026-03-18)
+
+
+### 📚 Documentation
+
+* improve formatting of client configuration priority description ([#65909](https://github.com/Arize-ai/arize/issues/65909)) ([fe4aa7c](https://github.com/Arize-ai/arize/commit/fe4aa7c36b647e010d7707a72af21f5134cd37dd))
+
 ## [1.3.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.2.0...arize-js-sdk/v1.3.0) (2026-03-17)
 
 
