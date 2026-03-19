@@ -80,7 +80,7 @@ export class NotFoundError extends APIError {
 export function handleApiError(response: { error: Problem }): never {
   const { error } = response;
   const status = error.status;
-  const message = error.detail || error.title;
+  const message = error.detail ?? error.title ?? "Unknown error";
 
   if (status === 401) {
     throw new AuthenticationError(status, message);

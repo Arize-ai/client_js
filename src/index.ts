@@ -8,4 +8,5 @@ export * from "./spaces";
 export * from "./prompts";
 export * from "./ai_integrations";
 export * from "./api_keys";
+export * from "./evaluators";
 export * from "./types";

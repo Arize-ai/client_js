@@ -21,3 +21,9 @@ export type RawPromptWithVersion = components["schemas"]["PromptWithVersion"];
 export type RawAiIntegration = components["schemas"]["AiIntegration"];
 export type RawApiKey = components["schemas"]["ApiKey"];
 export type RawApiKeyCreated = components["schemas"]["ApiKeyCreated"];
+export type RawEvaluator = components["schemas"]["Evaluator"];
+export type RawEvaluatorWithVersion =
+  components["schemas"]["EvaluatorWithVersion"];
+export type RawEvaluatorVersion = components["schemas"]["EvaluatorVersion"];
+export type RawTemplateConfig = components["schemas"]["TemplateConfig"];
+export type RawEvaluatorLlmConfig = components["schemas"]["EvaluatorLlmConfig"];

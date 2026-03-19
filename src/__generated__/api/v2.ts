@@ -350,7 +350,20 @@ export interface paths {
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
         post: operations["annotation_queues_records_create"];
-        delete?: never;
+        /**
+         * Delete annotation queue records
+         * @description Delete one or more records from an annotation queue by their IDs.
+         *
+         *     If one or more record IDs are not found or do not belong to the specified
+         *     queue, they are silently ignored. A 204 response does not guarantee that
+         *     all provided IDs were deleted.
+         *
+         *     Returns 404 if the annotation queue specified by `annotation_queue_id` is not found.
+         *     Individual missing record IDs do not trigger a 404.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        delete: operations["annotation_queues_records_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1832,6 +1845,10 @@ export interface components {
             /** @description List of span IDs to add to the queue */
             span_ids: string[];
         };
+        DeleteAnnotationQueueRecordsRequestBody: {
+            /** @description The IDs of the annotation queue records to delete. */
+            record_ids: components["schemas"]["Id"][];
+        };
         AddAnnotationQueueRecordsRequestBody: {
             /** @description Record sources to add to the annotation queue. At most 2 record sources (projects or datasets) may be provided in a single request. */
             record_sources: components["schemas"]["AnnotationQueueRecordInput"][];
@@ -3177,7 +3194,7 @@ export interface components {
                  *                 "id": "usr_123",
                  *                 "email": "reviewer@example.com"
                  *               },
-                 *               "completion_status": "incomplete"
+                 *               "completion_status": "pending"
                  *             }
                  *           ]
                  *         },
@@ -3197,7 +3214,7 @@ export interface components {
                  *                 "id": "usr_123",
                  *                 "email": "reviewer@example.com"
                  *               },
-                 *               "completion_status": "incomplete"
+                 *               "completion_status": "pending"
                  *             }
                  *           ]
                  *         }
@@ -3209,6 +3226,13 @@ export interface components {
                     record_sources: components["schemas"]["AnnotationQueueRecord"][];
                 };
             };
+        };
+        /** @description Annotation queue records successfully deleted */
+        AnnotationQueueRecordDeleted: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content?: never;
         };
         /** @description Returns a list of annotation queue record objects */
         AnnotationQueueRecordList: {
@@ -3233,12 +3257,18 @@ export interface components {
                  *               "label": "correct",
                  *               "score": 1,
                  *               "annotator": {
-                 *                 "id": "usr_123"
+                 *                 "id": "usr_123",
+                 *                 "email": "reviewer@example.com"
                  *               }
                  *             },
                  *             {
                  *               "name": "quality",
-                 *               "label": "good"
+                 *               "label": "good",
+                 *               "score": 0.95,
+                 *               "annotator": {
+                 *                 "id": "usr_123",
+                 *                 "email": "reviewer@example.com"
+                 *               }
                  *             }
                  *           ],
                  *           "evaluations": [
@@ -3261,8 +3291,8 @@ export interface components {
                  *         }
                  *       ],
                  *       "pagination": {
-                 *         "has_more": false,
-                 *         "next_cursor": null
+                 *         "next_cursor": "cursor_12345",
+                 *         "has_more": true
                  *       }
                  *     }
                  */
@@ -4555,15 +4585,48 @@ export interface components {
                  *       "annotation_config_ids": [
                  *         "ac_abc123"
                  *       ],
+                 *       "annotator_emails": [
+                 *         "annotator1@example.com"
+                 *       ],
                  *       "assignment_method": "all"
                  *     }
                  */
                 "application/json": components["schemas"]["CreateAnnotationQueueRequestBody"];
             };
         };
+        /** @description Body containing the IDs of annotation queue records to delete */
+        DeleteAnnotationQueueRecordsRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "record_ids": [
+                 *         "aqr_abc123",
+                 *         "aqr_def456"
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["DeleteAnnotationQueueRecordsRequestBody"];
+            };
+        };
         /** @description Body containing records to add to an annotation queue */
         AddAnnotationQueueRecordsRequestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "record_sources": [
+                 *         {
+                 *           "record_type": "span",
+                 *           "project_id": "proj_abc123",
+                 *           "start_time": "2024-01-15T00:00:00Z",
+                 *           "end_time": "2024-01-15T23:59:59Z",
+                 *           "span_ids": [
+                 *             "span_abc123",
+                 *             "span_def456"
+                 *           ]
+                 *         }
+                 *       ]
+                 *     }
+                 */
                 "application/json": components["schemas"]["AddAnnotationQueueRecordsRequestBody"];
             };
         };
@@ -5418,6 +5481,26 @@ export interface operations {
         requestBody: components["requestBodies"]["AddAnnotationQueueRecordsRequestBody"];
         responses: {
             201: components["responses"]["AnnotationQueueRecordCreate"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    annotation_queues_records_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The unique identifier of the annotation queue */
+                annotation_queue_id: components["parameters"]["AnnotationQueueIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["DeleteAnnotationQueueRecordsRequestBody"];
+        responses: {
+            204: components["responses"]["AnnotationQueueRecordDeleted"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];

@@ -1,27 +1,30 @@
 # @arizeai/ax-client
 
-## [1.3.1](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.3.0...arize-js-sdk/v1.3.1) (2026-03-18)
-
-
-### 📚 Documentation
-
-* improve formatting of client configuration priority description ([#65909](https://github.com/Arize-ai/arize/issues/65909)) ([fe4aa7c](https://github.com/Arize-ai/arize/commit/fe4aa7c36b647e010d7707a72af21f5134cd37dd))
-
-## [1.3.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.2.0...arize-js-sdk/v1.3.0) (2026-03-17)
-
+## [1.4.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.3.1...arize-js-sdk/v1.4.0) (2026-03-19)
 
 ### 🎁 New Features
 
-* **ai-integrations:** Add ai-integrations support to ax-client ([#65049](https://github.com/Arize-ai/arize/issues/65049)) ([148ea5c](https://github.com/Arize-ai/arize/commit/148ea5ce76795deec3e2faaf2f830cce0dd78f88)), closes [#59159](https://github.com/Arize-ai/arize/issues/59159)
-* **api-keys:** API Keys Create/List/Delete  ([#64924](https://github.com/Arize-ai/arize/issues/64924)) ([961b0dc](https://github.com/Arize-ai/arize/commit/961b0dce7d7750d39c4d74d3cf940c5c9cde0785))
-* **prompts:** add prompts support to JS ax-client ([#65175](https://github.com/Arize-ai/arize/issues/65175)) ([466a4f3](https://github.com/Arize-ai/arize/commit/466a4f3ed69d8cc4270efe5d85c1d4b424626386))
+- Implement evaluators API ([#65527](https://github.com/Arize-ai/arize/issues/65527)) ([bc137f6](https://github.com/Arize-ai/arize/commit/bc137f67bbcb3ab7aceebfb54f19b6d1a0686eaf)), closes [#59177](https://github.com/Arize-ai/arize/issues/59177)
 
+## [1.3.1](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.3.0...arize-js-sdk/v1.3.1) (2026-03-18)
+
+### 📚 Documentation
+
+- improve formatting of client configuration priority description ([#65909](https://github.com/Arize-ai/arize/issues/65909)) ([fe4aa7c](https://github.com/Arize-ai/arize/commit/fe4aa7c36b647e010d7707a72af21f5134cd37dd))
+
+## [1.3.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.2.0...arize-js-sdk/v1.3.0) (2026-03-17)
+
+### 🎁 New Features
+
+- **ai-integrations:** Add ai-integrations support to ax-client ([#65049](https://github.com/Arize-ai/arize/issues/65049)) ([148ea5c](https://github.com/Arize-ai/arize/commit/148ea5ce76795deec3e2faaf2f830cce0dd78f88)), closes [#59159](https://github.com/Arize-ai/arize/issues/59159)
+- **api-keys:** API Keys Create/List/Delete ([#64924](https://github.com/Arize-ai/arize/issues/64924)) ([961b0dc](https://github.com/Arize-ai/arize/commit/961b0dce7d7750d39c4d74d3cf940c5c9cde0785))
+- **prompts:** add prompts support to JS ax-client ([#65175](https://github.com/Arize-ai/arize/issues/65175)) ([466a4f3](https://github.com/Arize-ai/arize/commit/466a4f3ed69d8cc4270efe5d85c1d4b424626386))
 
 ### 🐛 Bug Fixes
 
-* **sdk:** Exit early on authentication errors ([#65266](https://github.com/Arize-ai/arize/issues/65266)) ([55e4dee](https://github.com/Arize-ai/arize/commit/55e4dee7a7c8b15d75be6a72c091f062dd2811ab))
-* Fix for ai-integrations and prompts in JS SDK ([#65798](https://github.com/Arize-ai/arize/issues/65798)) ([f95c790](https://github.com/Arize-ai/arize/commit/f95c7909ca600a9bc9dc3d0440b7bb9515fdcabf))
-* **api-keys:** rename regenerate endpoint to refresh ([#65562](https://github.com/Arize-ai/arize/issues/65562)) ([36df84f](https://github.com/Arize-ai/arize/commit/36df84ff50fc77d121173cb449b49344e9b9dded))
+- **sdk:** Exit early on authentication errors ([#65266](https://github.com/Arize-ai/arize/issues/65266)) ([55e4dee](https://github.com/Arize-ai/arize/commit/55e4dee7a7c8b15d75be6a72c091f062dd2811ab))
+- Fix for ai-integrations and prompts in JS SDK ([#65798](https://github.com/Arize-ai/arize/issues/65798)) ([f95c790](https://github.com/Arize-ai/arize/commit/f95c7909ca600a9bc9dc3d0440b7bb9515fdcabf))
+- **api-keys:** rename regenerate endpoint to refresh ([#65562](https://github.com/Arize-ai/arize/issues/65562)) ([36df84f](https://github.com/Arize-ai/arize/commit/36df84ff50fc77d121173cb449b49344e9b9dded))
 
 ## [1.2.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.1.0...arize-js-sdk/v1.2.0) (2026-02-20)
 
