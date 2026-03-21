@@ -1390,6 +1390,157 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v2/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List tasks
+         * @description List tasks the user has access to, with cursor-based pagination.
+         *
+         *     Filter by space, project, dataset, or task type using query parameters.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["tasks_list"];
+        put?: never;
+        /**
+         * Create task
+         * @description Creates a new evaluation task. You must supply exactly one of `project_id`
+         *     or `dataset_id` as the data source.
+         *
+         *     **Validation Rules**
+         *     - At least one evaluator is required.
+         *     - Duplicate evaluator IDs are not allowed.
+         *     - When `dataset_id` is provided, `experiment_ids` must contain at least one entry.
+         *     - When `project_id` is provided, `experiment_ids` must be omitted or empty.
+         *     - `sampling_rate` and `is_continuous` are only supported on project-based tasks.
+         *     - Dataset-based tasks always have `is_continuous = false`.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["tasks_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/tasks/{task_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get task
+         * @description Returns a single task by its ID.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["tasks_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/tasks/{task_id}/trigger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Trigger a task run
+         * @description Triggers a new run on an existing task. The run is queued and processed
+         *     asynchronously. Poll the returned run's status to track progress.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["tasks_trigger_run"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/tasks/{task_id}/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List task runs
+         * @description List all runs for a task with cursor-based pagination.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["tasks_list_runs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/task-runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get task run
+         * @description Returns a single task run. Use this to poll for status updates.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["task_runs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/task-runs/{run_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel task run
+         * @description Cancel a running task run. Only valid when the run's current status
+         *     is `pending` or `running`.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["task_runs_cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v2/spans": {
         parameters: {
             query?: never;
@@ -1494,6 +1645,13 @@ export interface components {
             /** @description Display label for the project */
             project_access_label: string;
         };
+        /**
+         * @description Current status of the API key.
+         *     - active - The key is valid for use.
+         *     - deleted - The key has been deleted by a user.
+         * @enum {string}
+         */
+        ApiKeyStatus: "active" | "deleted";
         ApiKey: {
             /** @description Unique identifier for the API key. */
             id: string;
@@ -1508,13 +1666,7 @@ export interface components {
              * @enum {string}
              */
             key_type: "user" | "service";
-            /**
-             * @description Current status of the API key.
-             *     - active - The key is valid for use.
-             *     - deleted - The key has been deleted by a user.
-             * @enum {string}
-             */
-            status: "active" | "deleted";
+            status: components["schemas"]["ApiKeyStatus"];
             /** @description Redacted version of the key suitable for display (e.g., "ak-abc...xyz"). */
             redacted_key: string;
             /**
@@ -1924,14 +2076,10 @@ export interface components {
             attributes?: {
                 [key: string]: unknown;
             };
-            /** @description Key-value pairs of span annotations */
-            annotations?: {
-                [key: string]: unknown;
-            };
-            /** @description Key-value pairs of span evaluations */
-            evaluations?: {
-                [key: string]: unknown;
-            };
+            /** @description List of human annotations on this span */
+            annotations?: components["schemas"]["Annotation"][];
+            /** @description List of evaluation results on this span */
+            evaluations?: components["schemas"]["Evaluation"][];
             /** @description List of events that occurred during the span */
             events?: components["schemas"]["SpanEvent"][];
         };
@@ -2354,6 +2502,109 @@ export interface components {
             provider_parameters: {
                 [key: string]: unknown;
             };
+        };
+        /**
+         * @description A task is a typed, configurable unit of work that ties one or more evaluators
+         *     to a data source (project or dataset).
+         */
+        Task: {
+            /** @description The unique identifier for the task */
+            id: string;
+            /** @description The name of the task */
+            name: string;
+            /**
+             * @description The task type: template_evaluation or code_evaluation
+             * @enum {string}
+             */
+            type: "template_evaluation" | "code_evaluation";
+            /** @description The project global ID (base64). Present for project-based tasks. */
+            project_id?: string | null;
+            /** @description The dataset global ID (base64). Present for dataset-based tasks. */
+            dataset_id?: string | null;
+            /** @description Sampling rate between 0 and 1. Only applicable for project-based tasks. */
+            sampling_rate?: number | null;
+            /** @description Whether the task runs continuously on incoming data. */
+            is_continuous: boolean;
+            /** @description Task-level query filter applied to all data. */
+            query_filter: string | null;
+            /** @description The evaluators attached to this task. */
+            evaluators: components["schemas"]["TaskEvaluator"][];
+            /** @description Experiment global IDs (base64) for dataset-based tasks. */
+            experiment_ids: string[];
+            /**
+             * Format: date-time
+             * @description When the task was last run.
+             */
+            last_run_at: string | null;
+            /**
+             * Format: date-time
+             * @description When the task was created.
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description When the task was last updated.
+             */
+            updated_at: string;
+            /** @description The unique identifier for the user who created the task. */
+            created_by_user_id: string | null;
+        };
+        TaskEvaluator: {
+            /** @description Evaluator global ID (base64). */
+            evaluator_id: string;
+            /** @description The name of the attached evaluator. */
+            evaluator_name: string;
+            /** @description Per-evaluator query filter, combined with the task-level filter (AND). */
+            query_filter: string | null;
+            /** @description Maps evaluator template variable names to data source column names. */
+            column_mappings: {
+                [key: string]: string;
+            } | null;
+        };
+        /** @description A task run is an async job that executes the work defined on a task. */
+        TaskRun: {
+            /** @description The unique identifier for the task run. */
+            id: string;
+            /** @description The parent task global ID (base64). */
+            task_id: string;
+            /**
+             * @description The current status of the run.
+             * @enum {string}
+             */
+            status: "pending" | "running" | "completed" | "failed" | "cancelled";
+            /**
+             * Format: date-time
+             * @description When the run started processing.
+             */
+            run_started_at: string | null;
+            /**
+             * Format: date-time
+             * @description When the run finished processing.
+             */
+            run_finished_at: string | null;
+            /**
+             * Format: date-time
+             * @description Start of the data window evaluated.
+             */
+            data_start_time: string | null;
+            /**
+             * Format: date-time
+             * @description End of the data window evaluated.
+             */
+            data_end_time: string | null;
+            /** @description Number of successfully evaluated items. */
+            num_successes: number;
+            /** @description Number of items that errored during evaluation. */
+            num_errors: number;
+            /** @description Number of items that were skipped. */
+            num_skipped: number;
+            /**
+             * Format: date-time
+             * @description When the run was created.
+             */
+            created_at: string;
+            /** @description The unique identifier for the user who triggered the run. */
+            created_by_user_id: string | null;
         };
         /**
          * @description Cursor-based pagination metadata. Use `next_cursor` in the subsequent
@@ -4179,6 +4430,216 @@ export interface components {
                 };
             };
         };
+        /** @description Returns a list of task objects */
+        TaskList: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "tasks": [
+                 *         {
+                 *           "id": "T25saW5lVGFzazo0NTpxUndY",
+                 *           "name": "Production Hallucination Check",
+                 *           "type": "template_evaluation",
+                 *           "project_id": "TW9kZWw6MTIzOmFCY0Q=",
+                 *           "dataset_id": null,
+                 *           "sampling_rate": 1,
+                 *           "is_continuous": true,
+                 *           "query_filter": null,
+                 *           "evaluators": [
+                 *             {
+                 *               "evaluator_id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
+                 *               "evaluator_name": "Hallucination Eval",
+                 *               "query_filter": null,
+                 *               "column_mappings": {
+                 *                 "input": "attributes.input.value",
+                 *                 "output": "attributes.output.value"
+                 *               }
+                 *             }
+                 *           ],
+                 *           "experiment_ids": [],
+                 *           "last_run_at": "2026-03-01T14:30:00.000Z",
+                 *           "created_at": "2026-02-20T10:00:00.000Z",
+                 *           "updated_at": "2026-02-20T10:00:00.500Z",
+                 *           "created_by_user_id": "VXNlcjoxOm5OYkM="
+                 *         }
+                 *       ],
+                 *       "pagination": {
+                 *         "has_more": false
+                 *       }
+                 *     }
+                 */
+                "application/json": {
+                    /** @description A list of tasks */
+                    tasks: components["schemas"]["Task"][];
+                    /** @description Pagination metadata for cursor-based navigation */
+                    pagination: components["schemas"]["PaginationMetadata"];
+                };
+            };
+        };
+        /** @description Returns a single task object */
+        Task: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "T25saW5lVGFzazo0NTpxUndY",
+                 *       "name": "Production Hallucination Check",
+                 *       "type": "template_evaluation",
+                 *       "project_id": "TW9kZWw6MTIzOmFCY0Q=",
+                 *       "dataset_id": null,
+                 *       "sampling_rate": 1,
+                 *       "is_continuous": true,
+                 *       "query_filter": null,
+                 *       "evaluators": [
+                 *         {
+                 *           "evaluator_id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
+                 *           "evaluator_name": "Hallucination Eval",
+                 *           "query_filter": null,
+                 *           "column_mappings": {
+                 *             "input": "attributes.input.value",
+                 *             "output": "attributes.output.value"
+                 *           }
+                 *         }
+                 *       ],
+                 *       "experiment_ids": [],
+                 *       "last_run_at": "2026-03-01T14:30:00.000Z",
+                 *       "created_at": "2026-02-20T10:00:00.000Z",
+                 *       "updated_at": "2026-02-20T10:00:00.500Z",
+                 *       "created_by_user_id": "VXNlcjoxOm5OYkM="
+                 *     }
+                 */
+                "application/json": components["schemas"]["Task"];
+            };
+        };
+        /** @description Returns the created task */
+        TaskCreated: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "T25saW5lVGFzazo0NTpxUndY",
+                 *       "name": "Production Hallucination Check",
+                 *       "type": "template_evaluation",
+                 *       "project_id": "TW9kZWw6MTIzOmFCY0Q=",
+                 *       "dataset_id": null,
+                 *       "sampling_rate": 1,
+                 *       "is_continuous": true,
+                 *       "query_filter": "metadata.environment = 'production'",
+                 *       "evaluators": [
+                 *         {
+                 *           "evaluator_id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
+                 *           "evaluator_name": "Hallucination Eval",
+                 *           "query_filter": null,
+                 *           "column_mappings": {
+                 *             "input": "attributes.input.value",
+                 *             "output": "attributes.output.value"
+                 *           }
+                 *         }
+                 *       ],
+                 *       "experiment_ids": [],
+                 *       "last_run_at": null,
+                 *       "created_at": "2026-02-20T10:00:00.000Z",
+                 *       "updated_at": "2026-02-20T10:00:00.500Z",
+                 *       "created_by_user_id": "VXNlcjoxOm5OYkM="
+                 *     }
+                 */
+                "application/json": components["schemas"]["Task"];
+            };
+        };
+        /** @description Returns a list of task run objects */
+        TaskRunList: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "task_runs": [
+                 *         {
+                 *           "id": "VGFza1J1bjo5OTpxUndY",
+                 *           "task_id": "T25saW5lVGFzazo0NTpxUndY",
+                 *           "status": "completed",
+                 *           "run_started_at": "2026-03-07T10:30:01.000Z",
+                 *           "run_finished_at": "2026-03-07T10:35:22.000Z",
+                 *           "data_start_time": "2026-03-01T00:00:00.000Z",
+                 *           "data_end_time": "2026-03-07T00:00:00.000Z",
+                 *           "num_successes": 4850,
+                 *           "num_errors": 12,
+                 *           "num_skipped": 138,
+                 *           "created_at": "2026-03-07T10:30:00.000Z",
+                 *           "created_by_user_id": "VXNlcjoxOm5OYkM="
+                 *         }
+                 *       ],
+                 *       "pagination": {
+                 *         "has_more": false
+                 *       }
+                 *     }
+                 */
+                "application/json": {
+                    /** @description A list of task runs */
+                    task_runs: components["schemas"]["TaskRun"][];
+                    /** @description Pagination metadata for cursor-based navigation */
+                    pagination: components["schemas"]["PaginationMetadata"];
+                };
+            };
+        };
+        /** @description Returns the created task run */
+        TaskRunCreated: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "VGFza1J1bjo5OTpxUndY",
+                 *       "task_id": "T25saW5lVGFzazo0NTpxUndY",
+                 *       "status": "pending",
+                 *       "run_started_at": null,
+                 *       "run_finished_at": null,
+                 *       "data_start_time": "2026-03-01T00:00:00.000Z",
+                 *       "data_end_time": "2026-03-07T00:00:00.000Z",
+                 *       "num_successes": 0,
+                 *       "num_errors": 0,
+                 *       "num_skipped": 0,
+                 *       "created_at": "2026-03-07T10:30:00.000Z",
+                 *       "created_by_user_id": "VXNlcjoxOm5OYkM="
+                 *     }
+                 */
+                "application/json": components["schemas"]["TaskRun"];
+            };
+        };
+        /** @description Returns a single task run object */
+        TaskRun: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "VGFza1J1bjo5OTpxUndY",
+                 *       "task_id": "T25saW5lVGFzazo0NTpxUndY",
+                 *       "status": "completed",
+                 *       "run_started_at": "2026-03-07T10:30:01.000Z",
+                 *       "run_finished_at": "2026-03-07T10:35:22.000Z",
+                 *       "data_start_time": "2026-03-01T00:00:00.000Z",
+                 *       "data_end_time": "2026-03-07T00:00:00.000Z",
+                 *       "num_successes": 4850,
+                 *       "num_errors": 12,
+                 *       "num_skipped": 138,
+                 *       "created_at": "2026-03-07T10:30:00.000Z",
+                 *       "created_by_user_id": "VXNlcjoxOm5OYkM="
+                 *     }
+                 */
+                "application/json": components["schemas"]["TaskRun"];
+            };
+        };
         /** @description Invalid request */
         BadRequest: {
             headers: {
@@ -4410,7 +4871,17 @@ export interface components {
          *
          *     When not specified, defaults to `active`.
          */
-        ApiKeyStatusQueryParam: "active" | "deleted";
+        ApiKeyStatusQueryParam: components["schemas"]["ApiKeyStatus"];
+        /** @description The task global ID (base64) */
+        TaskIdPathParam: components["schemas"]["Id"];
+        /** @description The task run global ID (base64) */
+        TaskRunIdPathParam: components["schemas"]["Id"];
+        TaskProjectIdQueryParam: string;
+        TaskDatasetIdQueryParam: string;
+        /** @description Filter by task type: template_evaluation or code_evaluation */
+        TaskTypeQueryParam: "template_evaluation" | "code_evaluation";
+        /** @description Filter by run status: pending, running, completed, failed, cancelled */
+        TaskRunStatusQueryParam: "pending" | "running" | "completed" | "failed" | "cancelled";
         /**
          * @description The unique identifier of the role.
          * @example Rol001
@@ -4437,10 +4908,20 @@ export interface components {
         /**
          * @description Case-insensitive substring filter on the resource name. Returns only
          *     resources whose name contains the given string. For example,
-         *     `name=prod` matches "production", "my-prod-dataset", etc.
-         *     When omitted, no name filter is applied and all resources are returned.
+         *     `name=prod` matches "production", "my-prod-dataset", etc. If omitted,
+         *     no name filtering is applied and all resources are returned.
          */
         NameSearchQueryParam: string;
+        /**
+         * @description Case-insensitive substring filter on the space name. Narrows results
+         *     to resources in spaces whose name contains the given string. If omitted,
+         *     no space name filtering is applied and all resources are returned.
+         */
+        SpaceNameQueryParam: string;
+        /** @description Filter to tasks for a specific project (base64 global ID) */
+        ProjectIdQueryParam: components["schemas"]["Id"];
+        /** @description Filter to tasks for a specific dataset (base64 global ID) */
+        tasks_DatasetIdQueryParam: components["schemas"]["Id"];
     };
     requestBodies: {
         /** @description Body containing AI integration creation parameters */
@@ -5067,6 +5548,93 @@ export interface components {
                 };
             };
         };
+        /** @description Body containing task creation parameters */
+        CreateTaskRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "name": "Production Hallucination Check",
+                 *       "type": "template_evaluation",
+                 *       "project_id": "TW9kZWw6MTIzOmFCY0Q=",
+                 *       "sampling_rate": 1,
+                 *       "is_continuous": true,
+                 *       "query_filter": "metadata.environment = 'production'",
+                 *       "evaluators": [
+                 *         {
+                 *           "evaluator_id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
+                 *           "column_mappings": {
+                 *             "input": "attributes.input.value",
+                 *             "output": "attributes.output.value"
+                 *           }
+                 *         }
+                 *       ]
+                 *     }
+                 */
+                "application/json": {
+                    /** @description Task name */
+                    name: string;
+                    /**
+                     * @description Task type
+                     * @enum {string}
+                     */
+                    type: "template_evaluation" | "code_evaluation";
+                    /** @description Project global ID (base64). Required if dataset_id is not provided. Mutually exclusive with dataset_id. */
+                    project_id?: string;
+                    /** @description Dataset global ID (base64). Required if project_id is not provided. Mutually exclusive with project_id. */
+                    dataset_id?: string;
+                    /** @description Experiment global IDs (base64). Required when dataset_id is provided (at least one). Must be omitted or empty for project-based tasks. */
+                    experiment_ids?: string[];
+                    /** @description Sampling rate between 0 and 1. Only supported on project tasks. */
+                    sampling_rate?: number;
+                    /** @description Whether the task runs continuously. Must be true or false for project-based tasks. Must be false or omitted for dataset-based tasks. */
+                    is_continuous?: boolean;
+                    /** @description Task-level query filter applied to all data. */
+                    query_filter?: string;
+                    /** @description Evaluators to attach (at least one required). */
+                    evaluators: {
+                        /** @description Evaluator global ID (base64). Duplicates are not allowed. */
+                        evaluator_id: string;
+                        /** @description Per-evaluator query filter. Combined with the task-level filter (AND). */
+                        query_filter?: string;
+                        /** @description Maps evaluator template variable names to data source column names. */
+                        column_mappings?: {
+                            [key: string]: string;
+                        };
+                    }[];
+                };
+            };
+        };
+        /** @description Body containing task run trigger parameters */
+        TriggerTaskRunRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "data_start_time": "2026-03-01T00:00:00Z",
+                 *       "data_end_time": "2026-03-07T00:00:00Z",
+                 *       "max_spans": 5000,
+                 *       "override_evaluations": false
+                 *     }
+                 */
+                "application/json": {
+                    /**
+                     * Format: date-time
+                     * @description ISO 8601 start of the data window to evaluate.
+                     */
+                    data_start_time?: string;
+                    /**
+                     * Format: date-time
+                     * @description ISO 8601 end of the data window to evaluate. If omitted, defaults to now.
+                     */
+                    data_end_time?: string;
+                    /** @description Maximum number of spans to process (default 10000). */
+                    max_spans?: number;
+                    /** @description Whether to re-evaluate data that already has evaluation labels (default false). */
+                    override_evaluations?: boolean;
+                    /** @description Experiment global IDs (base64) to run against. Only applicable for dataset-based tasks. */
+                    experiment_ids?: string[];
+                };
+            };
+        };
         /** @description Body containing span query parameters */
         ListSpansRequestBody: {
             content: {
@@ -5120,10 +5688,16 @@ export interface operations {
                 /** @description Filter search results to a particular space ID */
                 space_id?: components["parameters"]["SpaceIdQueryParam"];
                 /**
+                 * @description Case-insensitive substring filter on the space name. Narrows results
+                 *     to resources in spaces whose name contains the given string. If omitted,
+                 *     no space name filtering is applied and all resources are returned.
+                 */
+                space_name?: components["parameters"]["SpaceNameQueryParam"];
+                /**
                  * @description Case-insensitive substring filter on the resource name. Returns only
                  *     resources whose name contains the given string. For example,
-                 *     `name=prod` matches "production", "my-prod-dataset", etc.
-                 *     When omitted, no name filter is applied and all resources are returned.
+                 *     `name=prod` matches "production", "my-prod-dataset", etc. If omitted,
+                 *     no name filtering is applied and all resources are returned.
                  */
                 name?: components["parameters"]["NameSearchQueryParam"];
                 /** @description Maximum items to return */
@@ -5242,10 +5816,16 @@ export interface operations {
                 /** @description Filter search results to a particular space ID */
                 space_id?: components["parameters"]["SpaceIdQueryParam"];
                 /**
+                 * @description Case-insensitive substring filter on the space name. Narrows results
+                 *     to resources in spaces whose name contains the given string. If omitted,
+                 *     no space name filtering is applied and all resources are returned.
+                 */
+                space_name?: components["parameters"]["SpaceNameQueryParam"];
+                /**
                  * @description Case-insensitive substring filter on the resource name. Returns only
                  *     resources whose name contains the given string. For example,
-                 *     `name=prod` matches "production", "my-prod-dataset", etc.
-                 *     When omitted, no name filter is applied and all resources are returned.
+                 *     `name=prod` matches "production", "my-prod-dataset", etc. If omitted,
+                 *     no name filtering is applied and all resources are returned.
                  */
                 name?: components["parameters"]["NameSearchQueryParam"];
                 /** @description Maximum items to return */
@@ -5332,10 +5912,16 @@ export interface operations {
                 /** @description Filter search results to a particular space ID */
                 space_id?: components["parameters"]["SpaceIdQueryParam"];
                 /**
+                 * @description Case-insensitive substring filter on the space name. Narrows results
+                 *     to resources in spaces whose name contains the given string. If omitted,
+                 *     no space name filtering is applied and all resources are returned.
+                 */
+                space_name?: components["parameters"]["SpaceNameQueryParam"];
+                /**
                  * @description Case-insensitive substring filter on the resource name. Returns only
                  *     resources whose name contains the given string. For example,
-                 *     `name=prod` matches "production", "my-prod-dataset", etc.
-                 *     When omitted, no name filter is applied and all resources are returned.
+                 *     `name=prod` matches "production", "my-prod-dataset", etc. If omitted,
+                 *     no name filtering is applied and all resources are returned.
                  */
                 name?: components["parameters"]["NameSearchQueryParam"];
                 /** @description Maximum items to return */
@@ -5514,10 +6100,16 @@ export interface operations {
                 /** @description Filter search results to a particular space ID */
                 space_id?: components["parameters"]["SpaceIdQueryParam"];
                 /**
+                 * @description Case-insensitive substring filter on the space name. Narrows results
+                 *     to resources in spaces whose name contains the given string. If omitted,
+                 *     no space name filtering is applied and all resources are returned.
+                 */
+                space_name?: components["parameters"]["SpaceNameQueryParam"];
+                /**
                  * @description Case-insensitive substring filter on the resource name. Returns only
                  *     resources whose name contains the given string. For example,
-                 *     `name=prod` matches "production", "my-prod-dataset", etc.
-                 *     When omitted, no name filter is applied and all resources are returned.
+                 *     `name=prod` matches "production", "my-prod-dataset", etc. If omitted,
+                 *     no name filtering is applied and all resources are returned.
                  */
                 name?: components["parameters"]["NameSearchQueryParam"];
                 /** @description Maximum items to return */
@@ -5684,8 +6276,8 @@ export interface operations {
                 /**
                  * @description Case-insensitive substring filter on the resource name. Returns only
                  *     resources whose name contains the given string. For example,
-                 *     `name=prod` matches "production", "my-prod-dataset", etc.
-                 *     When omitted, no name filter is applied and all resources are returned.
+                 *     `name=prod` matches "production", "my-prod-dataset", etc. If omitted,
+                 *     no name filtering is applied and all resources are returned.
                  */
                 name?: components["parameters"]["NameSearchQueryParam"];
                 /** @description Maximum items to return */
@@ -5803,8 +6395,8 @@ export interface operations {
                 /**
                  * @description Case-insensitive substring filter on the resource name. Returns only
                  *     resources whose name contains the given string. For example,
-                 *     `name=prod` matches "production", "my-prod-dataset", etc.
-                 *     When omitted, no name filter is applied and all resources are returned.
+                 *     `name=prod` matches "production", "my-prod-dataset", etc. If omitted,
+                 *     no name filtering is applied and all resources are returned.
                  */
                 name?: components["parameters"]["NameSearchQueryParam"];
                 /** @description Maximum items to return */
@@ -6117,10 +6709,16 @@ export interface operations {
                 /** @description Filter search results to a particular space ID */
                 space_id?: components["parameters"]["SpaceIdQueryParam"];
                 /**
+                 * @description Case-insensitive substring filter on the space name. Narrows results
+                 *     to resources in spaces whose name contains the given string. If omitted,
+                 *     no space name filtering is applied and all resources are returned.
+                 */
+                space_name?: components["parameters"]["SpaceNameQueryParam"];
+                /**
                  * @description Case-insensitive substring filter on the resource name. Returns only
                  *     resources whose name contains the given string. For example,
-                 *     `name=prod` matches "production", "my-prod-dataset", etc.
-                 *     When omitted, no name filter is applied and all resources are returned.
+                 *     `name=prod` matches "production", "my-prod-dataset", etc. If omitted,
+                 *     no name filtering is applied and all resources are returned.
                  */
                 name?: components["parameters"]["NameSearchQueryParam"];
                 /** @description Maximum items to return */
@@ -6247,6 +6845,19 @@ export interface operations {
             query?: {
                 /** @description Filter search results to a particular space ID */
                 space_id?: components["parameters"]["SpaceIdQueryParam"];
+                /**
+                 * @description Case-insensitive substring filter on the space name. Narrows results
+                 *     to resources in spaces whose name contains the given string. If omitted,
+                 *     no space name filtering is applied and all resources are returned.
+                 */
+                space_name?: components["parameters"]["SpaceNameQueryParam"];
+                /**
+                 * @description Case-insensitive substring filter on the resource name. Returns only
+                 *     resources whose name contains the given string. For example,
+                 *     `name=prod` matches "production", "my-prod-dataset", etc. If omitted,
+                 *     no name filtering is applied and all resources are returned.
+                 */
+                name?: components["parameters"]["NameSearchQueryParam"];
                 /** @description Maximum items to return */
                 limit?: components["parameters"]["LimitQueryParamMax100"];
                 /**
@@ -6577,10 +7188,16 @@ export interface operations {
                 /** @description Filter search results to a particular space ID */
                 space_id?: components["parameters"]["SpaceIdQueryParam"];
                 /**
+                 * @description Case-insensitive substring filter on the space name. Narrows results
+                 *     to resources in spaces whose name contains the given string. If omitted,
+                 *     no space name filtering is applied and all resources are returned.
+                 */
+                space_name?: components["parameters"]["SpaceNameQueryParam"];
+                /**
                  * @description Case-insensitive substring filter on the resource name. Returns only
                  *     resources whose name contains the given string. For example,
-                 *     `name=prod` matches "production", "my-prod-dataset", etc.
-                 *     When omitted, no name filter is applied and all resources are returned.
+                 *     `name=prod` matches "production", "my-prod-dataset", etc. If omitted,
+                 *     no name filtering is applied and all resources are returned.
                  */
                 name?: components["parameters"]["NameSearchQueryParam"];
                 /** @description Maximum items to return */
@@ -6666,6 +7283,169 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             422: components["responses"]["BadRequest"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    tasks_list: {
+        parameters: {
+            query?: {
+                /** @description Filter search results to a particular space ID */
+                space_id?: components["parameters"]["SpaceIdQueryParam"];
+                /** @description Filter to tasks for a specific project (base64 global ID) */
+                project_id?: components["parameters"]["ProjectIdQueryParam"];
+                /** @description Filter to tasks for a specific dataset (base64 global ID) */
+                dataset_id?: components["parameters"]["tasks_DatasetIdQueryParam"];
+                /** @description Filter by task type: template_evaluation or code_evaluation */
+                type?: components["parameters"]["TaskTypeQueryParam"];
+                /** @description Maximum items to return */
+                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /**
+                 * @description Opaque pagination cursor returned from a previous response
+                 *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
+                 *     attempt to parse or construct it.
+                 */
+                cursor?: components["parameters"]["CursorQueryParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["TaskList"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    tasks_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["CreateTaskRequestBody"];
+        responses: {
+            201: components["responses"]["TaskCreated"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["BadRequest"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    tasks_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The task global ID (base64) */
+                task_id: components["parameters"]["TaskIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Task"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    tasks_trigger_run: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The task global ID (base64) */
+                task_id: components["parameters"]["TaskIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: components["requestBodies"]["TriggerTaskRunRequestBody"];
+        responses: {
+            201: components["responses"]["TaskRunCreated"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    tasks_list_runs: {
+        parameters: {
+            query?: {
+                /** @description Filter by run status: pending, running, completed, failed, cancelled */
+                status?: components["parameters"]["TaskRunStatusQueryParam"];
+                /** @description Maximum items to return */
+                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /**
+                 * @description Opaque pagination cursor returned from a previous response
+                 *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
+                 *     attempt to parse or construct it.
+                 */
+                cursor?: components["parameters"]["CursorQueryParam"];
+            };
+            header?: never;
+            path: {
+                /** @description The task global ID (base64) */
+                task_id: components["parameters"]["TaskIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["TaskRunList"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    task_runs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The task run global ID (base64) */
+                run_id: components["parameters"]["TaskRunIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["TaskRun"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    task_runs_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The task run global ID (base64) */
+                run_id: components["parameters"]["TaskRunIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["TaskRun"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };

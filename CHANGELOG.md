@@ -1,5 +1,12 @@
 # @arizeai/ax-client
 
+## [1.4.1](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.4.0...arize-js-sdk/v1.4.1) (2026-03-21)
+
+
+### 💫 Code Refactoring
+
+* **api-keys:** centralize ApiKeyStatus schema and update references ([#66333](https://github.com/Arize-ai/arize/issues/66333)) ([e32438d](https://github.com/Arize-ai/arize/commit/e32438d56098a25bd925c17ee262e0895e9f5ab6))
+
 ## [1.4.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.3.1...arize-js-sdk/v1.4.0) (2026-03-19)
 
 ### 🎁 New Features

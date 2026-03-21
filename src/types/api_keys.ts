@@ -1,5 +1,7 @@
+import { components } from "../__generated__/api/v2";
+
 export type KeyType = "user" | "service";
-export type ApiKeyStatus = "active" | "deleted";
+export type ApiKeyStatus = components["schemas"]["ApiKeyStatus"];
 
 export type ApiKeyRoles = {
   spaceRole?: "admin" | "member" | "read-only";
