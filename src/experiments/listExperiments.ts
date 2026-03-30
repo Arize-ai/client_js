@@ -3,12 +3,16 @@ import { PaginatedResponse, PaginationParams, WithClient } from "../types";
 import { Experiment } from "../types/experiments";
 import { transformPaginationMetadata } from "../utils/pagination";
 import { warnPreRelease } from "../utils/warning";
+import { findDatasetId, toSpaceRef } from "../utils/resolve";
 import { handleApiError } from "../errors";
 import { transformExperiment } from "./utils";
 
 export type ListExperimentsParams = WithClient<
   PaginationParams & {
-    datasetId?: string;
+    /** Dataset ID or name to filter experiments. */
+    dataset?: string;
+    /** Space ID or name. Required when `dataset` is a name. */
+    space?: string;
   }
 >;
 
@@ -16,7 +20,8 @@ export type ListExperimentsParams = WithClient<
  * List the information about all experiments available to the client.
  *
  * @param client - An optional ArizeClient instance to use for the request.
- * @param datasetId - An optional base64 encoded dataset ID used to filter experiments on a specific dataset.
+ * @param dataset - An optional dataset ID or name to filter experiments.
+ * @param space - An optional space ID or name. Required when `dataset` is a name.
  * @param limit - An optional limit on the number of experiments to return.
  * @param cursor - An optional cursor for pagination.
  * @returns A list of {@link Experiment} objects.
@@ -25,7 +30,7 @@ export type ListExperimentsParams = WithClient<
  * ```typescript
  * import { listExperiments } from "@arizeai/ax-client"
  *
- * const experiments = await listExperiments({});
+ * const experiments = await listExperiments({ dataset: "my-dataset", space: "my-space" });
  * console.log(experiments);
  * ```
  */
@@ -33,8 +38,12 @@ export async function listExperiments(
   params: ListExperimentsParams = {},
 ): Promise<PaginatedResponse<Experiment>> {
   warnPreRelease({ functionName: "listExperiments" });
-  const { client: clientInstance, datasetId, limit, cursor } = params;
+  const { client: clientInstance, dataset, space, limit, cursor } = params;
   const client = clientInstance ?? createClient();
+  const spaceRef = toSpaceRef(space);
+  const datasetId = dataset
+    ? await findDatasetId(client, dataset, spaceRef)
+    : undefined;
   const response = await client.GET("/v2/experiments", {
     params: {
       query: {

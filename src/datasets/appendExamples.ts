@@ -4,9 +4,17 @@ import { Dataset, DatasetExampleInput } from "../types/datasets";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { transformDataset } from "./utils";
+import { findDatasetId, toSpaceRef } from "../utils/resolve";
 
 export type AppendExamplesParams = WithClient<{
-  datasetId: string;
+  /**
+   * The name or ID of the dataset to add examples to.
+   */
+  dataset: string;
+  /**
+   * An optional space name or ID. Required when `dataset` is a name.
+   */
+  space?: string;
   datasetVersionId?: string;
   examples: DatasetExampleInput[];
 }>;
@@ -15,7 +23,8 @@ export type AppendExamplesParams = WithClient<{
  * Add new examples to a dataset.
  *
  * @param client - An optional ArizeClient instance to use for the request. @default createClient()
- * @param datasetId - The ID of the dataset to add examples to.
+ * @param dataset - The name or ID of the dataset to add examples to.
+ * @param space - An optional space name or ID. Required when `dataset` is a name.
  * @param datasetVersionId - An optional version of the dataset to add examples to. @default latest dataset version
  * @param examples - The array of examples ({@link DatasetExampleInput}) to add to the dataset. The examples must follow the following rules:
  * - Each item in `examples[]` may contain **any user-defined fields**.
@@ -28,18 +37,21 @@ export type AppendExamplesParams = WithClient<{
  * ```typescript
  * import { appendExamples } from "@arizeai/ax-client"
  *
- * const dataset = await appendExamples({ datasetId: "your_dataset_id", examples: [{ "question": "What is 2+2?", "answer": "4", "topic": "math" }] });
+ * const dataset = await appendExamples({ dataset: "my_dataset", space: "my_space", examples: [{ "question": "What is 2+2?", "answer": "4", "topic": "math" }] });
  * console.log(dataset);
  * ```
  */
 export async function appendExamples({
   client: clientInstance,
-  datasetId,
+  dataset,
+  space,
   datasetVersionId,
   examples,
 }: AppendExamplesParams): Promise<Dataset> {
   warnPreRelease({ functionName: "appendExamples" });
   const client = clientInstance ?? createClient();
+  const spaceRef = toSpaceRef(space);
+  const datasetId = await findDatasetId(client, dataset, spaceRef);
   const response = await client.POST("/v2/datasets/{dataset_id}/examples", {
     params: {
       path: { dataset_id: datasetId },

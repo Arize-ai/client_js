@@ -68,6 +68,28 @@ export class NotFoundError extends APIError {
 }
 
 /**
+ * Thrown when a resource name cannot be resolved to an ID.
+ */
+export class ResolutionError extends Error {
+  constructor(
+    public readonly resourceType: string,
+    public readonly resourceName: string,
+    public readonly availableNames: string[],
+    hint?: string,
+  ) {
+    const available =
+      availableNames.length > 0
+        ? ` Available ${resourceType}s: ${availableNames.join(", ")}`
+        : "";
+    const hintText = hint ? ` ${hint}` : "";
+    super(
+      `${resourceType} '${resourceName}' not found.${available}${hintText}`,
+    );
+    this.name = "ResolutionError";
+  }
+}
+
+/**
  * Handle API error responses from an openapi-fetch call.
  * Throws {@link AuthenticationError} for 401,
  * {@link AuthorizationError} for 403,

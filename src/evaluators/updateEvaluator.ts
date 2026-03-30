@@ -3,10 +3,12 @@ import { Evaluator, UpdateEvaluatorInput, WithClient } from "../types";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { transformEvaluator } from "./utils";
+import { findEvaluatorId, toSpaceRef } from "../utils/resolve";
 
 export type UpdateEvaluatorParams = WithClient<
   UpdateEvaluatorInput & {
-    evaluatorId: string;
+    evaluator: string;
+    space?: string;
   }
 >;
 
@@ -14,7 +16,8 @@ export type UpdateEvaluatorParams = WithClient<
  * Update an evaluator's metadata. At least one of `name` or `description` must be provided.
  *
  * @param client - An optional ArizeClient instance to use for the request.
- * @param evaluatorId - The unique identifier of the evaluator to update.
+ * @param evaluator - The evaluator name or ID.
+ * @param space - An optional space name or ID (required when resolving by evaluator name).
  * @param name - An optional new name for the evaluator.
  * @param description - An optional new description for the evaluator.
  * @returns The updated {@link Evaluator}.
@@ -24,7 +27,8 @@ export type UpdateEvaluatorParams = WithClient<
  * import { updateEvaluator } from "@arizeai/ax-client"
  *
  * const evaluator = await updateEvaluator({
- *   evaluatorId: "your_evaluator_id",
+ *   evaluator: "Relevance",
+ *   space: "my-space",
  *   name: "Updated Evaluator Name",
  * });
  * console.log(evaluator);
@@ -32,12 +36,15 @@ export type UpdateEvaluatorParams = WithClient<
  */
 export async function updateEvaluator({
   client: clientInstance,
-  evaluatorId,
+  evaluator,
+  space,
   name,
   description,
 }: UpdateEvaluatorParams): Promise<Evaluator> {
   warnPreRelease({ functionName: "updateEvaluator" });
   const client = clientInstance ?? createClient();
+  const spaceRef = toSpaceRef(space);
+  const evaluatorId = await findEvaluatorId(client, evaluator, spaceRef);
   const response = await client.PATCH("/v2/evaluators/{evaluator_id}", {
     params: {
       path: { evaluator_id: evaluatorId },

@@ -5,7 +5,8 @@ const EVALUATOR_VERSION_LIMIT = 5;
 (async () => {
   try {
     const versions = await listEvaluatorVersions({
-      evaluatorId: "your_evaluator_id",
+      space: "your_space_name",
+      evaluator: "your_evaluator_name",
       limit: EVALUATOR_VERSION_LIMIT,
     });
     // eslint-disable-next-line no-console

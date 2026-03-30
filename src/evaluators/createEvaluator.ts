@@ -7,17 +7,16 @@ import {
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { templateConfigToRaw, transformEvaluatorWithVersion } from "./utils";
+import { findSpaceId } from "../utils/resolve";
 
 export type CreateEvaluatorParams = WithClient<CreateEvaluatorInput>;
-// TODO: Support spaceName as an alternative to spaceId once the REST API
-// exposes a name-based lookup endpoint.
 
 /**
  * Create a new evaluator with an initial version.
  *
  * @param client - An optional ArizeClient instance to use for the request.
  * @param name - The name of the evaluator (must be unique within the space).
- * @param spaceId - The space ID to create the evaluator in.
+ * @param space - The space name or ID to create the evaluator in.
  * @param type - The evaluator type. Must be "template".
  * @param version - The initial version configuration.
  * @param version.commitMessage - A message describing this version.
@@ -31,7 +30,7 @@ export type CreateEvaluatorParams = WithClient<CreateEvaluatorInput>;
  *
  * const evaluator = await createEvaluator({
  *   name: "Relevance",
- *   spaceId: "your_space_id",
+ *   space: "my-space",
  *   type: "template",
  *   version: {
  *     commitMessage: "Initial version",
@@ -58,12 +57,13 @@ export async function createEvaluator({
   client: clientInstance,
   name,
   description,
-  spaceId,
+  space,
   type,
   version,
 }: CreateEvaluatorParams): Promise<EvaluatorWithVersion> {
   warnPreRelease({ functionName: "createEvaluator" });
   const client = clientInstance ?? createClient();
+  const spaceId = await findSpaceId(client, space);
   const response = await client.POST("/v2/evaluators", {
     body: {
       name,

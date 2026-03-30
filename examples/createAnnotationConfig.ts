@@ -4,7 +4,7 @@ import { createAnnotationConfig } from "../src/annotation_configs";
   try {
     const annotationConfig = await createAnnotationConfig({
       name: "Accuracy",
-      spaceId: "your_space_id",
+      space: "your_space_name",
       type: "categorical",
       values: [
         { label: "accurate", score: 1 },

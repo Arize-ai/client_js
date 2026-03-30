@@ -3,7 +3,8 @@ import { deleteAiIntegration } from "../src/ai_integrations";
 (async () => {
   try {
     await deleteAiIntegration({
-      integrationId: "your_integration_id",
+      space: "your_space_name",
+      integration: "your_integration_name",
     });
     // eslint-disable-next-line no-console
     console.log("AI integration deleted successfully");

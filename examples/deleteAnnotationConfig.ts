@@ -3,7 +3,8 @@ import { deleteAnnotationConfig } from "../src/annotation_configs";
 (async () => {
   try {
     await deleteAnnotationConfig({
-      annotationConfigId: "your_annotation_config_id",
+      space: "your_space_name",
+      annotationConfig: "your_annotation_config_name",
     });
     // eslint-disable-next-line no-console
     console.log("Annotation config deleted successfully");

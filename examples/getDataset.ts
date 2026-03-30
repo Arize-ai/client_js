@@ -2,7 +2,10 @@ import { getDataset } from "../src/datasets";
 
 async function main() {
   try {
-    const datasets = await getDataset({ datasetId: "your_dataset_id" });
+    const datasets = await getDataset({
+      space: "your_space_name",
+      dataset: "your_dataset_name",
+    });
     // eslint-disable-next-line no-console
     console.dir(datasets, { depth: null });
   } catch (error) {

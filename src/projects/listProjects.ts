@@ -4,11 +4,19 @@ import { Project } from "../types/projects";
 import { transformPaginationMetadata } from "../utils/pagination";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
+import { resolveSpace } from "../utils/space";
 import { transformProject } from "./utils";
 
 export type ListProjectsParams = WithClient<
   PaginationParams & {
-    spaceId?: string;
+    /**
+     * Optional space filter. If the value starts with `"spc_"` it is treated
+     * as a space ID; otherwise it is used as a case-insensitive substring
+     * filter on the space name.
+     */
+    space?: string;
+    /** Case-insensitive substring filter on the project name. */
+    name?: string;
   }
 >;
 
@@ -16,7 +24,8 @@ export type ListProjectsParams = WithClient<
  * List the information about all projects available to the client.
  *
  * @param client - An optional ArizeClient instance to use for the request.
- * @param spaceId - An optional base64 encoded space ID used to filter projects in a specific space.
+ * @param space - An optional space filter. Pass a space ID (e.g. `"spc_abc123"`) or a space name for substring filtering.
+ * @param name - An optional case-insensitive substring filter on the project name.
  * @param limit - An optional limit on the number of projects to return.
  * @param cursor - An optional cursor for pagination.
  * @returns A list of {@link Project} objects.
@@ -25,7 +34,7 @@ export type ListProjectsParams = WithClient<
  * ```typescript
  * import { listProjects } from "@arizeai/ax-client"
  *
- * const projects = await listProjects();
+ * const projects = await listProjects({ space: "my-space" });
  * console.log(projects);
  * ```
  */
@@ -33,12 +42,15 @@ export async function listProjects(
   params: ListProjectsParams = {},
 ): Promise<PaginatedResponse<Project>> {
   warnPreRelease({ functionName: "listProjects" });
-  const { client: clientInstance, spaceId, limit, cursor } = params;
+  const { client: clientInstance, space, name, limit, cursor } = params;
+  const { spaceId, spaceName } = resolveSpace(space);
   const client = clientInstance ?? createClient();
   const response = await client.GET("/v2/projects", {
     params: {
       query: {
         space_id: spaceId,
+        space_name: spaceName,
+        name,
         limit,
         cursor,
       },

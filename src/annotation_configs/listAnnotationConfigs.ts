@@ -8,11 +8,19 @@ import {
 import { transformPaginationMetadata } from "../utils/pagination";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
+import { resolveSpace } from "../utils/space";
 import { transformAnnotationConfig } from "./utils";
 
 export type ListAnnotationConfigsParams = WithClient<
   PaginationParams & {
-    spaceId?: string;
+    /**
+     * Optional space filter. If the value starts with `"spc_"` it is treated
+     * as a space ID; otherwise it is used as a case-insensitive substring
+     * filter on the space name.
+     */
+    space?: string;
+    /** Case-insensitive substring filter on the annotation config name. */
+    name?: string;
   }
 >;
 
@@ -20,7 +28,8 @@ export type ListAnnotationConfigsParams = WithClient<
  * List the information about all annotation configs available to the client.
  *
  * @param client - An optional ArizeClient instance to use for the request.
- * @param spaceId - An optional base64 encoded space ID used to filter annotation configs in a specific space.
+ * @param space - An optional space filter. Pass a space ID (e.g. `"spc_abc123"`) or a space name for substring filtering.
+ * @param name - An optional case-insensitive substring filter on the annotation config name.
  * @param limit - An optional limit on the number of annotation configs to return.
  * @param cursor - An optional cursor for pagination.
  * @returns A list of {@link AnnotationConfig} objects.
@@ -29,7 +38,7 @@ export type ListAnnotationConfigsParams = WithClient<
  * ```typescript
  * import { listAnnotationConfigs } from "@arizeai/ax-client"
  *
- * const annotationConfigs = await listAnnotationConfigs();
+ * const annotationConfigs = await listAnnotationConfigs({ space: "my-space" });
  * console.log(annotationConfigs);
  * ```
  */
@@ -37,12 +46,15 @@ export async function listAnnotationConfigs(
   params: ListAnnotationConfigsParams = {},
 ): Promise<PaginatedResponse<AnnotationConfig>> {
   warnPreRelease({ functionName: "listAnnotationConfigs" });
-  const { client: clientInstance, spaceId, limit, cursor } = params;
+  const { client: clientInstance, space, name, limit, cursor } = params;
+  const { spaceId, spaceName } = resolveSpace(space);
   const client = clientInstance ?? createClient();
   const response = await client.GET("/v2/annotation-configs", {
     params: {
       query: {
         space_id: spaceId,
+        space_name: spaceName,
+        name,
         limit,
         cursor,
       },

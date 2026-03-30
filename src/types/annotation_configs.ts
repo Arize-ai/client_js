@@ -37,7 +37,7 @@ export type AnnotationConfig =
 
 export interface AnnotationConfigCreateBase {
   name: string;
-  spaceId: string;
+  space: string;
 }
 
 export interface CreateContinuousAnnotationConfig extends AnnotationConfigCreateBase {

@@ -2,7 +2,10 @@ import { deletePrompt } from "../src/prompts";
 
 (async () => {
   try {
-    await deletePrompt({ promptId: "your_prompt_id" });
+    await deletePrompt({
+      space: "your_space_name",
+      prompt: "your_prompt_name",
+    });
     // eslint-disable-next-line no-console
     console.log("Prompt deleted successfully");
   } catch (error) {

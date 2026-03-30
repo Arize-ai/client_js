@@ -4,7 +4,8 @@ import { createExperiment } from "../src/experiments";
   try {
     const experiment = await createExperiment({
       experimentName: "your_experiment_name",
-      datasetId: "your_dataset_id",
+      space: "your_space_name",
+      dataset: "your_dataset_name",
       experimentRuns: [
         {
           example_id: "your_example_id",

@@ -3,7 +3,8 @@ import { createEvaluatorVersion } from "../src/evaluators";
 (async () => {
   try {
     const version = await createEvaluatorVersion({
-      evaluatorId: "your_evaluator_id",
+      space: "your_space_name",
+      evaluator: "your_evaluator_name",
       commitMessage: "Improved prompt wording",
       templateConfig: {
         name: "Relevance",

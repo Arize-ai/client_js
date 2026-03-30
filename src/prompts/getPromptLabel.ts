@@ -3,10 +3,12 @@ import { WithClient } from "../types";
 import { PromptVersion } from "../types/prompts";
 import { handleApiError } from "../errors";
 import { warnPreRelease } from "../utils/warning";
+import { findPromptId, toSpaceRef } from "../utils/resolve";
 import { transformPromptVersion } from "./utils";
 
 export type GetPromptLabelParams = WithClient<{
-  promptId: string;
+  prompt: string;
+  space?: string;
   labelName: string;
 }>;
 
@@ -16,7 +18,8 @@ export type GetPromptLabelParams = WithClient<{
  * Returns the full {@link PromptVersion} that this label currently references.
  *
  * @param client - An optional ArizeClient instance to use for the request.
- * @param promptId - The ID of the prompt.
+ * @param prompt - The name or ID of the prompt.
+ * @param space - An optional space name or ID (required when resolving a prompt by name).
  * @param labelName - The label name to resolve (e.g., "production", "staging").
  * @returns The {@link PromptVersion} pointed to by the label.
  * @throws Error if the label cannot be resolved or the response is invalid.
@@ -25,7 +28,8 @@ export type GetPromptLabelParams = WithClient<{
  * import { getPromptLabel } from "@arizeai/ax-client"
  *
  * const version = await getPromptLabel({
- *   promptId: "prompt_12345",
+ *   prompt: "customer-support",
+ *   space: "my-space",
  *   labelName: "production",
  * });
  * console.log(version);
@@ -33,11 +37,14 @@ export type GetPromptLabelParams = WithClient<{
  */
 export async function getPromptLabel({
   client: clientInstance,
-  promptId,
+  prompt,
+  space,
   labelName,
 }: GetPromptLabelParams): Promise<PromptVersion> {
   warnPreRelease({ functionName: "getPromptLabel" });
   const client = clientInstance ?? createClient();
+  const spaceRef = toSpaceRef(space);
+  const promptId = await findPromptId(client, prompt, spaceRef);
   const response = await client.GET(
     "/v2/prompts/{prompt_id}/labels/{label_name}",
     {

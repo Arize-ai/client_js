@@ -3,7 +3,7 @@ import { createDataset } from "../src/datasets/createDataset";
 (async () => {
   try {
     const dataset = await createDataset({
-      spaceId: "your_space_id",
+      space: "your_space_name",
       examples: [{ question: "What is 2+2?", answer: "4", topic: "math" }],
       name: "your_dataset_name",
     });

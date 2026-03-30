@@ -3,7 +3,8 @@ import { listDatasetExamples } from "../src/datasets";
 (async () => {
   try {
     const response = await listDatasetExamples({
-      datasetId: "your_dataset_id",
+      space: "your_space_name",
+      dataset: "your_dataset_name",
     });
     // eslint-disable-next-line no-console
     console.dir(response, { depth: null });

@@ -5,7 +5,9 @@ const EXPERIMENT_RUN_LIMIT = 5;
 (async () => {
   try {
     const experimentRuns = await listExperimentRuns({
-      experimentId: "your_experiment_id",
+      space: "your_space_name",
+      dataset: "your_dataset_name",
+      experiment: "your_experiment_name",
       limit: EXPERIMENT_RUN_LIMIT,
     });
     // eslint-disable-next-line no-console

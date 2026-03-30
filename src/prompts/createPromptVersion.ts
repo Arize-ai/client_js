@@ -3,18 +3,20 @@ import { WithClient } from "../types";
 import { PromptVersion } from "../types/prompts";
 import { handleApiError } from "../errors";
 import { warnPreRelease } from "../utils/warning";
+import { findPromptId, toSpaceRef } from "../utils/resolve";
 import { CreatePromptVersionInput } from "./createPrompt";
 import { transformPromptVersion } from "./utils";
 
 export type CreatePromptVersionParams = WithClient<
-  CreatePromptVersionInput & { promptId: string }
+  CreatePromptVersionInput & { prompt: string; space?: string }
 >;
 
 /**
  * Create a new version of an existing prompt.
  *
  * @param client - An optional ArizeClient instance to use for the request.
- * @param promptId - The ID of the prompt to create a new version for.
+ * @param prompt - The name or ID of the prompt to create a new version for.
+ * @param space - An optional space name or ID (required when resolving a prompt by name).
  * @param commitMessage - A message describing the changes in this version.
  * @param inputVariableFormat - The format for input variables in prompt messages.
  * @param provider - The LLM provider.
@@ -29,7 +31,8 @@ export type CreatePromptVersionParams = WithClient<
  * import { createPromptVersion } from "@arizeai/ax-client"
  *
  * const version = await createPromptVersion({
- *   promptId: "prompt_12345",
+ *   prompt: "customer-support",
+ *   space: "my-space",
  *   commitMessage: "Updated system prompt for better responses",
  *   inputVariableFormat: "f_string",
  *   provider: "openAI",
@@ -44,7 +47,8 @@ export type CreatePromptVersionParams = WithClient<
  */
 export async function createPromptVersion({
   client: clientInstance,
-  promptId,
+  prompt,
+  space,
   commitMessage,
   inputVariableFormat,
   provider,
@@ -55,6 +59,8 @@ export async function createPromptVersion({
 }: CreatePromptVersionParams): Promise<PromptVersion> {
   warnPreRelease({ functionName: "createPromptVersion" });
   const client = clientInstance ?? createClient();
+  const spaceRef = toSpaceRef(space);
+  const promptId = await findPromptId(client, prompt, spaceRef);
   const response = await client.POST("/v2/prompts/{prompt_id}/versions", {
     params: { path: { prompt_id: promptId } },
     body: {

@@ -10,6 +10,7 @@ import {
 } from "../types/prompts";
 import { handleApiError } from "../errors";
 import { warnPreRelease } from "../utils/warning";
+import { findSpaceId } from "../utils/resolve";
 import { transformPromptWithVersion } from "./utils";
 
 export type CreatePromptVersionInput = {
@@ -23,7 +24,7 @@ export type CreatePromptVersionInput = {
 };
 
 export type CreatePromptParams = WithClient<{
-  spaceId: string;
+  space: string;
   name: string;
   description?: string;
   version: CreatePromptVersionInput;
@@ -33,7 +34,7 @@ export type CreatePromptParams = WithClient<{
  * Create a new prompt with an initial version.
  *
  * @param client - An optional ArizeClient instance to use for the request.
- * @param spaceId - The space ID to create the prompt in.
+ * @param space - The space name or ID to create the prompt in.
  * @param name - The name of the prompt (must be unique within the space).
  * @param description - An optional description for the prompt.
  * @param version - The initial version configuration.
@@ -44,7 +45,7 @@ export type CreatePromptParams = WithClient<{
  * import { createPrompt } from "@arizeai/ax-client"
  *
  * const prompt = await createPrompt({
- *   spaceId: "your_space_id",
+ *   space: "my-space",
  *   name: "customer-support",
  *   description: "A prompt for customer support interactions",
  *   version: {
@@ -63,13 +64,14 @@ export type CreatePromptParams = WithClient<{
  */
 export async function createPrompt({
   client: clientInstance,
-  spaceId,
+  space,
   name,
   description,
   version,
 }: CreatePromptParams): Promise<PromptWithVersion> {
   warnPreRelease({ functionName: "createPrompt" });
   const client = clientInstance ?? createClient();
+  const spaceId = await findSpaceId(client, space);
   const response = await client.POST("/v2/prompts", {
     body: {
       space_id: spaceId,

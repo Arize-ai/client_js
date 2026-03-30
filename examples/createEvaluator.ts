@@ -4,7 +4,7 @@ import { createEvaluator } from "../src/evaluators";
   try {
     const evaluator = await createEvaluator({
       name: "Relevance",
-      spaceId: "your_space_id",
+      space: "your_space_name",
       type: "template",
       version: {
         commitMessage: "Initial version",

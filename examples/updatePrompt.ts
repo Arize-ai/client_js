@@ -3,7 +3,8 @@ import { updatePrompt } from "../src/prompts";
 (async () => {
   try {
     const updated = await updatePrompt({
-      promptId: "your_prompt_id",
+      space: "your_space_name",
+      prompt: "your_prompt_name",
       description: "Updated description for the prompt",
     });
     // eslint-disable-next-line no-console

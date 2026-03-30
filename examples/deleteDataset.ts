@@ -3,7 +3,8 @@ import { deleteDataset } from "../src/datasets";
 (async () => {
   try {
     await deleteDataset({
-      datasetId: "your_dataset_id",
+      space: "your_space_name",
+      dataset: "your_dataset_name",
     });
     // eslint-disable-next-line no-console
     console.log("Dataset deleted successfully");

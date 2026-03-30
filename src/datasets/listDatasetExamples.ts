@@ -4,9 +4,17 @@ import { createClient } from "../client";
 import { transformListDatasetExamplesResponseExample } from "./utils";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
+import { findDatasetId, toSpaceRef } from "../utils/resolve";
 
 export type ListDatasetExamplesParams = WithClient<{
-  datasetId: string;
+  /**
+   * The name or ID of the dataset to list examples for.
+   */
+  dataset: string;
+  /**
+   * An optional space name or ID. Required when `dataset` is a name.
+   */
+  space?: string;
   datasetVersionId?: string;
   limit?: number;
 }>;
@@ -15,7 +23,8 @@ export type ListDatasetExamplesParams = WithClient<{
  * List the examples of a specific dataset.
  *
  * @param client - An optional ArizeClient instance to use for the request. @default createClient()
- * @param datasetId - The ID of the dataset to list examples for.
+ * @param dataset - The name or ID of the dataset to list examples for.
+ * @param space - An optional space name or ID. Required when `dataset` is a name.
  * @param datasetVersionId - An optional version of the dataset to list examples for. Defaults to the latest version if not provided.
  * @param limit - The maximum number of examples to return. @default 50
  * @returns A list of {@link DatasetExample | Dataset Examples}.
@@ -24,8 +33,8 @@ export type ListDatasetExamplesParams = WithClient<{
  * ```typescript
  * import { listDatasetExamples } from "@arizeai/ax-client"
  *
- * const examples = await listDatasetExamples({ datasetId: "your_dataset_id" });
- * console.log(dataset);
+ * const examples = await listDatasetExamples({ dataset: "my_dataset", space: "my_space" });
+ * console.log(examples);
  * ```
  *
  * Note:
@@ -34,12 +43,15 @@ export type ListDatasetExamplesParams = WithClient<{
  */
 export async function listDatasetExamples({
   client: clientInstance,
-  datasetId,
+  dataset,
+  space,
   datasetVersionId,
   limit,
 }: ListDatasetExamplesParams): Promise<DatasetExample[]> {
   warnPreRelease({ functionName: "listDatasetExamples" });
   const client = clientInstance ?? createClient();
+  const spaceRef = toSpaceRef(space);
+  const datasetId = await findDatasetId(client, dataset, spaceRef);
   const response = await client.GET("/v2/datasets/{dataset_id}/examples", {
     params: {
       path: { dataset_id: datasetId },

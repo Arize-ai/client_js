@@ -42,6 +42,6 @@ export function warnPreRelease({
 
   // eslint-disable-next-line no-console
   console.warn(
-    `[Arize AX Client] ${functionName} is part of version ${version} - API may change. Set ${DISABLE_PRERELEASE_WARNING}=true to disable this warning.`,
+    `[Arize AX Client] ${functionName} is part of version ${version} - API may change. If you experience unexpected failures, please upgrade to the most recent version of the package. Set ${DISABLE_PRERELEASE_WARNING}=true to disable this warning.`,
   );
 }

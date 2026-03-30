@@ -7,6 +7,7 @@ import {
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { templateConfigToRaw, transformEvaluatorVersion } from "./utils";
+import { findEvaluatorId, toSpaceRef } from "../utils/resolve";
 
 export type CreateEvaluatorVersionParams =
   WithClient<CreateEvaluatorVersionInput>;
@@ -16,7 +17,8 @@ export type CreateEvaluatorVersionParams =
  * Versions are immutable once created. To change the configuration, create a new version.
  *
  * @param client - An optional ArizeClient instance to use for the request.
- * @param evaluatorId - The unique identifier of the evaluator to version.
+ * @param evaluator - The evaluator name or ID.
+ * @param space - An optional space name or ID (required when resolving by evaluator name).
  * @param commitMessage - A message describing the changes in this version.
  * @param templateConfig - The LLM template configuration for this version.
  * @returns The created {@link EvaluatorVersion}.
@@ -26,7 +28,8 @@ export type CreateEvaluatorVersionParams =
  * import { createEvaluatorVersion } from "@arizeai/ax-client"
  *
  * const version = await createEvaluatorVersion({
- *   evaluatorId: "your_evaluator_id",
+ *   evaluator: "Relevance",
+ *   space: "my-space",
  *   commitMessage: "Updated prompt template",
  *   templateConfig: {
  *     name: "Relevance",
@@ -48,12 +51,15 @@ export type CreateEvaluatorVersionParams =
  */
 export async function createEvaluatorVersion({
   client: clientInstance,
-  evaluatorId,
+  evaluator,
+  space,
   commitMessage,
   templateConfig,
 }: CreateEvaluatorVersionParams): Promise<EvaluatorVersion> {
   warnPreRelease({ functionName: "createEvaluatorVersion" });
   const client = clientInstance ?? createClient();
+  const spaceRef = toSpaceRef(space);
+  const evaluatorId = await findEvaluatorId(client, evaluator, spaceRef);
   const response = await client.POST("/v2/evaluators/{evaluator_id}/versions", {
     params: {
       path: { evaluator_id: evaluatorId },

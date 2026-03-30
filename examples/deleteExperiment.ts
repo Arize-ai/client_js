@@ -3,7 +3,9 @@ import { deleteExperiment } from "../src/experiments";
 (async () => {
   try {
     await deleteExperiment({
-      experimentId: "your_experiment_id",
+      space: "your_space_name",
+      dataset: "your_dataset_name",
+      experiment: "your_experiment_name",
     });
   } catch (error) {
     // eslint-disable-next-line no-console

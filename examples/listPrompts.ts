@@ -3,7 +3,7 @@ import { listPrompts } from "../src/prompts";
 (async () => {
   try {
     const { data: prompts, pagination } = await listPrompts({
-      spaceId: "your_space_id",
+      space: "your_space_name",
       limit: 10,
     });
     // eslint-disable-next-line no-console

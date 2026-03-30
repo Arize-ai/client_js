@@ -3,7 +3,8 @@ import { createPromptVersion } from "../src/prompts";
 (async () => {
   try {
     const version = await createPromptVersion({
-      promptId: "your_prompt_id",
+      space: "your_space_name",
+      prompt: "your_prompt_name",
       commitMessage: "Updated system prompt for better responses",
       inputVariableFormat: "f_string",
       provider: "openAI",

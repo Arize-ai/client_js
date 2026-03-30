@@ -4,9 +4,10 @@ import { Dataset, DatasetExampleInput } from "../types/datasets";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { transformDataset } from "./utils";
+import { findSpaceId } from "../utils/resolve";
 
 export type CreateDatasetParams = WithClient<{
-  spaceId: string;
+  space: string;
   examples: DatasetExampleInput[];
   name: string;
 }>;
@@ -15,7 +16,7 @@ export type CreateDatasetParams = WithClient<{
  * Create a new dataset with example(s).
  *
  * @param client - An optional ArizeClient instance to use for the request.
- * @param spaceId - The space ID to create the dataset in.
+ * @param space - The space name or ID to create the dataset in.
  * @param examples - The array of examples ({@link DatasetExample}) to create the dataset with. The examples must follow the following rules:
  * - Each item in `examples[]` may contain **any user-defined fields**.
  * - **Do not** include system-managed fields on input: `id`, `created_at`, `updated_at`.
@@ -28,7 +29,7 @@ export type CreateDatasetParams = WithClient<{
  * import { createDataset } from "@arizeai/ax-client"
  *
  * const dataset = await createDataset({
- *   spaceId: "your_space_id",
+ *   space: "your_space_name",
  *   examples: [
  *     { "question": "What is 2+2?", "answer": "4", "topic": "math" },
  *   ],
@@ -39,12 +40,13 @@ export type CreateDatasetParams = WithClient<{
  */
 export async function createDataset({
   client: clientInstance,
-  spaceId,
+  space,
   examples,
   name,
 }: CreateDatasetParams): Promise<Dataset> {
   warnPreRelease({ functionName: "createDataset" });
   const client = clientInstance ?? createClient();
+  const spaceId = await findSpaceId(client, space);
   const response = await client.POST("/v2/datasets", {
     body: {
       name,

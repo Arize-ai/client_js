@@ -3,18 +3,20 @@ import { Project, WithClient } from "../types";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { transformProject } from "./utils";
+import { findSpaceId } from "../utils/resolve";
 
 export type CreateProjectParams = WithClient<{
   name: string;
-  spaceId: string;
+  /** Space ID or name. */
+  space: string;
 }>;
 
 /**
  * Create a new project.
  *
  * @param client - An optional ArizeClient instance to use for the request.
- * @spaceId - The space ID to create the project in.
- * @name - The name of the project to create.
+ * @param space - The space ID or name to create the project in.
+ * @param name - The name of the project to create.
  * @returns A {@link Project}.
  * @throws Error if the project cannot be created or the response is invalid.
  * @example
@@ -22,7 +24,7 @@ export type CreateProjectParams = WithClient<{
  * import { createProject } from "@arizeai/ax-client"
  *
  * const project = await createProject({
- *   spaceId: "your_space_id",
+ *   space: "my-space",
  *   name: "your_project_name",
  * });
  * console.log(project);
@@ -31,10 +33,11 @@ export type CreateProjectParams = WithClient<{
 export async function createProject({
   client: clientInstance,
   name,
-  spaceId,
+  space,
 }: CreateProjectParams): Promise<Project> {
   warnPreRelease({ functionName: "createProject" });
   const client = clientInstance ?? createClient();
+  const spaceId = await findSpaceId(client, space);
   const response = await client.POST("/v2/projects", {
     body: {
       name,

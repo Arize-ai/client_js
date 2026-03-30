@@ -3,7 +3,7 @@ import { createPrompt } from "../src/prompts";
 (async () => {
   try {
     const prompt = await createPrompt({
-      spaceId: "your_space_id",
+      space: "your_space_name",
       name: "customer-support",
       description: "A prompt for customer support interactions",
       version: {

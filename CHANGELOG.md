@@ -1,11 +1,30 @@
 # @arizeai/ax-client
 
-## [1.4.1](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.4.0...arize-js-sdk/v1.4.1) (2026-03-21)
+## [1.5.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.4.1...arize-js-sdk/v1.5.0) (2026-03-30)
 
+
+### 🎁 New Features
+
+* add name-or-ID resolution across JS SDK (mirrors Python SDK) ([#66418](https://github.com/Arize-ai/arize/issues/66418)) ([d3c55bc](https://github.com/Arize-ai/arize/commit/d3c55bce943ff7e6f4fe1d094690a4ed93514fd8))
+* implement list spans ([#63735](https://github.com/Arize-ai/arize/issues/63735)) ([9510ea3](https://github.com/Arize-ai/arize/commit/9510ea3b381910468dcad028887ec6bdc6b1cf52))
+* implement roles CRUD API ([#66241](https://github.com/Arize-ai/arize/issues/66241)) ([92d1cb1](https://github.com/Arize-ai/arize/commit/92d1cb145bd3460a7f94a84825a30c3197a1331a)), closes [#66233](https://github.com/Arize-ai/arize/issues/66233)
+* add tasks and task-runs module to ax-client ([#65671](https://github.com/Arize-ai/arize/issues/65671)) ([de9545b](https://github.com/Arize-ai/arize/commit/de9545b57713805632db7458828768d9c330b911))
+
+
+### 🐛 Bug Fixes
+
+* address dependabot and code scanning security alerts ([#66426](https://github.com/Arize-ai/arize/issues/66426)) ([5eae40a](https://github.com/Arize-ai/arize/commit/5eae40ab235c50e4135ed7fefc6bec25d1a7724b))
+
+
+### ❔ Miscellaneous Chores
+
+* Add upgrade suggestion to SDK pre-release warnings ([#66879](https://github.com/Arize-ai/arize/issues/66879)) ([8c47f31](https://github.com/Arize-ai/arize/commit/8c47f31f1cac29121da13c9a9161a8493af4070d))
+
+## [1.4.1](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.4.0...arize-js-sdk/v1.4.1) (2026-03-21)
 
 ### 💫 Code Refactoring
 
-* **api-keys:** centralize ApiKeyStatus schema and update references ([#66333](https://github.com/Arize-ai/arize/issues/66333)) ([e32438d](https://github.com/Arize-ai/arize/commit/e32438d56098a25bd925c17ee262e0895e9f5ab6))
+- **api-keys:** centralize ApiKeyStatus schema and update references ([#66333](https://github.com/Arize-ai/arize/issues/66333)) ([e32438d](https://github.com/Arize-ai/arize/commit/e32438d56098a25bd925c17ee262e0895e9f5ab6))
 
 ## [1.4.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.3.1...arize-js-sdk/v1.4.0) (2026-03-19)
 

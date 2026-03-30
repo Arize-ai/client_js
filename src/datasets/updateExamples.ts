@@ -4,12 +4,17 @@ import { Dataset, DatasetExampleUpdate } from "../types/datasets";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { transformDataset } from "./utils";
+import { findDatasetId, toSpaceRef } from "../utils/resolve";
 
 export type UpdateExamplesParams = WithClient<{
   /**
-   * The ID of the dataset to update examples in.
+   * The name or ID of the dataset to update examples in.
    */
-  datasetId: string;
+  dataset: string;
+  /**
+   * An optional space name or ID. Required when `dataset` is a name.
+   */
+  space?: string;
   /**
    * An optional version of the dataset to update examples in.
    * @default latest dataset version
@@ -29,7 +34,8 @@ export type UpdateExamplesParams = WithClient<{
  * Update examples in a dataset with a patch to each example updating existing fields and adding new fields. Does not remove fields that are omitted.
  *
  * @param client - An optional ArizeClient instance to use for the request. @default createClient()
- * @param datasetId - The ID of the dataset to update examples in.
+ * @param dataset - The name or ID of the dataset to update examples in.
+ * @param space - An optional space name or ID. Required when `dataset` is a name.
  * @param datasetVersionId - An optional version of the dataset to update examples in. @default latest dataset version
  * @param examples - The array of examples ({@link DatasetExampleUpdate}) to update in the dataset.
  * The examples must follow the following rules:
@@ -49,7 +55,8 @@ export type UpdateExamplesParams = WithClient<{
  * import { updateExamples } from "@arizeai/ax-client"
  *
  * const dataset = await updateExamples({
- *   datasetId: "your_dataset_id",
+ *   dataset: "my_dataset",
+ *   space: "my_space",
  *   examples: [
  *     {
  *       id: "your_example_id",
@@ -65,13 +72,16 @@ export type UpdateExamplesParams = WithClient<{
  */
 export async function updateExamples({
   client: clientInstance,
-  datasetId,
+  dataset,
+  space,
   datasetVersionId,
   examples,
   newVersionName,
 }: UpdateExamplesParams): Promise<Dataset> {
   warnPreRelease({ functionName: "updateExamples" });
   const client = clientInstance ?? createClient();
+  const spaceRef = toSpaceRef(space);
+  const datasetId = await findDatasetId(client, dataset, spaceRef);
   const response = await client.PATCH("/v2/datasets/{dataset_id}/examples", {
     params: {
       path: { dataset_id: datasetId },

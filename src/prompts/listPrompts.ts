@@ -4,11 +4,19 @@ import { Prompt } from "../types/prompts";
 import { transformPaginationMetadata } from "../utils/pagination";
 import { handleApiError } from "../errors";
 import { warnPreRelease } from "../utils/warning";
+import { resolveSpace } from "../utils/space";
 import { transformPrompt } from "./utils";
 
 export type ListPromptsParams = WithClient<
   PaginationParams & {
-    spaceId?: string;
+    /**
+     * Optional space filter. If the value starts with `"spc_"` it is treated
+     * as a space ID; otherwise it is used as a case-insensitive substring
+     * filter on the space name.
+     */
+    space?: string;
+    /** Case-insensitive substring filter on the prompt name. */
+    name?: string;
   }
 >;
 
@@ -18,7 +26,8 @@ export type ListPromptsParams = WithClient<
  * The prompts are sorted by update date, with the most recently updated prompts first.
  *
  * @param client - An optional ArizeClient instance to use for the request.
- * @param spaceId - An optional space ID to filter prompts by space.
+ * @param space - An optional space filter. Pass a space ID (e.g. `"spc_abc123"`) or a space name for substring filtering.
+ * @param name - An optional case-insensitive substring filter on the prompt name.
  * @param limit - An optional limit on the number of prompts to return (max 100).
  * @param cursor - An optional cursor for pagination.
  * @returns A paginated list of {@link Prompt} objects.
@@ -27,7 +36,7 @@ export type ListPromptsParams = WithClient<
  * ```typescript
  * import { listPrompts } from "@arizeai/ax-client"
  *
- * const { data: prompts, pagination } = await listPrompts({ spaceId: "your_space_id" });
+ * const { data: prompts, pagination } = await listPrompts({ space: "my-space" });
  * console.log(prompts);
  * ```
  */
@@ -35,12 +44,15 @@ export async function listPrompts(
   params: ListPromptsParams = {},
 ): Promise<PaginatedResponse<Prompt>> {
   warnPreRelease({ functionName: "listPrompts" });
-  const { client: clientInstance, spaceId, limit, cursor } = params;
+  const { client: clientInstance, space, name, limit, cursor } = params;
+  const { spaceId, spaceName } = resolveSpace(space);
   const client = clientInstance ?? createClient();
   const response = await client.GET("/v2/prompts", {
     params: {
       query: {
         space_id: spaceId,
+        space_name: spaceName,
+        name,
         limit,
         cursor,
       },

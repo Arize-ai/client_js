@@ -1,18 +1,30 @@
 import { createClient } from "../client";
 import { AiIntegration, UpdateAiIntegrationInput, WithClient } from "../types";
 import { handleApiError } from "../errors";
+import { findAiIntegrationId, toSpaceRef } from "../utils/resolve";
 import { warnPreRelease } from "../utils/warning";
 import { toRawScoping, transformAiIntegration } from "./utils";
 
 export type UpdateAiIntegrationParams = WithClient<
-  { integrationId: string } & UpdateAiIntegrationInput
+  {
+    /**
+     * The name or ID of the AI integration to update.
+     */
+    integration: string;
+    /**
+     * The name or ID of the space the integration belongs to.
+     * Required when `integration` is a name rather than an ID.
+     */
+    space?: string;
+  } & UpdateAiIntegrationInput
 >;
 
 /**
  * Update an existing AI integration.
  *
  * @param client - An optional ArizeClient instance to use for the request.
- * @param integrationId - The ID of the integration to update.
+ * @param integration - The name or ID of the integration to update.
+ * @param space - The name or ID of the space (required when using a name for `integration`).
  * @param name - An optional new name for the integration.
  * @param provider - An optional new provider.
  * @param apiKey - An optional new API key. Pass null to remove the existing key.
@@ -30,9 +42,17 @@ export type UpdateAiIntegrationParams = WithClient<
  * ```typescript
  * import { updateAiIntegration } from "@arizeai/ax-client"
  *
+ * // By ID
  * const integration = await updateAiIntegration({
- *   integrationId: "your_integration_id",
+ *   integration: "your_integration_id",
  *   name: "Updated OpenAI",
+ *   modelNames: ["gpt-4o"],
+ * });
+ *
+ * // By name (requires space)
+ * const integration = await updateAiIntegration({
+ *   integration: "Production OpenAI",
+ *   space: "my-space",
  *   modelNames: ["gpt-4o"],
  * });
  * console.log(integration);
@@ -40,7 +60,8 @@ export type UpdateAiIntegrationParams = WithClient<
  */
 export async function updateAiIntegration({
   client: clientInstance,
-  integrationId,
+  integration,
+  space,
   name,
   provider,
   apiKey,
@@ -55,6 +76,12 @@ export async function updateAiIntegration({
 }: UpdateAiIntegrationParams): Promise<AiIntegration> {
   warnPreRelease({ functionName: "updateAiIntegration" });
   const client = clientInstance ?? createClient();
+  const spaceRef = toSpaceRef(space);
+  const integrationId = await findAiIntegrationId(
+    client,
+    integration,
+    spaceRef,
+  );
   const response = await client.PATCH("/v2/ai-integrations/{integration_id}", {
     params: {
       path: {

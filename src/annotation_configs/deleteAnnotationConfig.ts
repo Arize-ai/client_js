@@ -1,17 +1,20 @@
 import { createClient } from "../client";
 import { WithClient } from "../types";
+import { findAnnotationConfigId, toSpaceRef } from "../utils/resolve";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 
 export type DeleteAnnotationConfigParams = WithClient<{
-  annotationConfigId: string;
+  annotationConfig: string;
+  space?: string;
 }>;
 
 /**
- * Delete an annotation config by its ID.
+ * Delete an annotation config by its name or ID.
  *
  * @param client - An optional ArizeClient instance to use for the request.
- * @param annotationConfigId - The ID of the annotation config to delete.
+ * @param annotationConfig - The name or ID of the annotation config to delete.
+ * @param space - The space name or ID. Required when `annotationConfig` is a name.
  * @returns void.
  * @throws Error if the annotation config cannot be deleted or the response is invalid.
  * @example
@@ -19,16 +22,24 @@ export type DeleteAnnotationConfigParams = WithClient<{
  * import { deleteAnnotationConfig } from "@arizeai/ax-client"
  *
  * await deleteAnnotationConfig({
- *   annotationConfigId: "your_annotation_config_id",
+ *   annotationConfig: "Accuracy",
+ *   space: "your_space",
  * });
  * ```
  */
 export async function deleteAnnotationConfig({
   client: clientInstance,
-  annotationConfigId,
+  annotationConfig,
+  space,
 }: DeleteAnnotationConfigParams): Promise<void> {
   warnPreRelease({ functionName: "deleteAnnotationConfig" });
   const client = clientInstance ?? createClient();
+  const spaceRef = toSpaceRef(space);
+  const annotationConfigId = await findAnnotationConfigId(
+    client,
+    annotationConfig,
+    spaceRef,
+  );
   const response = await client.DELETE(
     "/v2/annotation-configs/{annotation_config_id}",
     {

@@ -3,7 +3,8 @@ import { appendExamples } from "../src/datasets/appendExamples";
 (async () => {
   try {
     const dataset = await appendExamples({
-      datasetId: "your_dataset_id",
+      space: "your_space_name_or_id",
+      dataset: "your_dataset_name",
       examples: [{ question: "What is 2+2?", answer: "4", topic: "math" }],
     });
     // eslint-disable-next-line no-console

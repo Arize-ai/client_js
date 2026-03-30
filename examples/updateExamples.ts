@@ -2,7 +2,8 @@ import { updateExamples } from "../src/datasets/updateExamples";
 (async () => {
   try {
     const dataset = await updateExamples({
-      datasetId: "your_dataset_id",
+      space: "your_space_name",
+      dataset: "your_dataset_name",
       examples: [
         {
           id: "your_example_id",

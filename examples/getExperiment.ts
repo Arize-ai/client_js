@@ -3,7 +3,9 @@ import { getExperiment } from "../src/experiments";
 (async () => {
   try {
     const experiment = await getExperiment({
-      experimentId: "your_experiment_id",
+      space: "your_space_name",
+      dataset: "your_dataset_name",
+      experiment: "your_experiment_name",
     });
     // eslint-disable-next-line no-console
     console.log(experiment);

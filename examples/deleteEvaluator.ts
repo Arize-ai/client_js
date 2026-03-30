@@ -2,7 +2,10 @@ import { deleteEvaluator } from "../src/evaluators";
 
 (async () => {
   try {
-    await deleteEvaluator({ evaluatorId: "your_evaluator_id" });
+    await deleteEvaluator({
+      space: "your_space_name",
+      evaluator: "your_evaluator_name",
+    });
     // eslint-disable-next-line no-console
     console.log("Evaluator deleted successfully");
   } catch (error) {

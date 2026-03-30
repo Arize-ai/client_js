@@ -8,11 +8,19 @@ import {
 import { transformPaginationMetadata } from "../utils/pagination";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
+import { resolveSpace } from "../utils/space";
 import { transformEvaluator } from "./utils";
 
 export type ListEvaluatorsParams = WithClient<
   PaginationParams & {
-    spaceId?: string;
+    /**
+     * Optional space filter. If the value starts with `"spc_"` it is treated
+     * as a space ID; otherwise it is used as a case-insensitive substring
+     * filter on the space name.
+     */
+    space?: string;
+    /** Case-insensitive substring filter on the evaluator name. */
+    name?: string;
   }
 >;
 
@@ -20,7 +28,8 @@ export type ListEvaluatorsParams = WithClient<
  * List evaluators accessible to the client, sorted by update date (most recent first).
  *
  * @param client - An optional ArizeClient instance to use for the request.
- * @param spaceId - An optional space ID to filter evaluators to a specific space. When omitted, evaluators from all permitted spaces are returned.
+ * @param space - An optional space filter. Pass a space ID (e.g. `"spc_abc123"`) or a space name for substring filtering.
+ * @param name - An optional case-insensitive substring filter on the evaluator name.
  * @param limit - An optional limit on the number of evaluators to return (max 100).
  * @param cursor - An optional cursor for pagination.
  * @returns A paginated list of {@link Evaluator} objects.
@@ -29,7 +38,7 @@ export type ListEvaluatorsParams = WithClient<
  * ```typescript
  * import { listEvaluators } from "@arizeai/ax-client"
  *
- * const evaluators = await listEvaluators({ spaceId: "your_space_id" });
+ * const evaluators = await listEvaluators({ space: "my-space" });
  * console.log(evaluators);
  * ```
  */
@@ -37,12 +46,15 @@ export async function listEvaluators(
   params: ListEvaluatorsParams = {},
 ): Promise<PaginatedResponse<Evaluator>> {
   warnPreRelease({ functionName: "listEvaluators" });
-  const { client: clientInstance, spaceId, limit, cursor } = params;
+  const { client: clientInstance, space, name, limit, cursor } = params;
+  const { spaceId, spaceName } = resolveSpace(space);
   const client = clientInstance ?? createClient();
   const response = await client.GET("/v2/evaluators", {
     params: {
       query: {
         space_id: spaceId,
+        space_name: spaceName,
+        name,
         limit,
         cursor,
       },

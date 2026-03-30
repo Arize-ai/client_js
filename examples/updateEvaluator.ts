@@ -3,7 +3,8 @@ import { updateEvaluator } from "../src/evaluators";
 (async () => {
   try {
     const evaluator = await updateEvaluator({
-      evaluatorId: "your_evaluator_id",
+      space: "your_space_name",
+      evaluator: "your_evaluator_name",
       name: "Updated Evaluator Name",
     });
     // eslint-disable-next-line no-console

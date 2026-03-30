@@ -56,7 +56,7 @@ export interface EvaluatorVersion {
 export interface CreateEvaluatorInput {
   name: string;
   description?: string;
-  spaceId: string;
+  space: string;
   /** Only "template" is supported in this iteration. */
   type: "template";
   version: {
@@ -70,7 +70,8 @@ export type UpdateEvaluatorInput =
   | { name?: string; description: string };
 
 export interface CreateEvaluatorVersionInput {
-  evaluatorId: string;
+  evaluator: string;
+  space?: string;
   commitMessage: string;
   templateConfig: TemplateConfig;
 }

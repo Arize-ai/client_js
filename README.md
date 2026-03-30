@@ -27,14 +27,14 @@ The `@arizeai/ax-client` package allows you to create and manage datasets.
 
 ### Creating a dataset
 
-Create a dataset by providing a spaceId, name, and array of examples (each containing at least one property). There are a few examples below, check out our docs for full documentation.
+Create a dataset by providing a space (name or ID), name, and array of examples (each containing at least one property). There are a few examples below, check out our docs for full documentation.
 
 ```typescript
 import { createDataset } from "@arizeai/ax-client";
 
 const dataset = await createDataset({
   name: "my-dataset",
-  spaceId: "space-id",
+  space: "my-space",
   examples: [
     {
       question: "What is 2 + 2?",
@@ -51,13 +51,15 @@ The `@arizeai/ax-client` package allows you to create and manage experiments.
 
 ### Listing experiment runs
 
-You can list experiment runs by providing an experimentId and an optional limit of experiment runs to return. There are a few examples below, check out our docs for full documentation.
+You can list experiment runs by providing an experiment name or ID (space and dataset context are required when using names). There are a few examples below, check out our docs for full documentation.
 
 ```typescript
 import { listExperimentRuns } from "@arizeai/ax-client";
 
 const experimentRuns = await listExperimentRuns({
-  experimentId: "experiment-id",
+  space: "my-space",
+  dataset: "my-dataset",
+  experiment: "my-experiment",
 });
 ```
 
@@ -126,6 +128,61 @@ const refreshed = await refreshApiKey({
   apiKeyId: "your-api-key-id",
   expiresAt: new Date("2027-01-01"),
 });
+```
+
+## Roles
+
+The `@arizeai/ax-client` package allows you to create and manage custom roles.
+
+### Creating a role
+
+```typescript
+import { createRole } from "@arizeai/ax-client";
+
+const role = await createRole({
+  name: "AI Engineer",
+  permissions: ["PROJECT_READ", "DATASET_READ", "DATASET_CREATE"],
+  description: "Can read and create datasets and experiments.",
+});
+```
+
+### Listing roles
+
+```typescript
+import { listRoles } from "@arizeai/ax-client";
+
+const { data } = await listRoles();
+console.log(data.map((r) => r.name));
+
+// Filter to only predefined (system) roles
+const { data: predefined } = await listRoles({ isPredefined: true });
+```
+
+### Getting a role
+
+```typescript
+import { getRole } from "@arizeai/ax-client";
+
+const role = await getRole({ roleId: "your-role-id" });
+```
+
+### Updating a role
+
+```typescript
+import { updateRole } from "@arizeai/ax-client";
+
+const role = await updateRole({
+  roleId: "your-role-id",
+  permissions: ["PROJECT_READ", "DATASET_READ"],
+});
+```
+
+### Deleting a role
+
+```typescript
+import { deleteRole } from "@arizeai/ax-client";
+
+await deleteRole({ roleId: "your-role-id" });
 ```
 
 ## REST endpoints
