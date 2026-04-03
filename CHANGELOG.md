@@ -1,24 +1,28 @@
 # @arizeai/ax-client
 
-## [1.5.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.4.1...arize-js-sdk/v1.5.0) (2026-03-30)
+## [1.6.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.5.0...arize-js-sdk/v1.6.0) (2026-04-03)
 
 
 ### 🎁 New Features
 
-* add name-or-ID resolution across JS SDK (mirrors Python SDK) ([#66418](https://github.com/Arize-ai/arize/issues/66418)) ([d3c55bc](https://github.com/Arize-ai/arize/commit/d3c55bce943ff7e6f4fe1d094690a4ed93514fd8))
-* implement list spans ([#63735](https://github.com/Arize-ai/arize/issues/63735)) ([9510ea3](https://github.com/Arize-ai/arize/commit/9510ea3b381910468dcad028887ec6bdc6b1cf52))
-* implement roles CRUD API ([#66241](https://github.com/Arize-ai/arize/issues/66241)) ([92d1cb1](https://github.com/Arize-ai/arize/commit/92d1cb145bd3460a7f94a84825a30c3197a1331a)), closes [#66233](https://github.com/Arize-ai/arize/issues/66233)
-* add tasks and task-runs module to ax-client ([#65671](https://github.com/Arize-ai/arize/issues/65671)) ([de9545b](https://github.com/Arize-ai/arize/commit/de9545b57713805632db7458828768d9c330b911))
+* Add annotation queue module to TS SDK ([#66428](https://github.com/Arize-ai/arize/issues/66428)) ([c5a48f5](https://github.com/Arize-ai/arize/commit/c5a48f5ba6c72dbac3ad231739117f5de636f4e2))
 
+## [1.5.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.4.1...arize-js-sdk/v1.5.0) (2026-03-30)
+
+### 🎁 New Features
+
+- add name-or-ID resolution across JS SDK (mirrors Python SDK) ([#66418](https://github.com/Arize-ai/arize/issues/66418)) ([d3c55bc](https://github.com/Arize-ai/arize/commit/d3c55bce943ff7e6f4fe1d094690a4ed93514fd8))
+- implement list spans ([#63735](https://github.com/Arize-ai/arize/issues/63735)) ([9510ea3](https://github.com/Arize-ai/arize/commit/9510ea3b381910468dcad028887ec6bdc6b1cf52))
+- implement roles CRUD API ([#66241](https://github.com/Arize-ai/arize/issues/66241)) ([92d1cb1](https://github.com/Arize-ai/arize/commit/92d1cb145bd3460a7f94a84825a30c3197a1331a)), closes [#66233](https://github.com/Arize-ai/arize/issues/66233)
+- add tasks and task-runs module to ax-client ([#65671](https://github.com/Arize-ai/arize/issues/65671)) ([de9545b](https://github.com/Arize-ai/arize/commit/de9545b57713805632db7458828768d9c330b911))
 
 ### 🐛 Bug Fixes
 
-* address dependabot and code scanning security alerts ([#66426](https://github.com/Arize-ai/arize/issues/66426)) ([5eae40a](https://github.com/Arize-ai/arize/commit/5eae40ab235c50e4135ed7fefc6bec25d1a7724b))
-
+- address dependabot and code scanning security alerts ([#66426](https://github.com/Arize-ai/arize/issues/66426)) ([5eae40a](https://github.com/Arize-ai/arize/commit/5eae40ab235c50e4135ed7fefc6bec25d1a7724b))
 
 ### ❔ Miscellaneous Chores
 
-* Add upgrade suggestion to SDK pre-release warnings ([#66879](https://github.com/Arize-ai/arize/issues/66879)) ([8c47f31](https://github.com/Arize-ai/arize/commit/8c47f31f1cac29121da13c9a9161a8493af4070d))
+- Add upgrade suggestion to SDK pre-release warnings ([#66879](https://github.com/Arize-ai/arize/issues/66879)) ([8c47f31](https://github.com/Arize-ai/arize/commit/8c47f31f1cac29121da13c9a9161a8493af4070d))
 
 ## [1.4.1](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.4.0...arize-js-sdk/v1.4.1) (2026-03-21)
 

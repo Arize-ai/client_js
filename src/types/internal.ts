@@ -35,5 +35,12 @@ export type RawEvaluatorWithVersion =
 export type RawEvaluatorVersion = components["schemas"]["EvaluatorVersion"];
 export type RawTemplateConfig = components["schemas"]["TemplateConfig"];
 export type RawEvaluatorLlmConfig = components["schemas"]["EvaluatorLlmConfig"];
+export type RawAnnotationQueue = components["schemas"]["AnnotationQueue"];
+export type RawAnnotationQueueRecord =
+  components["schemas"]["AnnotationQueueRecord"];
+export type RawAnnotationQueueRecordAnnotateResult =
+  components["schemas"]["AnnotationQueueRecordAnnotateResult"];
+export type RawAnnotationQueueRecordAssignResult =
+  components["schemas"]["AnnotationQueueRecordAssignResult"];
 export type RawRole = components["schemas"]["Role"];
 export type RawPermission = components["schemas"]["Permission"];

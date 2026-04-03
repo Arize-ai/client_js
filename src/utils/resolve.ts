@@ -440,6 +440,55 @@ export async function findAiIntegrationId(
 }
 
 /**
+ * Resolve an annotation queue ID or name to an annotation queue ID.
+ *
+ * If the value is a base64 ID, it is returned as-is.
+ * Otherwise, the list annotation-queues endpoint is called with whichever of
+ * `space_id` / `space_name` is available.
+ */
+export async function findAnnotationQueueId(
+  client: Client,
+  annotationQueue: string,
+  space?: SpaceRef | string,
+): Promise<string> {
+  if (isResourceId(annotationQueue)) {
+    return annotationQueue;
+  }
+
+  const ref = typeof space === "string" ? toSpaceRef(space) : (space ?? {});
+  requireSpace("annotation queue", annotationQueue, ref);
+
+  const available: string[] = [];
+  let cursor: string | undefined;
+
+  do {
+    const response = await client.GET("/v2/annotation-queues", {
+      params: {
+        query: {
+          space_id: ref.spaceId,
+          space_name: ref.spaceName,
+          name: annotationQueue,
+          limit: 100,
+          cursor,
+        },
+      },
+    });
+    if (response.error) {
+      return handleApiError(response);
+    }
+    for (const q of response.data.annotation_queues) {
+      if (q.name === annotationQueue) {
+        return q.id;
+      }
+      available.push(q.name);
+    }
+    cursor = response.data.pagination.next_cursor ?? undefined;
+  } while (cursor);
+
+  throw new ResolutionError("annotation queue", annotationQueue, available);
+}
+
+/**
  * Resolve a task ID or name to a task ID.
  *
  * If the value is a base64 ID, it is returned as-is.

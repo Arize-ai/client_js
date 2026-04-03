@@ -10,6 +10,7 @@ export * from "./prompts";
 export * from "./ai_integrations";
 export * from "./api_keys";
 export * from "./evaluators";
+export * from "./annotation_queues";
 export * from "./tasks";
 export * from "./roles";
 export * from "./types";

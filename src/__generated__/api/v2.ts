@@ -219,7 +219,6 @@ export interface paths {
          *     - At least one `annotation_config_id` is required, and all configs must belong to the specified space.
          *     - Do not include system-managed fields on input: `id`, `created_at`, `updated_at`.
          *     - If `assignment_method` is not provided, it defaults to `"all"`.
-         *     - If `annotator_emails` are provided, all emails must resolve to existing users with access to the space.
          *
          *     **Valid example**
          *     ```json
@@ -227,6 +226,7 @@ export interface paths {
          *       "name": "Quality Review Queue",
          *       "space_id": "spc_xyz789",
          *       "annotation_config_ids": ["ac_abc123"],
+         *       "annotator_emails": ["reviewer@example.com"],
          *       "assignment_method": "all"
          *     }
          *     ```
@@ -364,6 +364,118 @@ export interface paths {
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
         delete: operations["annotation_queues_records_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/annotation-queues/{annotation_queue_id}/records/{annotation_queue_record_id}/annotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Annotate a record
+         * @description Submit annotations for an annotation queue record.
+         *
+         *     Annotations are upserted into the underlying data source by annotation config name.
+         *     Omitted annotation configs are left unchanged.
+         *
+         *     **Payload Requirements**
+         *     - `annotations` must contain at least one entry.
+         *     - There is no maximum limit on the number of annotations — you may submit one annotation per annotation config associated with the queue.
+         *     - Each annotation `name` must match an annotation config associated with the queue.
+         *     - Omit `label`, `score`, or `text` to leave the existing value unchanged. Individual fields cannot be set to null; annotations cannot be removed once written.
+         *
+         *     **Response**
+         *     Returns a snapshot of the fields updated by this operation: the record identity and the submitted annotations only.
+         *     Evaluations and user assignments are not included for performance reasons.
+         *     Use the list records endpoint to retrieve the full record state.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "annotations": [
+         *         {"name": "accuracy", "label": "correct", "score": 1.0},
+         *         {"name": "quality", "text": "Well-structured response"}
+         *       ]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (annotation name not in queue)
+         *     ```json
+         *     {
+         *       "annotations": [
+         *         {"name": "unknown_config", "label": "good"}
+         *       ]
+         *     }
+         *     ```
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["annotation_queues_records_annotate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/annotation-queues/{annotation_queue_id}/records/{annotation_queue_record_id}/assign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Assign users to a record
+         * @description Assign users to an annotation queue record.
+         *
+         *     Fully replaces the current record-level user assignment. Re-assigning a user who has already
+         *     completed their annotation resets their completion status to pending.
+         *
+         *     **Payload Requirements**
+         *     - `assigned_user_emails` fully replaces the existing record-level user assignment.
+         *     - Pass an empty array to remove all record-level assignments.
+         *     - At most 100 emails may be provided per request.
+         *     - All emails must resolve to existing users with access to the queue's space.
+         *
+         *     **Response**
+         *     Returns a snapshot of the fields updated by this operation: the record identity and the resulting user assignments only.
+         *     Annotations and evaluations are not included for performance reasons.
+         *     Use the list records endpoint to retrieve the full record state.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "assigned_user_emails": ["reviewer@example.com", "annotator@example.com"]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (email does not belong to the space)
+         *     ```json
+         *     {
+         *       "assigned_user_emails": ["outsider@other.com"]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (exceeds 100-email limit)
+         *     ```json
+         *     {
+         *       "assigned_user_emails": ["user1@example.com", "user2@example.com", "...101 total emails"]
+         *     }
+         *     ```
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["annotation_queues_records_assign"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1742,6 +1854,10 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AddAnnotationQueueRecordsRequestBody: {
+            /** @description Record sources to add to the annotation queue. At most 2 record sources (projects or datasets) may be provided in a single request. */
+            record_sources: components["schemas"]["AnnotationQueueRecordInput"][];
+        };
         /**
          * @description An AI integration configures access to an external LLM provider (e.g. OpenAI,
          *     Azure OpenAI, AWS Bedrock, Vertex AI). Integrations can be scoped to the entire
@@ -1842,9 +1958,27 @@ export interface components {
             annotator?: components["schemas"]["AnnotatorUser"];
         };
         AnnotationConfig: components["schemas"]["ContinuousAnnotationConfig"] | components["schemas"]["CategoricalAnnotationConfig"] | components["schemas"]["FreeformAnnotationConfig"];
-        AddAnnotationQueueRecordsRequestBody: {
-            /** @description Record sources to add to the annotation queue. At most 2 record sources (projects or datasets) may be provided in a single request. */
-            record_sources: components["schemas"]["AnnotationQueueRecordInput"][];
+        /** @description Annotations to submit for an annotation queue record. Annotations are upserted by annotation config name; omitted configs are left unchanged. */
+        AnnotateAnnotationQueueRecordRequestBody: {
+            /** @description Annotations to upsert on this record, keyed by annotation config name. There is no maximum limit — you may submit one annotation per annotation config associated with the queue. */
+            annotations: components["schemas"]["AnnotationInput"][];
+        };
+        /** @description An annotation value to set on a record, identified by its annotation config name. Omitting a field leaves the existing value unchanged. */
+        AnnotationInput: {
+            /**
+             * @description The annotation config name
+             * @example accuracy
+             */
+            name: string;
+            /**
+             * Format: double
+             * @description Numeric score for the annotation. Omit to leave unchanged.
+             */
+            score?: number;
+            /** @description Categorical label for the annotation. Omit to leave unchanged. */
+            label?: string;
+            /** @description Free-form text note for the annotation. Omit to leave unchanged. */
+            text?: string;
         };
         AnnotationQueue: {
             /**
@@ -1928,6 +2062,34 @@ export interface components {
             /** @description Users assigned to this record */
             assigned_users: components["schemas"]["AnnotationQueueAssignedUser"][];
         };
+        /** @description A snapshot of the annotation queue record fields that were modified by an annotate operation. Only the record identity fields and the submitted annotations are returned. Evaluations and user assignments are not fetched and are not included in this response for performance reasons; use the list records endpoint to retrieve the full record state. */
+        AnnotationQueueRecordAnnotateResult: {
+            /** @description The unique identifier for the record */
+            id: string;
+            /** @description The annotation queue this record belongs to */
+            annotation_queue_id: string;
+            /**
+             * @description The source type of the record (spans or dataset)
+             * @enum {string}
+             */
+            source_type: "spans" | "dataset";
+            /** @description The annotations that were submitted in this request */
+            annotations: components["schemas"]["Annotation"][];
+        };
+        /** @description A snapshot of the annotation queue record fields that were modified by an assign operation. Only the record identity fields and the resulting user assignments are returned. Annotations and evaluations are not fetched and are not included in this response for performance reasons; use the list records endpoint to retrieve the full record state. */
+        AnnotationQueueRecordAssignResult: {
+            /** @description The unique identifier for the record */
+            id: string;
+            /** @description The annotation queue this record belongs to */
+            annotation_queue_id: string;
+            /**
+             * @description The source type of the record (spans or dataset)
+             * @enum {string}
+             */
+            source_type: "spans" | "dataset";
+            /** @description The users now assigned to this record after this operation */
+            assigned_users: components["schemas"]["AnnotationQueueAssignedUser"][];
+        };
         AnnotationQueueRecordInput: components["schemas"]["AnnotationQueueExampleRecordInput"] | components["schemas"]["AnnotationQueueSpanRecordInput"];
         AnnotationQueueSpanRecordInput: {
             /**
@@ -1949,6 +2111,17 @@ export interface components {
             end_time: string;
             /** @description List of span IDs to add to the queue */
             span_ids: string[];
+        };
+        /** @description User assignment for an annotation queue record. Fully replaces the current record-level user assignment. Pass an empty array to remove all assignments. */
+        AssignAnnotationQueueRecordRequestBody: {
+            /**
+             * @description Emails of users to assign to this record. Replaces the current record-level user assignment entirely. At most 100 emails may be provided per request.
+             * @example [
+             *       "reviewer@example.com",
+             *       "annotator@example.com"
+             *     ]
+             */
+            assigned_user_emails: components["schemas"]["Email"][];
         };
         CreateAnnotationQueueRequestBody: {
             /**
@@ -1981,15 +2154,8 @@ export interface components {
              *       "annotator2@example.com"
              *     ]
              */
-            annotator_emails: string[];
-            /**
-             * @description How records are assigned to annotators. Defaults to "all".
-             *     - `all`: Every annotator is assigned to every record.
-             *     - `random`: Each record is randomly assigned to one annotator.
-             * @default all
-             * @enum {string}
-             */
-            assignment_method?: "all" | "random";
+            annotator_emails: components["schemas"]["Email"][];
+            assignment_method?: components["schemas"]["AssignmentMethod"];
             /** @description Record sources to add to the annotation queue on creation. At most 2 record sources (projects or datasets) may be provided in a single create request. Additional records from other sources can be added after creation. */
             record_sources?: components["schemas"]["AnnotationQueueRecordInput"][];
         };
@@ -2028,7 +2194,7 @@ export interface components {
              *       "annotator@example.com"
              *     ]
              */
-            annotator_emails?: string[];
+            annotator_emails?: components["schemas"]["Email"][];
         };
         ApiKey: {
             /** @description Unique identifier for the API key. */
@@ -2179,11 +2345,7 @@ export interface components {
         User: {
             /** @description The unique identifier for the user */
             id: string;
-            /**
-             * Format: email
-             * @description The email address of the user
-             */
-            email?: string;
+            email?: components["schemas"]["Email"];
         };
         /**
          * @description A dataset is a structured collection of examples used to test and evaluate
@@ -3121,16 +3283,26 @@ export interface components {
             annotation_config_type: "freeform";
         };
         CreateAnnotationConfigRequestBody: components["schemas"]["ContinuousAnnotationConfigCreate"] | components["schemas"]["CategoricalAnnotationConfigCreate"] | components["schemas"]["FreeformAnnotationConfigCreate"];
+        /**
+         * Format: email
+         * @description An email address
+         * @example user@example.com
+         */
+        Email: string;
         /** @description A user assigned as an annotator, identified by ID and email. */
         AnnotatorUser: {
             /** @description The unique identifier for the user */
             id: string;
-            /**
-             * Format: email
-             * @description The email address of the user
-             */
-            email: string;
+            email: components["schemas"]["Email"];
         };
+        /**
+         * @description How records are assigned to annotators. Defaults to "all".
+         *     - `all`: Every annotator is assigned to every record.
+         *     - `random`: Each record is randomly assigned to one annotator.
+         * @default all
+         * @enum {string}
+         */
+        AssignmentMethod: "all" | "random";
         ApiKeyRefresh: {
             /**
              * Format: date-time
@@ -3441,6 +3613,58 @@ export interface components {
                     /** @description Pagination metadata for cursor-based navigation */
                     pagination: components["schemas"]["PaginationMetadata"];
                 };
+            };
+        };
+        /** @description Returns a snapshot of the record fields updated by the annotate operation. Only the submitted annotations are included. Evaluations and user assignments are omitted; use the list records endpoint for the full record state. */
+        AnnotationQueueRecordAnnotated: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "aqr_001",
+                 *       "annotation_queue_id": "aq_abc123",
+                 *       "source_type": "spans",
+                 *       "annotations": [
+                 *         {
+                 *           "name": "accuracy",
+                 *           "label": "correct",
+                 *           "score": 1,
+                 *           "annotator": {
+                 *             "id": "usr_123",
+                 *             "email": "reviewer@example.com"
+                 *           }
+                 *         }
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["AnnotationQueueRecordAnnotateResult"];
+            };
+        };
+        /** @description Returns a snapshot of the record fields updated by the assign operation. Only the resulting user assignments are included. Annotations and evaluations are omitted; use the list records endpoint for the full record state. */
+        AnnotationQueueRecordAssigned: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "aqr_001",
+                 *       "annotation_queue_id": "aq_abc123",
+                 *       "source_type": "spans",
+                 *       "assigned_users": [
+                 *         {
+                 *           "user": {
+                 *             "id": "usr_123",
+                 *             "email": "reviewer@example.com"
+                 *           },
+                 *           "completion_status": "pending"
+                 *         }
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["AnnotationQueueRecordAssignResult"];
             };
         };
         /** @description Returns the created annotation queue records */
@@ -5116,6 +5340,11 @@ export interface components {
          */
         AnnotationQueueIdPathParam: components["schemas"]["Id"];
         /**
+         * @description The unique identifier of the annotation queue record
+         * @example QW5ub3RhdGlvblF1ZXVlOjEyMzQ1
+         */
+        AnnotationQueueRecordIdPathParam: components["schemas"]["Id"];
+        /**
          * @description The unique identifier of the API key
          * @example QXBpS2V5OjEyMzQ1
          */
@@ -5159,6 +5388,13 @@ export interface components {
          * @example U3BhY2U6MTIzNDU=
          */
         SpaceIdQueryParam: components["schemas"]["Id"];
+        /**
+         * @description Case-insensitive substring filter on the space name. Narrows results
+         *     to resources in spaces whose name contains the given string. If omitted,
+         *     no space name filtering is applied and all resources are returned.
+         * @example my-space
+         */
+        SpaceNameQueryParam: string;
         /**
          * @description The unique identifier of the dataset
          * @example RGF0YXNldDoxMjM0NQ==
@@ -5270,13 +5506,6 @@ export interface components {
          * @example template_evaluation
          */
         TaskTypeQueryParam: "template_evaluation" | "code_evaluation";
-        /**
-         * @description Case-insensitive substring filter on the space name. Narrows results
-         *     to resources in spaces whose name contains the given string. If omitted,
-         *     no space name filtering is applied and all resources are returned.
-         * @example my-space
-         */
-        SpaceNameQueryParam: string;
         /**
          * @description Filter to tasks for a specific project (base64 global ID)
          * @example UHJvamVjdDoxMjM0NQ==
@@ -5423,6 +5652,35 @@ export interface components {
                  *     }
                  */
                 "application/json": components["schemas"]["AddAnnotationQueueRecordsRequestBody"];
+            };
+        };
+        /** @description Body containing annotations to submit for an annotation queue record */
+        AnnotateAnnotationQueueRecordRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "annotations": [
+                 *         {
+                 *           "name": "accuracy",
+                 *           "score": 0.95
+                 *         }
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["AnnotateAnnotationQueueRecordRequestBody"];
+            };
+        };
+        /** @description Body containing the user assignment for an annotation queue record */
+        AssignAnnotationQueueRecordRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "assigned_user_emails": [
+                 *         "reviewer@example.com"
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["AssignAnnotationQueueRecordRequestBody"];
             };
         };
         /** @description Body containing annotation queue creation parameters */
@@ -6492,6 +6750,7 @@ export interface operations {
         };
         requestBody: components["requestBodies"]["AddAnnotationQueueRecordsRequestBody"];
         responses: {
+            200: components["responses"]["AnnotationQueueRecordCreate"];
             201: components["responses"]["AnnotationQueueRecordCreate"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
@@ -6516,6 +6775,62 @@ export interface operations {
         requestBody: components["requestBodies"]["DeleteAnnotationQueueRecordsRequestBody"];
         responses: {
             204: components["responses"]["AnnotationQueueRecordDeleted"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    annotation_queues_records_annotate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the annotation queue
+                 * @example QW5ub3RhdGlvblF1ZXVlOjEyMzQ1
+                 */
+                annotation_queue_id: components["parameters"]["AnnotationQueueIdPathParam"];
+                /**
+                 * @description The unique identifier of the annotation queue record
+                 * @example QW5ub3RhdGlvblF1ZXVlOjEyMzQ1
+                 */
+                annotation_queue_record_id: components["parameters"]["AnnotationQueueRecordIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["AnnotateAnnotationQueueRecordRequestBody"];
+        responses: {
+            200: components["responses"]["AnnotationQueueRecordAnnotated"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    annotation_queues_records_assign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the annotation queue
+                 * @example QW5ub3RhdGlvblF1ZXVlOjEyMzQ1
+                 */
+                annotation_queue_id: components["parameters"]["AnnotationQueueIdPathParam"];
+                /**
+                 * @description The unique identifier of the annotation queue record
+                 * @example QW5ub3RhdGlvblF1ZXVlOjEyMzQ1
+                 */
+                annotation_queue_record_id: components["parameters"]["AnnotationQueueRecordIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["AssignAnnotationQueueRecordRequestBody"];
+        responses: {
+            200: components["responses"]["AnnotationQueueRecordAssigned"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];

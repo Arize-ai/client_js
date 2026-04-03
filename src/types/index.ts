@@ -11,5 +11,6 @@ export * from "./ai_integrations";
 export * from "./api_keys";
 export * from "./tasks";
 export * from "./evaluators";
+export * from "./annotation_queues";
 export * from "./tasks";
 export * from "./roles";
