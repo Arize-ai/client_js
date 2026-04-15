@@ -13,6 +13,9 @@ import { resolveSpace } from "../utils/space";
 import { findProjectId, findDatasetId } from "../utils/resolve";
 import { transformTask } from "./utils";
 
+/**
+ * Parameters for the listTasks function.
+ */
 export type ListTasksParams = WithClient<
   PaginationParams & {
     /**

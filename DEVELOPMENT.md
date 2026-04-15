@@ -16,6 +16,17 @@ From the root of the Arize monorepo, run:
 
 The ax-client package also has its own generate script, but in the typical development workflow where client changes are made after changes to the OpenAPI specification and REST API, you should not need to regenerate types while developing in the client.
 
+## Pre-commit Hooks (optional)
+
+Install pre-commit hooks to run prettier and TypeScript type checking automatically on every commit:
+
+```sh
+# From the repo root
+pre-commit install
+```
+
+For manual checks outside of a commit, use `pnpm prettier:check` and `pnpm type:check`.
+
 ## Testing Changes
 
 ### Using the examples directory

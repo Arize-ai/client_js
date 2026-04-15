@@ -6,6 +6,12 @@ import {
 } from "../types";
 import { RawTask, RawTaskEvaluator, RawTaskRun } from "../types/internal";
 
+/**
+ * Converts a CreateTaskEvaluatorInput to a raw task evaluator.
+ *
+ * @param evaluator - The CreateTaskEvaluatorInput to convert.
+ * @returns The raw task evaluator.
+ */
 export function toRawTaskEvaluator(evaluator: CreateTaskEvaluatorInput): {
   evaluator_id: string;
   query_filter?: string;
@@ -18,6 +24,12 @@ export function toRawTaskEvaluator(evaluator: CreateTaskEvaluatorInput): {
   };
 }
 
+/**
+ * Transforms a raw task evaluator to a TaskEvaluator object.
+ *
+ * @param evaluator - The raw task evaluator to transform.
+ * @returns The transformed TaskEvaluator object.
+ */
 export function transformTaskEvaluator(
   evaluator: RawTaskEvaluator,
 ): TaskEvaluator {
@@ -29,6 +41,12 @@ export function transformTaskEvaluator(
   };
 }
 
+/**
+ * Transforms a raw task to a Task object.
+ *
+ * @param task - The raw task to transform.
+ * @returns The transformed Task object.
+ */
 export function transformTask(task: RawTask): Task {
   const { id, name, type } = task;
   return {
@@ -49,6 +67,12 @@ export function transformTask(task: RawTask): Task {
   };
 }
 
+/**
+ * Transforms a raw task run to a TaskRun object.
+ *
+ * @param run - The raw task run to transform.
+ * @returns The transformed TaskRun object.
+ */
 export function transformTaskRun(run: RawTaskRun): TaskRun {
   return {
     id: run.id,

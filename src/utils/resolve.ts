@@ -1,6 +1,9 @@
 import type { createClient } from "../client";
 import { handleApiError, ResolutionError } from "../errors";
 
+/**
+ * The type of the client object.
+ */
 type Client = ReturnType<typeof createClient>;
 
 /**

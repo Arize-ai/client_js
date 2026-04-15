@@ -1054,6 +1054,83 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v2/organizations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List organizations
+         * @description List organizations the user has access to.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["organizations_list"];
+        put?: never;
+        /**
+         * Create an organization
+         * @description Create a new organization within the account.
+         *
+         *     **Payload Requirements**
+         *     - `name` is required and must be unique within the account.
+         *     - `description` is optional and defaults to an empty string if omitted.
+         *     - System-managed fields (`id`, `created_at`) are generated automatically and rejected if provided.
+         *
+         *     **Example valid request:**
+         *     ```json
+         *     { "name": "Agent Engineering Team", "description": "Organization for the Agent Engineering team" }
+         *     ```
+         *
+         *     **Example invalid request (duplicate name):**
+         *     ```json
+         *     { "name": "Agent Engineering Team" }
+         *     ```
+         *     Fails with 409 Conflict if an organization with that name already exists in the account.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["organizations_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/organizations/{org_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get an organization
+         * @description Get a specific organization by its ID.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["organizations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update an organization
+         * @description Update an organization's metadata by its ID. At least one field must be provided.
+         *
+         *     **Payload Requirements**
+         *     - At least one of `name` or `description` must be provided.
+         *     - If `name` is provided, it must be unique within the account.
+         *     - System-managed fields (`id`, `created_at`) cannot be modified.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        patch: operations["organizations_update"];
+        trace?: never;
+    };
     "/v2/projects": {
         parameters: {
             query?: never;
@@ -1659,7 +1736,15 @@ export interface paths {
         get: operations["spaces_get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete a space
+         * @description Delete a space by its ID. This deletes the space and all resources
+         *     that belong to it (models, monitors, dashboards, datasets, custom metrics, etc).
+         *     This operation is irreversible.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        delete: operations["spaces_delete"];
         options?: never;
         head?: never;
         /**
@@ -1693,7 +1778,18 @@ export interface paths {
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
         post: operations["spans_list"];
-        delete?: never;
+        /**
+         * Delete spans
+         * @description Permanently deletes spans by their span IDs. This operation is irreversible.
+         *
+         *     Accepts between 1 and 1000 span IDs per request. Only spans from the
+         *     last 31 days are considered; older spans are not affected. If one or more
+         *     span IDs are not found, they are silently ignored. A 204 response does
+         *     not guarantee that all provided IDs were deleted.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        delete: operations["spans_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2305,6 +2401,24 @@ export interface components {
          */
         ApiKeyStatus: "active" | "deleted";
         /**
+         * @description An organization is a top-level container within an account for grouping
+         *     spaces and managing access control. Organizations enable team separation
+         *     with role-based access control at the organization level.
+         */
+        Organization: {
+            /** @description Unique identifier for the organization */
+            id: components["schemas"]["Id"];
+            /** @description Name of the organization */
+            name: string;
+            /** @description A brief description of the organization's purpose */
+            description: string;
+            /**
+             * Format: date-time
+             * @description Timestamp for when the organization was created
+             */
+            created_at: string;
+        };
+        /**
          * @description A universally unique identifier
          * @example RW50aXR5OjEyMzQ1
          */
@@ -2601,7 +2715,7 @@ export interface components {
          *     Auto-generated from proto/auth/protocol/permissions.proto.
          * @enum {string}
          */
-        Permission: "AI_PROVIDER_READ" | "ALYX_RUN" | "ANNOTATION_CONFIG_CREATE" | "ANNOTATION_CONFIG_DELETE" | "ANNOTATION_CONFIG_READ" | "ANNOTATION_CONFIG_UPDATE" | "CUSTOM_METRIC_CREATE" | "CUSTOM_METRIC_DELETE" | "CUSTOM_METRIC_READ" | "CUSTOM_METRIC_UPDATE" | "DASHBOARD_CREATE" | "DASHBOARD_DELETE" | "DASHBOARD_READ" | "DASHBOARD_UPDATE" | "DATASET_CREATE" | "DATASET_DELETE" | "DATASET_EXAMPLE_ANNOTATE" | "DATASET_EXAMPLE_CREATE" | "DATASET_EXAMPLE_DELETE" | "DATASET_EXAMPLE_READ" | "DATASET_EXAMPLE_UPDATE" | "DATASET_READ" | "DATASET_UPDATE" | "DATA_FABRIC_CONNECTOR_CREATE" | "DATA_FABRIC_CONNECTOR_DELETE" | "DATA_FABRIC_CONNECTOR_READ" | "DATA_FABRIC_CONNECTOR_UPDATE" | "EVALUATOR_CREATE" | "EVALUATOR_DELETE" | "EVALUATOR_READ" | "EVALUATOR_UPDATE" | "EXPERIMENT_CREATE" | "EXPERIMENT_DELETE" | "EXPERIMENT_EVAL_TASK_CREATE" | "EXPERIMENT_EVAL_TASK_DELETE" | "EXPERIMENT_EVAL_TASK_READ" | "EXPERIMENT_EVAL_TASK_UPDATE" | "EXPERIMENT_READ" | "EXPERIMENT_RUN_ANNOTATE" | "EXPERIMENT_RUN_READ" | "EXPERIMENT_UPDATE" | "FILE_IMPORT_CREATE" | "FILE_IMPORT_DELETE" | "FILE_IMPORT_READ" | "FILE_IMPORT_UPDATE" | "ML_MODEL_CREATE" | "ML_MODEL_DELETE" | "ML_MODEL_READ" | "ML_MODEL_UPDATE" | "MONITOR_CREATE" | "MONITOR_DELETE" | "MONITOR_READ" | "MONITOR_TRIGGER" | "MONITOR_UPDATE" | "PLAYGROUND_RUN" | "PLAYGROUND_VIEW_CREATE" | "PLAYGROUND_VIEW_DELETE" | "PLAYGROUND_VIEW_READ" | "PLAYGROUND_VIEW_UPDATE" | "PROJECT_CREATE" | "PROJECT_DELETE" | "PROJECT_EVAL_TASK_CREATE" | "PROJECT_EVAL_TASK_DELETE" | "PROJECT_EVAL_TASK_READ" | "PROJECT_EVAL_TASK_UPDATE" | "PROJECT_READ" | "PROJECT_RESTRICT" | "PROJECT_SPAN_ANNOTATE" | "PROJECT_SPAN_CREATE" | "PROJECT_SPAN_DELETE" | "PROJECT_SPAN_READ" | "PROJECT_SPAN_UPDATE" | "PROJECT_UPDATE" | "PROMPT_CREATE" | "PROMPT_DELETE" | "PROMPT_OPTIMIZE_TASK_CREATE" | "PROMPT_OPTIMIZE_TASK_DELETE" | "PROMPT_OPTIMIZE_TASK_READ" | "PROMPT_OPTIMIZE_TASK_UPDATE" | "PROMPT_READ" | "PROMPT_UPDATE" | "QUEUE_CREATE" | "QUEUE_DELETE" | "QUEUE_READ" | "QUEUE_RECORD_ANNOTATE" | "QUEUE_RECORD_CREATE" | "QUEUE_RECORD_DELETE" | "QUEUE_RECORD_READ" | "QUEUE_RECORD_UPDATE" | "QUEUE_UPDATE" | "ROLE_BINDING_CREATE" | "ROLE_BINDING_DELETE" | "ROLE_BINDING_READ" | "SERVICE_KEY_CREATE" | "SPACE_CREATE" | "SPACE_DELETE" | "SPACE_READ" | "SPACE_UPDATE" | "TAG_CREATE" | "TAG_DELETE" | "TAG_READ" | "TAG_UPDATE" | "TRACE_VIEW_CREATE" | "TRACE_VIEW_DELETE" | "TRACE_VIEW_READ" | "TRACE_VIEW_UPDATE" | "USER_CREATE" | "USER_DELETE" | "USER_READ" | "USER_UPDATE";
+        Permission: "AI_PROVIDER_READ" | "ALYX_RUN" | "ANNOTATION_CONFIG_CREATE" | "ANNOTATION_CONFIG_DELETE" | "ANNOTATION_CONFIG_READ" | "ANNOTATION_CONFIG_UPDATE" | "CUSTOM_METRIC_CREATE" | "CUSTOM_METRIC_DELETE" | "CUSTOM_METRIC_READ" | "CUSTOM_METRIC_UPDATE" | "DASHBOARD_CREATE" | "DASHBOARD_DELETE" | "DASHBOARD_READ" | "DASHBOARD_UPDATE" | "DATASET_CREATE" | "DATASET_DELETE" | "DATASET_EXAMPLE_ANNOTATE" | "DATASET_EXAMPLE_CREATE" | "DATASET_EXAMPLE_DELETE" | "DATASET_EXAMPLE_READ" | "DATASET_EXAMPLE_UPDATE" | "DATASET_READ" | "DATASET_UPDATE" | "DATA_FABRIC_CONNECTOR_CREATE" | "DATA_FABRIC_CONNECTOR_DELETE" | "DATA_FABRIC_CONNECTOR_READ" | "DATA_FABRIC_CONNECTOR_UPDATE" | "EVALUATOR_CREATE" | "EVALUATOR_DELETE" | "EVALUATOR_READ" | "EVALUATOR_UPDATE" | "EXPERIMENT_CREATE" | "EXPERIMENT_DELETE" | "EXPERIMENT_EVAL_TASK_CREATE" | "EXPERIMENT_EVAL_TASK_DELETE" | "EXPERIMENT_EVAL_TASK_READ" | "EXPERIMENT_EVAL_TASK_UPDATE" | "EXPERIMENT_READ" | "EXPERIMENT_RUN_ANNOTATE" | "EXPERIMENT_RUN_READ" | "EXPERIMENT_UPDATE" | "FILE_IMPORT_CREATE" | "FILE_IMPORT_DELETE" | "FILE_IMPORT_READ" | "FILE_IMPORT_UPDATE" | "ML_MODEL_CREATE" | "ML_MODEL_DELETE" | "ML_MODEL_READ" | "ML_MODEL_UPDATE" | "MONITOR_CREATE" | "MONITOR_DELETE" | "MONITOR_READ" | "MONITOR_TRIGGER" | "MONITOR_UPDATE" | "ORGANIZATION_CREATE" | "ORGANIZATION_DELETE" | "ORGANIZATION_READ" | "ORGANIZATION_UPDATE" | "PLAYGROUND_RUN" | "PLAYGROUND_VIEW_CREATE" | "PLAYGROUND_VIEW_DELETE" | "PLAYGROUND_VIEW_READ" | "PLAYGROUND_VIEW_UPDATE" | "PROJECT_CREATE" | "PROJECT_DELETE" | "PROJECT_EVAL_TASK_CREATE" | "PROJECT_EVAL_TASK_DELETE" | "PROJECT_EVAL_TASK_READ" | "PROJECT_EVAL_TASK_UPDATE" | "PROJECT_READ" | "PROJECT_RESTRICT" | "PROJECT_SPAN_ANNOTATE" | "PROJECT_SPAN_CREATE" | "PROJECT_SPAN_DELETE" | "PROJECT_SPAN_READ" | "PROJECT_SPAN_UPDATE" | "PROJECT_UPDATE" | "PROMPT_CREATE" | "PROMPT_DELETE" | "PROMPT_OPTIMIZE_TASK_CREATE" | "PROMPT_OPTIMIZE_TASK_DELETE" | "PROMPT_OPTIMIZE_TASK_READ" | "PROMPT_OPTIMIZE_TASK_UPDATE" | "PROMPT_READ" | "PROMPT_UPDATE" | "QUEUE_CREATE" | "QUEUE_DELETE" | "QUEUE_READ" | "QUEUE_RECORD_ANNOTATE" | "QUEUE_RECORD_CREATE" | "QUEUE_RECORD_DELETE" | "QUEUE_RECORD_READ" | "QUEUE_RECORD_UPDATE" | "QUEUE_UPDATE" | "ROLE_BINDING_CREATE" | "ROLE_BINDING_DELETE" | "ROLE_BINDING_READ" | "SERVICE_KEY_CREATE" | "SPACE_CREATE" | "SPACE_DELETE" | "SPACE_READ" | "SPACE_UPDATE" | "TAG_CREATE" | "TAG_DELETE" | "TAG_READ" | "TAG_UPDATE" | "TRACE_VIEW_CREATE" | "TRACE_VIEW_DELETE" | "TRACE_VIEW_READ" | "TRACE_VIEW_UPDATE" | "USER_CREATE" | "USER_DELETE" | "USER_READ" | "USER_UPDATE";
         /**
          * @description A project represents an LLM application and serves as the primary container for observability data. Each project collects traces and spans that capture the execution flow of your application, enabling you to debug issues, monitor latency, and analyze token usage.
          *     Projects belong to a space and provide a centralized view of your application's performance. Use projects to organize related traces, run experiments against datasets, and track improvements over time.
@@ -4557,6 +4671,48 @@ export interface components {
                 };
             };
         };
+        OrganizationResponse: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
+        /** @description Returns a list of organization objects */
+        OrganizationList: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "organizations": [
+                 *         {
+                 *           "id": "org_001",
+                 *           "name": "Agent Engineering Team",
+                 *           "description": "Organization for the ML platform engineering team",
+                 *           "created_at": "2024-01-01T12:00:00Z"
+                 *         },
+                 *         {
+                 *           "id": "org_002",
+                 *           "name": "Data Science",
+                 *           "description": "Organization for the Agent Engineering team",
+                 *           "created_at": "2024-01-02T12:00:00Z"
+                 *         }
+                 *       ],
+                 *       "pagination": {
+                 *         "next_cursor": "cursor_12345",
+                 *         "has_more": true
+                 *       }
+                 *     }
+                 */
+                "application/json": {
+                    /** @description A list of organizations */
+                    organizations: components["schemas"]["Organization"][];
+                    /** @description Pagination metadata for cursor-based navigation */
+                    pagination: components["schemas"]["PaginationMetadata"];
+                };
+            };
+        };
         /** @description A project object */
         Project: {
             headers: {
@@ -5029,6 +5185,13 @@ export interface components {
                 "application/json": components["schemas"]["Space"];
             };
         };
+        /** @description Space successfully deleted */
+        SpaceDeleted: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
         /** @description Returns a list of space objects */
         SpaceList: {
             headers: {
@@ -5260,6 +5423,13 @@ export interface components {
                 "application/json": components["schemas"]["TaskRun"];
             };
         };
+        /** @description Spans successfully deleted */
+        SpanDeleted: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
         /** @description Returns the created task run */
         TaskRunCreated: {
             headers: {
@@ -5322,6 +5492,23 @@ export interface components {
                 };
             };
         };
+        /** @description An organization object */
+        Organization: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "org_001",
+                 *       "name": "Agent Engineering Team",
+                 *       "description": "Organization for the Agent Engineering team",
+                 *       "created_at": "2024-01-01T12:00:00Z"
+                 *     }
+                 */
+                "application/json": components["schemas"]["Organization"];
+            };
+        };
     };
     parameters: {
         /**
@@ -5371,37 +5558,13 @@ export interface components {
          *     attempt to parse or construct it.
          */
         CursorQueryParam: string;
-        /** @description Maximum items to return */
-        LimitQueryParamMax100: number;
-        /** @description Maximum items to return */
-        LimitQueryParamMax500: number;
-        /**
-         * @description Case-insensitive substring filter on the resource name. Returns only
-         *     resources whose name contains the given string. For example,
-         *     `name=prod` matches "production", "my-prod-dataset", etc. If omitted,
-         *     no name filtering is applied and all resources are returned.
-         * @example production
-         */
-        NameSearchQueryParam: string;
-        /**
-         * @description Filter search results to a particular space ID
-         * @example U3BhY2U6MTIzNDU=
-         */
-        SpaceIdQueryParam: components["schemas"]["Id"];
-        /**
-         * @description Case-insensitive substring filter on the space name. Narrows results
-         *     to resources in spaces whose name contains the given string. If omitted,
-         *     no space name filtering is applied and all resources are returned.
-         * @example my-space
-         */
-        SpaceNameQueryParam: string;
         /**
          * @description The unique identifier of the dataset
          * @example RGF0YXNldDoxMjM0NQ==
          */
         DatasetIdPathParam: components["schemas"]["Id"];
         /**
-         * @description Filter experiments to a particular dataset ID
+         * @description Filter to a specific dataset (base64 global ID)
          * @example RGF0YXNldDoxMjM0NQ==
          */
         DatasetIdQueryParam: components["schemas"]["Id"];
@@ -5430,11 +5593,6 @@ export interface components {
          * @example RXhwZXJpbWVudDoxMjM0NQ==
          */
         ExperimentIdPathParam: components["schemas"]["Id"];
-        /**
-         * @description The unique identifier of the project
-         * @example project_12345
-         */
-        ProjectIdPathParam: components["schemas"]["Id"];
         /** @description The name of the label (e.g., "production", "staging") */
         LabelNamePathParam: string;
         /**
@@ -5442,6 +5600,30 @@ export interface components {
          * @example production
          */
         LabelQueryParam: string;
+        /** @description Maximum items to return */
+        LimitQueryParamMax100: number;
+        /** @description Maximum items to return */
+        LimitQueryParamMax500: number;
+        /**
+         * @description Case-insensitive substring filter on the resource name. Returns only
+         *     resources whose name contains the given string. For example,
+         *     `name=prod` matches "production", "my-prod-dataset", etc. If omitted,
+         *     no name filtering is applied and all resources are returned.
+         * @example production
+         */
+        NameSearchQueryParam: string;
+        /** @description The unique identifier of an organization. When provided, only spaces belonging to this organization are returned. */
+        OrganizationIdQueryParam: components["schemas"]["Id"];
+        /**
+         * @description The unique identifier of the project
+         * @example project_12345
+         */
+        ProjectIdPathParam: components["schemas"]["Id"];
+        /**
+         * @description Filter to tasks for a specific project (base64 global ID)
+         * @example UHJvamVjdDoxMjM0NQ==
+         */
+        ProjectIdQueryParam: components["schemas"]["Id"];
         /**
          * @description The unique identifier of the prompt
          * @example prompt_12345
@@ -5452,11 +5634,6 @@ export interface components {
          * @example pv_12345
          */
         PromptVersionIdPathParam: components["schemas"]["Id"];
-        /**
-         * @description Return the prompt with this specific version. Mutually exclusive with `label`.
-         * @example pv_12345
-         */
-        VersionIdQueryParam: components["schemas"]["Id"];
         /** @description The unique identifier of the resource */
         ResourceIdPathParam: components["schemas"]["Id"];
         /**
@@ -5477,20 +5654,28 @@ export interface components {
          *     When not specified, returns all roles (both predefined and custom).
          */
         RolesIsPredefinedQueryParam: boolean;
-        /** @description The unique identifier of an organization. When provided, only spaces belonging to this organization are returned. */
-        OrganizationIdQueryParam: components["schemas"]["Id"];
         /**
          * @description The unique identifier of the space
          * @example spc_12345
          */
         SpaceIdPathParam: components["schemas"]["Id"];
-        TaskDatasetIdQueryParam: string;
+        /**
+         * @description Filter search results to a particular space ID
+         * @example U3BhY2U6MTIzNDU=
+         */
+        SpaceIdQueryParam: components["schemas"]["Id"];
+        /**
+         * @description Case-insensitive substring filter on the space name. Narrows results
+         *     to resources in spaces whose name contains the given string. If omitted,
+         *     no space name filtering is applied and all resources are returned.
+         * @example my-space
+         */
+        SpaceNameQueryParam: string;
         /**
          * @description The task global ID (base64)
          * @example VGFzazoxMjM0NQ==
          */
         TaskIdPathParam: components["schemas"]["Id"];
-        TaskProjectIdQueryParam: string;
         /**
          * @description The task run global ID (base64)
          * @example VGFza1J1bjoxMjM0NQ==
@@ -5507,15 +5692,15 @@ export interface components {
          */
         TaskTypeQueryParam: "template_evaluation" | "code_evaluation";
         /**
-         * @description Filter to tasks for a specific project (base64 global ID)
-         * @example UHJvamVjdDoxMjM0NQ==
+         * @description Return the prompt with this specific version. Mutually exclusive with `label`.
+         * @example pv_12345
          */
-        ProjectIdQueryParam: components["schemas"]["Id"];
+        VersionIdQueryParam: components["schemas"]["Id"];
         /**
-         * @description Filter to tasks for a specific dataset (base64 global ID)
-         * @example RGF0YXNldDoxMjM0NQ==
+         * @description The unique identifier of the organization
+         * @example org_12345
          */
-        tasks_DatasetIdQueryParam: components["schemas"]["Id"];
+        OrgIdPathParam: components["schemas"]["Id"];
     };
     requestBodies: {
         /** @description Body containing AI integration creation parameters */
@@ -6000,6 +6185,40 @@ export interface components {
                 };
             };
         };
+        /** @description Body containing organization creation parameters */
+        CreateOrganizationRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "name": "Agent Engineering Team",
+                 *       "description": "Organization for the Agent Engineering team"
+                 *     }
+                 */
+                "application/json": {
+                    /** @description Name of the organization (must be unique within the account) */
+                    name: string;
+                    /** @description A brief description of the organization's purpose. Defaults to an empty string if omitted. */
+                    description?: string;
+                };
+            };
+        };
+        /** @description Body containing organization update parameters. At least one field must be provided. */
+        UpdateOrganizationRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "name": "Updated Org Name",
+                 *       "description": "Updated organization description"
+                 *     }
+                 */
+                "application/json": {
+                    /** @description Updated name for the organization (must be unique within the account) */
+                    name?: string;
+                    /** @description Updated description for the organization. Set to an empty string to clear it. */
+                    description?: string;
+                };
+            };
+        };
         /** @description Body containing project creation parameters */
         CreateProjectRequestBody: {
             content: {
@@ -6227,6 +6446,26 @@ export interface components {
                      *     for filtering spans by attributes (e.g., `status_code = 'ERROR'`).
                      */
                     filter?: string;
+                };
+            };
+        };
+        /** @description Body containing span IDs to delete */
+        DeleteSpansRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "project_id": "UHJvamVjdDox",
+                 *       "span_ids": [
+                 *         "a1b2c3d4e5f6a7b8",
+                 *         "f8e7d6c5b4a39281"
+                 *       ]
+                 *     }
+                 */
+                "application/json": {
+                    /** @description The project ID containing the spans to delete */
+                    project_id: string;
+                    /** @description List of span IDs to delete (maximum 1000) */
+                    span_ids: string[];
                 };
             };
         };
@@ -7368,7 +7607,7 @@ export interface operations {
         parameters: {
             query?: {
                 /**
-                 * @description Filter experiments to a particular dataset ID
+                 * @description Filter to a specific dataset (base64 global ID)
                  * @example RGF0YXNldDoxMjM0NQ==
                  */
                 dataset_id?: components["parameters"]["DatasetIdQueryParam"];
@@ -7493,6 +7732,103 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             422: components["responses"]["BadRequest"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    organizations_list: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Case-insensitive substring filter on the resource name. Returns only
+                 *     resources whose name contains the given string. For example,
+                 *     `name=prod` matches "production", "my-prod-dataset", etc. If omitted,
+                 *     no name filtering is applied and all resources are returned.
+                 * @example production
+                 */
+                name?: components["parameters"]["NameSearchQueryParam"];
+                /** @description Maximum items to return */
+                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /**
+                 * @description Opaque pagination cursor returned from a previous response
+                 *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
+                 *     attempt to parse or construct it.
+                 */
+                cursor?: components["parameters"]["CursorQueryParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["OrganizationList"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    organizations_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["CreateOrganizationRequestBody"];
+        responses: {
+            201: components["responses"]["Organization"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    organizations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the organization
+                 * @example org_12345
+                 */
+                org_id: components["parameters"]["OrgIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Organization"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    organizations_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the organization
+                 * @example org_12345
+                 */
+                org_id: components["parameters"]["OrgIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["UpdateOrganizationRequestBody"];
+        responses: {
+            200: components["responses"]["Organization"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -8233,6 +8569,29 @@ export interface operations {
             429: components["responses"]["RateLimitExceeded"];
         };
     };
+    spaces_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the space
+                 * @example spc_12345
+                 */
+                space_id: components["parameters"]["SpaceIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: components["responses"]["SpaceDeleted"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
     spaces_update: {
         parameters: {
             query?: never;
@@ -8279,6 +8638,24 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    spans_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["DeleteSpansRequestBody"];
+        responses: {
+            204: components["responses"]["SpanDeleted"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -8311,10 +8688,10 @@ export interface operations {
                  */
                 project_id?: components["parameters"]["ProjectIdQueryParam"];
                 /**
-                 * @description Filter to tasks for a specific dataset (base64 global ID)
+                 * @description Filter to a specific dataset (base64 global ID)
                  * @example RGF0YXNldDoxMjM0NQ==
                  */
-                dataset_id?: components["parameters"]["tasks_DatasetIdQueryParam"];
+                dataset_id?: components["parameters"]["DatasetIdQueryParam"];
                 /**
                  * @description Filter by task type: template_evaluation or code_evaluation
                  * @example template_evaluation

@@ -44,3 +44,9 @@ export type RawAnnotationQueueRecordAssignResult =
   components["schemas"]["AnnotationQueueRecordAssignResult"];
 export type RawRole = components["schemas"]["Role"];
 export type RawPermission = components["schemas"]["Permission"];
+export type RawResourceRestriction =
+  components["schemas"]["ResourceRestriction"];
+export type RawRoleBinding = components["schemas"]["RoleBinding"];
+export type RawRoleBindingCreate = components["schemas"]["RoleBindingCreate"];
+export type RawRoleBindingResourceType =
+  components["schemas"]["RoleBindingResourceType"];

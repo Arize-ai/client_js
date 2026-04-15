@@ -13,4 +13,6 @@ export * from "./evaluators";
 export * from "./annotation_queues";
 export * from "./tasks";
 export * from "./roles";
+export * from "./resource_restrictions";
+export * from "./role_bindings";
 export * from "./types";

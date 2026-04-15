@@ -16,7 +16,7 @@ const output = `/**
  * Auto-generated from package version.
  * Keep this file in sync with package.json.
  */
-export const ARIZE_SDK_VERSION = "${packageJson.version}";
+export const ARIZE_SDK_VERSION = "${packageJson.version}"; // x-release-please-version
 `;
 
 mkdirSync(path.dirname(outputPath), { recursive: true });
