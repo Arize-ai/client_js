@@ -539,3 +539,39 @@ export async function findTaskId(
 
   throw new ResolutionError("task", task, available);
 }
+
+/**
+ * Resolve an organization ID or name to an organization ID.
+ *
+ * If the value is a base64 ID, it is returned as-is.
+ * Otherwise, the list organizations endpoint is called to find an exact name match.
+ */
+export async function findOrganizationId(
+  client: Client,
+  organization: string,
+): Promise<string> {
+  if (isResourceId(organization)) {
+    return organization;
+  }
+
+  const available: string[] = [];
+  let cursor: string | undefined;
+
+  do {
+    const response = await client.GET("/v2/organizations", {
+      params: { query: { name: organization, limit: 100, cursor } },
+    });
+    if (response.error) {
+      return handleApiError(response);
+    }
+    for (const o of response.data.organizations) {
+      if (o.name === organization) {
+        return o.id;
+      }
+      available.push(o.name);
+    }
+    cursor = response.data.pagination.next_cursor ?? undefined;
+  } while (cursor);
+
+  throw new ResolutionError("organization", organization, available);
+}

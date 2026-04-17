@@ -1,17 +1,23 @@
 # @arizeai/ax-client
 
-## [1.7.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.6.0...arize-js-sdk/v1.7.0) (2026-04-15)
+## [1.8.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.7.0...arize-js-sdk/v1.8.0) (2026-04-17)
 
 
 ### 🎁 New Features
 
-* d restrictResource, unrestrictResource, and role binding operations ([#67234](https://github.com/Arize-ai/arize/issues/67234)) ([16c97c8](https://github.com/Arize-ai/arize/commit/16c97c868d49de5549a41d07521479cb25a752dc))
-* **spaces:** add delete space support ([#68714](https://github.com/Arize-ai/arize/issues/68714)) ([9f09df0](https://github.com/Arize-ai/arize/commit/9f09df05753178b93acf91eedc065223733a2cb7))
+* **organizations:** add organizations module with list/get/create/update support ([#68644](https://github.com/Arize-ai/arize/issues/68644)) ([cdc825d](https://github.com/Arize-ai/arize/commit/cdc825d8675cbb36761e76e70d6995bc2883618f)), closes [#59168](https://github.com/Arize-ai/arize/issues/59168)
+
+## [1.7.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.6.0...arize-js-sdk/v1.7.0) (2026-04-15)
+
+### 🎁 New Features
+
+- add restrictResource, unrestrictResource, and role binding operations ([#67234](https://github.com/Arize-ai/arize/issues/67234)) ([16c97c8](https://github.com/Arize-ai/arize/commit/16c97c868d49de5549a41d07521479cb25a752dc))
+- **spaces:** add delete space support ([#68714](https://github.com/Arize-ai/arize/issues/68714)) ([9f09df0](https://github.com/Arize-ai/arize/commit/9f09df05753178b93acf91eedc065223733a2cb7))
 
 ### 📚 Documentation
 
-* add js docs to client type ([#68151](https://github.com/Arize-ai/arize/issues/68151)) ([859baac](https://github.com/Arize-ai/arize/commit/859baac6b2a4e336c4444ffac29ff2e896d7c06e))
-* add js docs to utils ([#68147](https://github.com/Arize-ai/arize/issues/68147)) ([e18bd33](https://github.com/Arize-ai/arize/commit/e18bd33af512ed1d9068fdd449ed77fb522fbe95))
+- add js docs to client type ([#68151](https://github.com/Arize-ai/arize/issues/68151)) ([859baac](https://github.com/Arize-ai/arize/commit/859baac6b2a4e336c4444ffac29ff2e896d7c06e))
+- add js docs to utils ([#68147](https://github.com/Arize-ai/arize/issues/68147)) ([e18bd33](https://github.com/Arize-ai/arize/commit/e18bd33af512ed1d9068fdd449ed77fb522fbe95))
 
 ## [1.6.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.5.0...arize-js-sdk/v1.6.0) (2026-04-03)
 

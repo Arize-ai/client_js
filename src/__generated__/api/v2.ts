@@ -843,7 +843,7 @@ export interface paths {
          *     - The evaluator `name` must be unique within the given space.
          *     - `type` must be `template` (the only supported type in this iteration).
          *     - `version.template_config.name` is the eval column name; must match `^[a-zA-Z0-9_\s\-&()]+$`.
-         *     - `version.template_config.template` is the prompt template; use `{{variable}}` for placeholders.
+         *     - `version.template_config.template` is the prompt template; use `{variable}` for placeholders (f-string format, e.g. `{input}`, `{output}`).
          *     - `version.template_config.classification_choices` maps choice labels to numeric scores (e.g. `{"relevant": 1, "irrelevant": 0}`). When omitted, the evaluator produces freeform output.
          *     - System-managed fields (`id`, `created_at`, `updated_at`, `created_by_user_id`) are rejected on input.
          *
@@ -1263,29 +1263,6 @@ export interface paths {
         patch: operations["prompts_update"];
         trace?: never;
     };
-    "/v2/prompts/{prompt_id}/labels/{label_name}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Resolve a label to a prompt version
-         * @description Resolve a label on a prompt to the version it points to. Returns the
-         *     full `PromptVersion` object that this label currently references.
-         *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
-         */
-        get: operations["prompt_labels_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v2/prompts/{prompt_id}/versions": {
         parameters: {
             query?: never;
@@ -1350,6 +1327,29 @@ export interface paths {
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
         post: operations["prompt_versions_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/prompts/{prompt_id}/labels/{label_name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resolve a label to a prompt version
+         * @description Resolve a label on a prompt to the version it points to. Returns the
+         *     full `PromptVersion` object that this label currently references.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["prompt_labels_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4143,23 +4143,23 @@ export interface components {
             content: {
                 /**
                  * @example {
-                 *       "id": "dataset_001",
+                 *       "id": "RGF0YXNldDoxOmFCY0Q=",
                  *       "created_at": "2024-01-01T12:00:00Z",
                  *       "updated_at": "2024-01-02T12:00:00Z",
                  *       "name": "Sample Dataset",
-                 *       "space_id": "spc_123",
+                 *       "space_id": "U3BhY2U6MTphQmNE",
                  *       "versions": [
                  *         {
-                 *           "id": "dv_001",
+                 *           "id": "RGF0YXNldFZlcnNpb246MTphQmNE",
                  *           "name": "v1.0",
-                 *           "dataset_id": "dataset_001",
+                 *           "dataset_id": "RGF0YXNldDoxOmFCY0Q=",
                  *           "created_at": "2024-01-01T12:00:00Z",
                  *           "updated_at": "2024-01-02T12:00:00Z"
                  *         },
                  *         {
-                 *           "id": "dv_002",
+                 *           "id": "RGF0YXNldFZlcnNpb246MjphQmNE",
                  *           "name": "v1.1",
-                 *           "dataset_id": "dataset_001",
+                 *           "dataset_id": "RGF0YXNldDoxOmFCY0Q=",
                  *           "created_at": "2024-02-01T12:00:00Z",
                  *           "updated_at": "2024-02-02T12:00:00Z"
                  *         }
@@ -4186,7 +4186,7 @@ export interface components {
                  * @example {
                  *       "examples": [
                  *         {
-                 *           "id": "ex_001",
+                 *           "id": "550e8400-e29b-41d4-a716-446655440000",
                  *           "created_at": "2024-01-01T12:00:00Z",
                  *           "updated_at": "2024-01-02T12:00:00Z",
                  *           "question": "What is 2 + 2?",
@@ -4195,7 +4195,7 @@ export interface components {
                  *           "isCorrect": true
                  *         },
                  *         {
-                 *           "id": "ex_002",
+                 *           "id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
                  *           "created_at": "2024-01-02T12:00:00Z",
                  *           "updated_at": "2024-01-03T12:00:00Z",
                  *           "question": "What is the square root of 16?",
@@ -4204,7 +4204,7 @@ export interface components {
                  *           "isCorrect": true
                  *         },
                  *         {
-                 *           "id": "ex_003",
+                 *           "id": "9c7f6b2e-4a3d-11e9-8bad-f5b7b8c1ae7e",
                  *           "created_at": "2024-01-03T12:00:00Z",
                  *           "updated_at": "2024-01-04T12:00:00Z",
                  *           "question": "If 3x = 12, what is x?",
@@ -4237,25 +4237,25 @@ export interface components {
                  * @example {
                  *       "datasets": [
                  *         {
-                 *           "id": "dataset_001",
+                 *           "id": "RGF0YXNldDoxOmFCY0Q=",
                  *           "created_at": "2024-01-01T12:00:00Z",
                  *           "updated_at": "2024-01-02T12:00:00Z",
                  *           "name": "Sample Dataset 1",
-                 *           "space_id": "spc_123"
+                 *           "space_id": "U3BhY2U6MTphQmNE"
                  *         },
                  *         {
-                 *           "id": "dataset_002",
+                 *           "id": "RGF0YXNldDoyOmFCY0Q=",
                  *           "created_at": "2024-01-02T12:00:00Z",
                  *           "updated_at": "2024-01-03T12:00:00Z",
                  *           "name": "Sample Dataset 2",
-                 *           "space_id": "spc_123"
+                 *           "space_id": "U3BhY2U6MTphQmNE"
                  *         },
                  *         {
-                 *           "id": "dataset_003",
+                 *           "id": "RGF0YXNldDozOmFCY0Q=",
                  *           "created_at": "2024-01-03T12:00:00Z",
                  *           "updated_at": "2024-01-04T12:00:00Z",
                  *           "name": "Sample Dataset 3",
-                 *           "space_id": "spc_456"
+                 *           "space_id": "U3BhY2U6MjphQmNE"
                  *         }
                  *       ],
                  *       "pagination": {
@@ -4568,10 +4568,10 @@ export interface components {
             content: {
                 /**
                  * @example {
-                 *       "id": "exp_001",
+                 *       "id": "RXhwZXJpbWVudDoxOmFCY0Q=",
                  *       "name": "Experiment 1",
-                 *       "dataset_id": "dataset_001",
-                 *       "dataset_version_id": "dv_001",
+                 *       "dataset_id": "RGF0YXNldDoxOmFCY0Q=",
+                 *       "dataset_version_id": "RGF0YXNldFZlcnNpb246MTphQmNE",
                  *       "created_at": "2024-01-01T12:00:00Z",
                  *       "updated_at": "2024-01-02T12:00:00Z"
                  *     }
@@ -4596,18 +4596,18 @@ export interface components {
                  * @example {
                  *       "experiments": [
                  *         {
-                 *           "id": "exp_001",
+                 *           "id": "RXhwZXJpbWVudDoxOmFCY0Q=",
                  *           "name": "Experiment 1",
-                 *           "dataset_id": "dataset_001",
-                 *           "dataset_version_id": "dv_001",
+                 *           "dataset_id": "RGF0YXNldDoxOmFCY0Q=",
+                 *           "dataset_version_id": "RGF0YXNldFZlcnNpb246MTphQmNE",
                  *           "created_at": "2024-01-01T12:00:00Z",
                  *           "updated_at": "2024-01-02T12:00:00Z"
                  *         },
                  *         {
-                 *           "id": "exp_002",
+                 *           "id": "RXhwZXJpbWVudDoyOmFCY0Q=",
                  *           "name": "Experiment 2",
-                 *           "dataset_id": "dataset_002",
-                 *           "dataset_version_id": "dv_002",
+                 *           "dataset_id": "RGF0YXNldDoyOmFCY0Q=",
+                 *           "dataset_version_id": "RGF0YXNldFZlcnNpb246MjphQmNE",
                  *           "created_at": "2024-01-02T12:00:00Z",
                  *           "updated_at": "2024-01-03T12:00:00Z"
                  *         }
@@ -4637,21 +4637,21 @@ export interface components {
                  *       "experiment_runs": [
                  *         {
                  *           "id": "run_001",
-                 *           "example_id": "ex_001",
+                 *           "example_id": "550e8400-e29b-41d4-a716-446655440000",
                  *           "output": "4",
                  *           "latency_ms": 120,
                  *           "model": "gpt-4"
                  *         },
                  *         {
                  *           "id": "run_002",
-                 *           "example_id": "ex_002",
+                 *           "example_id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
                  *           "output": "4",
                  *           "latency_ms": 150,
                  *           "model": "gpt-4"
                  *         },
                  *         {
                  *           "id": "run_003",
-                 *           "example_id": "ex_003",
+                 *           "example_id": "9c7f6b2e-4a3d-11e9-8bad-f5b7b8c1ae7e",
                  *           "output": "3",
                  *           "latency_ms": 130,
                  *           "model": "gpt-4"
@@ -6046,7 +6046,7 @@ export interface components {
                  *         "commit_message": "Initial version",
                  *         "template_config": {
                  *           "name": "hallucination",
-                 *           "template": "You are an evaluation assistant. Given the following input and output, determine if the output contains hallucinated content.\n\nInput: {{input}}\nOutput: {{output}}\nReference: {{reference}}",
+                 *           "template": "You are an evaluation assistant. Given the following input and output, determine if the output contains hallucinated content.\n\nInput: {input}\nOutput: {output}\nReference: {reference}",
                  *           "include_explanations": true,
                  *           "use_function_calling_if_available": true,
                  *           "classification_choices": {
@@ -6097,7 +6097,7 @@ export interface components {
                  *       "commit_message": "Improve template wording",
                  *       "template_config": {
                  *         "name": "hallucination",
-                 *         "template": "Evaluate whether the output is factually grounded.\n\nInput: {{input}}\nOutput: {{output}}",
+                 *         "template": "Evaluate whether the output is factually grounded.\n\nInput: {input}\nOutput: {output}",
                  *         "include_explanations": true,
                  *         "use_function_calling_if_available": true,
                  *         "classification_choices": {
@@ -8083,31 +8083,6 @@ export interface operations {
             429: components["responses"]["RateLimitExceeded"];
         };
     };
-    prompt_labels_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /**
-                 * @description The unique identifier of the prompt
-                 * @example prompt_12345
-                 */
-                prompt_id: components["parameters"]["PromptIdPathParam"];
-                /** @description The name of the label (e.g., "production", "staging") */
-                label_name: components["parameters"]["LabelNamePathParam"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: components["responses"]["PromptVersion"];
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            429: components["responses"]["RateLimitExceeded"];
-        };
-    };
     prompt_versions_list: {
         parameters: {
             query?: {
@@ -8156,6 +8131,31 @@ export interface operations {
         requestBody: components["requestBodies"]["CreatePromptVersionRequestBody"];
         responses: {
             201: components["responses"]["PromptVersion"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    prompt_labels_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the prompt
+                 * @example prompt_12345
+                 */
+                prompt_id: components["parameters"]["PromptIdPathParam"];
+                /** @description The name of the label (e.g., "production", "staging") */
+                label_name: components["parameters"]["LabelNamePathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["PromptVersion"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
