@@ -3,9 +3,11 @@
  * Note: "code" evaluators may appear in list/get responses but cannot be
  * created via the SDK in this iteration — only "template" is supported.
  */
+import type { components } from "../__generated__/api/v2";
+
 export type EvaluatorType = "template" | "code";
 
-export type EvaluatorDirection = "maximize" | "minimize";
+export type EvaluatorDirection = components["schemas"]["OptimizationDirection"];
 
 export type EvaluatorDataGranularity = "span" | "trace" | "session";
 

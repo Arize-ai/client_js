@@ -2,6 +2,8 @@ import { components } from "../__generated__/api/v2";
 
 export type RawDataset = components["schemas"]["Dataset"];
 export type RawDatasetVersion = components["schemas"]["DatasetVersion"];
+export type RawDatasetVersionWithExampleIds =
+  components["schemas"]["DatasetVersionWithExampleIds"];
 export type RawExperiment = components["schemas"]["Experiment"];
 export type RawExperimentRun = components["schemas"]["ExperimentRun"];
 export type RawDatasetExample = components["schemas"]["DatasetExample"];
@@ -51,3 +53,7 @@ export type RawOrganization = components["schemas"]["Organization"];
 export type RawRoleBindingCreate = components["schemas"]["RoleBindingCreate"];
 export type RawRoleBindingResourceType =
   components["schemas"]["RoleBindingResourceType"];
+export type RawAnnotationBatchResult =
+  components["schemas"]["AnnotationBatchResult"];
+export type RawAnnotateRecordResult =
+  components["schemas"]["AnnotateRecordResult"];

@@ -35,7 +35,7 @@ export type CreatePromptVersionParams = WithClient<
  *   space: "my-space",
  *   commitMessage: "Updated system prompt for better responses",
  *   inputVariableFormat: "f_string",
- *   provider: "openAI",
+ *   provider: "open_ai",
  *   model: "gpt-4",
  *   messages: [
  *     { role: "system", content: "You are a helpful assistant." },

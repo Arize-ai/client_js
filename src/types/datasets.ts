@@ -28,6 +28,16 @@ export type DatasetExample = {
   [key: string]: number | string | boolean | Date;
 };
 
+export type DatasetVersionWithExampleIds = {
+  id: string;
+  name: string;
+  spaceId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  datasetVersionId: string;
+  exampleIds: string[];
+};
+
 export type DatasetExampleInput = RawCreateDatasetRequestBodyExample;
 
 export type DatasetExampleUpdate = RawUpdateDatasetRequestBodyExample;

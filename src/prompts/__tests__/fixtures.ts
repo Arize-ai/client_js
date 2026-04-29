@@ -22,7 +22,7 @@ export const mockPromptVersion: RawPromptVersion = {
     { role: "user", content: "Hello, {name}!" },
   ],
   input_variable_format: "f_string",
-  provider: "openAI",
+  provider: "open_ai",
   model: "gpt-4",
   invocation_params: { temperature: 0.7, max_tokens: 1000 },
   created_at: mockDateString,

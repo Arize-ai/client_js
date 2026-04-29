@@ -51,7 +51,7 @@ export type CreatePromptParams = WithClient<{
  *   version: {
  *     commitMessage: "Initial version",
  *     inputVariableFormat: "f_string",
- *     provider: "openAI",
+ *     provider: "open_ai",
  *     model: "gpt-4",
  *     messages: [
  *       { role: "system", content: "You are a helpful assistant." },

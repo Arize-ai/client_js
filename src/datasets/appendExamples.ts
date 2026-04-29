@@ -1,9 +1,12 @@
 import { createClient } from "../client";
 import { WithClient } from "../types";
-import { Dataset, DatasetExampleInput } from "../types/datasets";
+import {
+  DatasetExampleInput,
+  DatasetVersionWithExampleIds,
+} from "../types/datasets";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
-import { transformDataset } from "./utils";
+import { transformDatasetVersionWithExampleIds } from "./utils";
 import { findDatasetId, toSpaceRef } from "../utils/resolve";
 
 export type AppendExamplesParams = WithClient<{
@@ -31,14 +34,14 @@ export type AppendExamplesParams = WithClient<{
  * - **Do not** include system-managed fields on input: `id`, `created_at`, `updated_at`.
  *   Requests that contain these fields in any example **will be rejected**.
  * - Each example **must contain at least one property** (i.e., `{}` is invalid).
- * @returns A {@link Dataset}.
+ * @returns A {@link DatasetVersionWithExampleIds} containing the dataset attributes, the version the examples were written to, and the IDs of the inserted examples.
  * @throws Error if the examples cannot be added or the response is invalid.
  * @example
  * ```typescript
  * import { appendExamples } from "@arizeai/ax-client"
  *
- * const dataset = await appendExamples({ dataset: "my_dataset", space: "my_space", examples: [{ "question": "What is 2+2?", "answer": "4", "topic": "math" }] });
- * console.log(dataset);
+ * const result = await appendExamples({ dataset: "my_dataset", space: "my_space", examples: [{ "question": "What is 2+2?", "answer": "4", "topic": "math" }] });
+ * console.log(result.exampleIds); // IDs of the inserted examples
  * ```
  */
 export async function appendExamples({
@@ -47,7 +50,7 @@ export async function appendExamples({
   space,
   datasetVersionId,
   examples,
-}: AppendExamplesParams): Promise<Dataset> {
+}: AppendExamplesParams): Promise<DatasetVersionWithExampleIds> {
   warnPreRelease({ functionName: "appendExamples" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
@@ -66,5 +69,5 @@ export async function appendExamples({
   if (response.error) {
     return handleApiError(response);
   }
-  return transformDataset(response.data);
+  return transformDatasetVersionWithExampleIds(response.data);
 }

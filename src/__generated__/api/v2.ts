@@ -498,6 +498,8 @@ export interface paths {
          *     paginated; use `limit` and `cursor` and the response `pagination.next_cursor` for
          *     subsequent pages.
          *
+         *     **Authorization:** Requires the `developer` user permission flag. Returns `403` when this flag is absent.
+         *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
         get: operations["api_keys_list"];
@@ -515,6 +517,11 @@ export interface paths {
          *       assign a role higher than your own returns `400 Bad Request`.
          *     - All roles default to the minimum privilege when omitted: `space_role` → `member`,
          *       `org_role` → `read-only`, `account_role` → `member`.
+         *
+         *     **Authorization:**
+         *     - **User keys:** Requires the `developer` user permission flag. Returns `403` when this flag is absent.
+         *     - **Service keys:** Requires the `SERVICE_KEY_CREATE` permission in the target space (space
+         *       member or above).
          *
          *     The full API key value (`key`) is **only returned once** in the creation response.
          *     Store it securely — it cannot be retrieved again. Use the `redacted_key` field on
@@ -544,6 +551,12 @@ export interface paths {
          * @description Delete an API key by its ID (soft-delete). This operation is irreversible. The key will
          *     immediately stop working for authentication.
          *
+         *     **Authorization:**
+         *     - **User keys:** the creator or an account admin may delete the key. Requires the
+         *       `developer` user permission flag. Returns `403` when this flag is absent.
+         *     - **Service keys:** space admins (and higher) may delete any service key in their space.
+         *       Non-admins require the `SERVICE_KEY_DELETE` permission and must be the creator of the key.
+         *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
         delete: operations["api_keys_delete"];
@@ -564,12 +577,17 @@ export interface paths {
         /**
          * Refresh an API key
          * @description Atomically revoke an existing API key and issue a replacement with the same
-         *     metadata (name, description, and key type). Attempting to refresh a key
-         *     you did not create returns a `400` error.
+         *     metadata (name, description, and key type).
          *
          *     The old key is invalidated and the new key is activated in a single transaction —
          *     there is no window where neither key is valid. The full new key value (`key`) is
          *     **only returned once** in the response. Store it securely.
+         *
+         *     **Authorization:**
+         *     - **User keys:** the creator or an account admin may refresh the key. Requires the
+         *       `developer` user permission flag. Returns `403` when this flag is absent.
+         *     - **Service keys:** space admins (and higher) may refresh any service key in their space.
+         *       Non-admins require the `SERVICE_KEY_CREATE` permission and must be the creator of the key.
          *
          *     **Expiry behaviour:** Supply `expires_at` in the request body to set an expiration
          *     on the replacement key. Omit `expires_at` (or send an empty body `{}`) to create
@@ -817,6 +835,60 @@ export interface paths {
         patch: operations["datasets_examples_update"];
         trace?: never;
     };
+    "/v2/datasets/{dataset_id}/examples/annotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Annotate a batch of dataset examples
+         * @description Write human annotations to a batch of examples in a dataset.
+         *
+         *     **Idempotency**: Writes use upsert semantics — submitting the same annotation
+         *     config name for the same example overwrites the previous value. Retrying on
+         *     network failure will not create duplicates.
+         *
+         *     **Unmatched record IDs**: If a `record_id` does not correspond to an existing
+         *     example in the dataset, the annotation for that record is silently ignored.
+         *     The response will still include an entry for it. No error is returned.
+         *
+         *     **Payload Requirements**
+         *     - `dataset_id` is the path parameter for the target dataset.
+         *     - `annotations` is a list of per-example annotation inputs, each identified by `record_id`.
+         *     - Annotation names must match existing annotation configs in the dataset's space.
+         *     - Up to 500 examples may be annotated per request.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "annotations": [
+         *         {"record_id": "ex_abc", "values": [{"name": "quality", "score": 0.8}]}
+         *       ]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (annotation name not found in space)
+         *     ```json
+         *     {
+         *       "annotations": [
+         *         {"record_id": "ex_abc", "values": [{"name": "nonexistent_config"}]}
+         *       ]
+         *     }
+         *     ```
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["datasets_examples_annotate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v2/evaluators": {
         parameters: {
             query?: never;
@@ -1054,6 +1126,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v2/experiments/{experiment_id}/runs/annotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Annotate a batch of experiment runs
+         * @description Write human annotations to a batch of runs in an experiment.
+         *
+         *     **Idempotency**: Writes use upsert semantics — submitting the same annotation
+         *     config name for the same run overwrites the previous value. Retrying on
+         *     network failure will not create duplicates.
+         *
+         *     **Unmatched record IDs**: If a `record_id` does not correspond to an existing
+         *     run in the experiment, the annotation for that record is silently ignored.
+         *     The response will still include an entry for it. No error is returned.
+         *
+         *     **Payload Requirements**
+         *     - `experiment_id` is the path parameter for the target experiment.
+         *     - `annotations` is a list of per-run annotation inputs, each identified by `record_id`.
+         *     - Annotation names must match existing annotation configs in the experiment's space.
+         *     - Up to 500 runs may be annotated per request.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "annotations": [
+         *         {"record_id": "run_abc", "values": [{"name": "quality", "label": "good"}]}
+         *       ]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (annotation name not found in space)
+         *     ```json
+         *     {
+         *       "annotations": [
+         *         {"record_id": "run_abc", "values": [{"name": "nonexistent_config"}]}
+         *       ]
+         *     }
+         *     ```
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["experiments_runs_annotate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v2/organizations": {
         parameters: {
             query?: never;
@@ -1114,7 +1240,20 @@ export interface paths {
         get: operations["organizations_get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete an organization
+         * @description Delete an organization by its ID. This deletes the organization and all
+         *     resources that belong to it, including all spaces and their contents
+         *     (projects, experiments, evaluators, models, monitors, dashboards, datasets,
+         *     annotation configs, annotation queues, custom metrics, etc.) as well
+         *     as organization-level resources such as integrations, cost configurations,
+         *     SAML identity providers, and API keys.
+         *
+         *     This operation is irreversible.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        delete: operations["organizations_delete"];
         options?: never;
         head?: never;
         /**
@@ -1256,7 +1395,8 @@ export interface paths {
         /**
          * Update a prompt
          * @description Update a prompt's metadata by its ID. Currently supports updating the
-         *     description.
+         *     description. The prompt name is immutable after creation; to rename a
+         *     prompt, delete it and create a new one (note: this loses version history).
          *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
@@ -1295,7 +1435,7 @@ export interface paths {
          *     {
          *       "commit_message": "Updated system prompt for better responses",
          *       "input_variable_format": "f_string",
-         *       "provider": "openAI",
+         *       "provider": "open_ai",
          *       "model": "gpt-4",
          *       "messages": [
          *         {
@@ -1314,7 +1454,7 @@ export interface paths {
          *     ```json
          *     {
          *       "input_variable_format": "f_string",
-         *       "provider": "openAI",
+         *       "provider": "open_ai",
          *       "messages": [
          *         {
          *           "role": "user",
@@ -1850,10 +1990,28 @@ export interface paths {
         get: operations["tasks_get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete task
+         * @description Deletes a task and all its associated resources (evaluator configs, runs, etc.).
+         *     This operation is irreversible.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        delete: operations["tasks_delete"];
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update task
+         * @description Update a task's mutable fields. At least one field must be provided.
+         *     Omitted fields are left unchanged.
+         *
+         *     When `evaluators` is provided, the entire evaluator list is replaced.
+         *
+         *     `sampling_rate` and `is_continuous` are only applicable for project-based tasks.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        patch: operations["tasks_update"];
         trace?: never;
     };
     "/v2/tasks/{task_id}/runs": {
@@ -1980,10 +2138,8 @@ export interface components {
             /** @description Whether function/tool calling is enabled */
             function_calling_enabled: boolean;
             auth_type: components["schemas"]["AiIntegrationAuthType"];
-            /** @description Provider-specific configuration (AWS or GCP metadata) */
-            provider_metadata?: {
-                [key: string]: unknown;
-            } | null;
+            /** @description Provider-specific configuration. For awsBedrock, must include role_arn. For vertexAI, must include project_id, location, and project_access_label. */
+            provider_metadata?: (components["schemas"]["AwsProviderMetadata"] | components["schemas"]["GcpProviderMetadata"]) | null;
             /** @description Visibility scoping rules */
             scopings: components["schemas"]["AiIntegrationScoping"][];
             /**
@@ -2018,6 +2174,11 @@ export interface components {
         };
         /** @description AWS Bedrock provider metadata */
         AwsProviderMetadata: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "aws";
             /** @description AWS IAM role ARN for cross-account access */
             role_arn: string;
             /** @description External ID for the assume-role policy */
@@ -2025,6 +2186,11 @@ export interface components {
         };
         /** @description Vertex AI (GCP) provider metadata */
         GcpProviderMetadata: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "gcp";
             /** @description GCP project ID */
             project_id: string;
             /** @description GCP region (e.g. us-central1) */
@@ -2291,6 +2457,35 @@ export interface components {
              *     ]
              */
             annotator_emails?: components["schemas"]["Email"][];
+        };
+        /** @description A single record to annotate in a batch, identified by its record ID. */
+        AnnotateRecordInput: {
+            /** @description The ID of the record to annotate (dataset example ID or experiment run ID). */
+            record_id: string;
+            /** @description One or more annotation values to set on this record. */
+            values: components["schemas"]["AnnotationInput"][];
+        };
+        /** @description Batch annotation request for dataset examples. */
+        AnnotateDatasetExamplesRequestBody: {
+            /** @description Batch of dataset example annotations to write. Up to 500 examples per request. */
+            annotations: components["schemas"]["AnnotateRecordInput"][];
+        };
+        /** @description Batch annotation request for experiment runs. */
+        AnnotateExperimentRunsRequestBody: {
+            /** @description Batch of experiment run annotations to write. Up to 500 runs per request. */
+            annotations: components["schemas"]["AnnotateRecordInput"][];
+        };
+        /** @description The annotation result for a single annotated record. */
+        AnnotateRecordResult: {
+            /** @description The ID of the record that was annotated, which is either the dataset example ID or the experiment run ID. */
+            record_id: string;
+            /** @description The annotations that were written to this record. */
+            annotations: components["schemas"]["Annotation"][];
+        };
+        /** @description Result of a batch annotation operation. Contains one result entry per annotated record. */
+        AnnotationBatchResult: {
+            /** @description Per-record annotation results, in the same order as the request. */
+            results: components["schemas"]["AnnotateRecordResult"][];
         };
         ApiKey: {
             /** @description Unique identifier for the API key. */
@@ -2599,14 +2794,8 @@ export interface components {
             ai_integration_id: string;
             /** @description Model name (e.g. gpt-4o) */
             model_name: string;
-            /** @description Parameters for the LLM call (e.g. temperature, max_tokens) */
-            invocation_parameters: {
-                [key: string]: unknown;
-            };
-            /** @description Provider-specific parameters */
-            provider_parameters: {
-                [key: string]: unknown;
-            };
+            invocation_parameters: components["schemas"]["InvocationParams"];
+            provider_parameters: components["schemas"]["ProviderParams"];
         };
         /** @description A versioned snapshot of an evaluator's configuration. */
         EvaluatorVersion: {
@@ -2645,11 +2834,8 @@ export interface components {
             classification_choices?: {
                 [key: string]: number;
             } | null;
-            /**
-             * @description Optimization direction for annotation scores. When omitted, no optimization preference is set.
-             * @enum {string|null}
-             */
-            direction?: "maximize" | "minimize" | null;
+            /** @default maximize */
+            direction?: components["schemas"]["OptimizationDirection"];
             /**
              * @description Data granularity level. Defaults to null when omitted.
              * @enum {string|null}
@@ -2696,8 +2882,10 @@ export interface components {
             readonly id: string;
             /** @description ID of the dataset example associated with this experiment run */
             readonly example_id: string;
-            /** @description output of the task for the matching example */
-            output: string;
+            /** @description Output of the task for the matching example. Null when the task errored. */
+            output?: string | null;
+            /** @description Error message when the task failed. Null on success. */
+            error?: string | null;
         } & {
             [key: string]: unknown;
         };
@@ -2715,7 +2903,7 @@ export interface components {
          *     Auto-generated from proto/auth/protocol/permissions.proto.
          * @enum {string}
          */
-        Permission: "AI_PROVIDER_READ" | "ALYX_RUN" | "ANNOTATION_CONFIG_CREATE" | "ANNOTATION_CONFIG_DELETE" | "ANNOTATION_CONFIG_READ" | "ANNOTATION_CONFIG_UPDATE" | "CUSTOM_METRIC_CREATE" | "CUSTOM_METRIC_DELETE" | "CUSTOM_METRIC_READ" | "CUSTOM_METRIC_UPDATE" | "DASHBOARD_CREATE" | "DASHBOARD_DELETE" | "DASHBOARD_READ" | "DASHBOARD_UPDATE" | "DATASET_CREATE" | "DATASET_DELETE" | "DATASET_EXAMPLE_ANNOTATE" | "DATASET_EXAMPLE_CREATE" | "DATASET_EXAMPLE_DELETE" | "DATASET_EXAMPLE_READ" | "DATASET_EXAMPLE_UPDATE" | "DATASET_READ" | "DATASET_UPDATE" | "DATA_FABRIC_CONNECTOR_CREATE" | "DATA_FABRIC_CONNECTOR_DELETE" | "DATA_FABRIC_CONNECTOR_READ" | "DATA_FABRIC_CONNECTOR_UPDATE" | "EVALUATOR_CREATE" | "EVALUATOR_DELETE" | "EVALUATOR_READ" | "EVALUATOR_UPDATE" | "EXPERIMENT_CREATE" | "EXPERIMENT_DELETE" | "EXPERIMENT_EVAL_TASK_CREATE" | "EXPERIMENT_EVAL_TASK_DELETE" | "EXPERIMENT_EVAL_TASK_READ" | "EXPERIMENT_EVAL_TASK_UPDATE" | "EXPERIMENT_READ" | "EXPERIMENT_RUN_ANNOTATE" | "EXPERIMENT_RUN_READ" | "EXPERIMENT_UPDATE" | "FILE_IMPORT_CREATE" | "FILE_IMPORT_DELETE" | "FILE_IMPORT_READ" | "FILE_IMPORT_UPDATE" | "ML_MODEL_CREATE" | "ML_MODEL_DELETE" | "ML_MODEL_READ" | "ML_MODEL_UPDATE" | "MONITOR_CREATE" | "MONITOR_DELETE" | "MONITOR_READ" | "MONITOR_TRIGGER" | "MONITOR_UPDATE" | "ORGANIZATION_CREATE" | "ORGANIZATION_DELETE" | "ORGANIZATION_READ" | "ORGANIZATION_UPDATE" | "PLAYGROUND_RUN" | "PLAYGROUND_VIEW_CREATE" | "PLAYGROUND_VIEW_DELETE" | "PLAYGROUND_VIEW_READ" | "PLAYGROUND_VIEW_UPDATE" | "PROJECT_CREATE" | "PROJECT_DELETE" | "PROJECT_EVAL_TASK_CREATE" | "PROJECT_EVAL_TASK_DELETE" | "PROJECT_EVAL_TASK_READ" | "PROJECT_EVAL_TASK_UPDATE" | "PROJECT_READ" | "PROJECT_RESTRICT" | "PROJECT_SPAN_ANNOTATE" | "PROJECT_SPAN_CREATE" | "PROJECT_SPAN_DELETE" | "PROJECT_SPAN_READ" | "PROJECT_SPAN_UPDATE" | "PROJECT_UPDATE" | "PROMPT_CREATE" | "PROMPT_DELETE" | "PROMPT_OPTIMIZE_TASK_CREATE" | "PROMPT_OPTIMIZE_TASK_DELETE" | "PROMPT_OPTIMIZE_TASK_READ" | "PROMPT_OPTIMIZE_TASK_UPDATE" | "PROMPT_READ" | "PROMPT_UPDATE" | "QUEUE_CREATE" | "QUEUE_DELETE" | "QUEUE_READ" | "QUEUE_RECORD_ANNOTATE" | "QUEUE_RECORD_CREATE" | "QUEUE_RECORD_DELETE" | "QUEUE_RECORD_READ" | "QUEUE_RECORD_UPDATE" | "QUEUE_UPDATE" | "ROLE_BINDING_CREATE" | "ROLE_BINDING_DELETE" | "ROLE_BINDING_READ" | "SERVICE_KEY_CREATE" | "SPACE_CREATE" | "SPACE_DELETE" | "SPACE_READ" | "SPACE_UPDATE" | "TAG_CREATE" | "TAG_DELETE" | "TAG_READ" | "TAG_UPDATE" | "TRACE_VIEW_CREATE" | "TRACE_VIEW_DELETE" | "TRACE_VIEW_READ" | "TRACE_VIEW_UPDATE" | "USER_CREATE" | "USER_DELETE" | "USER_READ" | "USER_UPDATE";
+        Permission: "AI_PROVIDER_READ" | "ALYX_RUN" | "ANNOTATION_CONFIG_CREATE" | "ANNOTATION_CONFIG_DELETE" | "ANNOTATION_CONFIG_READ" | "ANNOTATION_CONFIG_UPDATE" | "CUSTOM_METRIC_CREATE" | "CUSTOM_METRIC_DELETE" | "CUSTOM_METRIC_READ" | "CUSTOM_METRIC_UPDATE" | "DASHBOARD_CREATE" | "DASHBOARD_DELETE" | "DASHBOARD_READ" | "DASHBOARD_UPDATE" | "DATASET_CREATE" | "DATASET_DELETE" | "DATASET_EXAMPLE_ANNOTATE" | "DATASET_EXAMPLE_CREATE" | "DATASET_EXAMPLE_DELETE" | "DATASET_EXAMPLE_READ" | "DATASET_EXAMPLE_UPDATE" | "DATASET_READ" | "DATASET_UPDATE" | "DATA_FABRIC_CONNECTOR_CREATE" | "DATA_FABRIC_CONNECTOR_DELETE" | "DATA_FABRIC_CONNECTOR_READ" | "DATA_FABRIC_CONNECTOR_UPDATE" | "EVALUATOR_CREATE" | "EVALUATOR_DELETE" | "EVALUATOR_READ" | "EVALUATOR_UPDATE" | "EXPERIMENT_CREATE" | "EXPERIMENT_DELETE" | "EXPERIMENT_EVAL_TASK_CREATE" | "EXPERIMENT_EVAL_TASK_DELETE" | "EXPERIMENT_EVAL_TASK_READ" | "EXPERIMENT_EVAL_TASK_UPDATE" | "EXPERIMENT_READ" | "EXPERIMENT_RUN_ANNOTATE" | "EXPERIMENT_RUN_READ" | "EXPERIMENT_UPDATE" | "FILE_IMPORT_CREATE" | "FILE_IMPORT_DELETE" | "FILE_IMPORT_READ" | "FILE_IMPORT_UPDATE" | "ML_MODEL_CREATE" | "ML_MODEL_DELETE" | "ML_MODEL_READ" | "ML_MODEL_UPDATE" | "MONITOR_CREATE" | "MONITOR_DELETE" | "MONITOR_READ" | "MONITOR_TRIGGER" | "MONITOR_UPDATE" | "ORGANIZATION_CREATE" | "ORGANIZATION_DELETE" | "ORGANIZATION_READ" | "ORGANIZATION_UPDATE" | "PLAYGROUND_RUN" | "PLAYGROUND_VIEW_CREATE" | "PLAYGROUND_VIEW_DELETE" | "PLAYGROUND_VIEW_READ" | "PLAYGROUND_VIEW_UPDATE" | "PROJECT_CREATE" | "PROJECT_DELETE" | "PROJECT_EVAL_TASK_CREATE" | "PROJECT_EVAL_TASK_DELETE" | "PROJECT_EVAL_TASK_READ" | "PROJECT_EVAL_TASK_UPDATE" | "PROJECT_READ" | "PROJECT_RESTRICT" | "PROJECT_SPAN_ANNOTATE" | "PROJECT_SPAN_CREATE" | "PROJECT_SPAN_DELETE" | "PROJECT_SPAN_READ" | "PROJECT_SPAN_UPDATE" | "PROJECT_UPDATE" | "PROMPT_CREATE" | "PROMPT_DELETE" | "PROMPT_OPTIMIZE_TASK_CREATE" | "PROMPT_OPTIMIZE_TASK_DELETE" | "PROMPT_OPTIMIZE_TASK_READ" | "PROMPT_OPTIMIZE_TASK_UPDATE" | "PROMPT_READ" | "PROMPT_UPDATE" | "QUEUE_CREATE" | "QUEUE_DELETE" | "QUEUE_READ" | "QUEUE_RECORD_ANNOTATE" | "QUEUE_RECORD_CREATE" | "QUEUE_RECORD_DELETE" | "QUEUE_RECORD_READ" | "QUEUE_RECORD_UPDATE" | "QUEUE_UPDATE" | "ROLE_BINDING_CREATE" | "ROLE_BINDING_DELETE" | "ROLE_BINDING_READ" | "SERVICE_KEY_CREATE" | "SERVICE_KEY_DELETE" | "SERVICE_KEY_READ" | "SPACE_CREATE" | "SPACE_DELETE" | "SPACE_READ" | "SPACE_UPDATE" | "TAG_CREATE" | "TAG_DELETE" | "TAG_READ" | "TAG_UPDATE" | "TRACE_VIEW_CREATE" | "TRACE_VIEW_DELETE" | "TRACE_VIEW_READ" | "TRACE_VIEW_UPDATE" | "USER_CREATE" | "USER_DELETE" | "USER_PERMISSION_UPDATE" | "USER_READ" | "USER_UPDATE";
         /**
          * @description A project represents an LLM application and serves as the primary container for observability data. Each project collects traces and spans that capture the execution flow of your application, enabling you to debug issues, monitor latency, and analyze token usage.
          *     Projects belong to a space and provide a centralized view of your application's performance. Use projects to organize related traces, run experiments against datasets, and track improvements over time.
@@ -2774,7 +2962,7 @@ export interface components {
          * @description The LLM provider to use
          * @enum {string}
          */
-        LlmProvider: "openAI" | "azureOpenAI" | "awsBedrock" | "vertexAI" | "custom";
+        LlmProvider: "open_ai" | "azure_open_ai" | "aws_bedrock" | "vertex_ai" | "anthropic" | "custom";
         /**
          * @description The role of the message author
          * @enum {string}
@@ -2829,7 +3017,6 @@ export interface components {
             model: string;
             invocation_params?: components["schemas"]["InvocationParams"];
             provider_params?: components["schemas"]["ProviderParams"];
-            tool_config?: components["schemas"]["ToolConfig"];
             /**
              * Format: date-time
              * @description When the version was created
@@ -2837,7 +3024,7 @@ export interface components {
             created_at: string;
             /** @description The user ID of the user who created this version */
             created_by_user_id: string;
-            /** @description Label names currently pointing to this version (e.g., "production", "staging") */
+            /** @description Label names currently pointing to this version (e.g., "production", "staging"). Labels are case-sensitive. */
             labels?: string[];
         };
         /** @description Initial version configuration for a new prompt */
@@ -2860,27 +3047,7 @@ export interface components {
          *     The version is the initial version on create, or the resolved version
          *     (latest, by ID, or by label) on get.
          */
-        PromptWithVersion: {
-            /** @description The prompt ID */
-            id: string;
-            /** @description The prompt name */
-            name: string;
-            /** @description The prompt description */
-            description?: string | null;
-            /** @description The space ID the prompt belongs to */
-            space_id: string;
-            /**
-             * Format: date-time
-             * @description When the prompt was created
-             */
-            created_at: string;
-            /**
-             * Format: date-time
-             * @description When the prompt was last updated
-             */
-            updated_at: string;
-            /** @description The user ID of the user who created the prompt */
-            created_by_user_id: string;
+        PromptWithVersion: components["schemas"]["Prompt"] & {
             version: components["schemas"]["PromptVersion"];
         };
         /** @description Provider-specific parameters */
@@ -2906,8 +3073,6 @@ export interface components {
                 /** @description Whether to use the AWS Bedrock Converse endpoint */
                 use_converse_endpoint?: boolean;
             };
-            /** @description Custom provider parameters */
-            custom_provider_params?: Record<string, unknown>;
             /** @description Region for the model deployment */
             region?: string;
         };
@@ -3253,6 +3418,16 @@ export interface components {
             /** @description The unique identifier for the user who triggered the run. */
             created_by_user_id: string | null;
         };
+        /**
+         * @description Discriminator value identifying AWS Bedrock provider metadata.
+         * @enum {string}
+         */
+        AwsProviderMetadataKind: "aws";
+        /**
+         * @description Discriminator value identifying Vertex AI (GCP) provider metadata.
+         * @enum {string}
+         */
+        GcpProviderMetadataKind: "gcp";
         AnnotationConfigBase: {
             /** @description The unique identifier for the annotation config */
             id: string;
@@ -3396,7 +3571,17 @@ export interface components {
              */
             annotation_config_type: "freeform";
         };
-        CreateAnnotationConfigRequestBody: components["schemas"]["ContinuousAnnotationConfigCreate"] | components["schemas"]["CategoricalAnnotationConfigCreate"] | components["schemas"]["FreeformAnnotationConfigCreate"];
+        /**
+         * @description The type of annotation config:
+         *     - continuous: a numeric score within a defined range
+         *     - categorical: a set of labeled values each with an optional score
+         *     - freeform: free-text annotation with no structured scoring
+         * @enum {string}
+         */
+        AnnotationConfigType: "continuous" | "categorical" | "freeform";
+        CreateAnnotationConfigRequestBody: {
+            annotation_config_type: components["schemas"]["AnnotationConfigType"];
+        } & (components["schemas"]["ContinuousAnnotationConfigCreate"] | components["schemas"]["CategoricalAnnotationConfigCreate"] | components["schemas"]["FreeformAnnotationConfigCreate"]);
         /**
          * Format: email
          * @description An email address
@@ -3425,6 +3610,33 @@ export interface components {
              * @example 2027-01-01T00:00:00Z
              */
             expires_at?: string;
+        };
+        /**
+         * @description A dataset with the IDs of examples that were inserted or updated.
+         *     Includes the version the examples were written to and the list of
+         *     affected example IDs.
+         */
+        DatasetVersionWithExampleIds: {
+            /** @description Unique identifier for the dataset */
+            id: string;
+            /** @description Name of the dataset */
+            name: string;
+            /** @description Unique identifier for the space this dataset belongs to */
+            space_id: string;
+            /**
+             * Format: date-time
+             * @description Timestamp for when the dataset was created
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description Timestamp for the last update of the dataset
+             */
+            updated_at: string;
+            /** @description Unique identifier for the dataset version the examples were written to */
+            dataset_version_id: string;
+            /** @description IDs of the examples that were inserted or updated */
+            example_ids: string[];
         };
     };
     responses: {
@@ -4272,6 +4484,35 @@ export interface components {
                 };
             };
         };
+        /** @description Annotations successfully written to dataset examples */
+        DatasetExamplesAnnotated: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "results": [
+                 *         {
+                 *           "record_id": "ex_abc",
+                 *           "annotations": [
+                 *             {
+                 *               "name": "quality",
+                 *               "score": 0.8,
+                 *               "annotator": {
+                 *                 "id": "usr_123",
+                 *                 "email": "reviewer@example.com"
+                 *               },
+                 *               "updated_at": "2024-01-08T10:00:00Z"
+                 *             }
+                 *           ]
+                 *         }
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["AnnotationBatchResult"];
+            };
+        };
         /** @description Evaluator deleted successfully */
         EvaluatorDeleted: {
             headers: {
@@ -4671,6 +4912,35 @@ export interface components {
                 };
             };
         };
+        /** @description Annotations successfully written to experiment runs */
+        ExperimentRunsAnnotated: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "results": [
+                 *         {
+                 *           "record_id": "run_abc",
+                 *           "annotations": [
+                 *             {
+                 *               "name": "quality",
+                 *               "label": "good",
+                 *               "annotator": {
+                 *                 "id": "usr_123",
+                 *                 "email": "reviewer@example.com"
+                 *               },
+                 *               "updated_at": "2024-01-08T10:00:00Z"
+                 *             }
+                 *           ]
+                 *         }
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["AnnotationBatchResult"];
+            };
+        };
         OrganizationResponse: {
             headers: {
                 [name: string]: unknown;
@@ -4850,7 +5120,7 @@ export interface components {
                  *         }
                  *       ],
                  *       "input_variable_format": "f_string",
-                 *       "provider": "openAI",
+                 *       "provider": "open_ai",
                  *       "model": "gpt-4",
                  *       "invocation_params": {
                  *         "temperature": 0.7,
@@ -4912,7 +5182,7 @@ export interface components {
                  *             }
                  *           ],
                  *           "input_variable_format": "f_string",
-                 *           "provider": "openAI",
+                 *           "provider": "open_ai",
                  *           "model": "gpt-4",
                  *           "created_at": "2024-01-02T12:00:00Z",
                  *           "created_by_user_id": "user_12345"
@@ -4929,7 +5199,7 @@ export interface components {
                  *             }
                  *           ],
                  *           "input_variable_format": "f_string",
-                 *           "provider": "openAI",
+                 *           "provider": "open_ai",
                  *           "model": "gpt-4",
                  *           "created_at": "2024-01-01T12:00:00Z",
                  *           "created_by_user_id": "user_12345"
@@ -4980,7 +5250,7 @@ export interface components {
                  *           }
                  *         ],
                  *         "input_variable_format": "f_string",
-                 *         "provider": "openAI",
+                 *         "provider": "open_ai",
                  *         "model": "gpt-4",
                  *         "invocation_params": {},
                  *         "provider_params": {},
@@ -5275,6 +5545,13 @@ export interface components {
                 };
             };
         };
+        /** @description Spans successfully deleted */
+        SpanDeleted: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
         /** @description Returns a single task object */
         Task: {
             headers: {
@@ -5348,6 +5625,13 @@ export interface components {
                  */
                 "application/json": components["schemas"]["Task"];
             };
+        };
+        /** @description Task deleted successfully */
+        TaskDeleted: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content?: never;
         };
         /** @description Returns a list of task objects */
         TaskList: {
@@ -5423,13 +5707,6 @@ export interface components {
                 "application/json": components["schemas"]["TaskRun"];
             };
         };
-        /** @description Spans successfully deleted */
-        SpanDeleted: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content?: never;
-        };
         /** @description Returns the created task run */
         TaskRunCreated: {
             headers: {
@@ -5492,6 +5769,89 @@ export interface components {
                 };
             };
         };
+        /** @description Returns the updated task */
+        TaskUpdated: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "T25saW5lVGFzazo0NTpxUndY",
+                 *       "name": "Updated Task Name",
+                 *       "type": "template_evaluation",
+                 *       "project_id": "TW9kZWw6MTIzOmFCY0Q=",
+                 *       "dataset_id": null,
+                 *       "sampling_rate": 0.5,
+                 *       "is_continuous": true,
+                 *       "query_filter": "metadata.environment = 'staging'",
+                 *       "evaluators": [
+                 *         {
+                 *           "evaluator_id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
+                 *           "evaluator_name": "Hallucination Eval",
+                 *           "query_filter": null,
+                 *           "column_mappings": {
+                 *             "input": "attributes.input.value",
+                 *             "output": "attributes.output.value"
+                 *           }
+                 *         }
+                 *       ],
+                 *       "experiment_ids": [],
+                 *       "last_run_at": "2026-03-01T14:30:00.000Z",
+                 *       "created_at": "2026-02-20T10:00:00.000Z",
+                 *       "updated_at": "2026-03-10T15:00:00.000Z",
+                 *       "created_by_user_id": "VXNlcjoxOm5OYkM="
+                 *     }
+                 */
+                "application/json": components["schemas"]["Task"];
+            };
+        };
+        /** @description Examples successfully added to the dataset. */
+        DatasetExamplesInserted: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "RGF0YXNldDoxOmFCY0Q=",
+                 *       "name": "Sample Dataset",
+                 *       "space_id": "U3BhY2U6MTphQmNE",
+                 *       "created_at": "2024-01-01T12:00:00Z",
+                 *       "updated_at": "2024-01-02T12:00:00Z",
+                 *       "dataset_version_id": "RGF0YXNldFZlcnNpb246MTphQmNE",
+                 *       "example_ids": [
+                 *         "550e8400-e29b-41d4-a716-446655440000",
+                 *         "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["DatasetVersionWithExampleIds"];
+            };
+        };
+        /** @description Examples successfully updated in the dataset. */
+        DatasetExamplesUpdated: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "RGF0YXNldDoxOmFCY0Q=",
+                 *       "name": "Sample Dataset",
+                 *       "space_id": "U3BhY2U6MTphQmNE",
+                 *       "created_at": "2024-01-01T12:00:00Z",
+                 *       "updated_at": "2024-01-02T12:00:00Z",
+                 *       "dataset_version_id": "RGF0YXNldFZlcnNpb246MTphQmNE",
+                 *       "example_ids": [
+                 *         "550e8400-e29b-41d4-a716-446655440000",
+                 *         "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["DatasetVersionWithExampleIds"];
+            };
+        };
         /** @description An organization object */
         Organization: {
             headers: {
@@ -5508,6 +5868,13 @@ export interface components {
                  */
                 "application/json": components["schemas"]["Organization"];
             };
+        };
+        /** @description Organization successfully deleted */
+        OrganizationDeleted: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content?: never;
         };
     };
     parameters: {
@@ -5743,10 +6110,8 @@ export interface components {
                     /** @description Enable function/tool calling (default true) */
                     function_calling_enabled?: boolean;
                     auth_type?: components["schemas"]["AiIntegrationAuthType"];
-                    /** @description Provider-specific configuration (AWS or GCP metadata) */
-                    provider_metadata?: {
-                        [key: string]: unknown;
-                    };
+                    /** @description Provider-specific configuration. For awsBedrock, must include role_arn. For vertexAI, must include project_id, location, and project_access_label. */
+                    provider_metadata?: components["schemas"]["AwsProviderMetadata"] | components["schemas"]["GcpProviderMetadata"];
                     /** @description Visibility scoping rules. Defaults to account-wide. */
                     scopings?: components["schemas"]["AiIntegrationScoping"][];
                 };
@@ -5784,10 +6149,8 @@ export interface components {
                     /** @description Enable function/tool calling */
                     function_calling_enabled?: boolean;
                     auth_type?: components["schemas"]["AiIntegrationAuthType"];
-                    /** @description Provider-specific configuration */
-                    provider_metadata?: {
-                        [key: string]: unknown;
-                    } | null;
+                    /** @description Provider-specific configuration. For awsBedrock, must include role_arn. For vertexAI, must include project_id, location, and project_access_label. Pass null to remove. */
+                    provider_metadata?: (components["schemas"]["AwsProviderMetadata"] | components["schemas"]["GcpProviderMetadata"]) | null;
                     /** @description Visibility scoping rules (replaces all existing scopings) */
                     scopings?: components["schemas"]["AiIntegrationScoping"][];
                 };
@@ -6033,6 +6396,27 @@ export interface components {
                 };
             };
         };
+        /** @description Body containing dataset example annotation batch */
+        AnnotateDatasetExamplesRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "annotations": [
+                 *         {
+                 *           "record_id": "ex_abc",
+                 *           "values": [
+                 *             {
+                 *               "name": "quality",
+                 *               "score": 0.8
+                 *             }
+                 *           ]
+                 *         }
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["AnnotateDatasetExamplesRequestBody"];
+            };
+        };
         /** @description Body containing evaluator creation parameters with an initial version */
         CreateEvaluatorRequestBody: {
             content: {
@@ -6185,6 +6569,27 @@ export interface components {
                 };
             };
         };
+        /** @description Body containing experiment run annotation batch */
+        AnnotateExperimentRunsRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "annotations": [
+                 *         {
+                 *           "record_id": "run_abc",
+                 *           "values": [
+                 *             {
+                 *               "name": "quality",
+                 *               "label": "good"
+                 *             }
+                 *           ]
+                 *         }
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["AnnotateExperimentRunsRequestBody"];
+            };
+        };
         /** @description Body containing organization creation parameters */
         CreateOrganizationRequestBody: {
             content: {
@@ -6247,7 +6652,7 @@ export interface components {
                  *       "version": {
                  *         "commit_message": "Initial version",
                  *         "input_variable_format": "f_string",
-                 *         "provider": "openAI",
+                 *         "provider": "open_ai",
                  *         "model": "gpt-4",
                  *         "messages": [
                  *           {
@@ -6280,7 +6685,7 @@ export interface components {
                  * @example {
                  *       "commit_message": "Updated system prompt for better responses",
                  *       "input_variable_format": "f_string",
-                 *       "provider": "openAI",
+                 *       "provider": "open_ai",
                  *       "model": "gpt-4",
                  *       "messages": [
                  *         {
@@ -6322,7 +6727,7 @@ export interface components {
                  *     }
                  */
                 "application/json": {
-                    /** @description Array of label names to set on the version (replaces all existing labels) */
+                    /** @description Array of label names to set on the version. Replaces all existing labels on this version. Pass an empty array to remove all labels from this version. Labels are unique per prompt — a label can only be assigned to one version at a time. If a label in this array is currently assigned to a different version of the same prompt, it will be moved to this version automatically (no error is raised). */
                     labels: string[];
                 };
             };
@@ -6553,6 +6958,39 @@ export interface components {
                     override_evaluations?: boolean;
                     /** @description Experiment global IDs (base64) to run against. Only applicable for dataset-based tasks. */
                     experiment_ids?: string[];
+                };
+            };
+        };
+        /** @description Body containing task update parameters */
+        UpdateTaskRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "name": "Updated Task Name",
+                 *       "sampling_rate": 0.5,
+                 *       "query_filter": "metadata.environment = 'staging'"
+                 *     }
+                 */
+                "application/json": {
+                    /** @description New task name */
+                    name?: string;
+                    /** @description Sampling rate between 0 and 1. Only applicable for project-based tasks. */
+                    sampling_rate?: number;
+                    /** @description Whether the task runs continuously. Only applicable for project-based tasks. */
+                    is_continuous?: boolean;
+                    /** @description Task-level query filter applied to all data. Pass null to clear. */
+                    query_filter?: string | null;
+                    /** @description Replaces the entire evaluator list. At least one evaluator is required when provided. */
+                    evaluators?: {
+                        /** @description Evaluator global ID (base64). Duplicates are not allowed. */
+                        evaluator_id: string;
+                        /** @description Per-evaluator query filter. Combined with the task-level filter (AND). */
+                        query_filter?: string;
+                        /** @description Maps evaluator template variable names to data source column names. */
+                        column_mappings?: {
+                            [key: string]: string;
+                        };
+                    }[];
                 };
             };
         };
@@ -7242,6 +7680,7 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
         };
     };
@@ -7346,7 +7785,7 @@ export interface operations {
         };
         requestBody: components["requestBodies"]["InsertDatasetExamplesRequestBody"];
         responses: {
-            200: components["responses"]["Dataset"];
+            201: components["responses"]["DatasetExamplesInserted"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
@@ -7376,13 +7815,36 @@ export interface operations {
         };
         requestBody: components["requestBodies"]["UpdateDatasetExamplesRequestBody"];
         responses: {
-            200: components["responses"]["Dataset"];
+            200: components["responses"]["DatasetExamplesUpdated"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             422: components["responses"]["BadRequest"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    datasets_examples_annotate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the dataset
+                 * @example RGF0YXNldDoxMjM0NQ==
+                 */
+                dataset_id: components["parameters"]["DatasetIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["AnnotateDatasetExamplesRequestBody"];
+        responses: {
+            200: components["responses"]["DatasetExamplesAnnotated"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -7655,6 +8117,7 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             422: components["responses"]["BadRequest"];
             429: components["responses"]["RateLimitExceeded"];
@@ -7735,6 +8198,28 @@ export interface operations {
             429: components["responses"]["RateLimitExceeded"];
         };
     };
+    experiments_runs_annotate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the experiment
+                 * @example RXhwZXJpbWVudDoxMjM0NQ==
+                 */
+                experiment_id: components["parameters"]["ExperimentIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["AnnotateExperimentRunsRequestBody"];
+        responses: {
+            200: components["responses"]["ExperimentRunsAnnotated"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
     organizations_list: {
         parameters: {
             query?: {
@@ -7801,6 +8286,29 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["Organization"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    organizations_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the organization
+                 * @example org_12345
+                 */
+                org_id: components["parameters"]["OrgIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: components["responses"]["OrganizationDeleted"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
@@ -8754,6 +9262,52 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["Task"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    tasks_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The task global ID (base64)
+                 * @example VGFzazoxMjM0NQ==
+                 */
+                task_id: components["parameters"]["TaskIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: components["responses"]["TaskDeleted"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    tasks_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The task global ID (base64)
+                 * @example VGFzazoxMjM0NQ==
+                 */
+                task_id: components["parameters"]["TaskIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["UpdateTaskRequestBody"];
+        responses: {
+            200: components["responses"]["TaskUpdated"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];

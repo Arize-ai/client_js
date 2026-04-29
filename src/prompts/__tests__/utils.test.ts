@@ -39,7 +39,7 @@ describe("transformPromptVersion", () => {
       commitMessage: "Initial version",
       messages: mockPromptVersion.messages,
       inputVariableFormat: "f_string",
-      provider: "openAI",
+      provider: "open_ai",
       model: "gpt-4",
       invocationParams: { temperature: 0.7, max_tokens: 1000 },
       providerParams: undefined,
@@ -69,7 +69,7 @@ describe("transformPromptWithVersion", () => {
         commitMessage: "Initial version",
         messages: mockPromptVersion.messages,
         inputVariableFormat: "f_string",
-        provider: "openAI",
+        provider: "open_ai",
         model: "gpt-4",
         // invocation_params fields (e.g., max_tokens) retain snake_case — nested objects
         // are passed through without further transformation.

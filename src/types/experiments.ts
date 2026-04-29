@@ -30,6 +30,7 @@ export type ExperimentRun = {
   /** @deprecated Use `exampleId` instead. */
   example_id: string;
   exampleId?: string;
-  output: string;
+  output?: string | null;
+  error?: string | null;
   [key: string]: unknown;
 };

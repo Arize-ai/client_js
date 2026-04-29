@@ -39,7 +39,7 @@ export const mockRawTemplateConfigMinimal: RawTemplateConfig = {
   include_explanations: false,
   use_function_calling_if_available: false,
   classification_choices: null,
-  direction: null,
+  direction: undefined,
   data_granularity: null,
   llm_config: mockRawLlmConfig,
 };

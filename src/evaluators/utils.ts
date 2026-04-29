@@ -20,7 +20,7 @@ export function templateConfigToRaw(config: TemplateConfig): RawTemplateConfig {
     include_explanations: config.includeExplanations,
     use_function_calling_if_available: config.useFunctionCallingIfAvailable,
     classification_choices: config.classificationChoices,
-    direction: config.direction,
+    direction: config.direction ?? undefined,
     data_granularity: config.dataGranularity,
     llm_config: {
       ai_integration_id: config.llmConfig.aiIntegrationId,

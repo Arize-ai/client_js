@@ -17,3 +17,4 @@ export * from "./roles";
 export * from "./resourceRestrictions";
 export * from "./roleBindings";
 export * from "./organizations";
+export * from "./annotations";

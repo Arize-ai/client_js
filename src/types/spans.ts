@@ -1,9 +1,11 @@
 import { components } from "../__generated__/api/v2";
+import { Annotation } from "./annotations";
+
+export type { Annotation };
 
 type RawSpan = components["schemas"]["Span"];
 type RawSpanContext = components["schemas"]["SpanContext"];
 type RawSpanEvent = components["schemas"]["SpanEvent"];
-type RawAnnotation = components["schemas"]["Annotation"];
 type RawEvaluation = components["schemas"]["Evaluation"];
 
 export type SpanContext = {
@@ -15,15 +17,6 @@ export type SpanEvent = {
   name: RawSpanEvent["name"];
   timestamp: Date;
   attributes?: RawSpanEvent["attributes"];
-};
-
-export type Annotation = {
-  name: RawAnnotation["name"];
-  score?: RawAnnotation["score"];
-  label?: RawAnnotation["label"];
-  text?: RawAnnotation["text"];
-  updatedAt?: Date;
-  annotator?: RawAnnotation["annotator"];
 };
 
 export type Evaluation = {

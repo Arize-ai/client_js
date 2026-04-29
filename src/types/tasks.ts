@@ -93,3 +93,19 @@ export type TriggerTaskRunInput = {
    */
   experimentIds?: string[];
 };
+
+/**
+ * Input for updating an existing task. At least one field should be set.
+ * `samplingRate` and `isContinuous` apply to project-based tasks only.
+ * Pass `queryFilter: null` to clear the task-level filter.
+ */
+export type UpdateTaskInput = {
+  name?: string;
+  samplingRate?: number;
+  isContinuous?: boolean;
+  queryFilter?: string | null;
+  /**
+   * When provided, replaces the entire evaluator list (requires at least one entry).
+   */
+  evaluators?: CreateTaskEvaluatorInput[];
+};

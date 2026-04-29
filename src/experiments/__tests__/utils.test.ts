@@ -25,22 +25,22 @@ describe("normalizeExperimentRun", () => {
   it("supports legacy snake_case example_id input", () => {
     const normalizedRun = normalizeExperimentRun({
       example_id: mockExperimentRun.example_id,
-      output: mockExperimentRun.output,
+      output: "run_output",
     });
     expect(normalizedRun).toEqual({
       example_id: mockExperimentRun.example_id,
-      output: mockExperimentRun.output,
+      output: "run_output",
     });
   });
 
   it("supports camelCase exampleId input", () => {
     const normalizedRun = normalizeExperimentRun({
       exampleId: mockExperimentRun.example_id,
-      output: mockExperimentRun.output,
+      output: "run_output",
     });
     expect(normalizedRun).toEqual({
       example_id: mockExperimentRun.example_id,
-      output: mockExperimentRun.output,
+      output: "run_output",
     });
   });
 });

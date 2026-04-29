@@ -6,6 +6,10 @@ export type AiIntegrationProvider =
 export type AiIntegrationAuthType =
   components["schemas"]["AiIntegrationAuthType"];
 
+export type AwsProviderMetadata = components["schemas"]["AwsProviderMetadata"];
+export type GcpProviderMetadata = components["schemas"]["GcpProviderMetadata"];
+export type ProviderMetadata = AwsProviderMetadata | GcpProviderMetadata;
+
 export interface AiIntegrationScoping {
   organizationId?: string | null;
   spaceId?: string | null;
@@ -22,7 +26,7 @@ export interface AiIntegration {
   enableDefaultModels: boolean;
   functionCallingEnabled: boolean;
   authType: AiIntegrationAuthType;
-  providerMetadata?: Record<string, unknown> | null;
+  providerMetadata?: ProviderMetadata | null;
   scopings: AiIntegrationScoping[];
   createdAt: Date;
   updatedAt: Date;
@@ -39,7 +43,7 @@ export type CreateAiIntegrationInput = {
   enableDefaultModels?: boolean;
   functionCallingEnabled?: boolean;
   authType?: AiIntegrationAuthType;
-  providerMetadata?: Record<string, unknown>;
+  providerMetadata?: ProviderMetadata;
   scopings?: AiIntegrationScoping[];
 };
 
@@ -53,6 +57,6 @@ export type UpdateAiIntegrationInput = {
   enableDefaultModels?: boolean;
   functionCallingEnabled?: boolean;
   authType?: AiIntegrationAuthType;
-  providerMetadata?: Record<string, unknown> | null;
+  providerMetadata?: ProviderMetadata | null;
   scopings?: AiIntegrationScoping[];
 };

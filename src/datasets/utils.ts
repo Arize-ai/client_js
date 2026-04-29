@@ -1,9 +1,22 @@
-import { Dataset, DatasetExample, DatasetVersion } from "../types";
 import {
+  Dataset,
+  DatasetExample,
+  DatasetVersion,
+  DatasetVersionWithExampleIds,
+} from "../types";
+import {
+  AnnotationBatchResult,
+  AnnotateRecordResult,
+} from "../types/annotations";
+import {
+  RawAnnotationBatchResult,
+  RawAnnotateRecordResult,
   RawDataset,
   RawDatasetVersion,
+  RawDatasetVersionWithExampleIds,
   RawListExamplesResponse,
 } from "../types/internal";
+import { transformAnnotation } from "../spans/utils";
 
 function transformVersion(version: RawDatasetVersion): DatasetVersion {
   const { created_at, updated_at, dataset_id, ...rest } = version;
@@ -34,6 +47,20 @@ export function transformDataset(dataset: RawDataset): Dataset {
   return datasetInfo;
 }
 
+export function transformDatasetVersionWithExampleIds(
+  dataset: RawDatasetVersionWithExampleIds,
+): DatasetVersionWithExampleIds {
+  return {
+    id: dataset.id,
+    name: dataset.name,
+    spaceId: dataset.space_id,
+    createdAt: new Date(dataset.created_at),
+    updatedAt: new Date(dataset.updated_at),
+    datasetVersionId: dataset.dataset_version_id,
+    exampleIds: dataset.example_ids,
+  };
+}
+
 export function transformListDatasetExamplesResponseExample(
   example: RawListExamplesResponse["examples"][number],
 ): DatasetExample {
@@ -42,5 +69,22 @@ export function transformListDatasetExamplesResponseExample(
     ...rest,
     createdAt: new Date(created_at),
     updatedAt: new Date(updated_at),
+  };
+}
+
+function transformAnnotateRecordResult(
+  raw: RawAnnotateRecordResult,
+): AnnotateRecordResult {
+  return {
+    recordId: raw.record_id,
+    annotations: raw.annotations.map(transformAnnotation),
+  };
+}
+
+export function transformAnnotationBatchResult(
+  raw: RawAnnotationBatchResult,
+): AnnotationBatchResult {
+  return {
+    results: raw.results.map(transformAnnotateRecordResult),
   };
 }

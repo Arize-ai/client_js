@@ -27,7 +27,6 @@ export function transformPromptVersion(
     input_variable_format,
     invocation_params,
     provider_params,
-    tool_config,
     created_at,
     created_by_user_id,
     ...rest
@@ -40,7 +39,7 @@ export function transformPromptVersion(
     inputVariableFormat: input_variable_format,
     invocationParams: invocation_params,
     providerParams: provider_params,
-    toolConfig: tool_config,
+    toolConfig: invocation_params?.tool_config,
     createdAt: new Date(created_at),
     createdByUserId: created_by_user_id,
   };

@@ -1,9 +1,12 @@
 import { createClient } from "../client";
 import { WithClient } from "../types";
-import { Dataset, DatasetExampleUpdate } from "../types/datasets";
+import {
+  DatasetExampleUpdate,
+  DatasetVersionWithExampleIds,
+} from "../types/datasets";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
-import { transformDataset } from "./utils";
+import { transformDatasetVersionWithExampleIds } from "./utils";
 import { findDatasetId, toSpaceRef } from "../utils/resolve";
 
 export type UpdateExamplesParams = WithClient<{
@@ -48,7 +51,7 @@ export type UpdateExamplesParams = WithClient<{
  * - You can update examples with new and existing fields, but you cannot remove existing fields.
  * @param newVersionName An optional new version name for the dataset. If provided, a new version of the dataset will be created with the update.
  * If not the version will be updated in place.
- * @returns A {@link Dataset}.
+ * @returns A {@link DatasetVersionWithExampleIds} containing the dataset attributes, the version the examples were written to, and the IDs of the updated examples.
  * @throws Error if the examples cannot be updated or the response is invalid.
  * @example
  * ```typescript
@@ -77,7 +80,7 @@ export async function updateExamples({
   datasetVersionId,
   examples,
   newVersionName,
-}: UpdateExamplesParams): Promise<Dataset> {
+}: UpdateExamplesParams): Promise<DatasetVersionWithExampleIds> {
   warnPreRelease({ functionName: "updateExamples" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
@@ -97,5 +100,5 @@ export async function updateExamples({
   if (response.error) {
     return handleApiError(response);
   }
-  return transformDataset(response.data);
+  return transformDatasetVersionWithExampleIds(response.data);
 }

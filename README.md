@@ -185,6 +185,63 @@ import { deleteRole } from "@arizeai/ax-client";
 await deleteRole({ roleId: "your-role-id" });
 ```
 
+## Organizations
+
+The `@arizeai/ax-client` package allows you to manage organizations.
+
+### Listing organizations
+
+```typescript
+import { listOrganizations } from "@arizeai/ax-client";
+
+const result = await listOrganizations();
+console.log(result.organizations);
+```
+
+### Getting an organization
+
+```typescript
+import { getOrganization } from "@arizeai/ax-client";
+
+const org = await getOrganization({ organization: "your-organization-name" });
+console.log(org);
+```
+
+### Creating an organization
+
+```typescript
+import { createOrganization } from "@arizeai/ax-client";
+
+const org = await createOrganization({
+  name: "your-organization-name",
+  description: "Optional description",
+});
+console.log(org);
+```
+
+### Updating an organization
+
+```typescript
+import { updateOrganization } from "@arizeai/ax-client";
+
+const org = await updateOrganization({
+  organization: "your-organization-name",
+  name: "your-organization-name-updated",
+});
+console.log(org);
+```
+
+### Deleting an organization
+
+> **Warning:** This operation is irreversible and deletes the organization
+> and all resources that belong to it, including all spaces and their contents.
+
+```typescript
+import { deleteOrganization } from "@arizeai/ax-client";
+
+await deleteOrganization({ organization: "your-organization-name" });
+```
+
 ## REST endpoints
 
 It is recommended to use the methods in this package. If more control is desired, you can use the client directly. The client provides a type-safe fetch for the entire Arize AX REST API.

@@ -5,3 +5,4 @@ export * from "./deleteDataset";
 export * from "./createDataset";
 export * from "./updateExamples";
 export * from "./appendExamples";
+export * from "./annotateDatasetExamples";
