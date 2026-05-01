@@ -37,6 +37,10 @@ export type RawEvaluatorWithVersion =
 export type RawEvaluatorVersion = components["schemas"]["EvaluatorVersion"];
 export type RawTemplateConfig = components["schemas"]["TemplateConfig"];
 export type RawEvaluatorLlmConfig = components["schemas"]["EvaluatorLlmConfig"];
+export type RawCodeConfig = components["schemas"]["CodeConfig"];
+export type RawManagedCodeConfig = components["schemas"]["ManagedCodeConfig"];
+export type RawCustomCodeConfig = components["schemas"]["CustomCodeConfig"];
+export type RawStaticParam = components["schemas"]["StaticParam"];
 export type RawAnnotationQueue = components["schemas"]["AnnotationQueue"];
 export type RawAnnotationQueueRecord =
   components["schemas"]["AnnotationQueueRecord"];

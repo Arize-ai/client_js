@@ -1,4 +1,5 @@
 import {
+  RawCodeConfig,
   RawEvaluator,
   RawEvaluatorLlmConfig,
   RawEvaluatorVersion,
@@ -9,7 +10,9 @@ import {
 const mockDateString = "2024-01-01T00:00:00.000Z";
 
 export const mockEvaluatorId = "eval-id-1";
+export const mockCodeEvaluatorId = "eval-id-2";
 export const mockVersionId = "version-id-1";
+export const mockCodeVersionId = "version-id-2";
 export const mockSpaceId = "space-id-1";
 export const mockUserId = "user-id-1";
 export const mockAiIntegrationId = "ai-integration-id-1";
@@ -44,11 +47,35 @@ export const mockRawTemplateConfigMinimal: RawTemplateConfig = {
   llm_config: mockRawLlmConfig,
 };
 
+export const mockRawManagedCodeConfig: RawCodeConfig = {
+  type: "managed",
+  name: "contains_all_keywords_eval",
+  managed_evaluator: "ContainsAllKeywords",
+  variables: ["output"],
+  static_params: [
+    { name: "keywords", type: "STRING_ARRAY", default_value: ["one", "two"] },
+  ],
+  data_granularity: "span",
+  query_filter: null,
+};
+
+export const mockRawCustomCodeConfig: RawCodeConfig = {
+  type: "custom",
+  name: "custom_eval",
+  code: "class MyEvaluator(CodeEvaluator):\n  def evaluate(self, *, output=None, **kwargs): ...",
+  imports: "from typing import Any",
+  variables: ["output"],
+  static_params: undefined,
+  data_granularity: null,
+  query_filter: null,
+};
+
 export const mockRawEvaluatorVersion: RawEvaluatorVersion = {
   id: mockVersionId,
   evaluator_id: mockEvaluatorId,
   commit_hash: "abc123",
   commit_message: "Initial version",
+  type: "template",
   template_config: mockRawTemplateConfig,
   created_at: mockDateString,
   created_by_user_id: mockUserId,
@@ -59,9 +86,32 @@ export const mockRawEvaluatorVersionNullableFields: RawEvaluatorVersion = {
   evaluator_id: mockEvaluatorId,
   commit_hash: "def456",
   commit_message: null,
+  type: "template",
   template_config: mockRawTemplateConfigMinimal,
   created_at: mockDateString,
   created_by_user_id: null,
+};
+
+export const mockRawEvaluatorVersionManagedCode: RawEvaluatorVersion = {
+  id: mockCodeVersionId,
+  evaluator_id: mockCodeEvaluatorId,
+  commit_hash: "ghi789",
+  commit_message: "Initial code version",
+  type: "code",
+  code_config: mockRawManagedCodeConfig,
+  created_at: mockDateString,
+  created_by_user_id: mockUserId,
+};
+
+export const mockRawEvaluatorVersionCustomCode: RawEvaluatorVersion = {
+  id: mockCodeVersionId,
+  evaluator_id: mockCodeEvaluatorId,
+  commit_hash: "jkl012",
+  commit_message: "Custom code version",
+  type: "code",
+  code_config: mockRawCustomCodeConfig,
+  created_at: mockDateString,
+  created_by_user_id: mockUserId,
 };
 
 export const mockRawEvaluator: RawEvaluator = {
@@ -86,7 +136,23 @@ export const mockRawEvaluatorNullableFields: RawEvaluator = {
   created_by_user_id: null,
 };
 
+export const mockRawCodeEvaluator: RawEvaluator = {
+  id: mockCodeEvaluatorId,
+  name: "Keyword Evaluator",
+  description: "Checks for required keywords",
+  type: "code",
+  space_id: mockSpaceId,
+  created_at: mockDateString,
+  updated_at: mockDateString,
+  created_by_user_id: mockUserId,
+};
+
 export const mockRawEvaluatorWithVersion: RawEvaluatorWithVersion = {
   ...mockRawEvaluator,
   version: mockRawEvaluatorVersion,
+};
+
+export const mockRawCodeEvaluatorWithVersion: RawEvaluatorWithVersion = {
+  ...mockRawCodeEvaluator,
+  version: mockRawEvaluatorVersionManagedCode,
 };

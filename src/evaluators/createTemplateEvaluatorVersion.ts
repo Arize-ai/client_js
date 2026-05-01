@@ -1,6 +1,6 @@
 import { createClient } from "../client";
 import {
-  CreateEvaluatorVersionInput,
+  CreateTemplateEvaluatorVersionInput,
   EvaluatorVersion,
   WithClient,
 } from "../types";
@@ -9,25 +9,27 @@ import { handleApiError } from "../errors";
 import { templateConfigToRaw, transformEvaluatorVersion } from "./utils";
 import { findEvaluatorId, toSpaceRef } from "../utils/resolve";
 
-export type CreateEvaluatorVersionParams =
-  WithClient<CreateEvaluatorVersionInput>;
+export type CreateTemplateEvaluatorVersionParams =
+  WithClient<CreateTemplateEvaluatorVersionInput>;
 
 /**
- * Create a new version of an existing evaluator. The new version becomes the latest version immediately.
- * Versions are immutable once created. To change the configuration, create a new version.
+ * Create a new template version of an existing evaluator.
+ *
+ * The new version becomes the latest version immediately. Versions are
+ * immutable once created; to change the configuration, create a new version.
  *
  * @param client - An optional ArizeClient instance to use for the request.
  * @param evaluator - The evaluator name or ID.
  * @param space - An optional space name or ID (required when resolving by evaluator name).
  * @param commitMessage - A message describing the changes in this version.
- * @param templateConfig - The LLM template configuration for this version.
+ * @param templateConfig - The updated LLM template configuration.
  * @returns The created {@link EvaluatorVersion}.
  * @throws Error if the version cannot be created or the response is invalid.
  * @example
  * ```typescript
- * import { createEvaluatorVersion } from "@arizeai/ax-client"
+ * import { createTemplateEvaluatorVersion } from "@arizeai/ax-client"
  *
- * const version = await createEvaluatorVersion({
+ * const version = await createTemplateEvaluatorVersion({
  *   evaluator: "Relevance",
  *   space: "my-space",
  *   commitMessage: "Updated prompt template",
@@ -49,14 +51,17 @@ export type CreateEvaluatorVersionParams =
  * console.log(version);
  * ```
  */
-export async function createEvaluatorVersion({
-  client: clientInstance,
-  evaluator,
-  space,
-  commitMessage,
-  templateConfig,
-}: CreateEvaluatorVersionParams): Promise<EvaluatorVersion> {
-  warnPreRelease({ functionName: "createEvaluatorVersion" });
+export async function createTemplateEvaluatorVersion(
+  params: CreateTemplateEvaluatorVersionParams,
+): Promise<EvaluatorVersion> {
+  warnPreRelease({ functionName: "createTemplateEvaluatorVersion" });
+  const {
+    client: clientInstance,
+    evaluator,
+    space,
+    commitMessage,
+    templateConfig,
+  } = params;
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const evaluatorId = await findEvaluatorId(client, evaluator, spaceRef);

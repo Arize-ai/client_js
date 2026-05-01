@@ -1,8 +1,3 @@
-/**
- * Evaluator type returned by the API.
- * Note: "code" evaluators may appear in list/get responses but cannot be
- * created via the SDK in this iteration — only "template" is supported.
- */
 import type { components } from "../__generated__/api/v2";
 
 export type EvaluatorType = "template" | "code";
@@ -10,6 +5,14 @@ export type EvaluatorType = "template" | "code";
 export type EvaluatorDirection = components["schemas"]["OptimizationDirection"];
 
 export type EvaluatorDataGranularity = "span" | "trace" | "session";
+
+export type ManagedCodeEvaluator =
+  components["schemas"]["ManagedCodeEvaluator"];
+
+export type StaticParam =
+  | { name: string; type: "STRING"; defaultValue: string }
+  | { name: string; type: "STRING_ARRAY"; defaultValue: string[] }
+  | { name: string; type: "REGEX"; defaultValue: string };
 
 export interface EvaluatorLlmConfig {
   aiIntegrationId: string;
@@ -29,6 +32,29 @@ export interface TemplateConfig {
   llmConfig: EvaluatorLlmConfig;
 }
 
+export interface ManagedCodeConfig {
+  type: "managed";
+  name: string;
+  managedEvaluator: ManagedCodeEvaluator;
+  variables: string[];
+  staticParams?: StaticParam[];
+  dataGranularity?: EvaluatorDataGranularity | null;
+  queryFilter?: string | null;
+}
+
+export interface CustomCodeConfig {
+  type: "custom";
+  name: string;
+  code: string;
+  imports?: string | null;
+  variables: string[];
+  staticParams?: StaticParam[];
+  dataGranularity?: EvaluatorDataGranularity | null;
+  queryFilter?: string | null;
+}
+
+export type CodeConfig = ManagedCodeConfig | CustomCodeConfig;
+
 export interface Evaluator {
   id: string;
   name: string;
@@ -40,40 +66,63 @@ export interface Evaluator {
   createdByUserId: string | null;
 }
 
-export interface EvaluatorWithVersion extends Evaluator {
-  version: EvaluatorVersion;
-}
-
-export interface EvaluatorVersion {
+/** Common fields shared by all evaluator versions. */
+interface EvaluatorVersionBase {
   id: string;
   evaluatorId: string;
   commitHash: string;
   /** Null for evaluators migrated from before commit messages were tracked. */
   commitMessage: string | null;
-  templateConfig: TemplateConfig;
   createdAt: Date;
   createdByUserId: string | null;
 }
 
-export interface CreateEvaluatorInput {
+export interface EvaluatorVersionTemplate extends EvaluatorVersionBase {
+  type: "template";
+  templateConfig: TemplateConfig;
+}
+
+export interface EvaluatorVersionCode extends EvaluatorVersionBase {
+  type: "code";
+  codeConfig: CodeConfig;
+}
+
+export type EvaluatorVersion = EvaluatorVersionTemplate | EvaluatorVersionCode;
+
+export interface EvaluatorWithVersion extends Evaluator {
+  version: EvaluatorVersion;
+}
+
+export type CreateTemplateEvaluatorInput = {
   name: string;
   description?: string;
   space: string;
-  /** Only "template" is supported in this iteration. */
-  type: "template";
-  version: {
-    commitMessage: string;
-    templateConfig: TemplateConfig;
-  };
-}
+  commitMessage: string;
+  templateConfig: TemplateConfig;
+};
+
+export type CreateCodeEvaluatorInput = {
+  name: string;
+  description?: string;
+  space: string;
+  commitMessage: string;
+  codeConfig: CodeConfig;
+};
 
 export type UpdateEvaluatorInput =
   | { name: string; description?: string }
   | { name?: string; description: string };
 
-export interface CreateEvaluatorVersionInput {
+export type CreateTemplateEvaluatorVersionInput = {
   evaluator: string;
   space?: string;
   commitMessage: string;
   templateConfig: TemplateConfig;
-}
+};
+
+export type CreateCodeEvaluatorVersionInput = {
+  evaluator: string;
+  space?: string;
+  commitMessage: string;
+  codeConfig: CodeConfig;
+};

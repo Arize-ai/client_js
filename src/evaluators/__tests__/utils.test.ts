@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  codeConfigToRaw,
   templateConfigToRaw,
   transformEvaluator,
   transformEvaluatorLlmConfig,
@@ -7,16 +8,24 @@ import {
   transformEvaluatorWithVersion,
   transformTemplateConfig,
 } from "../utils";
-import { TemplateConfig } from "../../types";
+import { CodeConfig, TemplateConfig } from "../../types";
 import {
   mockAiIntegrationId,
+  mockCodeEvaluatorId,
+  mockCodeVersionId,
   mockEvaluatorId,
+  mockRawCodeEvaluator,
+  mockRawCodeEvaluatorWithVersion,
+  mockRawCustomCodeConfig,
   mockRawEvaluator,
   mockRawEvaluatorNullableFields,
   mockRawEvaluatorVersion,
+  mockRawEvaluatorVersionCustomCode,
+  mockRawEvaluatorVersionManagedCode,
   mockRawEvaluatorVersionNullableFields,
   mockRawEvaluatorWithVersion,
   mockRawLlmConfig,
+  mockRawManagedCodeConfig,
   mockRawTemplateConfig,
   mockRawTemplateConfigMinimal,
   mockSpaceId,
@@ -60,12 +69,12 @@ describe("transformTemplateConfig", () => {
   it("passes through null optional fields", () => {
     const result = transformTemplateConfig(mockRawTemplateConfigMinimal);
     expect(result.classificationChoices).toBeNull();
-    expect(result.direction).toBeNull();
+    expect(result.direction).toBeUndefined();
     expect(result.dataGranularity).toBeNull();
   });
 });
 
-describe("transformEvaluatorVersion", () => {
+describe("transformEvaluatorVersion — template branch", () => {
   it("transforms all fields and converts created_at to Date", () => {
     const result = transformEvaluatorVersion(mockRawEvaluatorVersion);
     expect(result).toEqual({
@@ -73,6 +82,7 @@ describe("transformEvaluatorVersion", () => {
       evaluatorId: mockEvaluatorId,
       commitHash: "abc123",
       commitMessage: "Initial version",
+      type: "template",
       templateConfig: transformTemplateConfig(mockRawTemplateConfig),
       createdAt: new Date("2024-01-01T00:00:00.000Z"),
       createdByUserId: mockUserId,
@@ -85,6 +95,41 @@ describe("transformEvaluatorVersion", () => {
     );
     expect(result.commitMessage).toBeNull();
     expect(result.createdByUserId).toBeNull();
+  });
+});
+
+describe("transformEvaluatorVersion — managed code branch", () => {
+  it("returns a code version with transformed managed code_config", () => {
+    const result = transformEvaluatorVersion(
+      mockRawEvaluatorVersionManagedCode,
+    );
+    expect(result.type).toBe("code");
+    if (result.type !== "code") return;
+    expect(result.id).toBe(mockCodeVersionId);
+    expect(result.evaluatorId).toBe(mockCodeEvaluatorId);
+    expect(result.codeConfig.type).toBe("managed");
+    if (result.codeConfig.type !== "managed") return;
+    expect(result.codeConfig.managedEvaluator).toBe("ContainsAllKeywords");
+    expect(result.codeConfig.variables).toEqual(["output"]);
+    expect(result.codeConfig.staticParams).toEqual([
+      { name: "keywords", type: "STRING_ARRAY", defaultValue: ["one", "two"] },
+    ]);
+    expect(result.codeConfig.dataGranularity).toBe("span");
+    expect(result.codeConfig.queryFilter).toBeNull();
+  });
+});
+
+describe("transformEvaluatorVersion — custom code branch", () => {
+  it("returns a code version with transformed custom code_config", () => {
+    const result = transformEvaluatorVersion(mockRawEvaluatorVersionCustomCode);
+    expect(result.type).toBe("code");
+    if (result.type !== "code") return;
+    expect(result.codeConfig.type).toBe("custom");
+    if (result.codeConfig.type !== "custom") return;
+    expect(result.codeConfig.code).toContain("MyEvaluator");
+    expect(result.codeConfig.imports).toBe("from typing import Any");
+    expect(result.codeConfig.variables).toEqual(["output"]);
+    expect(result.codeConfig.staticParams).toBeUndefined();
   });
 });
 
@@ -108,19 +153,35 @@ describe("transformEvaluator", () => {
     expect(result.description).toBeNull();
     expect(result.createdByUserId).toBeNull();
   });
+
+  it("handles code evaluator type", () => {
+    const result = transformEvaluator(mockRawCodeEvaluator);
+    expect(result.type).toBe("code");
+  });
 });
 
 describe("transformEvaluatorWithVersion", () => {
-  it("includes the transformed version on the evaluator", () => {
+  it("includes the transformed template version on the evaluator", () => {
     const result = transformEvaluatorWithVersion(mockRawEvaluatorWithVersion);
     expect(result.id).toBe(mockEvaluatorId);
-    expect(result.spaceId).toBe(mockSpaceId); // not space_id
-    expect(result.createdByUserId).toBe(mockUserId); // not created_by_user_id
+    expect(result.spaceId).toBe(mockSpaceId);
+    expect(result.createdByUserId).toBe(mockUserId);
     expect(result.version.id).toBe(mockVersionId);
-    expect(result.version.evaluatorId).toBe(mockEvaluatorId); // not evaluator_id
-    expect(result.version.commitHash).toBe("abc123"); // not commit_hash
+    expect(result.version.evaluatorId).toBe(mockEvaluatorId);
+    expect(result.version.commitHash).toBe("abc123");
+    expect(result.version.type).toBe("template");
     expect(result.version.createdAt).toBeInstanceOf(Date);
     expect(result.createdAt).toBeInstanceOf(Date);
+  });
+
+  it("includes the transformed code version on a code evaluator", () => {
+    const result = transformEvaluatorWithVersion(
+      mockRawCodeEvaluatorWithVersion,
+    );
+    expect(result.type).toBe("code");
+    expect(result.version.type).toBe("code");
+    if (result.version.type !== "code") return;
+    expect(result.version.codeConfig.type).toBe("managed");
   });
 });
 
@@ -171,5 +232,86 @@ describe("templateConfigToRaw", () => {
     const transformed = transformTemplateConfig(mockRawTemplateConfigMinimal);
     const raw = templateConfigToRaw(transformed);
     expect(raw).toEqual(mockRawTemplateConfigMinimal);
+  });
+});
+
+describe("codeConfigToRaw — managed", () => {
+  it("serializes managed CodeConfig to raw API shape", () => {
+    const input: CodeConfig = {
+      type: "managed",
+      name: "contains_all_keywords_eval",
+      managedEvaluator: "ContainsAllKeywords",
+      variables: ["output"],
+      staticParams: [
+        {
+          name: "keywords",
+          type: "STRING_ARRAY",
+          defaultValue: ["one", "two"],
+        },
+      ],
+      dataGranularity: "span",
+      queryFilter: null,
+    };
+    const raw = codeConfigToRaw(input);
+    expect(raw.type).toBe("managed");
+    if (raw.type !== "managed") return;
+    expect(raw.managed_evaluator).toBe("ContainsAllKeywords");
+    expect(raw.variables).toEqual(["output"]);
+    expect(raw.name).toBe("contains_all_keywords_eval");
+    expect(raw.data_granularity).toBe("span");
+  });
+
+  it("round-trips managed config through transform → raw without data loss", () => {
+    const transformed = transformEvaluatorVersion(
+      mockRawEvaluatorVersionManagedCode,
+    );
+    if (
+      transformed.type !== "code" ||
+      transformed.codeConfig.type !== "managed"
+    )
+      return;
+    const raw = codeConfigToRaw(transformed.codeConfig);
+    expect(raw.type).toBe("managed");
+    if (raw.type !== "managed") return;
+    expect(raw.managed_evaluator).toBe(
+      mockRawManagedCodeConfig.type === "managed"
+        ? mockRawManagedCodeConfig.managed_evaluator
+        : undefined,
+    );
+  });
+});
+
+describe("codeConfigToRaw — custom", () => {
+  it("serializes custom CodeConfig to raw API shape", () => {
+    const input: CodeConfig = {
+      type: "custom",
+      name: "custom_eval",
+      code: "class X(CodeEvaluator): pass",
+      imports: "from typing import Any",
+      variables: ["output"],
+      dataGranularity: null,
+      queryFilter: null,
+    };
+    const raw = codeConfigToRaw(input);
+    expect(raw.type).toBe("custom");
+    if (raw.type !== "custom") return;
+    expect(raw.code).toBe("class X(CodeEvaluator): pass");
+    expect(raw.imports).toBe("from typing import Any");
+  });
+
+  it("round-trips custom config through transform → raw without data loss", () => {
+    const transformed = transformEvaluatorVersion(
+      mockRawEvaluatorVersionCustomCode,
+    );
+    if (transformed.type !== "code" || transformed.codeConfig.type !== "custom")
+      return;
+    const raw = codeConfigToRaw(transformed.codeConfig);
+    expect(raw.type).toBe("custom");
+    if (raw.type !== "custom") return;
+    expect(raw.code).toBe(
+      mockRawCustomCodeConfig.type === "custom"
+        ? mockRawCustomCodeConfig.code
+        : undefined,
+    );
   });
 });

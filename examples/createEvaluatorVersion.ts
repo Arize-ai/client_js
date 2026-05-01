@@ -1,8 +1,8 @@
-import { createEvaluatorVersion } from "../src/evaluators";
+import { createTemplateEvaluatorVersion } from "../src/evaluators";
 
 (async () => {
   try {
-    const version = await createEvaluatorVersion({
+    const version = await createTemplateEvaluatorVersion({
       space: "your_space_name",
       evaluator: "your_evaluator_name",
       commitMessage: "Improved prompt wording",

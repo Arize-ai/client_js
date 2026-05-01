@@ -1,5 +1,12 @@
 # @arizeai/ax-client
 
+## [1.11.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.10.1...arize-js-sdk/v1.11.0) (2026-05-01)
+
+
+### 🎁 New Features
+
+* extend evaluators API for code evaluator configs ([#69121](https://github.com/Arize-ai/arize/issues/69121)) ([1d136e4](https://github.com/Arize-ai/arize/commit/1d136e4d7eb009212dfb872d67725266d12d6c66))
+
 ## [1.10.1](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.10.0...arize-js-sdk/v1.10.1) (2026-04-29)
 
 

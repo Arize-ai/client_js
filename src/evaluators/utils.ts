@@ -1,15 +1,24 @@
 import {
+  CodeConfig,
   Evaluator,
   EvaluatorLlmConfig,
   EvaluatorVersion,
+  EvaluatorVersionCode,
+  EvaluatorVersionTemplate,
   EvaluatorWithVersion,
+  ManagedCodeConfig,
+  StaticParam,
   TemplateConfig,
 } from "../types";
 import {
+  RawCodeConfig,
+  RawCustomCodeConfig,
   RawEvaluator,
   RawEvaluatorLlmConfig,
   RawEvaluatorVersion,
   RawEvaluatorWithVersion,
+  RawManagedCodeConfig,
+  RawStaticParam,
   RawTemplateConfig,
 } from "../types/internal";
 
@@ -29,6 +38,37 @@ export function templateConfigToRaw(config: TemplateConfig): RawTemplateConfig {
       provider_parameters: config.llmConfig.providerParameters,
     },
   };
+}
+
+export function codeConfigToRaw(config: CodeConfig): RawCodeConfig {
+  const base = {
+    name: config.name,
+    variables: config.variables,
+    static_params: config.staticParams?.map(
+      (p): RawStaticParam => ({
+        name: p.name,
+        type: p.type,
+        default_value: p.defaultValue,
+      }),
+    ),
+    data_granularity: config.dataGranularity,
+    query_filter: config.queryFilter,
+  };
+  if (config.type === "managed") {
+    const raw: RawManagedCodeConfig = {
+      ...base,
+      type: "managed",
+      managed_evaluator: config.managedEvaluator,
+    };
+    return raw;
+  }
+  const raw: RawCustomCodeConfig = {
+    ...base,
+    type: "custom",
+    code: config.code,
+    imports: config.imports,
+  };
+  return raw;
 }
 
 export function transformEvaluatorLlmConfig(
@@ -57,18 +97,81 @@ export function transformTemplateConfig(
   };
 }
 
+function transformStaticParam(raw: RawStaticParam): StaticParam {
+  switch (raw.type) {
+    case "STRING_ARRAY":
+      return {
+        name: raw.name,
+        type: "STRING_ARRAY",
+        defaultValue: raw.default_value as string[],
+      };
+    case "STRING":
+      return {
+        name: raw.name,
+        type: "STRING",
+        defaultValue: raw.default_value as string,
+      };
+    case "REGEX":
+      return {
+        name: raw.name,
+        type: "REGEX",
+        defaultValue: raw.default_value as string,
+      };
+  }
+}
+
+function transformCodeConfig(raw: RawCodeConfig): CodeConfig {
+  const staticParams = raw.static_params?.map(transformStaticParam);
+  const base = {
+    name: raw.name,
+    variables: raw.variables,
+    staticParams: staticParams?.length ? staticParams : undefined,
+    dataGranularity: raw.data_granularity,
+    queryFilter: raw.query_filter,
+  };
+  if (raw.type === "managed") {
+    const managed: ManagedCodeConfig = {
+      ...base,
+      type: "managed",
+      managedEvaluator: raw.managed_evaluator,
+    };
+    return managed;
+  }
+  return {
+    ...base,
+    type: "custom",
+    code: raw.code,
+    imports: raw.imports,
+  };
+}
+
 export function transformEvaluatorVersion(
   raw: RawEvaluatorVersion,
 ): EvaluatorVersion {
-  return {
+  const base = {
     id: raw.id,
     evaluatorId: raw.evaluator_id,
     commitHash: raw.commit_hash,
     commitMessage: raw.commit_message,
-    templateConfig: transformTemplateConfig(raw.template_config),
     createdAt: new Date(raw.created_at),
     createdByUserId: raw.created_by_user_id,
   };
+
+  if (raw.type === "code") {
+    const codeVersion: EvaluatorVersionCode = {
+      ...base,
+      type: "code",
+      codeConfig: transformCodeConfig(raw.code_config),
+    };
+    return codeVersion;
+  }
+
+  const templateVersion: EvaluatorVersionTemplate = {
+    ...base,
+    type: "template",
+    templateConfig: transformTemplateConfig(raw.template_config),
+  };
+  return templateVersion;
 }
 
 export function transformEvaluator(raw: RawEvaluator): Evaluator {

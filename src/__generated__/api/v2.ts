@@ -913,10 +913,13 @@ export interface paths {
          *
          *     **Payload Requirements**
          *     - The evaluator `name` must be unique within the given space.
-         *     - `type` must be `template` (the only supported type in this iteration).
-         *     - `version.template_config.name` is the eval column name; must match `^[a-zA-Z0-9_\s\-&()]+$`.
-         *     - `version.template_config.template` is the prompt template; use `{variable}` for placeholders (f-string format, e.g. `{input}`, `{output}`).
-         *     - `version.template_config.classification_choices` maps choice labels to numeric scores (e.g. `{"relevant": 1, "irrelevant": 0}`). When omitted, the evaluator produces freeform output.
+         *     - `type` (top-level) selects the evaluator kind: `template` or `code`.
+         *       With `template`, provide `version.template_config`.
+         *       With `code`, provide `version.code_config` — where `code_config.type` is `managed` or `custom` (a separate discriminator *within* `code_config`, independent of the top-level `type: code`).
+         *     - For template evaluators: `version.template_config.name` is the eval column name; must match `^[a-zA-Z0-9_\s\-&()]+$`.
+         *     - For template evaluators: `version.template_config.template` is the prompt template; use `{variable}` for placeholders (f-string format, e.g. `{input}`, `{output}`).
+         *     - For template evaluators: `version.template_config.classification_choices` maps choice labels to numeric scores (e.g. `{"relevant": 1, "irrelevant": 0}`). When omitted, the evaluator produces freeform output.
+         *     - For code evaluators: see `CodeConfig` — managed evaluators (`code_config.type: managed`) use `managed_evaluator` and `variables`; custom evaluators (`code_config.type: custom`) use `code`, optional `imports`, and `variables`.
          *     - System-managed fields (`id`, `created_at`, `updated_at`, `created_by_user_id`) are rejected on input.
          *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
@@ -986,7 +989,9 @@ export interface paths {
          *
          *     **Payload Requirements**
          *     - `commit_message` describes the changes in this version.
-         *     - `template_config` follows the same schema and constraints as in Create Evaluator.
+         *     - Provide either `template_config` or `code_config` to match the evaluator's `type`.
+         *       `code_config.type` is a separate inner discriminator (`managed` or `custom`) and is unrelated to the top-level `type`.
+         *       Schema and constraints match Create Evaluator.
          *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
@@ -1923,9 +1928,13 @@ export interface paths {
          * @description Permanently deletes spans by their span IDs. This operation is irreversible.
          *
          *     Accepts between 1 and 1000 span IDs per request. Only spans from the
-         *     last 31 days are considered; older spans are not affected. If one or more
-         *     span IDs are not found, they are silently ignored. A 204 response does
-         *     not guarantee that all provided IDs were deleted.
+         *     last 31 days are considered; older spans are not affected.
+         *
+         *     A `204 No Content` response indicates all extant IDs provided
+         *     within the last 31 days were deleted.
+         *
+         *     A `200 OK` response indicates one or more intervals could not be fully processed
+         *     within the retry budget. Retry the original request for a correct result.
          *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
@@ -2758,6 +2767,52 @@ export interface components {
             explanation?: string;
         };
         /**
+         * @description Discriminated union representing either a managed (built-in) or custom
+         *     (user-supplied Python) code evaluator configuration, resolved by the
+         *     nested `type` field (`managed` -> `ManagedCodeConfig`, `custom` -> `CustomCodeConfig`).
+         *     This inner `type` is independent of the parent evaluator version's `type` (which is always `code` here).
+         */
+        CodeConfig: components["schemas"]["ManagedCodeConfig"] | components["schemas"]["CustomCodeConfig"];
+        CodeConfigCommon: {
+            /**
+             * @description Data granularity level for evaluation. When omitted or null, no granularity
+             *     filter is applied (span-level evaluation is used by default on the server).
+             * @enum {string|null}
+             */
+            data_granularity?: "span" | "trace" | "session" | null;
+            /**
+             * @description Optional filter query over the chosen data granularity. When omitted or null,
+             *     no filter is applied.
+             */
+            query_filter?: string | null;
+        };
+        CustomCodeConfig: components["schemas"]["CodeConfigCommon"] & {
+            /**
+             * @description Discriminator for custom Python code evaluators
+             * @enum {string}
+             */
+            type: "custom";
+            /** @description Eval column name. Must match ^[a-zA-Z0-9_\s\-&()]+$ */
+            name: string;
+            /** @description Python source defining the evaluator class */
+            code: string;
+            /** @description Optional package import block prepended when running the evaluator */
+            imports?: string | null;
+            /** @description Dataset columns or span attributes mapped to evaluate() arguments */
+            variables: string[];
+            /**
+             * @description Optional typed defaults accessible on the evaluator instance. Omit or pass an
+             *     empty array when the custom class does not read any static parameters.
+             */
+            static_params?: components["schemas"]["StaticParam"][];
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "custom";
+        };
+        /**
          * @description An evaluator defines reusable evaluation logic that can be attached to
          *     evaluation tasks. The type field determines the kind of evaluation:
          *     template (LLM-based template evaluation) or code (custom code evaluation).
@@ -2769,11 +2824,7 @@ export interface components {
             name: string;
             /** @description The description of the evaluator */
             description?: string | null;
-            /**
-             * @description The evaluator type: template (LLM-based) or code (custom code)
-             * @enum {string}
-             */
-            type: "template" | "code";
+            type: components["schemas"]["EvaluatorType"];
             /** @description The unique identifier for the space the evaluator belongs to */
             space_id: string;
             /**
@@ -2797,8 +2848,41 @@ export interface components {
             invocation_parameters: components["schemas"]["InvocationParams"];
             provider_parameters: components["schemas"]["ProviderParams"];
         };
-        /** @description A versioned snapshot of an evaluator's configuration. */
-        EvaluatorVersion: {
+        /**
+         * @description The evaluator type: `template` (LLM-based) or `code` (managed built-in
+         *     evaluators or custom Python code — both are subtypes of `code`,
+         *     discriminated by the nested `CodeConfig.type` = `managed` | `custom`).
+         *     Applies to both the parent `Evaluator.type` field and every version's `type`
+         *     discriminator — a version's `type` must always match its parent evaluator's `type`.
+         * @enum {string}
+         */
+        EvaluatorType: "template" | "code";
+        /**
+         * @description A versioned snapshot of an evaluator's configuration. Exactly one of
+         *     `template_config` or `code_config` is present. The `type` field discriminates
+         *     the branch and matches the parent evaluator's `type`.
+         */
+        EvaluatorVersion: components["schemas"]["EvaluatorVersionTemplate"] | components["schemas"]["EvaluatorVersionCode"];
+        /** @description Evaluator version carrying a code configuration. */
+        EvaluatorVersionCode: components["schemas"]["EvaluatorVersionCommon"] & {
+            /** @enum {string} */
+            type?: "code";
+            /** @description The code evaluator configuration for this version */
+            code_config: components["schemas"]["CodeConfig"];
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "code";
+        };
+        EvaluatorVersionCodeCreate: {
+            /** @description Commit message describing the changes */
+            commit_message: string;
+            /** @description The code configuration for this version */
+            code_config: components["schemas"]["CodeConfig"];
+        };
+        EvaluatorVersionCommon: {
             /** @description The unique identifier for this version */
             id: string;
             /** @description The parent evaluator ID */
@@ -2807,8 +2891,6 @@ export interface components {
             commit_hash: string;
             /** @description A message describing the changes in this version */
             commit_message: string | null;
-            /** @description The template configuration for this version */
-            template_config: components["schemas"]["TemplateConfig"];
             /**
              * Format: date-time
              * @description When this version was created
@@ -2816,10 +2898,83 @@ export interface components {
             created_at: string;
             /** @description The unique identifier for the user who created this version */
             created_by_user_id: string | null;
+            type: components["schemas"]["EvaluatorType"];
+        };
+        /**
+         * @description Payload for an evaluator version: exactly one of `template_config` or `code_config`.
+         *     Used both when creating an evaluator (initial `version`) and when appending a version.
+         */
+        EvaluatorVersionCreate: components["schemas"]["EvaluatorVersionTemplateCreate"] | components["schemas"]["EvaluatorVersionCodeCreate"];
+        /** @description Evaluator version carrying a template (LLM) configuration. */
+        EvaluatorVersionTemplate: components["schemas"]["EvaluatorVersionCommon"] & {
+            /** @enum {string} */
+            type?: "template";
+            /** @description The LLM template configuration for this version */
+            template_config: components["schemas"]["TemplateConfig"];
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "template";
+        };
+        EvaluatorVersionTemplateCreate: {
+            /** @description Commit message describing the changes */
+            commit_message: string;
+            /** @description The template configuration for this version */
+            template_config: components["schemas"]["TemplateConfig"];
         };
         EvaluatorWithVersion: components["schemas"]["Evaluator"] & {
             /** @description The resolved version of the evaluator */
             version: components["schemas"]["EvaluatorVersion"];
+        };
+        ManagedCodeConfig: components["schemas"]["CodeConfigCommon"] & {
+            /**
+             * @description Discriminator for managed (built-in) code evaluators
+             * @enum {string}
+             */
+            type: "managed";
+            /** @description Eval column name. Must match ^[a-zA-Z0-9_\s\-&()]+$ */
+            name: string;
+            /** @description Which managed code evaluator implementation to use */
+            managed_evaluator: components["schemas"]["ManagedCodeEvaluator"];
+            /**
+             * @description Dataset columns or span attributes passed into the evaluator (order and count
+             *     must match the managed evaluator's requirements).
+             */
+            variables: string[];
+            /**
+             * @description Static parameters for the managed evaluator (see registry `args`). When omitted,
+             *     the registry's required arguments must be satisfied by defaults on the evaluator
+             *     class; otherwise validation fails with 400. If the registry has no args, omitting
+             *     this field is equivalent to an empty list.
+             */
+            static_params?: components["schemas"]["StaticParam"][];
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "managed";
+        };
+        /**
+         * @description Built-in managed code evaluator name
+         * @enum {string}
+         */
+        ManagedCodeEvaluator: "MatchesRegex" | "JSONParseable" | "ContainsAnyKeyword" | "ContainsAllKeywords" | "ExactMatch";
+        StaticParam: {
+            /** @description Parameter name (matches the managed evaluator's argument name) */
+            name: string;
+            /**
+             * @description Argument type for static parameters
+             * @enum {string}
+             */
+            type: "STRING" | "STRING_ARRAY" | "REGEX";
+            /**
+             * @description Default value. Must be a string when `type` is STRING or REGEX, and a string
+             *     array when `type` is STRING_ARRAY. Mismatches are rejected with 400 by the server.
+             */
+            default_value: string | string[];
         };
         TemplateConfig: {
             /** @description Eval column name. Must match ^[a-zA-Z0-9_\s\-&()]+$ */
@@ -4586,6 +4741,7 @@ export interface components {
                  *       "evaluator_id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
                  *       "commit_hash": "a3b1c9e4f7d2a0518e6c3bb9217f87d1c4e810f2",
                  *       "commit_message": "Initial version",
+                 *       "type": "template",
                  *       "template_config": {
                  *         "name": "hallucination",
                  *         "template": "You are an evaluation assistant...",
@@ -4619,36 +4775,6 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                /**
-                 * @example {
-                 *       "id": "RXZhbHVhdG9yVmVyc2lvbjoxMTpBYkNk",
-                 *       "evaluator_id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
-                 *       "commit_hash": "b4c2d0e5f8a3b1629f7d4cc0328g98e2d5f921g3",
-                 *       "commit_message": "Improve template wording",
-                 *       "template_config": {
-                 *         "name": "hallucination",
-                 *         "template": "Evaluate whether the output is factually grounded...",
-                 *         "include_explanations": true,
-                 *         "use_function_calling_if_available": true,
-                 *         "classification_choices": {
-                 *           "hallucinated": 0,
-                 *           "factual": 1
-                 *         },
-                 *         "direction": "maximize",
-                 *         "data_granularity": "span",
-                 *         "llm_config": {
-                 *           "ai_integration_id": "TGxtSW50ZWdyYXRpb246MTI6YUJjRA==",
-                 *           "model_name": "gpt-4o",
-                 *           "invocation_parameters": {
-                 *             "temperature": 0
-                 *           },
-                 *           "provider_parameters": {}
-                 *         }
-                 *       },
-                 *       "created_at": "2026-02-17T10:30:00.000Z",
-                 *       "created_by_user_id": "VXNlcjoxOm5OYkM="
-                 *     }
-                 */
                 "application/json": components["schemas"]["EvaluatorVersion"];
             };
         };
@@ -4658,43 +4784,6 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                /**
-                 * @example {
-                 *       "evaluator_versions": [
-                 *         {
-                 *           "id": "RXZhbHVhdG9yVmVyc2lvbjoxMDpYeVp3",
-                 *           "evaluator_id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
-                 *           "commit_hash": "a3b1c9e4f7d2a0518e6c3bb9217f87d1c4e810f2",
-                 *           "commit_message": "Initial version",
-                 *           "template_config": {
-                 *             "name": "hallucination",
-                 *             "template": "You are an evaluation assistant...",
-                 *             "include_explanations": true,
-                 *             "use_function_calling_if_available": true,
-                 *             "classification_choices": {
-                 *               "hallucinated": 0,
-                 *               "factual": 1
-                 *             },
-                 *             "direction": "maximize",
-                 *             "data_granularity": "span",
-                 *             "llm_config": {
-                 *               "ai_integration_id": "TGxtSW50ZWdyYXRpb246MTI6YUJjRA==",
-                 *               "model_name": "gpt-4o",
-                 *               "invocation_parameters": {
-                 *                 "temperature": 0
-                 *               },
-                 *               "provider_parameters": {}
-                 *             }
-                 *           },
-                 *           "created_at": "2026-02-16T22:05:48.143Z",
-                 *           "created_by_user_id": "VXNlcjoxOm5OYkM="
-                 *         }
-                 *       ],
-                 *       "pagination": {
-                 *         "has_more": false
-                 *       }
-                 *     }
-                 */
                 "application/json": {
                     /** @description A list of evaluator versions */
                     evaluator_versions: components["schemas"]["EvaluatorVersion"][];
@@ -4724,6 +4813,7 @@ export interface components {
                  *         "evaluator_id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
                  *         "commit_hash": "a3b1c9e4f7d2a0518e6c3bb9217f87d1c4e810f2",
                  *         "commit_message": "Initial version",
+                 *         "type": "template",
                  *         "template_config": {
                  *           "name": "hallucination",
                  *           "template": "You are an evaluation assistant...",
@@ -4773,6 +4863,7 @@ export interface components {
                  *         "evaluator_id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
                  *         "commit_hash": "a3b1c9e4f7d2a0518e6c3bb9217f87d1c4e810f2",
                  *         "commit_message": "Initial version",
+                 *         "type": "template",
                  *         "template_config": {
                  *           "name": "hallucination",
                  *           "template": "You are an evaluation assistant...",
@@ -5876,6 +5967,66 @@ export interface components {
             };
             content?: never;
         };
+        /**
+         * @description Some span IDs could not be confirmed deleted within the allotted retries.
+         *     Retry the original request for a completed deletion result.
+         */
+        SpanDeletePartial: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "deleted_span_ids": [
+                 *         "a1b2c3d4e5f6a7b8"
+                 *       ]
+                 *     }
+                 */
+                "application/json": {
+                    /** @description Span IDs confirmed deleted across all successfully processed intervals. */
+                    deleted_span_ids: string[];
+                };
+            };
+        };
+        /** @description Fatal mid-request error. Body carries any IDs already confirmed deleted. */
+        SpanDeleteError: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "title": "Internal Server Error",
+                 *       "status": 500,
+                 *       "detail": "failed to delete spans for interval 2024-01-15/2024-01-16: broker unavailable",
+                 *       "deleted_span_ids": [
+                 *         "a1b2c3d4e5f6a7b8"
+                 *       ]
+                 *     }
+                 */
+                "application/problem+json": {
+                    /** @description A short, human-readable summary of the problem type */
+                    title: string;
+                    /** @description The HTTP status code generated by the origin server for this occurrence of the problem */
+                    status: number;
+                    /**
+                     * Format: uri-reference
+                     * @description A URI reference that identifies the problem type
+                     */
+                    type?: string;
+                    /** @description A human-readable explanation specific to this occurrence of the problem */
+                    detail?: string;
+                    /**
+                     * Format: uri-reference
+                     * @description A URI reference that identifies the specific occurrence of the problem
+                     */
+                    instance?: string;
+                    /** @description Span IDs confirmed deleted before the fatal error occurred. */
+                    deleted_span_ids?: string[];
+                };
+            };
+        };
     };
     parameters: {
         /**
@@ -6420,37 +6571,6 @@ export interface components {
         /** @description Body containing evaluator creation parameters with an initial version */
         CreateEvaluatorRequestBody: {
             content: {
-                /**
-                 * @example {
-                 *       "space_id": "U3BhY2U6NDkzOkJaSkc=",
-                 *       "name": "Hallucination Eval",
-                 *       "description": "Detects hallucinated content in LLM responses",
-                 *       "type": "template",
-                 *       "version": {
-                 *         "commit_message": "Initial version",
-                 *         "template_config": {
-                 *           "name": "hallucination",
-                 *           "template": "You are an evaluation assistant. Given the following input and output, determine if the output contains hallucinated content.\n\nInput: {input}\nOutput: {output}\nReference: {reference}",
-                 *           "include_explanations": true,
-                 *           "use_function_calling_if_available": true,
-                 *           "classification_choices": {
-                 *             "hallucinated": 0,
-                 *             "factual": 1
-                 *           },
-                 *           "direction": "maximize",
-                 *           "data_granularity": "span",
-                 *           "llm_config": {
-                 *             "ai_integration_id": "TGxtSW50ZWdyYXRpb246MTI6YUJjRA==",
-                 *             "model_name": "gpt-4o",
-                 *             "invocation_parameters": {
-                 *               "temperature": 0
-                 *             },
-                 *             "provider_parameters": {}
-                 *           }
-                 *         }
-                 *       }
-                 *     }
-                 */
                 "application/json": {
                     /** @description Space global ID (base64) */
                     space_id: string;
@@ -6459,54 +6579,19 @@ export interface components {
                     /** @description Evaluator description */
                     description?: string;
                     /**
-                     * @description Evaluator type. Only template is supported in this iteration.
+                     * @description Evaluator type. Use `template` with `version.template_config`, or `code`
+                     *     with `version.code_config`.
                      * @enum {string}
                      */
                     type: "template" | "code";
-                    /** @description The initial version for the evaluator */
-                    version: {
-                        /** @description Commit message for the initial version */
-                        commit_message: string;
-                        /** @description The template configuration for the initial version */
-                        template_config: components["schemas"]["TemplateConfig"];
-                    };
+                    version: components["schemas"]["EvaluatorVersionCreate"];
                 };
             };
         };
         /** @description Body containing evaluator version creation parameters */
         CreateEvaluatorVersionRequestBody: {
             content: {
-                /**
-                 * @example {
-                 *       "commit_message": "Improve template wording",
-                 *       "template_config": {
-                 *         "name": "hallucination",
-                 *         "template": "Evaluate whether the output is factually grounded.\n\nInput: {input}\nOutput: {output}",
-                 *         "include_explanations": true,
-                 *         "use_function_calling_if_available": true,
-                 *         "classification_choices": {
-                 *           "hallucinated": 0,
-                 *           "factual": 1
-                 *         },
-                 *         "direction": "maximize",
-                 *         "data_granularity": "span",
-                 *         "llm_config": {
-                 *           "ai_integration_id": "TGxtSW50ZWdyYXRpb246MTI6YUJjRA==",
-                 *           "model_name": "gpt-4o",
-                 *           "invocation_parameters": {
-                 *             "temperature": 0
-                 *           },
-                 *           "provider_parameters": {}
-                 *         }
-                 *       }
-                 *     }
-                 */
-                "application/json": {
-                    /** @description Commit message describing the changes */
-                    commit_message: string;
-                    /** @description The template configuration for this version */
-                    template_config: components["schemas"]["TemplateConfig"];
-                };
+                "application/json": components["schemas"]["EvaluatorVersionCreate"];
             };
         };
         /** @description Body containing evaluator update parameters */
@@ -9159,12 +9244,14 @@ export interface operations {
         };
         requestBody: components["requestBodies"]["DeleteSpansRequestBody"];
         responses: {
+            200: components["responses"]["SpanDeletePartial"];
             204: components["responses"]["SpanDeleted"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
+            500: components["responses"]["SpanDeleteError"];
         };
     };
     tasks_list: {
