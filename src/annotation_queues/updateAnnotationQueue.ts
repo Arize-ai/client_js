@@ -29,7 +29,7 @@ export type UpdateAnnotationQueueParams = WithClient<
  * @param annotationQueue - The name or ID of the annotation queue to update.
  * @param space - An optional space name or ID. Required when `annotationQueue` is a name.
  * @param name - Optional new name for the queue.
- * @param instructions - Optional new instructions. Send an empty string to clear.
+ * @param instructions - Optional new instructions. Pass an empty string (`""`) to clear.
  * @param annotationConfigIds - Optional full replacement list of annotation config IDs.
  * @param annotatorEmails - Optional full replacement list of annotator emails.
  * @returns The updated {@link AnnotationQueue}.

@@ -860,7 +860,7 @@ export interface paths {
          *     - `dataset_id` is the path parameter for the target dataset.
          *     - `annotations` is a list of per-example annotation inputs, each identified by `record_id`.
          *     - Annotation names must match existing annotation configs in the dataset's space.
-         *     - Up to 500 examples may be annotated per request.
+         *     - Up to 1000 examples may be annotated per request.
          *
          *     **Valid example**
          *     ```json
@@ -1156,7 +1156,7 @@ export interface paths {
          *     - `experiment_id` is the path parameter for the target experiment.
          *     - `annotations` is a list of per-run annotation inputs, each identified by `record_id`.
          *     - Annotation names must match existing annotation configs in the experiment's space.
-         *     - Up to 500 runs may be annotated per request.
+         *     - Up to 1000 runs may be annotated per request.
          *
          *     **Valid example**
          *     ```json
@@ -1433,7 +1433,7 @@ export interface paths {
          *     - At least one message is required in `messages`.
          *     - Do not include system-managed fields on input: `id`, `commit_hash`, `created_at`, `created_by_user_id`.
          *       Requests that contain these fields will be rejected.
-         *     - `input_variable_format` and `provider` are required.
+         *     - `provider` is required. `input_variable_format` defaults to `f_string` if not provided.
          *
          *     **Valid example** (create)
          *     ```json
@@ -1907,6 +1907,260 @@ export interface paths {
         patch: operations["spaces_update"];
         trace?: never;
     };
+    "/v2/spaces/{space_id}/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add a user to a space
+         * @description Add a single existing account user to a space with a specified role.
+         *
+         *     **Payload Requirements**
+         *     - `user_id` is required and must be a valid User global ID.
+         *     - `role` is required and must be a role assignment object with a `type` discriminator:
+         *       - `{ "type": "builtin", "name": "admin" }` — one of the predefined roles: `admin`, `member`, `read-only`, `annotator`.
+         *       - `{ "type": "custom", "id": "<role_id>" }` — a custom RBAC role identified by its global ID.
+         *     - If the user is already a member, their role is updated to the specified value (upsert).
+         *     - The user must already be a member of the space's parent organization; auto-enrollment is not performed (400 if not a member).
+         *
+         *     **Role constraints**
+         *     - Users with an `annotator` account role can only be assigned the `annotator` builtin space role.
+         *     - Users with a non-annotator account role cannot be assigned the `annotator` builtin space role.
+         *
+         *     **Authorization**
+         *     Requires space admin role when using a `builtin` role, or `ROLE_BINDING_CREATE`
+         *     permission (RBAC) when using a `custom` role.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["spaces_add_user"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/spaces/{space_id}/users/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove a user from a space
+         * @description Remove a user from a space. This removes both the legacy `SpaceMembers` row
+         *     and any RBAC role bindings for the user on this space.
+         *
+         *     Returns 404 if the user is not a member of the space.
+         *
+         *     **Authorization**
+         *     Requires space admin role (legacy auth) or `ROLE_BINDING_DELETE` permission (RBAC).
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        delete: operations["spaces_remove_user"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List users
+         * @description List users in the account with cursor-based pagination. Results are sorted by
+         *     creation date ascending (oldest first).
+         *
+         *     Requires account admin role, account member role, or USER_READ permission at the
+         *     account level.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["users_list"];
+        put?: never;
+        /**
+         * Create a user
+         * @description Create a new account user with explicit invite control.
+         *
+         *     **Invite modes**
+         *     - `none` — add the user directly with no invitation (for SSO-only accounts). The user
+         *       is immediately active and can log in via the configured identity provider.
+         *     - `email_link` — create an `invited` invitation and send the user an email with a
+         *       verification link to complete registration.
+         *     - `temporary_password` — create an `invited` invitation with a temporary password
+         *       (returned once in the response). The user must reset it on first login.
+         *
+         *     **Idempotency on `email`** (applies when `invite_mode != "none"`)
+         *
+         *     | Existing state | Behavior | Response |
+         *     | --- | --- | --- |
+         *     | No prior invitation | Create a new `invited` invitation | `201 Created` |
+         *     | `invited` (not yet accepted) | Return the existing invitation as-is; do not resend | `200 OK` |
+         *     | `active` | Email belongs to an existing member | `409 Conflict` |
+         *     | `expired` | Create a new `invited` invitation | `201 Created` |
+         *     | `inactive` | User has been deactivated and cannot be re-invited | `409 Conflict` |
+         *
+         *     When `invite_mode` is `none` and the email already belongs to an active account member,
+         *     the request returns `409 Conflict`.
+         *
+         *     **Payload requirements**
+         *     - `name` — required, 1–255 characters
+         *     - `email` — required, must be a valid email address; used as the idempotency key
+         *     - `role` — required, one of `admin`, `member`, `annotator`; sets the account-level role
+         *     - `invite_mode` — required, one of `none`, `email_link`, `temporary_password`
+         *
+         *     Requires account admin role or USER_CREATE permission.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["users_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/users/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a user
+         * @description Get a specific user by their ID.
+         *
+         *     Requires account admin role, account member role, or USER_READ permission at the account level.
+         *
+         *     Returns 404 if the user does not exist, does not belong to the caller's account, or the caller lacks read permission.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["users_get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a user
+         * @description Permanently block a user from the account. The user's status is set to
+         *     `inactive` and they can no longer log in. The operation cascades to:
+         *     - Organization memberships
+         *     - Space memberships
+         *     - User API keys
+         *     - Role bindings
+         *
+         *     Blocked users cannot be re-invited via the create endpoint — `inactive`
+         *     is a terminal state. Callers cannot delete themselves. The operation is
+         *     idempotent — blocking an already-inactive user returns 204.
+         *
+         *     Requires account admin role or USER_DELETE permission.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        delete: operations["users_delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update a user
+         * @description Update a user's display name and/or developer permission.
+         *
+         *     **Payload Requirements**
+         *     - At least one of `name` or `is_developer` must be provided.
+         *     - `name` must be 1–255 characters. Leading and trailing whitespace is stripped before
+         *       validation; whitespace-only values (e.g. `"   "`) are rejected with 400.
+         *     - Setting `is_developer` to its current value is a no-op (idempotent).
+         *
+         *     **Example valid requests:**
+         *     ```json
+         *     { "name": "Jane Smith" }
+         *     { "is_developer": true }
+         *     { "name": "Jane Smith", "is_developer": false }
+         *     ```
+         *
+         *     **Example invalid requests:**
+         *     - `{}` — at least one field must be provided
+         *     - `{ "name": "   " }` — name cannot be whitespace only
+         *
+         *     Requires account admin role or USER_UPDATE permission.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        patch: operations["users_update"];
+        trace?: never;
+    };
+    "/v2/users/{user_id}/resend-invitation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resend a user invitation
+         * @description Resend the invitation email for a pending (unverified) user. Generates a
+         *     new verification token and sends a fresh email to the user's address.
+         *
+         *     The target user must be in the `invited` state (unverified and active).
+         *     Returns 400 if the user has already verified their account, or if
+         *     SAML/IdP login is enforced for the account.
+         *
+         *     This is a fire-and-forget operation: a 202 response means the token was
+         *     regenerated and the email dispatch was accepted. If the email fails to send,
+         *     the endpoint still returns 202 and logs the error internally.
+         *
+         *     Requires account admin role or USER_CREATE permission.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["users_resend_invitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/users/{user_id}/reset-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Trigger a password-reset email for a user
+         * @description Generates a reset token and sends the user a password-reset email with a 30-minute link.
+         *
+         *     - Requires account admin role or USER_UPDATE permission.
+         *     - Returns 400 if the target user authenticates via SSO/SAML or has not
+         *       yet verified their account (no password hash to key the token against).
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["users_password_reset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v2/spans": {
         parameters: {
             query?: never;
@@ -1927,11 +2181,11 @@ export interface paths {
          * Delete spans
          * @description Permanently deletes spans by their span IDs. This operation is irreversible.
          *
-         *     Accepts between 1 and 1000 span IDs per request. Only spans from the
-         *     last 31 days are considered; older spans are not affected.
+         *     Accepts between 1 and 5000 span IDs per request. Only spans within the
+         *     supported lookback window are considered; older spans are not affected.
          *
          *     A `204 No Content` response indicates all extant IDs provided
-         *     within the last 31 days were deleted.
+         *     within the supported lookback window were deleted.
          *
          *     A `200 OK` response indicates one or more intervals could not be fully processed
          *     within the retry budget. Retry the original request for a correct result.
@@ -1939,6 +2193,86 @@ export interface paths {
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
         delete: operations["spans_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/spans/annotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Annotate a batch of project spans
+         * @description Write human annotations to a batch of spans in a project.
+         *
+         *     **Idempotency**: Writes use upsert semantics — submitting the same annotation
+         *     config name for the same span overwrites the previous value. Retrying on
+         *     network failure will not create duplicates.
+         *
+         *     **202 Accepted**: The request was validated and the writes were submitted
+         *     to the database layer. Changes may not be immediately visible in queries.
+         *
+         *     **Partial failure**: This endpoint writes records in day-bucket batches.
+         *     A non-2xx response means the request failed partway through — some records
+         *     may already be saved and some may not. It is safe to retry the full
+         *     request; re-submitting a record that was already saved will overwrite it
+         *     with the same value (no duplicates).
+         *
+         *     **Payload Requirements**
+         *     - `project_id` is required and must identify a project the caller has span annotation access to.
+         *     - `annotations` is a list of per-span annotation inputs. Each entry identifies
+         *       one span by its `record_id` and provides one or more annotation values.
+         *     - `start_time` / `end_time` constrain the Druid time range for span lookup.
+         *       If omitted, `start_time` defaults to 7 days ago and `end_time` to now.
+         *       The window may not exceed 31 days and `end_time` may not be in the future.
+         *       If ANY span ID cannot be located within the given range, the entire
+         *       request is rejected with 404 and no annotations are written (all-or-nothing
+         *       pre-validation).
+         *     - Annotation names must match existing annotation configs in the project's space.
+         *     - Up to 1000 span records may be annotated per request.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "project_id": "proj_abc123",
+         *       "annotations": [
+         *         {"record_id": "span_abc", "values": [{"name": "relevance", "label": "good", "score": 1.0}]}
+         *       ]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (annotation name not found in space)
+         *     ```json
+         *     {
+         *       "project_id": "proj_abc123",
+         *       "annotations": [
+         *         {"record_id": "span_abc", "values": [{"name": "nonexistent_config"}]}
+         *       ]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (time window exceeds 31 days)
+         *     ```json
+         *     {
+         *       "project_id": "proj_abc123",
+         *       "start_time": "2025-01-01T00:00:00Z",
+         *       "end_time": "2025-03-01T00:00:00Z",
+         *       "annotations": [
+         *         {"record_id": "span_abc", "values": [{"name": "relevance", "label": "good"}]}
+         *       ]
+         *     }
+         *     ```
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["spans_annotate"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -2469,24 +2803,24 @@ export interface components {
         };
         /** @description A single record to annotate in a batch, identified by its record ID. */
         AnnotateRecordInput: {
-            /** @description The ID of the record to annotate (dataset example ID or experiment run ID). */
+            /** @description The record identifier (span ID, dataset example ID, or experiment run ID, depending on the endpoint). */
             record_id: string;
             /** @description One or more annotation values to set on this record. */
             values: components["schemas"]["AnnotationInput"][];
         };
         /** @description Batch annotation request for dataset examples. */
         AnnotateDatasetExamplesRequestBody: {
-            /** @description Batch of dataset example annotations to write. Up to 500 examples per request. */
+            /** @description Batch of dataset example annotations to write. Up to 1000 examples per request. */
             annotations: components["schemas"]["AnnotateRecordInput"][];
         };
         /** @description Batch annotation request for experiment runs. */
         AnnotateExperimentRunsRequestBody: {
-            /** @description Batch of experiment run annotations to write. Up to 500 runs per request. */
+            /** @description Batch of experiment run annotations to write. Up to 1000 runs per request. */
             annotations: components["schemas"]["AnnotateRecordInput"][];
         };
         /** @description The annotation result for a single annotated record. */
         AnnotateRecordResult: {
-            /** @description The ID of the record that was annotated, which is either the dataset example ID or the experiment run ID. */
+            /** @description The record identifier (span ID, dataset example ID, or experiment run ID, depending on the endpoint). */
             record_id: string;
             /** @description The annotations that were written to this record. */
             annotations: components["schemas"]["Annotation"][];
@@ -2495,6 +2829,28 @@ export interface components {
         AnnotationBatchResult: {
             /** @description Per-record annotation results, in the same order as the request. */
             results: components["schemas"]["AnnotateRecordResult"][];
+        };
+        /** @description Batch annotation request for project spans. */
+        AnnotateSpansRequestBody: {
+            /**
+             * @description The project (model) ID whose spans are being annotated.
+             * @example proj_abc123
+             */
+            project_id: string;
+            /**
+             * Format: date-time
+             * @description Start of the time range for span lookup. Optional; defaults to 7 days ago.
+             * @example 2024-01-01T00:00:00Z
+             */
+            start_time?: string;
+            /**
+             * Format: date-time
+             * @description End of the time range for span lookup. Optional; defaults to now.
+             * @example 2024-01-08T00:00:00Z
+             */
+            end_time?: string;
+            /** @description Batch of span annotations to write. Up to 1000 spans per request. */
+            annotations: components["schemas"]["AnnotateRecordInput"][];
         };
         ApiKey: {
             /** @description Unique identifier for the API key. */
@@ -2623,6 +2979,90 @@ export interface components {
             created_at: string;
         };
         /**
+         * @description An account user represents a member of the account. Users can be listed,
+         *     updated, or removed from the account.
+         */
+        User: {
+            id: components["schemas"]["Id"];
+            /** @description Display name of the user */
+            name: string;
+            email: components["schemas"]["Email"];
+            /**
+             * Format: date-time
+             * @description Timestamp for when the user was created
+             */
+            created_at: string;
+            status: components["schemas"]["UserStatus"];
+            role: components["schemas"]["UserRoleAssignment"];
+            /** @description Whether the user has developer permissions (can create GraphQL API keys) */
+            is_developer: boolean;
+        };
+        /**
+         * @description Account-level role of the user. These are pre-defined roles in Arize.
+         * @enum {string}
+         */
+        UserRole: "admin" | "member" | "annotator";
+        /**
+         * @description Current status of the user in the account.
+         *     - `active`: User has verified their email and can access the platform.
+         *     - `invited`: User has been invited and their verification token is still valid.
+         *     - `expired`: User was invited but their verification token has expired or is missing. A new invite is required.
+         * @enum {string}
+         */
+        UserStatus: "active" | "invited" | "expired";
+        UserUpdate: {
+            /** @description Updated display name for the user */
+            name?: string;
+            /** @description Set to true to grant developer permissions, or false to revoke them. */
+            is_developer?: boolean;
+        };
+        CreateUserRequest: {
+            /** @description Full name of the new user */
+            name: string;
+            /** @description Email address of the user to invite */
+            email: components["schemas"]["Email"];
+            role: components["schemas"]["UserRoleAssignment"];
+            /** @description Controls whether and how an invitation is sent */
+            invite_mode: components["schemas"]["InviteMode"];
+            /**
+             * @description Whether the user should have developer permissions (can create GraphQL API keys).
+             *     Defaults to `true` for `admin` and `member` roles, and `false` for `annotator`.
+             */
+            is_developer?: boolean;
+        };
+        /**
+         * @description Controls how the user is invited to the account.
+         *     - `none` — add the user directly with no invitation email (for SSO-only accounts).
+         *     - `email_link` — send the user an email with a verification link to complete registration.
+         *     - `temporary_password` — issue a temporary password delivered out-of-band; the user must reset it on first login.
+         * @enum {string}
+         */
+        InviteMode: "none" | "email_link" | "temporary_password";
+        UserCreatedResponse: {
+            /** @description Unique identifier for the user */
+            id: components["schemas"]["Id"];
+            /** @description Full name of the user */
+            name: string;
+            /** @description Email address of the user */
+            email: components["schemas"]["Email"];
+            role: components["schemas"]["UserRoleAssignment"];
+            /**
+             * Format: date-time
+             * @description Timestamp for when the user was created
+             */
+            created_at: string;
+            status: components["schemas"]["UserStatus"];
+            /** @description Whether the user has developer permissions (can create GraphQL API keys) */
+            is_developer: boolean;
+            /** @description The invite mode used when the user was created. */
+            invite_mode: components["schemas"]["InviteMode"];
+            /**
+             * @description Temporary password issued when `invite_mode` is `temporary_password`.
+             *     Only present in the `POST /v2/users` 201 Created response.
+             */
+            temporary_password?: string;
+        };
+        /**
          * @description A universally unique identifier
          * @example RW50aXR5OjEyMzQ1
          */
@@ -2658,12 +3098,6 @@ export interface components {
              * @description A URI reference that identifies the specific occurrence of the problem
              */
             instance?: string;
-        };
-        /** @description A reference to a user by their ID and optionally their email address. */
-        User: {
-            /** @description The unique identifier for the user */
-            id: string;
-            email?: components["schemas"]["Email"];
         };
         /**
          * @description A dataset is a structured collection of examples used to test and evaluate
@@ -3077,10 +3511,10 @@ export interface components {
             created_at: string;
         };
         /**
-         * @description The format for input variables in the prompt messages. There is no default; this field is required.
+         * @description The format for input variables in the prompt messages. Defaults to `f_string` if not provided.
          *     - `f_string`: Single curly braces ({variable_name})
          *     - `mustache`: Double curly braces ({{variable_name}})
-         *     - `none`: No input variable parsing
+         *     - `none`: **Deprecated.** Treated as `f_string`. Will be removed in a future version.
          * @enum {string}
          */
         InputVariableFormat: "f_string" | "mustache" | "none";
@@ -3186,7 +3620,7 @@ export interface components {
         PromptVersionCreateRequest: {
             /** @description Commit message describing this version */
             commit_message: string;
-            input_variable_format: components["schemas"]["InputVariableFormat"];
+            input_variable_format?: components["schemas"]["InputVariableFormat"];
             provider: components["schemas"]["LlmProvider"];
             /** @description The model to use for the call. Optional. If omitted, no default model is set on the prompt version. */
             model?: string;
@@ -3408,6 +3842,21 @@ export interface components {
              * @description Timestamp for when the space was created
              */
             created_at: string;
+        };
+        /** @description A space membership record. */
+        SpaceMembership: {
+            /** @description Unique identifier for the membership record */
+            id: components["schemas"]["Id"];
+            /** @description The unique identifier of the user */
+            user_id: components["schemas"]["Id"];
+            /** @description The unique identifier of the space */
+            space_id: components["schemas"]["Id"];
+            role: components["schemas"]["SpaceRoleAssignment"];
+        };
+        SpaceMembershipInput: {
+            /** @description The unique identifier of the user to add */
+            user_id: components["schemas"]["Id"];
+            role: components["schemas"]["SpaceRoleAssignment"];
         };
         /**
          * @description A Span represents a single unit of work within a distributed trace for an LLM application.
@@ -3793,6 +4242,81 @@ export interface components {
             /** @description IDs of the examples that were inserted or updated */
             example_ids: string[];
         };
+        /** @enum {string} */
+        SpaceRoleAssignmentType: "builtin" | "custom";
+        /**
+         * @description Space-level role for the user.
+         *     - `admin`: Full access to the space and its resources.
+         *     - `member`: Standard access to the space.
+         *     - `read-only`: Read-only access to the space.
+         *     - `annotator`: Limited access for annotation tasks only.
+         * @enum {string}
+         */
+        UserSpaceRole: "admin" | "member" | "read-only" | "annotator";
+        /** @description A builtin (predefined) space role assignment. */
+        BuiltinRoleAssignment: {
+            /**
+             * @description Discriminator selecting the builtin variant. Must be `builtin`. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "builtin";
+            name: components["schemas"]["UserSpaceRole"];
+        };
+        /** @description A custom RBAC role assignment. */
+        CustomRoleAssignment: {
+            /**
+             * @description Discriminator selecting the custom variant. Must be `custom`. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "custom";
+            /** @description The unique identifier of the custom RBAC role. */
+            id: components["schemas"]["Id"];
+            /**
+             * @description Human-readable name of the custom role.
+             *     Returned in responses only; ignored on input.
+             */
+            readonly name?: string;
+        };
+        /**
+         * @description A role assignment for a space membership. Discriminated by `type`:
+         *     - `builtin`: one of the predefined roles (`admin`, `member`, `read-only`, `annotator`)
+         *     - `custom`: a custom RBAC role identified by its ID
+         */
+        SpaceRoleAssignment: components["schemas"]["BuiltinRoleAssignment"] | components["schemas"]["CustomRoleAssignment"];
+        /** @enum {string} */
+        UserRoleAssignmentType: "builtin" | "custom";
+        /** @description A builtin (predefined) account-level role assignment. */
+        BuiltinUserRoleAssignment: {
+            /**
+             * @description Discriminator identifying this as a builtin role assignment. Must be `builtin`. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "builtin";
+            name: components["schemas"]["UserRole"];
+        };
+        /** @description A custom RBAC role assignment. */
+        CustomUserRoleAssignment: {
+            /**
+             * @description Discriminator identifying this as a custom role assignment. Must be `custom`. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "custom";
+            /** @description The unique identifier of the custom RBAC role. */
+            id: components["schemas"]["Id"];
+            /**
+             * @description Human-readable name of the custom role.
+             *     Returned in responses only; ignored on input.
+             */
+            readonly name?: string;
+        };
+        /**
+         * @description An account-level role assignment. Discriminated by `type`:
+         *     - `builtin`: one of the predefined roles (`admin`, `member`, `annotator`)
+         *     - `custom`: a custom RBAC role identified by its ID
+         *
+         *     Note: `custom` role assignments are not yet supported and are reserved for future use.
+         */
+        UserRoleAssignment: components["schemas"]["BuiltinUserRoleAssignment"] | components["schemas"]["CustomUserRoleAssignment"];
     };
     responses: {
         /** @description An AI integration object */
@@ -5074,6 +5598,108 @@ export interface components {
                 };
             };
         };
+        /** @description An account user object */
+        UserResponse: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "VXNlcjoxMjM0NQ==",
+                 *       "name": "Jane Smith",
+                 *       "email": "jane.smith@example.com",
+                 *       "created_at": "2024-01-01T12:00:00Z",
+                 *       "status": "active",
+                 *       "role": {
+                 *         "type": "builtin",
+                 *         "name": "member"
+                 *       },
+                 *       "is_developer": false
+                 *     }
+                 */
+                "application/json": components["schemas"]["User"];
+            };
+        };
+        /** @description Returns a list of account user objects */
+        UserList: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "users": [
+                 *         {
+                 *           "id": "VXNlcjoxMjM0NQ==",
+                 *           "name": "Jane Smith",
+                 *           "email": "jane.smith@example.com",
+                 *           "created_at": "2024-01-01T12:00:00Z",
+                 *           "status": "active",
+                 *           "role": {
+                 *             "type": "builtin",
+                 *             "name": "member"
+                 *           },
+                 *           "is_developer": true
+                 *         },
+                 *         {
+                 *           "id": "VXNlcjo2Nzg5MA==",
+                 *           "name": "John Doe",
+                 *           "email": "john.doe@example.com",
+                 *           "created_at": "2024-01-02T12:00:00Z",
+                 *           "status": "invited",
+                 *           "role": {
+                 *             "type": "builtin",
+                 *             "name": "admin"
+                 *           },
+                 *           "is_developer": false
+                 *         }
+                 *       ],
+                 *       "pagination": {
+                 *         "next_cursor": "cursor_12345",
+                 *         "has_more": true
+                 *       }
+                 *     }
+                 */
+                "application/json": {
+                    /** @description A list of account users */
+                    users: components["schemas"]["User"][];
+                    /** @description Pagination metadata for cursor-based navigation */
+                    pagination: components["schemas"]["PaginationMetadata"];
+                };
+            };
+        };
+        /** @description User successfully removed from the account */
+        UserDeleted: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
+        /** @description User created successfully */
+        UserCreated: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "VXNlcjoxMjM0NQ==",
+                 *       "name": "Jane Smith",
+                 *       "email": "jane.smith@example.com",
+                 *       "role": {
+                 *         "type": "builtin",
+                 *         "name": "member"
+                 *       },
+                 *       "status": "invited",
+                 *       "is_developer": false,
+                 *       "invite_mode": "email_link",
+                 *       "created_at": "2024-01-01T12:00:00Z"
+                 *     }
+                 */
+                "application/json": components["schemas"]["UserCreatedResponse"];
+            };
+        };
         /** @description A project object */
         Project: {
             headers: {
@@ -5546,6 +6172,22 @@ export interface components {
                 "application/json": components["schemas"]["Space"];
             };
         };
+        /** @description User successfully added to the space */
+        SpaceUserAdded: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["SpaceMembership"];
+            };
+        };
+        /** @description User successfully removed from the space */
+        SpaceUserRemoved: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
         /** @description Space successfully deleted */
         SpaceDeleted: {
             headers: {
@@ -5635,6 +6277,16 @@ export interface components {
                     pagination: components["schemas"]["PaginationMetadata"];
                 };
             };
+        };
+        /**
+         * @description Annotations submitted successfully.
+         *     The request was validated and the writes were submitted to the database layer. Changes may not be immediately visible in queries.
+         */
+        SpansAnnotated: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content?: never;
         };
         /** @description Spans successfully deleted */
         SpanDeleted: {
@@ -6209,6 +6861,22 @@ export interface components {
          * @example template_evaluation
          */
         TaskTypeQueryParam: "template_evaluation" | "code_evaluation";
+        /**
+         * @description The unique identifier of the user
+         * @example VXNlcjoxMjM0NQ==
+         */
+        UserIdPathParam: components["schemas"]["Id"];
+        /**
+         * @description Filter users by email address (case-insensitive partial match, up to 255 characters).
+         *     Results are scoped to users visible to the caller.
+         * @example jane@example.com
+         */
+        EmailSearchQueryParam: string;
+        /**
+         * @description Filter users by account status. When omitted, `active`, `invited`, and `expired` users are returned.
+         *     Can be specified multiple times to filter by multiple statuses (e.g., `?status=active&status=invited`).
+         */
+        UserStatusQueryParam: components["schemas"]["UserStatus"][];
         /**
          * @description Return the prompt with this specific version. Mutually exclusive with `label`.
          * @example pv_12345
@@ -6787,7 +7455,7 @@ export interface components {
                 "application/json": {
                     /** @description Commit message describing this version */
                     commit_message: string;
-                    input_variable_format: components["schemas"]["InputVariableFormat"];
+                    input_variable_format?: components["schemas"]["InputVariableFormat"];
                     provider: components["schemas"]["LlmProvider"];
                     /** @description The model to use for the call. Optional. If omitted, no default model is set on the version. */
                     model?: string;
@@ -6888,6 +7556,12 @@ export interface components {
                 };
             };
         };
+        /** @description Body containing the user to add to the space */
+        AddSpaceUserRequestBody: {
+            content: {
+                "application/json": components["schemas"]["SpaceMembershipInput"];
+            };
+        };
         /** @description Body containing space update parameters. At least one field must be provided. */
         UpdateSpaceRequestBody: {
             content: {
@@ -6954,9 +7628,34 @@ export interface components {
                 "application/json": {
                     /** @description The project ID containing the spans to delete */
                     project_id: string;
-                    /** @description List of span IDs to delete (maximum 1000) */
+                    /** @description List of span IDs to delete (maximum 5000) */
                     span_ids: string[];
                 };
+            };
+        };
+        /** @description Body containing span annotation batch */
+        AnnotateSpansRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "project_id": "proj_abc123",
+                 *       "start_time": "2024-01-01T00:00:00Z",
+                 *       "end_time": "2024-01-08T00:00:00Z",
+                 *       "annotations": [
+                 *         {
+                 *           "record_id": "span_abc",
+                 *           "values": [
+                 *             {
+                 *               "name": "relevance",
+                 *               "label": "good",
+                 *               "score": 1.5
+                 *             }
+                 *           ]
+                 *         }
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["AnnotateSpansRequestBody"];
             };
         };
         /** @description Body containing task creation parameters */
@@ -7077,6 +7776,24 @@ export interface components {
                         };
                     }[];
                 };
+            };
+        };
+        /** @description Body containing user creation parameters and invite control. */
+        CreateUserRequestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateUserRequest"];
+            };
+        };
+        /** @description Body containing user update parameters. At least one field must be provided. */
+        UpdateUserRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "name": "Jane Smith",
+                 *       "is_developer": false
+                 *     }
+                 */
+                "application/json": components["schemas"]["UserUpdate"];
             };
         };
     };
@@ -9209,6 +9926,239 @@ export interface operations {
             429: components["responses"]["RateLimitExceeded"];
         };
     };
+    spaces_add_user: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the space
+                 * @example spc_12345
+                 */
+                space_id: components["parameters"]["SpaceIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["AddSpaceUserRequestBody"];
+        responses: {
+            201: components["responses"]["SpaceUserAdded"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    spaces_remove_user: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the space
+                 * @example spc_12345
+                 */
+                space_id: components["parameters"]["SpaceIdPathParam"];
+                /**
+                 * @description The unique identifier of the user
+                 * @example VXNlcjoxMjM0NQ==
+                 */
+                user_id: components["parameters"]["UserIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: components["responses"]["SpaceUserRemoved"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    users_list: {
+        parameters: {
+            query?: {
+                /** @description Maximum items to return */
+                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /**
+                 * @description Opaque pagination cursor returned from a previous response
+                 *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
+                 *     attempt to parse or construct it.
+                 */
+                cursor?: components["parameters"]["CursorQueryParam"];
+                /**
+                 * @description Filter users by email address (case-insensitive partial match, up to 255 characters).
+                 *     Results are scoped to users visible to the caller.
+                 * @example jane@example.com
+                 */
+                email?: components["parameters"]["EmailSearchQueryParam"];
+                /**
+                 * @description Filter users by account status. When omitted, `active`, `invited`, and `expired` users are returned.
+                 *     Can be specified multiple times to filter by multiple statuses (e.g., `?status=active&status=invited`).
+                 */
+                status?: components["parameters"]["UserStatusQueryParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["UserList"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    users_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["CreateUserRequestBody"];
+        responses: {
+            200: components["responses"]["UserResponse"];
+            201: components["responses"]["UserCreated"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    users_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the user
+                 * @example VXNlcjoxMjM0NQ==
+                 */
+                user_id: components["parameters"]["UserIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["UserResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    users_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the user
+                 * @example VXNlcjoxMjM0NQ==
+                 */
+                user_id: components["parameters"]["UserIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: components["responses"]["UserDeleted"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    users_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the user
+                 * @example VXNlcjoxMjM0NQ==
+                 */
+                user_id: components["parameters"]["UserIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["UpdateUserRequestBody"];
+        responses: {
+            200: components["responses"]["UserResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    users_resend_invitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the user
+                 * @example VXNlcjoxMjM0NQ==
+                 */
+                user_id: components["parameters"]["UserIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Invitation resend accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    users_password_reset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the user
+                 * @example VXNlcjoxMjM0NQ==
+                 */
+                user_id: components["parameters"]["UserIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Password-reset email sent successfully (no content). */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
     spans_list: {
         parameters: {
             query?: {
@@ -9252,6 +10202,23 @@ export interface operations {
             404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
             500: components["responses"]["SpanDeleteError"];
+        };
+    };
+    spans_annotate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["AnnotateSpansRequestBody"];
+        responses: {
+            202: components["responses"]["SpansAnnotated"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
         };
     };
     tasks_list: {

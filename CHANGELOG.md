@@ -1,5 +1,17 @@
 # @arizeai/ax-client
 
+## [1.12.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.11.0...arize-js-sdk/v1.12.0) (2026-05-08)
+
+
+### 🎁 New Features
+
+* add SDK source identification via span attributes ([#70404](https://github.com/Arize-ai/arize/issues/70404)) ([b8ccabb](https://github.com/Arize-ai/arize/commit/b8ccabbcb3cb042d696b6009e170a74e3ad28a8d))
+
+
+### 🐛 Bug Fixes
+
+* **annotation-queues:** Update how "unset" behaviour works for annotation queues. ([#69699](https://github.com/Arize-ai/arize/issues/69699)) ([5c82539](https://github.com/Arize-ai/arize/commit/5c82539815c7f727fc6ee8b82a752fd2931ea5b9))
+
 ## [1.11.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.10.1...arize-js-sdk/v1.11.0) (2026-05-01)
 
 

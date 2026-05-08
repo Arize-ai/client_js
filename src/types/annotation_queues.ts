@@ -85,6 +85,7 @@ export interface CreateAnnotationQueueInput {
 
 export interface UpdateAnnotationQueueInput {
   name?: string;
+  /** Pass an empty string (`""`) to clear existing instructions. */
   instructions?: string;
   annotationConfigIds?: string[];
   annotatorEmails?: string[];

@@ -1,5 +1,6 @@
 import createOpenApiClient, { ClientOptions } from "openapi-fetch";
 import { paths } from "./__generated__/api/v2";
+import { ARIZE_SDK_VERSION } from "./__generated__/version/version.generated";
 
 const DEFAULT_BASE_URL = "https://api.arize.com";
 
@@ -79,6 +80,9 @@ const arizeConfigToClientOptions = (
     headers: {
       ...mergedOptions.defaultHeaders,
       Authorization: `Bearer ${mergedOptions.apiKey}`,
+      "sdk-language": "javascript",
+      "sdk-version": ARIZE_SDK_VERSION,
+      "sdk-package-name": "@arizeai/ax-client",
     },
   };
   return options;
