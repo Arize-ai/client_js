@@ -6,7 +6,7 @@ import { findOrganizationId } from "../utils/resolve";
 
 export type DeleteOrganizationParams = WithClient<{
   /**
-   * The organization ID (e.g. `"org_abc123"`) or organization name to delete.
+   * The organization ID (e.g. `"T3JnYW5pemF0aW9uOmFiYzEyMw=="`) or organization name to delete.
    */
   organization: string;
 }>;

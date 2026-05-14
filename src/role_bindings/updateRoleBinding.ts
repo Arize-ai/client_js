@@ -25,8 +25,8 @@ export type UpdateRoleBindingParams = WithClient<{
  * import { updateRoleBinding } from "@arizeai/ax-client"
  *
  * const binding = await updateRoleBinding({
- *   bindingId: "your_binding_id",
- *   roleId: "your_new_role_id",
+ *   bindingId: "Um9sZUJpbmRpbmc6YWJjMTIz",
+ *   roleId: "Um9sZTphYmMxMjM=",
  * });
  * console.log(binding);
  * ```

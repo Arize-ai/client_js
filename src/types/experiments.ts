@@ -1,3 +1,5 @@
+import { Annotation } from "./spans";
+
 export type Experiment = {
   id: string;
   name: string;
@@ -32,5 +34,6 @@ export type ExperimentRun = {
   exampleId?: string;
   output?: string | null;
   error?: string | null;
+  annotations?: Annotation[];
   [key: string]: unknown;
 };

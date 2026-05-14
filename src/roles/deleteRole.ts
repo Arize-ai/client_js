@@ -18,7 +18,7 @@ export type DeleteRoleParams = WithClient<{
  * ```typescript
  * import { deleteRole } from "@arizeai/ax-client"
  *
- * await deleteRole({ roleId: "your_role_id" });
+ * await deleteRole({ roleId: "Um9sZTphYmMxMjM=" });
  * ```
  */
 export async function deleteRole({

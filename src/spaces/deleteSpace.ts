@@ -6,7 +6,7 @@ import { findSpaceId } from "../utils/resolve";
 
 export type DeleteSpaceParams = WithClient<{
   /**
-   * The space ID (e.g. `"spc_abc123"`) or space name to delete.
+   * The space ID (e.g. `"U3BhY2U6YWJjMTIz"`) or space name to delete.
    */
   space: string;
 }>;

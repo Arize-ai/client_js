@@ -48,6 +48,7 @@ const mockTaskRunBase: TaskRun = {
   id: "run-1",
   taskId: "task-1",
   status: "pending",
+  experimentId: null,
   runStartedAt: null,
   runFinishedAt: null,
   dataStartTime: null,

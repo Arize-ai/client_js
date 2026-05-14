@@ -53,7 +53,10 @@ export type RawPermission = components["schemas"]["Permission"];
 export type RawResourceRestriction =
   components["schemas"]["ResourceRestriction"];
 export type RawRoleBinding = components["schemas"]["RoleBinding"];
+export type RawSpaceMembership = components["schemas"]["SpaceMembership"];
 export type RawOrganization = components["schemas"]["Organization"];
+export type RawOrganizationMembership =
+  components["schemas"]["OrganizationMembership"];
 export type RawRoleBindingCreate = components["schemas"]["RoleBindingCreate"];
 export type RawRoleBindingResourceType =
   components["schemas"]["RoleBindingResourceType"];
@@ -61,3 +64,6 @@ export type RawAnnotationBatchResult =
   components["schemas"]["AnnotationBatchResult"];
 export type RawAnnotateRecordResult =
   components["schemas"]["AnnotateRecordResult"];
+export type RawUser = components["schemas"]["User"];
+export type RawUserCreatedResponse =
+  components["schemas"]["UserCreatedResponse"];

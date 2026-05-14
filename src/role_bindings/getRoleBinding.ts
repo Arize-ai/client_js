@@ -19,7 +19,7 @@ export type GetRoleBindingParams = WithClient<{
  * ```typescript
  * import { getRoleBinding } from "@arizeai/ax-client"
  *
- * const binding = await getRoleBinding({ bindingId: "your_binding_id" });
+ * const binding = await getRoleBinding({ bindingId: "Um9sZUJpbmRpbmc6YWJjMTIz" });
  * console.log(binding);
  * ```
  */

@@ -4,6 +4,7 @@ import {
   ExperimentRunInput,
 } from "../types/experiments";
 import { RawExperiment, RawExperimentRun } from "../types/internal";
+import { transformAnnotation } from "../spans/utils";
 
 export function transformExperiment(experiment: RawExperiment): Experiment {
   const experimentInfo = {
@@ -44,10 +45,11 @@ export function normalizeExperimentRun(run: ExperimentRunInput) {
 }
 
 export function transformExperimentRun(run: RawExperimentRun): ExperimentRun {
-  const { example_id, ...rest } = run;
+  const { example_id, annotations, ...rest } = run;
   return {
     ...rest,
     exampleId: example_id,
     example_id,
+    ...(annotations && { annotations: annotations.map(transformAnnotation) }),
   };
 }

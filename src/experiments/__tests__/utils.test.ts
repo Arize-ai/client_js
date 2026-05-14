@@ -4,7 +4,11 @@ import {
   transformExperiment,
   transformExperimentRun,
 } from "../utils";
-import { mockExperiment, mockExperimentRun } from "./fixtures";
+import {
+  mockExperiment,
+  mockExperimentRun,
+  mockExperimentRunWithAnnotations,
+} from "./fixtures";
 
 describe("transformExperiment", () => {
   it("should transform the created_at and updated_at fields of an experiment to date objects", () => {
@@ -54,5 +58,28 @@ describe("transformExperimentRun", () => {
       example_id: mockExperimentRun.example_id,
       exampleId: mockExperimentRun.example_id,
     });
+  });
+
+  it("omits the annotations key when annotations are absent", () => {
+    const transformedRun = transformExperimentRun(mockExperimentRun);
+    expect(transformedRun).not.toHaveProperty("annotations");
+  });
+
+  it("transforms populated annotations and maps updated_at to a Date", () => {
+    const transformedRun = transformExperimentRun(
+      mockExperimentRunWithAnnotations,
+    );
+    expect(transformedRun.annotations).toEqual([
+      {
+        name: "quality",
+        score: 0.9,
+        label: "good",
+        text: "spot on",
+        updatedAt: new Date(
+          mockExperimentRunWithAnnotations.annotations?.[0]?.updated_at ?? "",
+        ),
+        annotator: { id: "user-1", email: "u1@example.com" },
+      },
+    ]);
   });
 });

@@ -41,7 +41,7 @@ export type CreateTemplateEvaluatorVersionParams =
  *     classificationChoices: { relevant: 1, irrelevant: 0 },
  *     direction: "maximize",
  *     llmConfig: {
- *       aiIntegrationId: "your_ai_integration_id",
+ *       aiIntegrationId: "QUlJbnRlZ3JhdGlvbjphYmMxMjM=",
  *       modelName: "gpt-4o",
  *       invocationParameters: { temperature: 0 },
  *       providerParameters: {},

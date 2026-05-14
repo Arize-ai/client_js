@@ -490,15 +490,25 @@ export interface paths {
         };
         /**
          * List API keys
-         * @description List API keys for the authenticated user. Returns metadata for each key (id, name, description,
+         * @description List API keys. Returns metadata for each key (id, name, description,
          *     key_type, status, redacted_key, created_at, expires_at, created_by_user_id). The raw key
          *     secret is never returned after creation.
          *
-         *     Results can be filtered by key type, status, and created-by user ID. Responses are
+         *     Results can be filtered by key type, status, space, and creator. Responses are
          *     paginated; use `limit` and `cursor` and the response `pagination.next_cursor` for
          *     subsequent pages.
          *
-         *     **Authorization:** Requires the `developer` user permission flag. Returns `403` when this flag is absent.
+         *     **Service keys (`key_type=service`):** Provide `space_id` to return all service keys for
+         *     that space. When `key_type` is omitted alongside `space_id`, service keys are returned
+         *     implicitly. Requires the `SERVICE_KEY_READ` permission in the space (or account/space admin).
+         *     Optionally combine with `user_id` to filter service keys by their creator — available to any
+         *     caller with space access (not admin-gated).
+         *
+         *     **User keys (`key_type=user`):** Returned by default (no `space_id`). Provide `user_id` to
+         *     view keys belonging to a specific user — account admins only; non-admins receive `403`.
+         *
+         *     **Authorization:** Requires the `developer` user permission flag or account admin role.
+         *     Returns `403` when neither condition is met.
          *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
@@ -725,6 +735,11 @@ export interface paths {
          *     If version is not passed, the latest version is selected. Examples are
          *     sorted by insertion order.
          *
+         *     **Human annotations**: returned in the structured `annotations` array on
+         *     each example. Each entry includes `name`, optional `label` / `score` /
+         *     `text` / `updated_at`, and an `annotator` (id + email) for per-user
+         *     annotations.
+         *
          *     **Pagination**:
          *     - Response includes `pagination` for forward compatibility.
          *     - **Currently not implemented**: `pagination.next_cursor` is omitted
@@ -852,9 +867,13 @@ export interface paths {
          *     config name for the same example overwrites the previous value. Retrying on
          *     network failure will not create duplicates.
          *
+         *     **202 Accepted**: The annotations have been accepted and will be written.
+         *     Visibility in read queries may lag by a short interval. No response body
+         *     is returned.
+         *
          *     **Unmatched record IDs**: If a `record_id` does not correspond to an existing
          *     example in the dataset, the annotation for that record is silently ignored.
-         *     The response will still include an entry for it. No error is returned.
+         *     No error is returned.
          *
          *     **Payload Requirements**
          *     - `dataset_id` is the path parameter for the target dataset.
@@ -1114,6 +1133,11 @@ export interface paths {
          *
          *     The runs are sorted by insertion order.
          *
+         *     **Human annotations**: returned in the structured `annotations` array on
+         *     each run. Each entry includes `name`, optional `label` / `score` /
+         *     `text` / `updated_at`, and an `annotator` (id + email) for per-user
+         *     annotations.
+         *
          *     **Pagination**:
          *     - Response includes `pagination` for forward compatibility.
          *     - **Currently not implemented**: `pagination.next_cursor` is omitted
@@ -1148,9 +1172,13 @@ export interface paths {
          *     config name for the same run overwrites the previous value. Retrying on
          *     network failure will not create duplicates.
          *
+         *     **202 Accepted**: The annotations have been accepted and will be written.
+         *     Visibility in read queries may lag by a short interval. No response body
+         *     is returned.
+         *
          *     **Unmatched record IDs**: If a `record_id` does not correspond to an existing
          *     run in the experiment, the annotation for that record is silently ignored.
-         *     The response will still include an entry for it. No error is returned.
+         *     No error is returned.
          *
          *     **Payload Requirements**
          *     - `experiment_id` is the path parameter for the target experiment.
@@ -1273,6 +1301,62 @@ export interface paths {
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
         patch: operations["organizations_update"];
+        trace?: never;
+    };
+    "/v2/organizations/{org_id}/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add a user to an organization
+         * @description Add a single existing account user to an organization with a specified role.
+         *
+         *     **Payload Requirements**
+         *     - `user_id` and `role` are both required.
+         *     - If the user is already a member, their role is updated to the specified value (upsert).
+         *
+         *     **Role constraints**
+         *     - Users with an `annotator` account role can only be assigned the `annotator` organization role.
+         *     - Users with a non-annotator account role cannot be assigned the `annotator` organization role.
+         *
+         *     Requires organization admin.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["organizations_add_user"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/organizations/{org_id}/users/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove a user from an organization
+         * @description Remove a user from the organization and all its child spaces (membership cascade).
+         *
+         *     Requires organization admin.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        delete: operations["organizations_remove_user"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v2/projects": {
@@ -1923,17 +2007,17 @@ export interface paths {
          *     **Payload Requirements**
          *     - `user_id` is required and must be a valid User global ID.
          *     - `role` is required and must be a role assignment object with a `type` discriminator:
-         *       - `{ "type": "builtin", "name": "admin" }` — one of the predefined roles: `admin`, `member`, `read-only`, `annotator`.
+         *       - `{ "type": "predefined", "name": "admin" }` — one of the predefined roles: `admin`, `member`, `read-only`, `annotator`.
          *       - `{ "type": "custom", "id": "<role_id>" }` — a custom RBAC role identified by its global ID.
          *     - If the user is already a member, their role is updated to the specified value (upsert).
          *     - The user must already be a member of the space's parent organization; auto-enrollment is not performed (400 if not a member).
          *
          *     **Role constraints**
-         *     - Users with an `annotator` account role can only be assigned the `annotator` builtin space role.
-         *     - Users with a non-annotator account role cannot be assigned the `annotator` builtin space role.
+         *     - Users with an `annotator` account role can only be assigned the `annotator` predefined space role.
+         *     - Users with a non-annotator account role cannot be assigned the `annotator` predefined space role.
          *
          *     **Authorization**
-         *     Requires space admin role when using a `builtin` role, or `ROLE_BINDING_CREATE`
+         *     Requires space admin role when using a `predefined` role, or `ROLE_BINDING_CREATE`
          *     permission (RBAC) when using a `custom` role.
          *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
@@ -2120,9 +2204,9 @@ export interface paths {
          *     Returns 400 if the user has already verified their account, or if
          *     SAML/IdP login is enforced for the account.
          *
-         *     This is a fire-and-forget operation: a 202 response means the token was
+         *     This is a fire-and-forget operation: a 204 response means the token was
          *     regenerated and the email dispatch was accepted. If the email fails to send,
-         *     the endpoint still returns 202 and logs the error internally.
+         *     the endpoint still returns 204 and logs the error internally.
          *
          *     Requires account admin role or USER_CREATE permission.
          *
@@ -2182,7 +2266,7 @@ export interface paths {
          * @description Permanently deletes spans by their span IDs. This operation is irreversible.
          *
          *     Accepts between 1 and 5000 span IDs per request. Only spans within the
-         *     supported lookback window are considered; older spans are not affected.
+         *     supported lookback window (2 years) are considered; older spans are not affected.
          *
          *     A `204 No Content` response indicates all extant IDs provided
          *     within the supported lookback window were deleted.
@@ -2215,25 +2299,29 @@ export interface paths {
          *     config name for the same span overwrites the previous value. Retrying on
          *     network failure will not create duplicates.
          *
-         *     **202 Accepted**: The request was validated and the writes were submitted
-         *     to the database layer. Changes may not be immediately visible in queries.
+         *     **202 Accepted**: The annotations have been accepted and will be written.
+         *     Visibility in read queries may lag by a short interval.
          *
-         *     **Partial failure**: This endpoint writes records in day-bucket batches.
-         *     A non-2xx response means the request failed partway through — some records
-         *     may already be saved and some may not. It is safe to retry the full
-         *     request; re-submitting a record that was already saved will overwrite it
-         *     with the same value (no duplicates).
+         *     **Partial failure**: Writes are grouped by calendar day and processed
+         *     sequentially. A non-2xx response means the request failed during the write
+         *     phase — annotations for earlier calendar-day buckets may already be saved
+         *     while later ones are not. It is safe to retry the full request;
+         *     re-submitting a record that was already saved will overwrite it with the
+         *     same value (no duplicates).
          *
          *     **Payload Requirements**
          *     - `project_id` is required and must identify a project the caller has span annotation access to.
          *     - `annotations` is a list of per-span annotation inputs. Each entry identifies
          *       one span by its `record_id` and provides one or more annotation values.
+         *     - Each `record_id` must be unique within the request (duplicates return 400).
+         *     - Each record's `values` list must not contain duplicate annotation config names (returns 400).
          *     - `start_time` / `end_time` constrain the Druid time range for span lookup.
-         *       If omitted, `start_time` defaults to 7 days ago and `end_time` to now.
-         *       The window may not exceed 31 days and `end_time` may not be in the future.
-         *       If ANY span ID cannot be located within the given range, the entire
-         *       request is rejected with 404 and no annotations are written (all-or-nothing
-         *       pre-validation).
+         *       If omitted, `start_time` defaults to 31 days ago and `end_time` to now.
+         *       Both `start_time` and `end_time` may not be in the future. The window may
+         *       not exceed 31 days. If ANY span ID cannot be located within the given
+         *       range, the entire request is rejected with 404 and no annotations are
+         *       written (all-or-nothing pre-validation). Only after all spans are
+         *       confirmed does the write phase begin.
          *     - Annotation names must match existing annotation configs in the project's space.
          *     - Up to 1000 span records may be annotated per request.
          *
@@ -2297,16 +2385,29 @@ export interface paths {
         put?: never;
         /**
          * Create task
-         * @description Creates a new evaluation task. You must supply exactly one of `project_id`
-         *     or `dataset_id` as the data source.
+         * @description Creates a new task. Supported task types:
          *
-         *     **Validation Rules**
+         *     | `type` | Data source | Notes |
+         *     |---|---|---|
+         *     | `template_evaluation` | `project_id` or `dataset_id` | Requires `evaluators`. Supports continuous operation. |
+         *     | `code_evaluation` | `project_id` or `dataset_id` | Requires `evaluators`. Supports continuous operation. |
+         *     | `run_experiment` | `dataset_id` only | Requires `run_configuration`. Never continuous. |
+         *
+         *     For `run_experiment` tasks the run configuration is stored on the task.
+         *     Each trigger (`POST /v2/tasks/{task_id}/trigger`) supplies per-run fields
+         *     (`experiment_name`, optional example subset, etc.) and starts an async run.
+         *     Poll `GET /v2/task-runs/{run_id}` until `status` reaches a terminal state.
+         *
+         *     **Validation Rules (template_evaluation / code_evaluation)**
          *     - At least one evaluator is required.
          *     - Duplicate evaluator IDs are not allowed.
          *     - When `dataset_id` is provided, `experiment_ids` must contain at least one entry.
-         *     - When `project_id` is provided, `experiment_ids` must be omitted or empty.
          *     - `sampling_rate` and `is_continuous` are only supported on project-based tasks.
-         *     - Dataset-based tasks always have `is_continuous = false`.
+         *
+         *     **Validation Rules (run_experiment)**
+         *     - `dataset_id` is required; `project_id` must be omitted.
+         *     - `run_configuration` is required; `evaluators`, `experiment_ids`, `sampling_rate`,
+         *       `is_continuous`, and `query_filter` must be omitted.
          *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
@@ -2391,7 +2492,26 @@ export interface paths {
         /**
          * Trigger a task run
          * @description Triggers a new run on an existing task. The run is queued and processed
-         *     asynchronously. Poll the returned run's status to track progress.
+         *     asynchronously. Poll `GET /v2/task-runs/{run_id}` until the run reaches a
+         *     terminal status (`completed`, `failed`, or `cancelled`).
+         *
+         *     **For `run_experiment` tasks**
+         *
+         *     Supply `experiment_name` (required) plus any of the optional per-run fields:
+         *     `dataset_version_id`, `example_ids` (exclusive with `max_examples`),
+         *     `max_examples`, `tracing_metadata`, `evaluation_task_ids`.
+         *
+         *     The fields `data_start_time`, `data_end_time`, `max_spans`,
+         *     `override_evaluations`, and `experiment_ids` are not applicable and will
+         *     return 400 if supplied.
+         *
+         *     The response includes `experiment_id` once the experiment is provisioned.
+         *
+         *     **For `template_evaluation` / `code_evaluation` tasks**
+         *
+         *     Supply `data_start_time`, `data_end_time`, `max_spans`,
+         *     `override_evaluations`, and/or `experiment_ids` as needed.
+         *     `run_experiment`-specific fields are not applicable for these task types.
          *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
@@ -2839,7 +2959,7 @@ export interface components {
             project_id: string;
             /**
              * Format: date-time
-             * @description Start of the time range for span lookup. Optional; defaults to 7 days ago.
+             * @description Start of the time range for span lookup. Optional; defaults to 31 days ago.
              * @example 2024-01-01T00:00:00Z
              */
             start_time?: string;
@@ -3034,7 +3154,7 @@ export interface components {
          * @description Controls how the user is invited to the account.
          *     - `none` — add the user directly with no invitation email (for SSO-only accounts).
          *     - `email_link` — send the user an email with a verification link to complete registration.
-         *     - `temporary_password` — issue a temporary password delivered out-of-band; the user must reset it on first login.
+         *     - `temporary_password` — issue a temporary password returned in the `POST /v2/users` response body; the user must reset it on first login. **Treat this value as a secret** — see `UserCreatedResponse.temporary_password` for security guidance.
          * @enum {string}
          */
         InviteMode: "none" | "email_link" | "temporary_password";
@@ -3057,8 +3177,14 @@ export interface components {
             /** @description The invite mode used when the user was created. */
             invite_mode: components["schemas"]["InviteMode"];
             /**
+             * Format: password
              * @description Temporary password issued when `invite_mode` is `temporary_password`.
              *     Only present in the `POST /v2/users` 201 Created response.
+             *
+             *     **Security notice:** this value is returned in the JSON response body
+             *     (not out-of-band). Callers must treat it as a secret: avoid logging the
+             *     full response, ensure transport is TLS-only, and instruct the user to
+             *     change the password on first login.
              */
             temporary_password?: string;
         };
@@ -3142,6 +3268,8 @@ export interface components {
              * @description Timestamp for the last update of the example
              */
             readonly updated_at: string;
+            /** @description List of human annotations on this dataset example */
+            readonly annotations?: components["schemas"]["Annotation"][];
         } & {
             [key: string]: unknown;
         };
@@ -3475,6 +3603,8 @@ export interface components {
             output?: string | null;
             /** @description Error message when the task failed. Null on success. */
             error?: string | null;
+            /** @description List of human annotations on this experiment run */
+            readonly annotations?: components["schemas"]["Annotation"][];
         } & {
             [key: string]: unknown;
         };
@@ -3492,7 +3622,7 @@ export interface components {
          *     Auto-generated from proto/auth/protocol/permissions.proto.
          * @enum {string}
          */
-        Permission: "AI_PROVIDER_READ" | "ALYX_RUN" | "ANNOTATION_CONFIG_CREATE" | "ANNOTATION_CONFIG_DELETE" | "ANNOTATION_CONFIG_READ" | "ANNOTATION_CONFIG_UPDATE" | "CUSTOM_METRIC_CREATE" | "CUSTOM_METRIC_DELETE" | "CUSTOM_METRIC_READ" | "CUSTOM_METRIC_UPDATE" | "DASHBOARD_CREATE" | "DASHBOARD_DELETE" | "DASHBOARD_READ" | "DASHBOARD_UPDATE" | "DATASET_CREATE" | "DATASET_DELETE" | "DATASET_EXAMPLE_ANNOTATE" | "DATASET_EXAMPLE_CREATE" | "DATASET_EXAMPLE_DELETE" | "DATASET_EXAMPLE_READ" | "DATASET_EXAMPLE_UPDATE" | "DATASET_READ" | "DATASET_UPDATE" | "DATA_FABRIC_CONNECTOR_CREATE" | "DATA_FABRIC_CONNECTOR_DELETE" | "DATA_FABRIC_CONNECTOR_READ" | "DATA_FABRIC_CONNECTOR_UPDATE" | "EVALUATOR_CREATE" | "EVALUATOR_DELETE" | "EVALUATOR_READ" | "EVALUATOR_UPDATE" | "EXPERIMENT_CREATE" | "EXPERIMENT_DELETE" | "EXPERIMENT_EVAL_TASK_CREATE" | "EXPERIMENT_EVAL_TASK_DELETE" | "EXPERIMENT_EVAL_TASK_READ" | "EXPERIMENT_EVAL_TASK_UPDATE" | "EXPERIMENT_READ" | "EXPERIMENT_RUN_ANNOTATE" | "EXPERIMENT_RUN_READ" | "EXPERIMENT_UPDATE" | "FILE_IMPORT_CREATE" | "FILE_IMPORT_DELETE" | "FILE_IMPORT_READ" | "FILE_IMPORT_UPDATE" | "ML_MODEL_CREATE" | "ML_MODEL_DELETE" | "ML_MODEL_READ" | "ML_MODEL_UPDATE" | "MONITOR_CREATE" | "MONITOR_DELETE" | "MONITOR_READ" | "MONITOR_TRIGGER" | "MONITOR_UPDATE" | "ORGANIZATION_CREATE" | "ORGANIZATION_DELETE" | "ORGANIZATION_READ" | "ORGANIZATION_UPDATE" | "PLAYGROUND_RUN" | "PLAYGROUND_VIEW_CREATE" | "PLAYGROUND_VIEW_DELETE" | "PLAYGROUND_VIEW_READ" | "PLAYGROUND_VIEW_UPDATE" | "PROJECT_CREATE" | "PROJECT_DELETE" | "PROJECT_EVAL_TASK_CREATE" | "PROJECT_EVAL_TASK_DELETE" | "PROJECT_EVAL_TASK_READ" | "PROJECT_EVAL_TASK_UPDATE" | "PROJECT_READ" | "PROJECT_RESTRICT" | "PROJECT_SPAN_ANNOTATE" | "PROJECT_SPAN_CREATE" | "PROJECT_SPAN_DELETE" | "PROJECT_SPAN_READ" | "PROJECT_SPAN_UPDATE" | "PROJECT_UPDATE" | "PROMPT_CREATE" | "PROMPT_DELETE" | "PROMPT_OPTIMIZE_TASK_CREATE" | "PROMPT_OPTIMIZE_TASK_DELETE" | "PROMPT_OPTIMIZE_TASK_READ" | "PROMPT_OPTIMIZE_TASK_UPDATE" | "PROMPT_READ" | "PROMPT_UPDATE" | "QUEUE_CREATE" | "QUEUE_DELETE" | "QUEUE_READ" | "QUEUE_RECORD_ANNOTATE" | "QUEUE_RECORD_CREATE" | "QUEUE_RECORD_DELETE" | "QUEUE_RECORD_READ" | "QUEUE_RECORD_UPDATE" | "QUEUE_UPDATE" | "ROLE_BINDING_CREATE" | "ROLE_BINDING_DELETE" | "ROLE_BINDING_READ" | "SERVICE_KEY_CREATE" | "SERVICE_KEY_DELETE" | "SERVICE_KEY_READ" | "SPACE_CREATE" | "SPACE_DELETE" | "SPACE_READ" | "SPACE_UPDATE" | "TAG_CREATE" | "TAG_DELETE" | "TAG_READ" | "TAG_UPDATE" | "TRACE_VIEW_CREATE" | "TRACE_VIEW_DELETE" | "TRACE_VIEW_READ" | "TRACE_VIEW_UPDATE" | "USER_CREATE" | "USER_DELETE" | "USER_PERMISSION_UPDATE" | "USER_READ" | "USER_UPDATE";
+        Permission: "AI_PROVIDER_READ" | "ALYX_RUN" | "ANNOTATION_CONFIG_CREATE" | "ANNOTATION_CONFIG_DELETE" | "ANNOTATION_CONFIG_READ" | "ANNOTATION_CONFIG_UPDATE" | "CUSTOM_METRIC_CREATE" | "CUSTOM_METRIC_DELETE" | "CUSTOM_METRIC_READ" | "CUSTOM_METRIC_UPDATE" | "DASHBOARD_CREATE" | "DASHBOARD_DELETE" | "DASHBOARD_READ" | "DASHBOARD_UPDATE" | "DATASET_CREATE" | "DATASET_DELETE" | "DATASET_EXAMPLE_ANNOTATE" | "DATASET_EXAMPLE_CREATE" | "DATASET_EXAMPLE_DELETE" | "DATASET_EXAMPLE_READ" | "DATASET_EXAMPLE_UPDATE" | "DATASET_READ" | "DATASET_UPDATE" | "DATA_FABRIC_CONNECTOR_CREATE" | "DATA_FABRIC_CONNECTOR_DELETE" | "DATA_FABRIC_CONNECTOR_READ" | "DATA_FABRIC_CONNECTOR_UPDATE" | "EVALUATOR_CREATE" | "EVALUATOR_DELETE" | "EVALUATOR_READ" | "EVALUATOR_UPDATE" | "EXPERIMENT_CREATE" | "EXPERIMENT_DELETE" | "EXPERIMENT_EVAL_TASK_CREATE" | "EXPERIMENT_EVAL_TASK_DELETE" | "EXPERIMENT_EVAL_TASK_READ" | "EXPERIMENT_EVAL_TASK_UPDATE" | "EXPERIMENT_READ" | "EXPERIMENT_RUN_ANNOTATE" | "EXPERIMENT_RUN_READ" | "EXPERIMENT_UPDATE" | "FILE_IMPORT_CREATE" | "FILE_IMPORT_DELETE" | "FILE_IMPORT_READ" | "FILE_IMPORT_UPDATE" | "ML_MODEL_CREATE" | "ML_MODEL_DELETE" | "ML_MODEL_READ" | "ML_MODEL_UPDATE" | "MONITOR_CREATE" | "MONITOR_DELETE" | "MONITOR_READ" | "MONITOR_TRIGGER" | "MONITOR_UPDATE" | "ORGANIZATION_CREATE" | "ORGANIZATION_DELETE" | "ORGANIZATION_READ" | "ORGANIZATION_UPDATE" | "PLAYGROUND_RUN" | "PLAYGROUND_VIEW_CREATE" | "PLAYGROUND_VIEW_DELETE" | "PLAYGROUND_VIEW_READ" | "PLAYGROUND_VIEW_UPDATE" | "PROJECT_CREATE" | "PROJECT_DELETE" | "PROJECT_EVAL_TASK_CREATE" | "PROJECT_EVAL_TASK_DELETE" | "PROJECT_EVAL_TASK_READ" | "PROJECT_EVAL_TASK_UPDATE" | "PROJECT_READ" | "PROJECT_RESTRICT" | "PROJECT_SPAN_ANNOTATE" | "PROJECT_SPAN_CREATE" | "PROJECT_SPAN_DELETE" | "PROJECT_SPAN_READ" | "PROJECT_SPAN_UPDATE" | "PROJECT_UPDATE" | "PROMPT_CREATE" | "PROMPT_DELETE" | "PROMPT_OPTIMIZE_TASK_CREATE" | "PROMPT_OPTIMIZE_TASK_DELETE" | "PROMPT_OPTIMIZE_TASK_READ" | "PROMPT_OPTIMIZE_TASK_UPDATE" | "PROMPT_READ" | "PROMPT_UPDATE" | "QUEUE_CREATE" | "QUEUE_DELETE" | "QUEUE_READ" | "QUEUE_RECORD_ANNOTATE" | "QUEUE_RECORD_CREATE" | "QUEUE_RECORD_DELETE" | "QUEUE_RECORD_READ" | "QUEUE_RECORD_UPDATE" | "QUEUE_UPDATE" | "REMOTE_ENDPOINT_INTEGRATION_CREATE" | "REMOTE_ENDPOINT_INTEGRATION_DELETE" | "REMOTE_ENDPOINT_INTEGRATION_READ" | "REMOTE_ENDPOINT_INTEGRATION_UPDATE" | "ROLE_BINDING_CREATE" | "ROLE_BINDING_DELETE" | "ROLE_BINDING_READ" | "SERVICE_KEY_CREATE" | "SERVICE_KEY_DELETE" | "SERVICE_KEY_READ" | "SPACE_CREATE" | "SPACE_DELETE" | "SPACE_READ" | "SPACE_UPDATE" | "TAG_CREATE" | "TAG_DELETE" | "TAG_READ" | "TAG_UPDATE" | "TRACE_VIEW_CREATE" | "TRACE_VIEW_DELETE" | "TRACE_VIEW_READ" | "TRACE_VIEW_UPDATE" | "USER_CREATE" | "USER_DELETE" | "USER_PERMISSION_UPDATE" | "USER_READ" | "USER_UPDATE";
         /**
          * @description A project represents an LLM application and serves as the primary container for observability data. Each project collects traces and spans that capture the execution flow of your application, enabling you to debug issues, monitor latency, and analyze token usage.
          *     Projects belong to a space and provide a centralized view of your application's performance. Use projects to organize related traces, run experiments against datasets, and track improvements over time.
@@ -3921,7 +4051,9 @@ export interface components {
         };
         /**
          * @description A task is a typed, configurable unit of work that ties one or more evaluators
-         *     to a data source (project or dataset).
+         *     to a data source (project or dataset). `run_experiment` tasks additionally
+         *     carry a `run_configuration` that defines the LLM or evaluator settings for
+         *     each triggered run.
          */
         Task: {
             /** @description The unique identifier for the task */
@@ -3929,10 +4061,10 @@ export interface components {
             /** @description The name of the task */
             name: string;
             /**
-             * @description The task type: template_evaluation or code_evaluation
+             * @description The task type: template_evaluation, code_evaluation, or run_experiment
              * @enum {string}
              */
-            type: "template_evaluation" | "code_evaluation";
+            type: "template_evaluation" | "code_evaluation" | "run_experiment";
             /** @description The project global ID (base64). Present for project-based tasks. */
             project_id?: string | null;
             /** @description The dataset global ID (base64). Present for dataset-based tasks. */
@@ -3943,10 +4075,15 @@ export interface components {
             is_continuous: boolean;
             /** @description Task-level query filter applied to all data. */
             query_filter: string | null;
-            /** @description The evaluators attached to this task. */
+            /** @description The evaluators attached to this task. Empty for run_experiment tasks. */
             evaluators: components["schemas"]["TaskEvaluator"][];
             /** @description Experiment global IDs (base64) for dataset-based tasks. */
             experiment_ids: string[];
+            /**
+             * @description The run configuration for a `run_experiment` task. Present only when
+             *     `type` is `run_experiment`. Null for all other task types.
+             */
+            run_configuration?: Omit<components["schemas"]["RunConfiguration"], "experiment_type"> | null;
             /**
              * Format: date-time
              * @description When the task was last run.
@@ -3977,12 +4114,23 @@ export interface components {
                 [key: string]: string;
             } | null;
         };
-        /** @description A task run is an async job that executes the work defined on a task. */
+        /**
+         * @description A task run is an async job that executes the work defined on a task. Runs are
+         *     created by triggering an existing task (`POST /v2/tasks/{task_id}/trigger`).
+         *     For `run_experiment` tasks, `experiment_id` is populated after the experiment
+         *     is provisioned; poll `GET /v2/task-runs/{run_id}` until `status` reaches a
+         *     terminal state.
+         */
         TaskRun: {
             /** @description The unique identifier for the task run. */
             id: string;
             /** @description The parent task global ID (base64). */
             task_id: string;
+            /**
+             * @description Created experiment global ID (base64). Present only for `run_experiment`
+             *     task runs; null for all other task types.
+             */
+            experiment_id?: string | null;
             /**
              * @description The current status of the run.
              * @enum {string}
@@ -4000,12 +4148,12 @@ export interface components {
             run_finished_at: string | null;
             /**
              * Format: date-time
-             * @description Start of the data window evaluated.
+             * @description Start of the data window evaluated. Null for run_experiment runs.
              */
             data_start_time: string | null;
             /**
              * Format: date-time
-             * @description End of the data window evaluated.
+             * @description End of the data window evaluated. Null for run_experiment runs.
              */
             data_end_time: string | null;
             /** @description Number of successfully evaluated items. */
@@ -4021,6 +4169,65 @@ export interface components {
             created_at: string;
             /** @description The unique identifier for the user who triggered the run. */
             created_by_user_id: string | null;
+        };
+        /** @description Configuration for running an LLM prompt against each dataset example. */
+        LlmGenerationRunConfig: {
+            /**
+             * @description Discriminator. Must be `"llm_generation"`. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            experiment_type: "llm_generation";
+            /** @description AI integration global ID (base64). */
+            ai_integration_id: string;
+            /** @description Model name (e.g. `gpt-4o`). Falls back to the integration's default if omitted. */
+            model_name?: string;
+            /** @description Array of message objects (at least one). */
+            messages: components["schemas"]["LLMMessage"][];
+            input_variable_format: components["schemas"]["InputVariableFormat"];
+            invocation_parameters?: components["schemas"]["InvocationParams"];
+            /** @description Provider-specific parameters. Defaults to `{}` (no overrides) if omitted. */
+            provider_parameters?: Record<string, unknown>;
+            tool_config?: components["schemas"]["ToolConfig"];
+            /** @description Prompt version global ID (base64). Links to a Prompt Hub version for traceability. */
+            prompt_version_id?: string | null;
+        };
+        /**
+         * @description Experiment execution configuration for a `run_experiment` task. Exactly one
+         *     variant must be supplied, identified by `experiment_type`. All fields sit at
+         *     the top level alongside `experiment_type` (flat — no wrapper sub-object).
+         */
+        RunConfiguration: components["schemas"]["LlmGenerationRunConfig"] | components["schemas"]["TemplateEvaluationRunConfig"];
+        /** @description Configuration for running a template-based LLM evaluator against each dataset example. */
+        TemplateEvaluationRunConfig: {
+            /**
+             * @description Discriminator. Must be `"template_evaluation"`. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            experiment_type: "template_evaluation";
+            /** @description AI integration global ID (base64). The LLM that judges each example. */
+            ai_integration_id: string;
+            /** @description Model name (e.g. `gpt-4o`). Falls back to the integration's default if omitted. */
+            model_name?: string;
+            /**
+             * @description The evaluation prompt template. Use `{{variable}}` placeholders that map to dataset
+             *     column paths via `column_mapping`.
+             */
+            template: string;
+            /** @description Whether to ask the LLM to include a written explanation alongside the score/label. */
+            provide_explanation: boolean;
+            /** @description Map of choice label to numeric score (e.g. `{"relevant": 1, "irrelevant": 0}`). */
+            classification_choices?: {
+                [key: string]: number;
+            };
+            /** @description Maps template variable names to dataset column paths. */
+            column_mapping?: {
+                [key: string]: string;
+            };
+            /** @description EvaluatorVersion global ID (base64). Links this run to an Eval Hub evaluator version. */
+            evaluator_version_id?: string | null;
+            invocation_parameters?: components["schemas"]["InvocationParams"];
+            /** @description Provider-specific parameters. Defaults to `{}` (no overrides) if omitted. */
+            provider_parameters?: Record<string, unknown>;
         };
         /**
          * @description Discriminator value identifying AWS Bedrock provider metadata.
@@ -4054,10 +4261,7 @@ export interface components {
          */
         OptimizationDirection: "maximize" | "minimize" | "none";
         ContinuousAnnotationConfig: components["schemas"]["AnnotationConfigBase"] & {
-            /**
-             * @description The type of the annotation config
-             * @enum {string}
-             */
+            /** @enum {string} */
             type: "continuous";
             /**
              * Format: double
@@ -4087,10 +4291,7 @@ export interface components {
             score?: number;
         };
         CategoricalAnnotationConfig: components["schemas"]["AnnotationConfigBase"] & {
-            /**
-             * @description The type of the annotation config
-             * @enum {string}
-             */
+            /** @enum {string} */
             type: "categorical";
             /** @description An array of categorical annotation values */
             values: components["schemas"]["CategoricalAnnotationValue"][];
@@ -4103,10 +4304,7 @@ export interface components {
             type: "categorical";
         };
         FreeformAnnotationConfig: components["schemas"]["AnnotationConfigBase"] & {
-            /**
-             * @description The type of the annotation config
-             * @enum {string}
-             */
+            /** @enum {string} */
             type: "freeform";
         } & {
             /**
@@ -4123,10 +4321,7 @@ export interface components {
             space_id: string;
         };
         ContinuousAnnotationConfigCreate: components["schemas"]["AnnotationConfigCreateBase"] & {
-            /**
-             * @description The type of the annotation config
-             * @enum {string}
-             */
+            /** @enum {string} */
             annotation_config_type: "continuous";
             /**
              * Format: double
@@ -4147,10 +4342,7 @@ export interface components {
             annotation_config_type: "continuous";
         };
         CategoricalAnnotationConfigCreate: components["schemas"]["AnnotationConfigCreateBase"] & {
-            /**
-             * @description The type of the annotation config
-             * @enum {string}
-             */
+            /** @enum {string} */
             annotation_config_type: "categorical";
             /** @description An array of categorical annotation values */
             values: components["schemas"]["CategoricalAnnotationValue"][];
@@ -4163,10 +4355,7 @@ export interface components {
             annotation_config_type: "categorical";
         };
         FreeformAnnotationConfigCreate: components["schemas"]["AnnotationConfigCreateBase"] & {
-            /**
-             * @description The type of the annotation config
-             * @enum {string}
-             */
+            /** @enum {string} */
             annotation_config_type: "freeform";
         } & {
             /**
@@ -4243,7 +4432,62 @@ export interface components {
             example_ids: string[];
         };
         /** @enum {string} */
-        SpaceRoleAssignmentType: "builtin" | "custom";
+        OrganizationRoleAssignmentType: "predefined" | "custom";
+        /**
+         * @description Organization-level role for the user.
+         *     - `admin`: Full access to the organization and its resources.
+         *     - `member`: Standard access to the organization.
+         *     - `read-only`: Read-only access to the organization.
+         *     - `annotator`: Limited access for annotation tasks only.
+         * @enum {string}
+         */
+        OrganizationRole: "admin" | "member" | "read-only" | "annotator";
+        /** @description A predefined organization role assignment. */
+        OrganizationPredefinedRoleAssignment: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "predefined";
+            name: components["schemas"]["OrganizationRole"];
+        };
+        /** @description A custom RBAC role assignment. */
+        OrganizationCustomRoleAssignment: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "custom";
+            /** @description The unique identifier of the custom RBAC role. */
+            id: components["schemas"]["Id"];
+            /**
+             * @description Human-readable name of the custom role.
+             *     Returned in responses only; ignored on input.
+             */
+            readonly name?: string;
+        };
+        /**
+         * @description A role assignment for an organization membership. Discriminated by `type`:
+         *     - `predefined`: one of the predefined roles (`admin`, `member`, `read-only`, `annotator`)
+         *     - `custom`: a custom RBAC role identified by its ID
+         */
+        OrganizationRoleAssignment: components["schemas"]["OrganizationPredefinedRoleAssignment"] | components["schemas"]["OrganizationCustomRoleAssignment"];
+        OrganizationMembershipInput: {
+            /** @description The unique identifier of the user to add */
+            user_id: components["schemas"]["Id"];
+            role: components["schemas"]["OrganizationRoleAssignment"];
+        };
+        OrganizationMembership: {
+            /** @description Unique identifier for the membership record */
+            id: components["schemas"]["Id"];
+            /** @description The unique identifier of the user */
+            user_id: components["schemas"]["Id"];
+            /** @description The unique identifier of the organization */
+            organization_id: components["schemas"]["Id"];
+            role: components["schemas"]["OrganizationRoleAssignment"];
+        };
+        /** @enum {string} */
+        SpaceRoleAssignmentType: "predefined" | "custom";
         /**
          * @description Space-level role for the user.
          *     - `admin`: Full access to the space and its resources.
@@ -4253,19 +4497,19 @@ export interface components {
          * @enum {string}
          */
         UserSpaceRole: "admin" | "member" | "read-only" | "annotator";
-        /** @description A builtin (predefined) space role assignment. */
-        BuiltinRoleAssignment: {
+        /** @description A predefined space role assignment. */
+        PredefinedRoleAssignment: {
             /**
-             * @description Discriminator selecting the builtin variant. Must be `builtin`. (enum property replaced by openapi-typescript)
+             * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            type: "builtin";
+            type: "predefined";
             name: components["schemas"]["UserSpaceRole"];
         };
         /** @description A custom RBAC role assignment. */
         CustomRoleAssignment: {
             /**
-             * @description Discriminator selecting the custom variant. Must be `custom`. (enum property replaced by openapi-typescript)
+             * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
             type: "custom";
@@ -4279,19 +4523,19 @@ export interface components {
         };
         /**
          * @description A role assignment for a space membership. Discriminated by `type`:
-         *     - `builtin`: one of the predefined roles (`admin`, `member`, `read-only`, `annotator`)
+         *     - `predefined`: one of the predefined roles (`admin`, `member`, `read-only`, `annotator`)
          *     - `custom`: a custom RBAC role identified by its ID
          */
-        SpaceRoleAssignment: components["schemas"]["BuiltinRoleAssignment"] | components["schemas"]["CustomRoleAssignment"];
+        SpaceRoleAssignment: components["schemas"]["PredefinedRoleAssignment"] | components["schemas"]["CustomRoleAssignment"];
         /** @enum {string} */
-        UserRoleAssignmentType: "builtin" | "custom";
-        /** @description A builtin (predefined) account-level role assignment. */
-        BuiltinUserRoleAssignment: {
+        UserRoleAssignmentType: "predefined" | "custom";
+        /** @description A predefined account-level role assignment. */
+        PredefinedUserRoleAssignment: {
             /**
-             * @description Discriminator identifying this as a builtin role assignment. Must be `builtin`. (enum property replaced by openapi-typescript)
+             * @description Discriminator identifying this as a predefined role assignment. Must be `predefined`. (enum property replaced by openapi-typescript)
              * @enum {string}
              */
-            type: "builtin";
+            type: "predefined";
             name: components["schemas"]["UserRole"];
         };
         /** @description A custom RBAC role assignment. */
@@ -4311,12 +4555,216 @@ export interface components {
         };
         /**
          * @description An account-level role assignment. Discriminated by `type`:
-         *     - `builtin`: one of the predefined roles (`admin`, `member`, `annotator`)
+         *     - `predefined`: one of the predefined roles (`admin`, `member`, `annotator`)
          *     - `custom`: a custom RBAC role identified by its ID
          *
          *     Note: `custom` role assignments are not yet supported and are reserved for future use.
          */
-        UserRoleAssignment: components["schemas"]["BuiltinUserRoleAssignment"] | components["schemas"]["CustomUserRoleAssignment"];
+        UserRoleAssignment: components["schemas"]["PredefinedUserRoleAssignment"] | components["schemas"]["CustomUserRoleAssignment"];
+        BaseEvaluationTaskRequest: {
+            /** @description Task name */
+            name: string;
+            /**
+             * @description Task type discriminator. Narrowed to a specific enum value by each
+             *     concrete variant (`CreateTemplateEvaluationTaskRequest`, etc.).
+             */
+            type: string;
+            /**
+             * @description Project global ID (base64). Required when `dataset_id` is not provided.
+             *     Mutually exclusive with `dataset_id`.
+             */
+            project_id?: string;
+            /**
+             * @description Dataset global ID (base64). Required when `project_id` is not provided.
+             *     Mutually exclusive with `project_id`.
+             */
+            dataset_id?: string;
+            /**
+             * @description Experiment global IDs (base64). Required when `dataset_id` is provided
+             *     (at least one entry). Must be omitted or empty for project-based tasks.
+             */
+            experiment_ids?: string[];
+            /** @description Sampling rate between 0 and 1. Only supported on project-based tasks. */
+            sampling_rate?: number;
+            /**
+             * @description Whether the task runs continuously. Only supported on project-based tasks.
+             *     Must be `false` or omitted for dataset-based tasks.
+             */
+            is_continuous?: boolean;
+            /** @description Task-level query filter applied to all evaluated data. */
+            query_filter?: string;
+            /** @description Evaluators to attach (at least one required). */
+            evaluators: {
+                /** @description Evaluator global ID (base64). Duplicates are not allowed. */
+                evaluator_id: string;
+                /** @description Per-evaluator query filter. Combined with the task-level filter (AND). */
+                query_filter?: string;
+                /** @description Maps evaluator template variable names to data source column names. */
+                column_mappings?: {
+                    [key: string]: string;
+                };
+            }[];
+        };
+        /**
+         * @description Request body for creating a `template_evaluation` task. Requires `evaluators`
+         *     and exactly one of `project_id` or `dataset_id`. When `dataset_id` is provided,
+         *     `experiment_ids` must contain at least one entry.
+         */
+        CreateTemplateEvaluationTaskRequest: components["schemas"]["BaseEvaluationTaskRequest"] & {
+            /**
+             * @description Task type discriminator. Must be `"template_evaluation"`.
+             * @enum {string}
+             */
+            type: "template_evaluation";
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "template_evaluation";
+        };
+        /**
+         * @description Request body for creating a `code_evaluation` task. Requires `evaluators`
+         *     and exactly one of `project_id` or `dataset_id`. When `dataset_id` is provided,
+         *     `experiment_ids` must contain at least one entry.
+         */
+        CreateCodeEvaluationTaskRequest: components["schemas"]["BaseEvaluationTaskRequest"] & {
+            /**
+             * @description Task type discriminator. Must be `"code_evaluation"`.
+             * @enum {string}
+             */
+            type: "code_evaluation";
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "code_evaluation";
+        };
+        /**
+         * @description Request body for creating a `run_experiment` task. Requires `dataset_id` and
+         *     `run_configuration`. Does not support continuous execution — runs are triggered
+         *     explicitly via `POST /v2/tasks/{task_id}/trigger`.
+         */
+        CreateRunExperimentTaskRequest: {
+            /** @description Task name */
+            name: string;
+            /**
+             * @description Task type discriminator. Must be `"run_experiment"`. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "run_experiment";
+            /** @description Dataset global ID (base64). Required for `run_experiment` tasks. */
+            dataset_id: string;
+            run_configuration: components["schemas"]["RunConfiguration"];
+        };
+        /**
+         * @description PATCH body for `template_evaluation` and `code_evaluation` tasks. The two
+         *     types share the same updatable shape; the server derives the task type
+         *     from the URL's task record. At least one field must be provided.
+         */
+        UpdateEvaluationTaskRequest: {
+            /** @description New task name. */
+            name?: string;
+            /** @description Sampling rate between 0 and 1. Only applicable for project-based tasks. */
+            sampling_rate?: number;
+            /** @description Whether the task runs continuously. Only applicable for project-based tasks. */
+            is_continuous?: boolean;
+            /** @description Task-level query filter. Pass `null` to clear. */
+            query_filter?: string | null;
+            /** @description Replaces the entire evaluator list. At least one evaluator is required when provided. */
+            evaluators?: {
+                /** @description Evaluator global ID (base64). Duplicates are not allowed. */
+                evaluator_id: string;
+                /** @description Per-evaluator query filter. Combined with the task-level filter (AND). */
+                query_filter?: string;
+                /** @description Maps evaluator template variable names to data source column names. */
+                column_mappings?: {
+                    [key: string]: string;
+                };
+            }[];
+        };
+        /**
+         * @description PATCH body for `run_experiment` tasks. The server derives the task type
+         *     from the URL's task record. At least one of `name` or `run_configuration`
+         *     must be provided. When `run_configuration` is provided the stored config
+         *     is fully replaced (existing configs are marked inactive and the new config
+         *     is inserted atomically in a transaction).
+         */
+        UpdateRunExperimentTaskRequest: {
+            /** @description New task name. */
+            name?: string;
+            run_configuration?: components["schemas"]["RunConfiguration"];
+        };
+        /**
+         * @description Trigger request for `template_evaluation` or `code_evaluation` tasks.
+         *     `data_start_time` and `data_end_time` together must span no more than 30 days.
+         *     `data_start_time` must be before `data_end_time`.
+         */
+        TriggerEvaluationTaskRunRequest: {
+            /**
+             * Format: date-time
+             * @description ISO 8601 start of the data window to evaluate. If omitted, defaults to
+             *     the task's last run time (or 7 days ago on first run).
+             */
+            data_start_time?: string;
+            /**
+             * Format: date-time
+             * @description ISO 8601 end of the data window to evaluate. If omitted, defaults to now.
+             */
+            data_end_time?: string;
+            /** @description Maximum number of spans to process (default 10000). */
+            max_spans?: number;
+            /**
+             * @description Whether to re-evaluate data that already has evaluation labels
+             *     (default `false`).
+             */
+            override_evaluations?: boolean;
+            /**
+             * @description Experiment global IDs (base64) to run against. Only for dataset-based
+             *     `template_evaluation` / `code_evaluation` tasks.
+             */
+            experiment_ids?: string[];
+        };
+        /**
+         * @description Trigger request for `run_experiment` tasks. `example_ids` and `max_examples`
+         *     are mutually exclusive; at most one may be provided.
+         */
+        TriggerRunExperimentTaskRunRequest: {
+            /**
+             * @description Display name for the experiment to be created. Must be unique within
+             *     the dataset.
+             */
+            experiment_name: string;
+            /**
+             * @description Dataset version global ID (base64). Defaults to the latest version
+             *     when omitted.
+             */
+            dataset_version_id?: string;
+            /**
+             * @description Specific example IDs to run against. Mutually exclusive with
+             *     `max_examples`. When both are omitted, all examples are used.
+             */
+            example_ids?: string[];
+            /**
+             * @description Maximum number of examples to run (dataset order). Mutually exclusive
+             *     with `example_ids`. When both are omitted, all examples are used.
+             */
+            max_examples?: number;
+            /**
+             * @description Arbitrary key-value metadata. Providing this enables tracing for
+             *     the run.
+             */
+            tracing_metadata?: {
+                [key: string]: string;
+            };
+            /**
+             * @description Task global IDs (base64) of evaluation tasks to trigger after the
+             *     experiment run completes. Supported for all `run_experiment`
+             *     experiment types.
+             */
+            evaluation_task_ids?: string[];
+        };
     };
     responses: {
         /** @description An AI integration object */
@@ -4866,7 +5314,7 @@ export interface components {
             };
             content?: never;
         };
-        /** @description Returns a list of API keys for the authenticated user. The raw key secret is never returned. */
+        /** @description Returns a list of API keys matching the request filters. The raw key secret is never returned. */
         ApiKeyList: {
             headers: {
                 [name: string]: unknown;
@@ -4905,7 +5353,7 @@ export interface components {
                  *     }
                  */
                 "application/json": {
-                    /** @description API keys owned by the authenticated user. */
+                    /** @description API keys matching the request filters. */
                     api_keys: components["schemas"]["ApiKey"][];
                     /** @description Pagination metadata for cursor-based navigation. */
                     pagination: components["schemas"]["PaginationMetadata"];
@@ -5163,34 +5611,15 @@ export interface components {
                 };
             };
         };
-        /** @description Annotations successfully written to dataset examples */
+        /**
+         * @description Annotations written successfully.
+         *     The annotations have been accepted and will be written. Visibility in read queries may lag by a short interval.
+         */
         DatasetExamplesAnnotated: {
             headers: {
                 [name: string]: unknown;
             };
-            content: {
-                /**
-                 * @example {
-                 *       "results": [
-                 *         {
-                 *           "record_id": "ex_abc",
-                 *           "annotations": [
-                 *             {
-                 *               "name": "quality",
-                 *               "score": 0.8,
-                 *               "annotator": {
-                 *                 "id": "usr_123",
-                 *                 "email": "reviewer@example.com"
-                 *               },
-                 *               "updated_at": "2024-01-08T10:00:00Z"
-                 *             }
-                 *           ]
-                 *         }
-                 *       ]
-                 *     }
-                 */
-                "application/json": components["schemas"]["AnnotationBatchResult"];
-            };
+            content?: never;
         };
         /** @description Evaluator deleted successfully */
         EvaluatorDeleted: {
@@ -5527,34 +5956,15 @@ export interface components {
                 };
             };
         };
-        /** @description Annotations successfully written to experiment runs */
+        /**
+         * @description Annotations written successfully.
+         *     The annotations have been accepted and will be written. Visibility in read queries may lag by a short interval.
+         */
         ExperimentRunsAnnotated: {
             headers: {
                 [name: string]: unknown;
             };
-            content: {
-                /**
-                 * @example {
-                 *       "results": [
-                 *         {
-                 *           "record_id": "run_abc",
-                 *           "annotations": [
-                 *             {
-                 *               "name": "quality",
-                 *               "label": "good",
-                 *               "annotator": {
-                 *                 "id": "usr_123",
-                 *                 "email": "reviewer@example.com"
-                 *               },
-                 *               "updated_at": "2024-01-08T10:00:00Z"
-                 *             }
-                 *           ]
-                 *         }
-                 *       ]
-                 *     }
-                 */
-                "application/json": components["schemas"]["AnnotationBatchResult"];
-            };
+            content?: never;
         };
         OrganizationResponse: {
             headers: {
@@ -5598,6 +6008,33 @@ export interface components {
                 };
             };
         };
+        /** @description User successfully added to the organization */
+        OrganizationUserAdded: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "QWNjb3VudE9yZ2FuaXphdGlvbk1lbWJlcjox",
+                 *       "user_id": "VXNlcjoxMjM0NQ==",
+                 *       "organization_id": "QWNjb3VudE9yZ2FuaXphdGlvbjox",
+                 *       "role": {
+                 *         "type": "predefined",
+                 *         "name": "member"
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["OrganizationMembership"];
+            };
+        };
+        /** @description User successfully removed from the organization */
+        OrganizationUserRemoved: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
         /** @description An account user object */
         UserResponse: {
             headers: {
@@ -5612,7 +6049,7 @@ export interface components {
                  *       "created_at": "2024-01-01T12:00:00Z",
                  *       "status": "active",
                  *       "role": {
-                 *         "type": "builtin",
+                 *         "type": "predefined",
                  *         "name": "member"
                  *       },
                  *       "is_developer": false
@@ -5637,7 +6074,7 @@ export interface components {
                  *           "created_at": "2024-01-01T12:00:00Z",
                  *           "status": "active",
                  *           "role": {
-                 *             "type": "builtin",
+                 *             "type": "predefined",
                  *             "name": "member"
                  *           },
                  *           "is_developer": true
@@ -5649,7 +6086,7 @@ export interface components {
                  *           "created_at": "2024-01-02T12:00:00Z",
                  *           "status": "invited",
                  *           "role": {
-                 *             "type": "builtin",
+                 *             "type": "predefined",
                  *             "name": "admin"
                  *           },
                  *           "is_developer": false
@@ -5688,7 +6125,7 @@ export interface components {
                  *       "name": "Jane Smith",
                  *       "email": "jane.smith@example.com",
                  *       "role": {
-                 *         "type": "builtin",
+                 *         "type": "predefined",
                  *         "name": "member"
                  *       },
                  *       "status": "invited",
@@ -6278,10 +6715,7 @@ export interface components {
                 };
             };
         };
-        /**
-         * @description Annotations submitted successfully.
-         *     The request was validated and the writes were submitted to the database layer. Changes may not be immediately visible in queries.
-         */
+        /** @description Annotations accepted. Writes are idempotent; retry on failure is safe. */
         SpansAnnotated: {
             headers: {
                 [name: string]: unknown;
@@ -6857,10 +7291,10 @@ export interface components {
          */
         TaskRunStatusQueryParam: "pending" | "running" | "completed" | "failed" | "cancelled";
         /**
-         * @description Filter by task type: template_evaluation or code_evaluation
+         * @description Filter by task type: template_evaluation, code_evaluation, or run_experiment
          * @example template_evaluation
          */
-        TaskTypeQueryParam: "template_evaluation" | "code_evaluation";
+        TaskTypeQueryParam: "template_evaluation" | "code_evaluation" | "run_experiment";
         /**
          * @description The unique identifier of the user
          * @example VXNlcjoxMjM0NQ==
@@ -6882,6 +7316,14 @@ export interface components {
          * @example pv_12345
          */
         VersionIdQueryParam: components["schemas"]["Id"];
+        /**
+         * @description Filter API keys by the user who created them (base64 global ID).
+         *     When used with `space_id`, filters service keys by creator — available to any user with space access.
+         *     When used without `space_id`, filters user keys by creator — account admins only (non-admins receive `403`).
+         *     Can be combined with `key_type` to further narrow results by key type.
+         * @example VXNlcjoxMjM0NQ==
+         */
+        UserIdQueryParam: components["schemas"]["Id"];
         /**
          * @description The unique identifier of the organization
          * @example org_12345
@@ -7377,6 +7819,21 @@ export interface components {
                 };
             };
         };
+        /** @description Body containing the user to add to the organization */
+        AddOrganizationUserRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "user_id": "VXNlcjoxMjM0NQ==",
+                 *       "role": {
+                 *         "type": "predefined",
+                 *         "name": "member"
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["OrganizationMembershipInput"];
+            };
+        };
         /** @description Body containing project creation parameters */
         CreateProjectRequestBody: {
             content: {
@@ -7648,7 +8105,7 @@ export interface components {
                  *             {
                  *               "name": "relevance",
                  *               "label": "good",
-                 *               "score": 1.5
+                 *               "score": 0.9
                  *             }
                  *           ]
                  *         }
@@ -7658,124 +8115,74 @@ export interface components {
                 "application/json": components["schemas"]["AnnotateSpansRequestBody"];
             };
         };
-        /** @description Body containing task creation parameters */
+        /**
+         * @description Body containing task creation parameters. The `type` field is the discriminator.
+         *
+         *     | `type` | Schema |
+         *     |---|---|
+         *     | `template_evaluation` | `CreateTemplateEvaluationTaskRequest` |
+         *     | `code_evaluation` | `CreateCodeEvaluationTaskRequest` |
+         *     | `run_experiment` | `CreateRunExperimentTaskRequest` |
+         *
+         *     `run_experiment` tasks do not run continuously — they must be triggered
+         *     explicitly via `POST /v2/tasks/{task_id}/trigger` each time.
+         *
+         *     For `template_evaluation` / `code_evaluation` tasks, exactly one of `project_id`
+         *     or `dataset_id` must be provided. When `dataset_id` is provided, `experiment_ids`
+         *     must contain at least one entry. `is_continuous` and `sampling_rate` are only
+         *     supported for project-based tasks.
+         */
         CreateTaskRequestBody: {
             content: {
-                /**
-                 * @example {
-                 *       "name": "Production Hallucination Check",
-                 *       "type": "template_evaluation",
-                 *       "project_id": "TW9kZWw6MTIzOmFCY0Q=",
-                 *       "sampling_rate": 1,
-                 *       "is_continuous": true,
-                 *       "query_filter": "metadata.environment = 'production'",
-                 *       "evaluators": [
-                 *         {
-                 *           "evaluator_id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
-                 *           "column_mappings": {
-                 *             "input": "attributes.input.value",
-                 *             "output": "attributes.output.value"
-                 *           }
-                 *         }
-                 *       ]
-                 *     }
-                 */
-                "application/json": {
-                    /** @description Task name */
-                    name: string;
-                    /**
-                     * @description Task type
-                     * @enum {string}
-                     */
-                    type: "template_evaluation" | "code_evaluation";
-                    /** @description Project global ID (base64). Required if dataset_id is not provided. Mutually exclusive with dataset_id. */
-                    project_id?: string;
-                    /** @description Dataset global ID (base64). Required if project_id is not provided. Mutually exclusive with project_id. */
-                    dataset_id?: string;
-                    /** @description Experiment global IDs (base64). Required when dataset_id is provided (at least one). Must be omitted or empty for project-based tasks. */
-                    experiment_ids?: string[];
-                    /** @description Sampling rate between 0 and 1. Only supported on project tasks. */
-                    sampling_rate?: number;
-                    /** @description Whether the task runs continuously. Must be true or false for project-based tasks. Must be false or omitted for dataset-based tasks. */
-                    is_continuous?: boolean;
-                    /** @description Task-level query filter applied to all data. */
-                    query_filter?: string;
-                    /** @description Evaluators to attach (at least one required). */
-                    evaluators: {
-                        /** @description Evaluator global ID (base64). Duplicates are not allowed. */
-                        evaluator_id: string;
-                        /** @description Per-evaluator query filter. Combined with the task-level filter (AND). */
-                        query_filter?: string;
-                        /** @description Maps evaluator template variable names to data source column names. */
-                        column_mappings?: {
-                            [key: string]: string;
-                        };
-                    }[];
-                };
+                "application/json": components["schemas"]["CreateTemplateEvaluationTaskRequest"] | components["schemas"]["CreateCodeEvaluationTaskRequest"] | components["schemas"]["CreateRunExperimentTaskRequest"];
             };
         };
-        /** @description Body containing task run trigger parameters */
+        /**
+         * @description Trigger body for `POST /v2/tasks/{task_id}/trigger`. The server derives
+         *     the task type from the URL's task record and selects the appropriate
+         *     schema; the body itself does not carry a `task_type` field.
+         *
+         *     | Task type | Schema |
+         *     |---|---|
+         *     | `template_evaluation` | `TriggerEvaluationTaskRunRequest` |
+         *     | `code_evaluation` | `TriggerEvaluationTaskRunRequest` |
+         *     | `run_experiment` | `TriggerRunExperimentTaskRunRequest` |
+         *
+         *     Sending a field that is not valid for the resolved task type returns 400.
+         *     For `template_evaluation` and `code_evaluation` tasks all trigger fields
+         *     are optional — an empty body is valid and uses server defaults.
+         */
         TriggerTaskRunRequestBody: {
             content: {
-                /**
-                 * @example {
-                 *       "data_start_time": "2026-03-01T00:00:00Z",
-                 *       "data_end_time": "2026-03-07T00:00:00Z",
-                 *       "max_spans": 5000,
-                 *       "override_evaluations": false
-                 *     }
-                 */
-                "application/json": {
-                    /**
-                     * Format: date-time
-                     * @description ISO 8601 start of the data window to evaluate.
-                     */
-                    data_start_time?: string;
-                    /**
-                     * Format: date-time
-                     * @description ISO 8601 end of the data window to evaluate. If omitted, defaults to now.
-                     */
-                    data_end_time?: string;
-                    /** @description Maximum number of spans to process (default 10000). */
-                    max_spans?: number;
-                    /** @description Whether to re-evaluate data that already has evaluation labels (default false). */
-                    override_evaluations?: boolean;
-                    /** @description Experiment global IDs (base64) to run against. Only applicable for dataset-based tasks. */
-                    experiment_ids?: string[];
-                };
+                "application/json": components["schemas"]["TriggerEvaluationTaskRunRequest"] | components["schemas"]["TriggerRunExperimentTaskRunRequest"];
             };
         };
-        /** @description Body containing task update parameters */
+        /**
+         * @description PATCH body for `PATCH /v2/tasks/{task_id}`. The server derives the task
+         *     type from the URL's task record and selects the appropriate schema; the
+         *     body itself does not carry a `type` field.
+         *
+         *     | Task type | Schema |
+         *     |---|---|
+         *     | `template_evaluation` | `UpdateEvaluationTaskRequest` |
+         *     | `code_evaluation` | `UpdateEvaluationTaskRequest` |
+         *     | `run_experiment` | `UpdateRunExperimentTaskRequest` |
+         *
+         *     For `template_evaluation` and `code_evaluation` tasks, at least one of
+         *     `name`, `sampling_rate`, `is_continuous`, `query_filter`, or `evaluators`
+         *     must be provided.
+         *
+         *     For `run_experiment` tasks, at least one of `name` or `run_configuration`
+         *     must be provided. When `run_configuration` is provided the stored config
+         *     is atomically replaced.
+         *
+         *     Sending a field that is not valid for the resolved task type returns 400
+         *     (e.g. `evaluators` on a `run_experiment` task, or `run_configuration` on
+         *     an evaluation task).
+         */
         UpdateTaskRequestBody: {
             content: {
-                /**
-                 * @example {
-                 *       "name": "Updated Task Name",
-                 *       "sampling_rate": 0.5,
-                 *       "query_filter": "metadata.environment = 'staging'"
-                 *     }
-                 */
-                "application/json": {
-                    /** @description New task name */
-                    name?: string;
-                    /** @description Sampling rate between 0 and 1. Only applicable for project-based tasks. */
-                    sampling_rate?: number;
-                    /** @description Whether the task runs continuously. Only applicable for project-based tasks. */
-                    is_continuous?: boolean;
-                    /** @description Task-level query filter applied to all data. Pass null to clear. */
-                    query_filter?: string | null;
-                    /** @description Replaces the entire evaluator list. At least one evaluator is required when provided. */
-                    evaluators?: {
-                        /** @description Evaluator global ID (base64). Duplicates are not allowed. */
-                        evaluator_id: string;
-                        /** @description Per-evaluator query filter. Combined with the task-level filter (AND). */
-                        query_filter?: string;
-                        /** @description Maps evaluator template variable names to data source column names. */
-                        column_mappings?: {
-                            [key: string]: string;
-                        };
-                    }[];
-                };
+                "application/json": components["schemas"]["UpdateEvaluationTaskRequest"] | components["schemas"]["UpdateRunExperimentTaskRequest"];
             };
         };
         /** @description Body containing user creation parameters and invite control. */
@@ -8336,6 +8743,19 @@ export interface operations {
                  * @example active
                  */
                 status?: components["parameters"]["ApiKeyStatusQueryParam"];
+                /**
+                 * @description Filter search results to a particular space ID
+                 * @example U3BhY2U6MTIzNDU=
+                 */
+                space_id?: components["parameters"]["SpaceIdQueryParam"];
+                /**
+                 * @description Filter API keys by the user who created them (base64 global ID).
+                 *     When used with `space_id`, filters service keys by creator — available to any user with space access.
+                 *     When used without `space_id`, filters user keys by creator — account admins only (non-admins receive `403`).
+                 *     Can be combined with `key_type` to further narrow results by key type.
+                 * @example VXNlcjoxMjM0NQ==
+                 */
+                user_id?: components["parameters"]["UserIdQueryParam"];
                 /** @description Maximum items to return */
                 limit?: components["parameters"]["LimitQueryParamMax100"];
                 /**
@@ -8355,7 +8775,7 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
-            422: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -8373,7 +8793,6 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
-            422: components["responses"]["BadRequest"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -8465,7 +8884,6 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
-            422: components["responses"]["BadRequest"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -8506,7 +8924,6 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
-            422: components["responses"]["BadRequest"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -8530,7 +8947,6 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
-            422: components["responses"]["BadRequest"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -8562,7 +8978,6 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
-            422: components["responses"]["BadRequest"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -8592,7 +9007,6 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
-            422: components["responses"]["BadRequest"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -8623,7 +9037,6 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
-            422: components["responses"]["BadRequest"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -8642,7 +9055,7 @@ export interface operations {
         };
         requestBody: components["requestBodies"]["AnnotateDatasetExamplesRequestBody"];
         responses: {
-            200: components["responses"]["DatasetExamplesAnnotated"];
+            202: components["responses"]["DatasetExamplesAnnotated"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
@@ -8902,7 +9315,6 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
-            422: components["responses"]["BadRequest"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -8921,7 +9333,6 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
-            422: components["responses"]["BadRequest"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -8943,9 +9354,7 @@ export interface operations {
             200: components["responses"]["Experiment"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
-            422: components["responses"]["BadRequest"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -8969,7 +9378,6 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
-            422: components["responses"]["BadRequest"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -8996,7 +9404,6 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
-            422: components["responses"]["BadRequest"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -9015,9 +9422,10 @@ export interface operations {
         };
         requestBody: components["requestBodies"]["AnnotateExperimentRunsRequestBody"];
         responses: {
-            200: components["responses"]["ExperimentRunsAnnotated"];
+            202: components["responses"]["ExperimentRunsAnnotated"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
@@ -9142,6 +9550,57 @@ export interface operations {
             429: components["responses"]["RateLimitExceeded"];
         };
     };
+    organizations_add_user: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the organization
+                 * @example org_12345
+                 */
+                org_id: components["parameters"]["OrgIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["AddOrganizationUserRequestBody"];
+        responses: {
+            200: components["responses"]["OrganizationUserAdded"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    organizations_remove_user: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique identifier of the organization
+                 * @example org_12345
+                 */
+                org_id: components["parameters"]["OrgIdPathParam"];
+                /**
+                 * @description The unique identifier of the user
+                 * @example VXNlcjoxMjM0NQ==
+                 */
+                user_id: components["parameters"]["UserIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: components["responses"]["OrganizationUserRemoved"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
     projects_list: {
         parameters: {
             query?: {
@@ -9247,7 +9706,6 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
-            422: components["responses"]["BadRequest"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -9342,7 +9800,6 @@ export interface operations {
             200: components["responses"]["PromptWithVersion"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
@@ -9365,7 +9822,6 @@ export interface operations {
             204: components["responses"]["PromptDeleted"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
@@ -9388,7 +9844,6 @@ export interface operations {
             200: components["responses"]["Prompt"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
@@ -9941,7 +10396,7 @@ export interface operations {
         };
         requestBody: components["requestBodies"]["AddSpaceUserRequestBody"];
         responses: {
-            201: components["responses"]["SpaceUserAdded"];
+            200: components["responses"]["SpaceUserAdded"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
@@ -10116,8 +10571,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Invitation resend accepted */
-            202: {
+            /** @description Invitation resend accepted (no content) */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -10255,7 +10710,7 @@ export interface operations {
                  */
                 dataset_id?: components["parameters"]["DatasetIdQueryParam"];
                 /**
-                 * @description Filter by task type: template_evaluation or code_evaluation
+                 * @description Filter by task type: template_evaluation, code_evaluation, or run_experiment
                  * @example template_evaluation
                  */
                 type?: components["parameters"]["TaskTypeQueryParam"];
@@ -10296,7 +10751,6 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
-            422: components["responses"]["BadRequest"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -10318,7 +10772,6 @@ export interface operations {
             200: components["responses"]["Task"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
@@ -10426,6 +10879,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };

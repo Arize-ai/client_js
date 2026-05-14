@@ -6,7 +6,7 @@ import { handleApiError } from "../errors";
 import { transformSpace } from "./utils";
 
 export type UpdateSpaceParams = WithClient<{
-  /** Space ID (e.g. `"spc_abc123"`) or space name. */
+  /** Space ID (e.g. `"U3BhY2U6YWJjMTIz"`) or space name. */
   space: string;
   name?: string;
   description?: string;

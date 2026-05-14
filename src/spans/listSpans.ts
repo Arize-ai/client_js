@@ -20,8 +20,8 @@ export type ListSpansParams = WithClient<
      * The space name or ID. Required when `project` is a name.
      */
     space?: string;
-    startTime?: string;
-    endTime?: string;
+    startTime?: Date;
+    endTime?: Date;
     filter?: string;
   }
 >;
@@ -32,8 +32,8 @@ export type ListSpansParams = WithClient<
  * @param client - An optional ArizeClient instance to use for the request.
  * @param project - The project name or ID to list spans for.
  * @param space - The space name or ID. Required when `project` is a name.
- * @param startTime - An optional ISO 8601 timestamp to filter spans starting at or after this time. Defaults to 1 week ago.
- * @param endTime - An optional ISO 8601 timestamp to filter spans starting before this time. Defaults to the current time.
+ * @param startTime - An optional Date to filter spans starting at or after this time. Defaults to 1 week ago.
+ * @param endTime - An optional Date to filter spans starting before this time. Defaults to the current time.
  * @param filter - An optional filter expression using SQL-like syntax (e.g., `status_code = 'ERROR'`).
  * @param limit - An optional limit on the number of spans to return.
  * @param cursor - An optional cursor for pagination.
@@ -77,8 +77,8 @@ export async function listSpans(
     },
     body: {
       project_id: projectId,
-      start_time: startTime,
-      end_time: endTime,
+      start_time: startTime?.toISOString(),
+      end_time: endTime?.toISOString(),
       filter,
     },
   });

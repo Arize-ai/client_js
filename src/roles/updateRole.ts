@@ -30,7 +30,7 @@ export type UpdateRoleParams = WithClient<{
  * import { updateRole } from "@arizeai/ax-client"
  *
  * const role = await updateRole({
- *   roleId: "your_role_id",
+ *   roleId: "Um9sZTphYmMxMjM=",
  *   permissions: ["PROJECT_READ", "DATASET_READ"],
  * });
  * console.log(role);

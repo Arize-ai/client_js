@@ -2,6 +2,7 @@ import {
   RawCreateDatasetRequestBodyExample,
   RawUpdateDatasetRequestBodyExample,
 } from "./internal";
+import { Annotation } from "./spans";
 
 export type DatasetVersion = {
   id: string;
@@ -24,8 +25,9 @@ export type DatasetExample = {
   id: string;
   createdAt: Date;
   updatedAt: Date;
+  annotations?: Annotation[];
 } & {
-  [key: string]: number | string | boolean | Date;
+  [key: string]: number | string | boolean | Date | Annotation[];
 };
 
 export type DatasetVersionWithExampleIds = {

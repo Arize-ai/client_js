@@ -16,3 +16,19 @@ export const mockExperimentRun: RawExperimentRun = {
   example_id: "example_id",
   output: "run_output",
 };
+
+export const mockExperimentRunWithAnnotations: RawExperimentRun = {
+  id: "run_id",
+  example_id: "example_id",
+  output: "run_output",
+  annotations: [
+    {
+      name: "quality",
+      score: 0.9,
+      label: "good",
+      text: "spot on",
+      updated_at: mockDateString,
+      annotator: { id: "user-1", email: "u1@example.com" },
+    },
+  ],
+};

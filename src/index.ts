@@ -16,4 +16,5 @@ export * from "./roles";
 export * from "./resource_restrictions";
 export * from "./role_bindings";
 export * from "./organizations";
+export * from "./users";
 export * from "./types";

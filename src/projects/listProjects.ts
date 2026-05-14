@@ -10,9 +10,9 @@ import { transformProject } from "./utils";
 export type ListProjectsParams = WithClient<
   PaginationParams & {
     /**
-     * Optional space filter. If the value starts with `"spc_"` it is treated
-     * as a space ID; otherwise it is used as a case-insensitive substring
-     * filter on the space name.
+     * Optional space filter. If the value is a base64-encoded resource ID
+     * (e.g. `"U3BhY2U6YWJjMTIz"`) it is treated as a space ID; otherwise it
+     * is used as a case-insensitive substring filter on the space name.
      */
     space?: string;
     /** Case-insensitive substring filter on the project name. */
@@ -24,7 +24,7 @@ export type ListProjectsParams = WithClient<
  * List the information about all projects available to the client.
  *
  * @param client - An optional ArizeClient instance to use for the request.
- * @param space - An optional space filter. Pass a space ID (e.g. `"spc_abc123"`) or a space name for substring filtering.
+ * @param space - An optional space filter. Pass a base64-encoded space ID (e.g. `"U3BhY2U6YWJjMTIz"`) or a space name for substring filtering.
  * @param name - An optional case-insensitive substring filter on the project name.
  * @param limit - An optional limit on the number of projects to return.
  * @param cursor - An optional cursor for pagination.

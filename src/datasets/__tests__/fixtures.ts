@@ -34,3 +34,33 @@ export const mockListExamplesResponseExample: RawDatasetExample = {
   created_at: mockDateString,
   updated_at: mockDateString,
 };
+
+export const mockListExamplesResponseExampleWithAnnotations: RawDatasetExample =
+  {
+    id: mockExampleId,
+    created_at: mockDateString,
+    updated_at: mockDateString,
+    annotations: [
+      {
+        name: "quality",
+        score: 0.9,
+        label: "good",
+        text: "spot on",
+        updated_at: mockDateString,
+        annotator: { id: "user-1", email: "u1@example.com" },
+      },
+      {
+        // consensus annotation — no annotator, no updated_at
+        name: "accuracy",
+        label: "yes",
+      },
+    ],
+  };
+
+export const mockListExamplesResponseExampleWithEmptyAnnotations: RawDatasetExample =
+  {
+    id: mockExampleId,
+    created_at: mockDateString,
+    updated_at: mockDateString,
+    annotations: [],
+  };

@@ -24,7 +24,7 @@ export type CreateSpaceParams = WithClient<{
  * import { createSpace } from "@arizeai/ax-client"
  *
  * const space = await createSpace({
- *   organizationId: "your_org_id",
+ *   organizationId: "T3JnYW5pemF0aW9uOmFiYzEyMw==",
  *   name: "your_space_name",
  * });
  * console.log(space);

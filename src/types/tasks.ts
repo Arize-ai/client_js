@@ -1,7 +1,106 @@
+import { components } from "../__generated__/api/v2";
 import { RawTask, RawTaskRun } from "./internal";
 
 export type TaskType = RawTask["type"];
 export type TaskRunStatus = RawTaskRun["status"];
+
+// ---- Run-experiment config input types ----
+
+/**
+ * LLM-generation experiment configuration. Extends the generated schema with
+ * an optional `aiIntegration` name field: when set, the SDK resolves it to an
+ * AI integration ID before sending the request.
+ */
+export type LlmGenerationConfigInput =
+  components["schemas"]["LlmGenerationRunConfig"] & {
+    /**
+     * Optional: resolve the AI integration by name instead of by ID.
+     * When set, the SDK looks up the integration ID and overwrites
+     * `ai_integration_id` before sending the request.
+     */
+    aiIntegration?: string;
+  };
+
+/**
+ * Template-evaluation experiment configuration. Extends the generated schema
+ * with an optional `aiIntegration` name field.
+ */
+export type TemplateEvaluationConfigInput =
+  components["schemas"]["TemplateEvaluationRunConfig"] & {
+    /** Optional: resolve aiIntegration by name instead of ID. */
+    aiIntegration?: string;
+  };
+
+/** Discriminated run configuration — either LLM generation or template evaluation. */
+export type RunExperimentConfigInput =
+  | LlmGenerationConfigInput
+  | TemplateEvaluationConfigInput;
+
+// ---- Create-task input types ----
+
+export type CreateTaskEvaluatorInput = {
+  evaluatorId: string;
+  queryFilter?: string;
+  columnMappings?: Record<string, string>;
+};
+
+/**
+ * Input for creating a new evaluation task (`template_evaluation` or
+ * `code_evaluation`).
+ *
+ * Exactly one of `project` (for online project monitoring) or `dataset`
+ * (for offline batch evaluation) must be provided.
+ * `isContinuous` and `samplingRate` are only valid for project-scoped tasks.
+ */
+export type CreateEvaluationTaskInput = {
+  name: string;
+  type: "template_evaluation" | "code_evaluation";
+  /** The space name or ID. Required when `project` or `dataset` is a name. */
+  space?: string;
+  /** The project name or ID to monitor. Mutually exclusive with `dataset`. */
+  project?: string;
+  /** The dataset name or ID to evaluate. Mutually exclusive with `project`. */
+  dataset?: string;
+  /**
+   * Experiment IDs to scope this task to. Only valid for dataset-scoped tasks.
+   */
+  experimentIds?: string[];
+  isContinuous?: boolean;
+  samplingRate?: number;
+  queryFilter?: string;
+  evaluators: CreateTaskEvaluatorInput[];
+};
+
+/**
+ * Input for creating a new `run_experiment` task (server-side LLM experiment).
+ *
+ * Use {@link createRunExperimentTask} for name-based AI integration resolution,
+ * or pass `ai_integration_id` directly in `runConfiguration`.
+ */
+export type CreateRunExperimentTaskInput = {
+  name: string;
+  type: "run_experiment";
+  /** The space name or ID. Required when `dataset` is a name. */
+  space?: string;
+  /** The dataset name or ID to run the experiment against. */
+  dataset: string;
+  /** Discriminated experiment configuration. */
+  runConfiguration: RunExperimentConfigInput;
+};
+
+/**
+ * Generic create-task input. Discriminated by `type`:
+ * - `"template_evaluation"` | `"code_evaluation"` → {@link CreateEvaluationTaskInput}
+ * - `"run_experiment"` → {@link CreateRunExperimentTaskInput}
+ *
+ * Prefer the narrow helpers {@link createEvaluationTask} and
+ * {@link createRunExperimentTask} for clearer signatures.
+ */
+export type CreateTaskInput =
+  | CreateEvaluationTaskInput
+  | CreateRunExperimentTaskInput;
+
+// ---- Shared task types ----
 
 export interface TaskEvaluator {
   evaluatorId: string;
@@ -21,6 +120,11 @@ export interface Task {
   queryFilter: string | null;
   evaluators: TaskEvaluator[];
   experimentIds: string[];
+  /**
+   * Run configuration for `run_experiment` tasks. `null` for all other task
+   * types.
+   */
+  runConfiguration: RawTask["run_configuration"] | null;
   lastRunAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -31,66 +135,28 @@ export interface TaskRun {
   id: string;
   taskId: string;
   status: TaskRunStatus;
+  /**
+   * Created experiment global ID (base64). Populated only for `run_experiment`
+   * task runs after the experiment has been provisioned. `null` for all other
+   * task types and while provisioning is in progress.
+   */
+  experimentId: string | null;
   runStartedAt: Date | null;
   runFinishedAt: Date | null;
   dataStartTime: Date | null;
   dataEndTime: Date | null;
-  /** Number of spans successfully evaluated during this run. */
   numSuccesses: number;
-  /** Number of spans where the evaluator raised an error during this run. */
   numErrors: number;
-  /**
-   * Number of spans skipped during this run. Spans are skipped when they were
-   * already evaluated in a previous run and `overrideEvaluations` is false.
-   */
   numSkipped: number;
   createdAt: Date;
   createdByUserId: string | null;
 }
-
-export type CreateTaskEvaluatorInput = {
-  evaluatorId: string;
-  queryFilter?: string;
-  columnMappings?: Record<string, string>;
-};
-
-/**
- * Input for creating a new evaluation task.
- *
- * Exactly one of `project` (for online project monitoring) or `dataset`
- * (for offline batch evaluation) must be provided — they are mutually exclusive.
- * `isContinuous` and `samplingRate` are only valid for project-scoped tasks.
- */
-export type CreateTaskInput = {
-  name: string;
-  type: TaskType;
-  /** The space name or ID. Required when `project` or `dataset` is a name. */
-  space?: string;
-  /** The project name or ID to monitor. Mutually exclusive with `dataset`. */
-  project?: string;
-  /** The dataset name or ID to evaluate. Mutually exclusive with `project`. */
-  dataset?: string;
-  /**
-   * Experiment IDs to scope this task to. Only valid for dataset-scoped tasks
-   * (`dataset` is set). When provided, the task evaluates only the specified
-   * experiments rather than the entire dataset.
-   */
-  experimentIds?: string[];
-  isContinuous?: boolean;
-  samplingRate?: number;
-  queryFilter?: string;
-  evaluators: CreateTaskEvaluatorInput[];
-};
 
 export type TriggerTaskRunInput = {
   dataStartTime?: Date;
   dataEndTime?: Date;
   maxSpans?: number;
   overrideEvaluations?: boolean;
-  /**
-   * Experiment IDs to evaluate. Only valid for dataset-scoped tasks. When
-   * provided, only spans belonging to these experiments are evaluated.
-   */
   experimentIds?: string[];
 };
 
@@ -104,8 +170,5 @@ export type UpdateTaskInput = {
   samplingRate?: number;
   isContinuous?: boolean;
   queryFilter?: string | null;
-  /**
-   * When provided, replaces the entire evaluator list (requires at least one entry).
-   */
   evaluators?: CreateTaskEvaluatorInput[];
 };

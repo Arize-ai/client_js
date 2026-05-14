@@ -99,6 +99,18 @@ console.log(data.map((k) => k.name));
 
 // Filter by key type or status
 const { data: userKeys } = await listApiKeys({ keyType: "user" });
+
+// List service keys for a specific space
+const { data: serviceKeys } = await listApiKeys({
+  keyType: "service",
+  spaceId: "U3BhY2U6MTIzNDU=",
+});
+
+// List service keys created by a specific user (any caller with space access)
+const { data: byUser } = await listApiKeys({
+  spaceId: "U3BhY2U6MTIzNDU=",
+  userId: "VXNlcjoxMjM0NQ==",
+});
 ```
 
 ### Deleting an API key
@@ -240,6 +252,143 @@ console.log(org);
 import { deleteOrganization } from "@arizeai/ax-client";
 
 await deleteOrganization({ organization: "your-organization-name" });
+```
+
+## Organization memberships
+
+### Adding a user to an organization
+
+```typescript
+import { addOrganizationUser } from "@arizeai/ax-client";
+
+const membership = await addOrganizationUser({
+  organizationId: "org_abc123",
+  userId: "VXNlcjoxMjM0NQ==",
+  role: { type: "predefined", name: "member" },
+});
+console.log(membership);
+```
+
+### Removing a user from an organization
+
+```typescript
+import { removeOrganizationUser } from "@arizeai/ax-client";
+
+await removeOrganizationUser({
+  organizationId: "org_abc123",
+  userId: "VXNlcjoxMjM0NQ==",
+});
+```
+
+## Users
+
+The `@arizeai/ax-client` package allows you to manage users.
+
+> **Note:** Unlike organizations, users are identified by opaque ID only — not
+> by name. User display names are not unique within an account, so all functions
+> require the user's ID.
+
+### Listing users
+
+```typescript
+import { listUsers } from "@arizeai/ax-client";
+
+const result = await listUsers();
+console.log(result.data);
+```
+
+### Getting a user
+
+```typescript
+import { getUser } from "@arizeai/ax-client";
+
+const user = await getUser({ userId: "VXNlcjoxMjM0NQ==" });
+console.log(user);
+```
+
+### Creating a user
+
+The `inviteMode` parameter controls how the user is invited:
+
+- `"email_link"` — sends the user an email with a verification link.
+- `"temporary_password"` — issues a one-time password returned in the response.
+- `"none"` — pre-provisions an SSO user directly; no invitation is sent and the
+  user is immediately active via the configured identity provider.
+
+Returns a `UserCreated` object (HTTP 201) for a new user, or a `User` object
+(HTTP 200) when an existing `invited` user is returned as-is (idempotent — the
+invitation is not resent).
+
+```typescript
+import { createUser } from "@arizeai/ax-client";
+
+const user = await createUser({
+  name: "Jane Smith",
+  email: "jane.smith@example.com",
+  role: { type: "predefined", name: "member" },
+  inviteMode: "email_link",
+});
+console.log(user);
+```
+
+### Updating a user
+
+```typescript
+import { updateUser } from "@arizeai/ax-client";
+
+const user = await updateUser({
+  userId: "VXNlcjoxMjM0NQ==",
+  name: "Jane Smith Updated",
+  isDeveloper: true,
+});
+console.log(user);
+```
+
+### Deleting a user
+
+> **Warning:** This operation permanently blocks the user from the account.
+> Blocked users cannot be re-invited — inactive is a terminal state. The
+> operation cascades to organization memberships, space memberships, API keys,
+> and role bindings.
+
+```typescript
+import { deleteUser } from "@arizeai/ax-client";
+
+await deleteUser({ userId: "VXNlcjoxMjM0NQ==" });
+```
+
+### Resending a user invitation
+
+```typescript
+import { resendInvitation } from "@arizeai/ax-client";
+
+await resendInvitation({ userId: "VXNlcjoxMjM0NQ==" });
+```
+
+## Space memberships
+
+### Adding a user to a space
+
+```typescript
+import { addSpaceUser } from "@arizeai/ax-client";
+
+const membership = await addSpaceUser({
+  spaceId: "spc_abc123",
+  userId: "VXNlcjoxMjM0NQ==",
+  role: { type: "predefined", name: "member" },
+});
+console.log(membership);
+```
+
+### Removing a user from a space
+
+```typescript
+import { removeSpaceUser } from "@arizeai/ax-client";
+
+await removeSpaceUser({
+  spaceId: "spc_abc123",
+  userId: "VXNlcjoxMjM0NQ==",
+});
 ```
 
 ## REST endpoints

@@ -1,13 +1,9 @@
 import { createClient } from "../client";
 import { WithClient } from "../types";
-import {
-  AnnotateRecordInput,
-  AnnotationBatchResult,
-} from "../types/annotations";
+import { AnnotateRecordInput } from "../types/annotations";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { findDatasetId, findExperimentId, toSpaceRef } from "../utils/resolve";
-import { transformAnnotationBatchResult } from "../datasets/utils";
 
 export type AnnotateExperimentRunsParams = WithClient<{
   /**
@@ -23,7 +19,7 @@ export type AnnotateExperimentRunsParams = WithClient<{
    */
   space?: string;
   /**
-   * Batch of annotations to write. Up to 500 runs per request.
+   * Batch of annotations to write. Up to 1000 runs per request.
    */
   annotations: AnnotateRecordInput[];
 }>;
@@ -33,8 +29,11 @@ export type AnnotateExperimentRunsParams = WithClient<{
  *
  * Annotations are upserted by annotation config name for each run.
  * Submitting the same annotation config name for the same run
- * overwrites the previous value. Up to 500 runs may be annotated
+ * overwrites the previous value. Up to 1000 runs may be annotated
  * per request.
+ *
+ * The writes are submitted to the database layer but may not be immediately
+ * visible in queries (HTTP 202 Accepted).
  *
  * @param client - An optional ArizeClient instance to use for the request. @default createClient()
  * @param experiment - The name or base64-encoded ID of the experiment.
@@ -42,13 +41,13 @@ export type AnnotateExperimentRunsParams = WithClient<{
  * @param space - An optional space name or ID used to resolve `dataset` by name.
  * @param annotations - Batch of {@link AnnotateRecordInput} items. Each item specifies
  *   a `recordId` (experiment run ID) and `values` (list of annotation values to set).
- * @returns An {@link AnnotationBatchResult} with per-record annotation results.
- * @throws Error if the annotations cannot be written or the response is invalid.
+ * @returns void
+ * @throws Error if the annotations cannot be written.
  * @example
  * ```typescript
  * import { annotateExperimentRuns } from "@arizeai/ax-client"
  *
- * const result = await annotateExperimentRuns({
+ * await annotateExperimentRuns({
  *   space: "my_space",
  *   dataset: "my_dataset",
  *   experiment: "my_experiment",
@@ -62,7 +61,6 @@ export type AnnotateExperimentRunsParams = WithClient<{
  *     },
  *   ],
  * });
- * console.log(result);
  * ```
  */
 export async function annotateExperimentRuns({
@@ -71,7 +69,7 @@ export async function annotateExperimentRuns({
   dataset,
   space,
   annotations,
-}: AnnotateExperimentRunsParams): Promise<AnnotationBatchResult> {
+}: AnnotateExperimentRunsParams): Promise<void> {
   warnPreRelease({ functionName: "annotateExperimentRuns" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
@@ -96,5 +94,4 @@ export async function annotateExperimentRuns({
   if (response.error) {
     return handleApiError(response);
   }
-  return transformAnnotationBatchResult(response.data);
 }

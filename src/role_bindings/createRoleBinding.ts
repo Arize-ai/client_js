@@ -30,10 +30,10 @@ export type CreateRoleBindingParams = WithClient<{
  * import { createRoleBinding } from "@arizeai/ax-client"
  *
  * const binding = await createRoleBinding({
- *   userId: "your_user_id",
- *   roleId: "your_role_id",
+ *   userId: "VXNlcjoxMjM0NQ==",
+ *   roleId: "Um9sZTphYmMxMjM=",
  *   resourceType: "PROJECT",
- *   resourceId: "your_project_id",
+ *   resourceId: "UHJvamVjdDphYmMxMjM=",
  * });
  * console.log(binding);
  * ```

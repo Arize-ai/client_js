@@ -19,7 +19,7 @@ export type GetEvaluatorVersionParams = WithClient<{
  * ```typescript
  * import { getEvaluatorVersion } from "@arizeai/ax-client"
  *
- * const version = await getEvaluatorVersion({ versionId: "your_version_id" });
+ * const version = await getEvaluatorVersion({ versionId: "RXZhbHVhdG9yVmVyc2lvbjphYmMxMjM=" });
  * console.log(version);
  * ```
  */

@@ -18,7 +18,7 @@ export type DeleteRoleBindingParams = WithClient<{
  * ```typescript
  * import { deleteRoleBinding } from "@arizeai/ax-client"
  *
- * await deleteRoleBinding({ bindingId: "your_binding_id" });
+ * await deleteRoleBinding({ bindingId: "Um9sZUJpbmRpbmc6YWJjMTIz" });
  * ```
  */
 export async function deleteRoleBinding({

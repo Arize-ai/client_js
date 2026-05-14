@@ -1,13 +1,9 @@
 import { createClient } from "../client";
 import { WithClient } from "../types";
-import {
-  AnnotateRecordInput,
-  AnnotationBatchResult,
-} from "../types/annotations";
+import { AnnotateRecordInput } from "../types/annotations";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { findDatasetId, toSpaceRef } from "../utils/resolve";
-import { transformAnnotationBatchResult } from "./utils";
 
 export type AnnotateDatasetExamplesParams = WithClient<{
   /**
@@ -19,7 +15,7 @@ export type AnnotateDatasetExamplesParams = WithClient<{
    */
   space?: string;
   /**
-   * Batch of annotations to write. Up to 500 examples per request.
+   * Batch of annotations to write. Up to 1000 examples per request.
    */
   annotations: AnnotateRecordInput[];
 }>;
@@ -29,21 +25,24 @@ export type AnnotateDatasetExamplesParams = WithClient<{
  *
  * Annotations are upserted by annotation config name for each example.
  * Submitting the same annotation config name for the same example
- * overwrites the previous value. Up to 500 examples may be annotated
+ * overwrites the previous value. Up to 1000 examples may be annotated
  * per request.
+ *
+ * The writes are submitted to the database layer but may not be immediately
+ * visible in queries (HTTP 202 Accepted).
  *
  * @param client - An optional ArizeClient instance to use for the request. @default createClient()
  * @param dataset - The name or ID of the dataset.
  * @param space - An optional space name or ID. Required when `dataset` is a name.
  * @param annotations - Batch of {@link AnnotateRecordInput} items. Each item specifies
  *   a `recordId` (dataset example ID) and `values` (list of annotation values to set).
- * @returns An {@link AnnotationBatchResult} with per-record annotation results.
- * @throws Error if the annotations cannot be written or the response is invalid.
+ * @returns void
+ * @throws Error if the annotations cannot be written.
  * @example
  * ```typescript
  * import { annotateDatasetExamples } from "@arizeai/ax-client"
  *
- * const result = await annotateDatasetExamples({
+ * await annotateDatasetExamples({
  *   space: "my_space",
  *   dataset: "my_dataset",
  *   annotations: [
@@ -56,7 +55,6 @@ export type AnnotateDatasetExamplesParams = WithClient<{
  *     },
  *   ],
  * });
- * console.log(result);
  * ```
  */
 export async function annotateDatasetExamples({
@@ -64,7 +62,7 @@ export async function annotateDatasetExamples({
   dataset,
   space,
   annotations,
-}: AnnotateDatasetExamplesParams): Promise<AnnotationBatchResult> {
+}: AnnotateDatasetExamplesParams): Promise<void> {
   warnPreRelease({ functionName: "annotateDatasetExamples" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
@@ -86,5 +84,4 @@ export async function annotateDatasetExamples({
   if (response.error) {
     return handleApiError(response);
   }
-  return transformAnnotationBatchResult(response.data);
 }

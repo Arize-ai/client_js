@@ -5,12 +5,6 @@ import {
   DatasetVersionWithExampleIds,
 } from "../types";
 import {
-  AnnotationBatchResult,
-  AnnotateRecordResult,
-} from "../types/annotations";
-import {
-  RawAnnotationBatchResult,
-  RawAnnotateRecordResult,
   RawDataset,
   RawDatasetVersion,
   RawDatasetVersionWithExampleIds,
@@ -64,27 +58,11 @@ export function transformDatasetVersionWithExampleIds(
 export function transformListDatasetExamplesResponseExample(
   example: RawListExamplesResponse["examples"][number],
 ): DatasetExample {
-  const { created_at, updated_at, ...rest } = example;
+  const { created_at, updated_at, annotations, ...rest } = example;
   return {
     ...rest,
     createdAt: new Date(created_at),
     updatedAt: new Date(updated_at),
-  };
-}
-
-function transformAnnotateRecordResult(
-  raw: RawAnnotateRecordResult,
-): AnnotateRecordResult {
-  return {
-    recordId: raw.record_id,
-    annotations: raw.annotations.map(transformAnnotation),
-  };
-}
-
-export function transformAnnotationBatchResult(
-  raw: RawAnnotationBatchResult,
-): AnnotationBatchResult {
-  return {
-    results: raw.results.map(transformAnnotateRecordResult),
+    ...(annotations && { annotations: annotations.map(transformAnnotation) }),
   };
 }

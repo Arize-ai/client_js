@@ -14,24 +14,10 @@ export type Annotation = {
 
 /** A single record to annotate in a batch, identified by its record ID. */
 export interface AnnotateRecordInput {
-  /** The ID of the record (dataset example ID or experiment run ID). */
+  /** The ID of the record (span ID, dataset example ID, or experiment run ID). */
   recordId: string;
   /** One or more annotation values to set on this record. */
   values: AnnotationInput[];
-}
-
-/** The annotation results for a single annotated record. */
-export interface AnnotateRecordResult {
-  /** The ID of the record that was annotated. */
-  recordId: string;
-  /** The annotations that were written to this record. */
-  annotations: Annotation[];
-}
-
-/** Result of a batch annotation operation. Contains one result entry per annotated record. */
-export interface AnnotationBatchResult {
-  /** Per-record annotation results, in the same order as the request. */
-  results: AnnotateRecordResult[];
 }
 
 export type { AnnotationInput };

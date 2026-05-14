@@ -14,9 +14,9 @@ import { transformEvaluator } from "./utils";
 export type ListEvaluatorsParams = WithClient<
   PaginationParams & {
     /**
-     * Optional space filter. If the value starts with `"spc_"` it is treated
-     * as a space ID; otherwise it is used as a case-insensitive substring
-     * filter on the space name.
+     * Optional space filter. If the value is a base64-encoded resource ID
+     * (e.g. `"U3BhY2U6YWJjMTIz"`) it is treated as a space ID; otherwise it
+     * is used as a case-insensitive substring filter on the space name.
      */
     space?: string;
     /** Case-insensitive substring filter on the evaluator name. */
@@ -28,7 +28,7 @@ export type ListEvaluatorsParams = WithClient<
  * List evaluators accessible to the client, sorted by update date (most recent first).
  *
  * @param client - An optional ArizeClient instance to use for the request.
- * @param space - An optional space filter. Pass a space ID (e.g. `"spc_abc123"`) or a space name for substring filtering.
+ * @param space - An optional space filter. Pass a base64-encoded space ID (e.g. `"U3BhY2U6YWJjMTIz"`) or a space name for substring filtering.
  * @param name - An optional case-insensitive substring filter on the evaluator name.
  * @param limit - An optional limit on the number of evaluators to return (max 100).
  * @param cursor - An optional cursor for pagination.
