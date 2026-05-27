@@ -3,6 +3,7 @@ export * from "./getDataset";
 export * from "./listDatasetExamples";
 export * from "./deleteDataset";
 export * from "./createDataset";
+export * from "./updateDataset";
 export * from "./updateExamples";
 export * from "./appendExamples";
 export * from "./annotateDatasetExamples";

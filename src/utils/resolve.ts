@@ -1,5 +1,5 @@
 import type { createClient } from "../client";
-import { handleApiError, ResolutionError } from "../errors";
+import { AmbiguousNameError, handleApiError, ResolutionError } from "../errors";
 
 /**
  * The type of the client object.
@@ -69,6 +69,9 @@ function requireSpace(
  * If the value is already a base64-encoded resource ID,
  * it is returned as-is. Otherwise, the list spaces endpoint is called to find
  * an exact name match.
+ *
+ * @throws {AmbiguousNameError} If multiple spaces share the same name (e.g.
+ *   across different organizations). Pass a space ID to disambiguate.
  */
 export async function findSpaceId(
   client: Client,
@@ -78,7 +81,7 @@ export async function findSpaceId(
     return space;
   }
 
-  const available: string[] = [];
+  const matches: string[] = [];
   let cursor: string | undefined;
 
   do {
@@ -90,14 +93,19 @@ export async function findSpaceId(
     }
     for (const s of response.data.spaces) {
       if (s.name === space) {
-        return s.id;
+        matches.push(s.id);
       }
-      available.push(s.name);
     }
     cursor = response.data.pagination.next_cursor ?? undefined;
   } while (cursor);
 
-  throw new ResolutionError("space", space, available);
+  if (matches.length > 1) {
+    throw new AmbiguousNameError("space", space, matches);
+  }
+  if (matches.length === 1) {
+    return matches[0]!;
+  }
+  throw new ResolutionError("space", space, []);
 }
 
 /**
@@ -538,6 +546,47 @@ export async function findTaskId(
   } while (cursor);
 
   throw new ResolutionError("task", task, available);
+}
+
+/**
+ * Resolve a user email to a user ID.
+ *
+ * Pages through all results (the email filter is a partial/case-insensitive
+ * match, so we must verify exact matches ourselves). Returns `null` if no
+ * user with that exact email address is found. Throws if more than one user
+ * matches — email addresses should be unique within an account.
+ */
+export async function findUserIdByEmail(
+  client: Client,
+  email: string,
+): Promise<string | null> {
+  const matches: string[] = [];
+  let cursor: string | undefined;
+
+  do {
+    const response = await client.GET("/v2/users", {
+      params: { query: { email, limit: 100, cursor } },
+    });
+    if (response.error) {
+      return handleApiError(response);
+    }
+    for (const u of response.data.users) {
+      if (u.email.toLowerCase() === email.toLowerCase()) {
+        matches.push(u.id);
+      }
+    }
+    cursor = response.data.pagination.next_cursor ?? undefined;
+  } while (cursor);
+
+  if (matches.length === 0) {
+    return null;
+  }
+  if (matches.length > 1) {
+    throw new Error(
+      `findUserIdByEmail: ${matches.length} users found with email '${email}' — expected exactly one`,
+    );
+  }
+  return matches[0] ?? null;
 }
 
 /**

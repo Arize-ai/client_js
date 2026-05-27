@@ -1,4 +1,5 @@
 export * from "./createRoleBinding";
-export * from "./getRoleBinding";
-export * from "./updateRoleBinding";
 export * from "./deleteRoleBinding";
+export * from "./getRoleBinding";
+export * from "./listRoleBindings";
+export * from "./updateRoleBinding";

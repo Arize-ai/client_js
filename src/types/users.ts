@@ -39,3 +39,23 @@ export type UserInviteTemporaryPassword = {
 export type UserCreated =
   | (User & UserInviteBasic)
   | (User & UserInviteTemporaryPassword);
+
+export type BulkUserDeletionStatus = "deleted" | "failed" | "not_found";
+
+export type BulkUserDeletionSuccess = {
+  userId: string;
+  email?: string;
+  status: "deleted";
+};
+
+export type BulkUserDeletionError = {
+  userId: string;
+  email?: string;
+  status: "failed" | "not_found";
+  error: string;
+};
+
+/** Discriminated union on `status` — check `status` before accessing `error`. */
+export type BulkUserDeletionResult =
+  | BulkUserDeletionSuccess
+  | BulkUserDeletionError;

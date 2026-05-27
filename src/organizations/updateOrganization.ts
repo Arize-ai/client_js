@@ -6,7 +6,7 @@ import { handleApiError } from "../errors";
 import { transformOrganization } from "./utils";
 
 export type UpdateOrganizationParams = WithClient<{
-  /** Organization ID (e.g. `"org_12345"`) or organization name. */
+  /** Organization global ID (base64, e.g. `"T3JnYW5pemF0aW9uOjEyMzQ1"`) or organization name. */
   organization: string;
   /** Updated name for the organization. */
   name?: string;

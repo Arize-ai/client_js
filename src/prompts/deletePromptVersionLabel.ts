@@ -21,7 +21,7 @@ export type DeletePromptVersionLabelParams = WithClient<{
  * import { deletePromptVersionLabel } from "@arizeai/ax-client"
  *
  * await deletePromptVersionLabel({
- *   versionId: "pv_12345",
+ *   versionId: "UHJvbXB0VmVyc2lvbjoxMjM0NQ==",
  *   labelName: "staging",
  * });
  * ```

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  AmbiguousNameError,
   APIError,
   AuthenticationError,
   AuthorizationError,
@@ -86,6 +87,25 @@ describe("NotFoundError", () => {
     const err = new NotFoundError("resource not found");
     expect(err).toBeInstanceOf(APIError);
     expect(err).toBeInstanceOf(NotFoundError);
+  });
+});
+
+describe("AmbiguousNameError", () => {
+  it("should include resource type, name, and IDs in the message", () => {
+    const err = new AmbiguousNameError("space", "my-space", ["id1", "id2"]);
+    expect(err.resourceType).toBe("space");
+    expect(err.resourceName).toBe("my-space");
+    expect(err.matchingIds).toEqual(["id1", "id2"]);
+    expect(err.message).toContain("my-space");
+    expect(err.message).toContain("id1");
+    expect(err.message).toContain("id2");
+    expect(err.name).toBe("AmbiguousNameError");
+  });
+
+  it("should be an instance of Error", () => {
+    const err = new AmbiguousNameError("space", "my-space", ["id1", "id2"]);
+    expect(err).toBeInstanceOf(Error);
+    expect(err).toBeInstanceOf(AmbiguousNameError);
   });
 });
 

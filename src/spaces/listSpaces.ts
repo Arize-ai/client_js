@@ -13,6 +13,8 @@ import { transformSpace } from "./utils";
 export type ListSpacesParams = WithClient<
   PaginationParams & {
     organizationId?: string;
+    /** Case-insensitive substring filter on the space name. */
+    name?: string;
   }
 >;
 
@@ -21,6 +23,7 @@ export type ListSpacesParams = WithClient<
  *
  * @param client - An optional ArizeClient instance to use for the request.
  * @param organizationId - An optional organization ID used to filter spaces in a specific organization.
+ * @param name - An optional case-insensitive substring filter on the space name.
  * @param limit - An optional limit on the number of spaces to return.
  * @param cursor - An optional cursor for pagination.
  * @returns A list of {@link Space} objects.
@@ -37,12 +40,19 @@ export async function listSpaces(
   params: ListSpacesParams = {},
 ): Promise<PaginatedResponse<Space>> {
   warnPreRelease({ functionName: "listSpaces" });
-  const { client: clientInstance, organizationId, limit, cursor } = params;
+  const {
+    client: clientInstance,
+    organizationId,
+    name,
+    limit,
+    cursor,
+  } = params;
   const client = clientInstance ?? createClient();
   const response = await client.GET("/v2/spaces", {
     params: {
       query: {
         org_id: organizationId,
+        name,
         limit,
         cursor,
       },

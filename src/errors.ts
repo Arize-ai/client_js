@@ -68,6 +68,26 @@ export class NotFoundError extends APIError {
 }
 
 /**
+ * Thrown when a resource name matches more than one resource (e.g. a space
+ * name shared across different organizations). Pass a resource ID instead of
+ * the name to disambiguate.
+ */
+export class AmbiguousNameError extends Error {
+  constructor(
+    public readonly resourceType: string,
+    public readonly resourceName: string,
+    public readonly matchingIds: string[],
+  ) {
+    super(
+      `Multiple ${resourceType}s named '${resourceName}' found. ` +
+        `Use a ${resourceType} ID to disambiguate. ` +
+        `Matching IDs: ${matchingIds.join(", ")}`,
+    );
+    this.name = "AmbiguousNameError";
+  }
+}
+
+/**
  * Thrown when a resource name cannot be resolved to an ID.
  */
 export class ResolutionError extends Error {

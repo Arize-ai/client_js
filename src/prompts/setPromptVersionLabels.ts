@@ -27,7 +27,7 @@ export type SetPromptVersionLabelsParams = WithClient<{
  * import { setPromptVersionLabels } from "@arizeai/ax-client"
  *
  * const { labels } = await setPromptVersionLabels({
- *   versionId: "pv_12345",
+ *   versionId: "UHJvbXB0VmVyc2lvbjoxMjM0NQ==",
  *   labels: ["production", "staging"],
  * });
  * console.log(labels);

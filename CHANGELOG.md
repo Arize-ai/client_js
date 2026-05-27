@@ -1,34 +1,43 @@
 # @arizeai/ax-client
 
-## [1.14.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.13.0...arize-js-sdk/v1.14.0) (2026-05-14)
+## [1.15.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.14.0...arize-js-sdk/v1.15.0) (2026-05-27)
 
 
 ### 🎁 New Features
 
-* add structured annotations to dataset examples and experiment runs responses ([#69284](https://github.com/Arize-ai/arize/issues/69284)) ([c32872e](https://github.com/Arize-ai/arize/commit/c32872e8dbcf482300e417fd2f110153c6244349))
-* **datasets & experiments:** align dataset/experiment annotate endpoints to 202 empty body ([#70693](https://github.com/Arize-ai/arize/issues/70693)) ([7caad8e](https://github.com/Arize-ai/arize/commit/7caad8eba4dcf36f5c021ffd5f436cd13a9b4399))
-* **spans:** add annotateSpans() for batch span annotation ([#71631](https://github.com/Arize-ai/arize/issues/71631)) ([7fff72c](https://github.com/Arize-ai/arize/commit/7fff72ca59750bb3cb7bcaa2f6001ac04538b3e6))
-* Add users support ([#70278](https://github.com/Arize-ai/arize/issues/70278)) ([e94bccf](https://github.com/Arize-ai/arize/commit/e94bccf59686a3f8fc89bd449fb73049b6b6e903))
-
-## [1.13.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.12.0...arize-js-sdk/v1.13.0) (2026-05-11)
-
-
-### 🎁 New Features
-
-* **api-keys:** extend GET /v2/api-keys with space_id and user_id filters ([#70697](https://github.com/Arize-ai/arize/issues/70697)) ([06dfc73](https://github.com/Arize-ai/arize/commit/06dfc73f9f3d7eb08c9d3c9435ff17d3462fa5e3))
-* add run_experiment task type ([#70545](https://github.com/Arize-ai/arize/issues/70545)) ([2ed75b9](https://github.com/Arize-ai/arize/commit/2ed75b998fb90298575329f4a63c95435a9a74b2))
-
-## [1.12.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.11.0...arize-js-sdk/v1.12.0) (2026-05-08)
-
-
-### 🎁 New Features
-
-* add SDK source identification via span attributes ([#70404](https://github.com/Arize-ai/arize/issues/70404)) ([b8ccabb](https://github.com/Arize-ai/arize/commit/b8ccabbcb3cb042d696b6009e170a74e3ad28a8d))
+* **datasets:** add updateDataset function ([#72037](https://github.com/Arize-ai/arize/issues/72037)) ([25623b4](https://github.com/Arize-ai/arize/commit/25623b4ef59383c1cc68b24cd083ae6427f89945))
 
 
 ### 🐛 Bug Fixes
 
-* **annotation-queues:** Update how "unset" behaviour works for annotation queues. ([#69699](https://github.com/Arize-ai/arize/issues/69699)) ([5c82539](https://github.com/Arize-ai/arize/commit/5c82539815c7f727fc6ee8b82a752fd2931ea5b9))
+* raise AmbiguousNameError when multiple spaces share a name ([#72449](https://github.com/Arize-ai/arize/issues/72449)) ([6e71959](https://github.com/Arize-ai/arize/commit/6e71959db6b952aad77648532921355c028cfb98))
+* **rest-api:** use base64 Relay global IDs in OpenAPI spec examples ([#71993](https://github.com/Arize-ai/arize/issues/71993)) ([5903e5b](https://github.com/Arize-ai/arize/commit/5903e5b6bea4b149906f1fc45eb7aa8993eac2c9)), closes [#71246](https://github.com/Arize-ai/arize/issues/71246)
+
+## [1.14.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.13.0...arize-js-sdk/v1.14.0) (2026-05-14)
+
+### 🎁 New Features
+
+- add structured annotations to dataset examples and experiment runs responses ([#69284](https://github.com/Arize-ai/arize/issues/69284)) ([c32872e](https://github.com/Arize-ai/arize/commit/c32872e8dbcf482300e417fd2f110153c6244349))
+- **datasets & experiments:** align dataset/experiment annotate endpoints to 202 empty body ([#70693](https://github.com/Arize-ai/arize/issues/70693)) ([7caad8e](https://github.com/Arize-ai/arize/commit/7caad8eba4dcf36f5c021ffd5f436cd13a9b4399))
+- **spans:** add annotateSpans() for batch span annotation ([#71631](https://github.com/Arize-ai/arize/issues/71631)) ([7fff72c](https://github.com/Arize-ai/arize/commit/7fff72ca59750bb3cb7bcaa2f6001ac04538b3e6))
+- Add users support ([#70278](https://github.com/Arize-ai/arize/issues/70278)) ([e94bccf](https://github.com/Arize-ai/arize/commit/e94bccf59686a3f8fc89bd449fb73049b6b6e903))
+
+## [1.13.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.12.0...arize-js-sdk/v1.13.0) (2026-05-11)
+
+### 🎁 New Features
+
+- **api-keys:** extend GET /v2/api-keys with space_id and user_id filters ([#70697](https://github.com/Arize-ai/arize/issues/70697)) ([06dfc73](https://github.com/Arize-ai/arize/commit/06dfc73f9f3d7eb08c9d3c9435ff17d3462fa5e3))
+- add run_experiment task type ([#70545](https://github.com/Arize-ai/arize/issues/70545)) ([2ed75b9](https://github.com/Arize-ai/arize/commit/2ed75b998fb90298575329f4a63c95435a9a74b2))
+
+## [1.12.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.11.0...arize-js-sdk/v1.12.0) (2026-05-08)
+
+### 🎁 New Features
+
+- add SDK source identification via span attributes ([#70404](https://github.com/Arize-ai/arize/issues/70404)) ([b8ccabb](https://github.com/Arize-ai/arize/commit/b8ccabbcb3cb042d696b6009e170a74e3ad28a8d))
+
+### 🐛 Bug Fixes
+
+- **annotation-queues:** Update how "unset" behaviour works for annotation queues. ([#69699](https://github.com/Arize-ai/arize/issues/69699)) ([5c82539](https://github.com/Arize-ai/arize/commit/5c82539815c7f727fc6ee8b82a752fd2931ea5b9))
 
 ## [1.11.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.10.1...arize-js-sdk/v1.11.0) (2026-05-01)
 

@@ -297,11 +297,25 @@ export interface paths {
          * Update an annotation queue
          * @description Update an annotation queue by its ID. At least one field must be provided.
          *
-         *     **Payload Requirements:**
+         *     **Payload Requirements**
          *     - At least one of `name`, `instructions`, `annotation_config_ids`, or `annotator_emails` must be provided
          *     - `name` must be unique within the space (409 Conflict if duplicate)
          *     - `annotation_config_ids` replaces all existing config associations; all configs must belong to the same space as the queue
          *     - `annotator_emails` replaces all existing user assignments; all users must have active accounts
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "name": "Updated Review Queue",
+         *       "annotation_config_ids": ["QW5ub3RhdGlvbkNvbmZpZzoxOmFCY0Q=", "QW5ub3RhdGlvbkNvbmZpZzoyOmFCY0Q="],
+         *       "annotator_emails": ["reviewer@example.com"]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (empty body — no fields provided)
+         *     ```json
+         *     {}
+         *     ```
          *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
@@ -344,6 +358,36 @@ export interface paths {
          *       - For dataset record source: all `example_ids` must be non-empty strings.
          *       - For spans record source: all `span_ids` must be non-empty strings.
          *       - At most 500 records total may be added in one request
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "record_sources": [
+         *         {
+         *           "record_type": "span",
+         *           "project_id": "TW9kZWw6MTIzOmFCY0Q=",
+         *           "start_time": "2026-01-15T00:00:00Z",
+         *           "end_time": "2026-01-16T00:00:00Z",
+         *           "span_ids": ["U3BhbjoxOmFCY0Q="]
+         *         }
+         *       ]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (span record with `start_time` after `end_time`)
+         *     ```json
+         *     {
+         *       "record_sources": [
+         *         {
+         *           "record_type": "span",
+         *           "project_id": "TW9kZWw6MTIzOmFCY0Q=",
+         *           "start_time": "2026-01-20T00:00:00Z",
+         *           "end_time": "2026-01-15T00:00:00Z",
+         *           "span_ids": ["U3BhbjoxOmFCY0Q="]
+         *         }
+         *       ]
+         *     }
+         *     ```
          *
          *     <Note>If no example_ids are provided for a dataset record source, all examples in the dataset will be added to the queue.</Note>
          *
@@ -718,7 +762,30 @@ export interface paths {
         delete: operations["datasets_delete"];
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update a dataset
+         * @description Update an existing dataset by its ID.
+         *
+         *     **Payload Requirements**
+         *     - `name` is required.
+         *     - `name` must be unique within the space (409 Conflict if duplicate).
+         *     - `name` cannot be empty or whitespace-only.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "name": "Updated Dataset Name"
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (empty body — no fields provided)
+         *     ```json
+         *     {}
+         *     ```
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        patch: operations["datasets_update"];
         trace?: never;
     };
     "/v2/datasets/{dataset_id}/examples": {
@@ -941,6 +1008,49 @@ export interface paths {
          *     - For code evaluators: see `CodeConfig` — managed evaluators (`code_config.type: managed`) use `managed_evaluator` and `variables`; custom evaluators (`code_config.type: custom`) use `code`, optional `imports`, and `variables`.
          *     - System-managed fields (`id`, `created_at`, `updated_at`, `created_by_user_id`) are rejected on input.
          *
+         *     **Valid example** (template evaluator)
+         *     ```json
+         *     {
+         *       "name": "Hallucination Detector",
+         *       "space_id": "U3BhY2U6MTpWNEth",
+         *       "type": "template",
+         *       "version": {
+         *         "commit_message": "Initial version",
+         *         "template_config": {
+         *           "name": "hallucination",
+         *           "template": "Given the input: {input}\nand the output: {output}\nIs the output a hallucination?",
+         *           "include_explanations": true,
+         *           "use_function_calling_if_available": true,
+         *           "classification_choices": {"hallucinated": 0, "factual": 1},
+         *           "llm_config": {
+         *             "ai_integration_id": "TGxtSW50ZWdyYXRpb246MTI6YUJjRA==",
+         *             "model_name": "gpt-4o",
+         *             "invocation_parameters": {"temperature": 0},
+         *             "provider_parameters": {}
+         *           }
+         *         }
+         *       }
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (type/config mismatch — `template` type with `code_config`)
+         *     ```json
+         *     {
+         *       "name": "Bad Evaluator",
+         *       "space_id": "U3BhY2U6MTpWNEth",
+         *       "type": "template",
+         *       "version": {
+         *         "commit_message": "Wrong config",
+         *         "code_config": {
+         *           "type": "custom",
+         *           "name": "my_eval",
+         *           "code": "class Evaluator: ...",
+         *           "variables": ["input"]
+         *         }
+         *       }
+         *     }
+         *     ```
+         *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
         post: operations["evaluators_create"];
@@ -981,6 +1091,24 @@ export interface paths {
          * @description Update an evaluator's metadata. At least one field must be provided.
          *     Omitted fields are left unchanged.
          *
+         *     **Payload Requirements**
+         *     - At least one of `name` or `description` must be provided.
+         *     - `name`, if provided, must be unique within the space.
+         *     - System-managed fields (`id`, `type`, `space_id`, `created_at`, `updated_at`, `created_by_user_id`) cannot be modified.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "name": "Hallucination Detector v2",
+         *       "description": "Updated evaluator for production hallucination checks"
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (no updatable fields provided)
+         *     ```json
+         *     {}
+         *     ```
+         *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
         patch: operations["evaluators_update"];
@@ -1012,6 +1140,44 @@ export interface paths {
          *       `code_config.type` is a separate inner discriminator (`managed` or `custom`) and is unrelated to the top-level `type`.
          *       Schema and constraints match Create Evaluator.
          *
+         *     **Valid example** (template version)
+         *     ```json
+         *     {
+         *       "commit_message": "Improve prompt template for better accuracy",
+         *       "template_config": {
+         *         "name": "hallucination",
+         *         "template": "Given the input: {input}\nand output: {output}\nIs the output a hallucination? Explain your reasoning.",
+         *         "include_explanations": true,
+         *         "use_function_calling_if_available": true,
+         *         "classification_choices": {"hallucinated": 0, "factual": 1},
+         *         "llm_config": {
+         *           "ai_integration_id": "TGxtSW50ZWdyYXRpb246MTI6YUJjRA==",
+         *           "model_name": "gpt-4o",
+         *           "invocation_parameters": {"temperature": 0},
+         *           "provider_parameters": {}
+         *         }
+         *       }
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (missing required `commit_message`)
+         *     ```json
+         *     {
+         *       "template_config": {
+         *         "name": "hallucination",
+         *         "template": "Is this a hallucination?",
+         *         "include_explanations": false,
+         *         "use_function_calling_if_available": false,
+         *         "llm_config": {
+         *           "ai_integration_id": "TGxtSW50ZWdyYXRpb246MTI6YUJjRA==",
+         *           "model_name": "gpt-4o",
+         *           "invocation_parameters": {},
+         *           "provider_parameters": {}
+         *         }
+         *       }
+         *     }
+         *     ```
+         *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
         post: operations["evaluator_versions_create"];
@@ -1030,7 +1196,7 @@ export interface paths {
         };
         /**
          * Get evaluator version
-         * @description Get a specific evaluator version by its global ID.
+         * @description Get a specific evaluator version by its unique identifier.
          *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
@@ -1237,14 +1403,19 @@ export interface paths {
          *     - `description` is optional and defaults to an empty string if omitted.
          *     - System-managed fields (`id`, `created_at`) are generated automatically and rejected if provided.
          *
-         *     **Example valid request:**
+         *     **Valid example**
          *     ```json
-         *     { "name": "Agent Engineering Team", "description": "Organization for the Agent Engineering team" }
+         *     {
+         *       "name": "Agent Engineering Team",
+         *       "description": "Organization for the Agent Engineering team"
+         *     }
          *     ```
          *
-         *     **Example invalid request (duplicate name):**
+         *     **Invalid example** (duplicate name)
          *     ```json
-         *     { "name": "Agent Engineering Team" }
+         *     {
+         *       "name": "Agent Engineering Team"
+         *     }
          *     ```
          *     Fails with 409 Conflict if an organization with that name already exists in the account.
          *
@@ -1298,6 +1469,19 @@ export interface paths {
          *     - If `name` is provided, it must be unique within the account.
          *     - System-managed fields (`id`, `created_at`) cannot be modified.
          *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "name": "Platform Engineering Team",
+         *       "description": "Renamed from Agent Engineering Team"
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (no fields provided)
+         *     ```json
+         *     {}
+         *     ```
+         *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
         patch: operations["organizations_update"];
@@ -1325,6 +1509,22 @@ export interface paths {
          *     - Users with a non-annotator account role cannot be assigned the `annotator` organization role.
          *
          *     Requires organization admin.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "user_id": "VXNlcjo0MjphQmNE",
+         *       "role": "member"
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (annotator account user assigned non-annotator org role — returns 400)
+         *     ```json
+         *     {
+         *       "user_id": "VXNlcjo0MjphQmNE",
+         *       "role": "admin"
+         *     }
+         *     ```
          *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
@@ -1415,7 +1615,29 @@ export interface paths {
         delete: operations["projects_delete"];
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update a project
+         * @description Update a project by its ID (rename).
+         *
+         *     **Payload Requirements**
+         *     - `name` must be provided and must be unique within the space.
+         *     - System-managed fields (`id`, `created_at`, `updated_at`) cannot be modified.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "name": "Renamed Project"
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (empty body)
+         *     ```json
+         *     {}
+         *     ```
+         *
+         *     <Note>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
+         */
+        patch: operations["projects_update"];
         trace?: never;
     };
     "/v2/prompts": {
@@ -1722,7 +1944,20 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * List role bindings
+         * @description List role bindings for the authenticated user's account, filtered by
+         *     resource type. Results are paginated; use `limit` and `cursor` for
+         *     subsequent pages.
+         *
+         *     The `resource_type` query parameter is **required** and must be one of
+         *     `SPACE` or `PROJECT`. All bindings in the account are visible to any
+         *     authenticated account member. Use `user_id` to narrow to a specific
+         *     user.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["role_bindings_list"];
         put?: never;
         /**
          * Create a role binding
@@ -1731,7 +1966,7 @@ export interface paths {
          *     **Payload Requirements**
          *     - `role_id`, `user_id`, `resource_type`, and `resource_id` are required.
          *     - `resource_type` must be `SPACE` or `PROJECT`.
-         *     - `resource_id` must be a global ID for the selected `resource_type`.
+         *     - `resource_id` must be a unique identifier for the selected `resource_type`.
          *     - Only one binding per user and resource is allowed. If the target user
          *       already has any binding on the resource, the request returns
          *       `409 Conflict`.
@@ -1866,6 +2101,13 @@ export interface paths {
          *     }
          *     ```
          *
+         *     **Invalid example** (missing required `permissions`)
+         *     ```json
+         *     {
+         *       "name": "Data Scientist"
+         *     }
+         *     ```
+         *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
         post: operations["roles_create"];
@@ -1906,8 +2148,24 @@ export interface paths {
          * @description Update a custom role by its ID. At least one field must be provided.
          *     Predefined roles cannot be updated.
          *
-         *     When `permissions` is provided, the existing permissions are fully replaced
-         *     with the new set.
+         *     **Payload Requirements**
+         *     - At least one of `name`, `description`, or `permissions` must be provided.
+         *     - When `permissions` is provided, the existing permissions are fully replaced with the new set.
+         *     - `name`, if provided, must be unique within the account.
+         *     - System-managed fields (`id`, `created_at`, `updated_at`, `is_predefined`) cannot be modified.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "name": "Senior Data Scientist",
+         *       "permissions": ["PROJECT_READ", "DATASET_READ", "DATASET_CREATE", "DATASET_DELETE"]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (no fields provided)
+         *     ```json
+         *     {}
+         *     ```
          *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
@@ -2005,10 +2263,10 @@ export interface paths {
          * @description Add a single existing account user to a space with a specified role.
          *
          *     **Payload Requirements**
-         *     - `user_id` is required and must be a valid User global ID.
+         *     - `user_id` is required and must be a valid user identifier (base64).
          *     - `role` is required and must be a role assignment object with a `type` discriminator:
          *       - `{ "type": "predefined", "name": "admin" }` — one of the predefined roles: `admin`, `member`, `read-only`, `annotator`.
-         *       - `{ "type": "custom", "id": "<role_id>" }` — a custom RBAC role identified by its global ID.
+         *       - `{ "type": "custom", "id": "<role_id>" }` — a custom RBAC role, using its unique identifier.
          *     - If the user is already a member, their role is updated to the specified value (upsert).
          *     - The user must already be a member of the space's parent organization; auto-enrollment is not performed (400 if not a member).
          *
@@ -2398,16 +2656,43 @@ export interface paths {
          *     (`experiment_name`, optional example subset, etc.) and starts an async run.
          *     Poll `GET /v2/task-runs/{run_id}` until `status` reaches a terminal state.
          *
-         *     **Validation Rules (template_evaluation / code_evaluation)**
+         *     **Payload Requirements (template_evaluation / code_evaluation)**
          *     - At least one evaluator is required.
          *     - Duplicate evaluator IDs are not allowed.
          *     - When `dataset_id` is provided, `experiment_ids` must contain at least one entry.
          *     - `sampling_rate` and `is_continuous` are only supported on project-based tasks.
+         *     - System-managed fields (`id`, `created_at`, `updated_at`) are rejected on input.
          *
-         *     **Validation Rules (run_experiment)**
+         *     **Payload Requirements (run_experiment)**
          *     - `dataset_id` is required; `project_id` must be omitted.
          *     - `run_configuration` is required; `evaluators`, `experiment_ids`, `sampling_rate`,
          *       `is_continuous`, and `query_filter` must be omitted.
+         *
+         *     **Valid example** (template_evaluation, project-based)
+         *     ```json
+         *     {
+         *       "name": "Production Hallucination Check",
+         *       "type": "template_evaluation",
+         *       "project_id": "TW9kZWw6MTIzOmFCY0Q=",
+         *       "sampling_rate": 1.0,
+         *       "is_continuous": true,
+         *       "evaluators": [
+         *         {
+         *           "evaluator_id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
+         *           "column_mappings": {"input": "attributes.input.value", "output": "attributes.output.value"}
+         *         }
+         *       ]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (run_experiment missing `run_configuration`)
+         *     ```json
+         *     {
+         *       "name": "My Experiment",
+         *       "type": "run_experiment",
+         *       "dataset_id": "RGF0YXNldDo1NjpxUndY"
+         *     }
+         *     ```
          *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
@@ -2449,9 +2734,26 @@ export interface paths {
          * @description Update a task's mutable fields. At least one field must be provided.
          *     Omitted fields are left unchanged.
          *
-         *     When `evaluators` is provided, the entire evaluator list is replaced.
+         *     **Payload Requirements**
+         *     - At least one mutable field must be provided.
+         *     - When `evaluators` is provided, the entire evaluator list is replaced.
+         *     - `sampling_rate` and `is_continuous` are only applicable for project-based tasks.
+         *     - Fields not valid for the task's type return 400 (e.g. `run_configuration` on an evaluation task).
+         *     - System-managed fields (`id`, `type`, `created_at`, `updated_at`) cannot be modified.
          *
-         *     `sampling_rate` and `is_continuous` are only applicable for project-based tasks.
+         *     **Valid example** (update evaluation task)
+         *     ```json
+         *     {
+         *       "name": "Updated Hallucination Check",
+         *       "sampling_rate": 0.5,
+         *       "query_filter": "metadata.environment = 'staging'"
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (no fields provided)
+         *     ```json
+         *     {}
+         *     ```
          *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
@@ -2495,6 +2797,11 @@ export interface paths {
          *     asynchronously. Poll `GET /v2/task-runs/{run_id}` until the run reaches a
          *     terminal status (`completed`, `failed`, or `cancelled`).
          *
+         *     **Payload Requirements**
+         *     - Fields must match the task's type; sending inapplicable fields returns 400.
+         *     - For `template_evaluation` / `code_evaluation` tasks, all trigger fields are optional — an empty body uses server defaults.
+         *     - For `run_experiment` tasks, `experiment_name` is required.
+         *
          *     **For `run_experiment` tasks**
          *
          *     Supply `experiment_name` (required) plus any of the optional per-run fields:
@@ -2512,6 +2819,21 @@ export interface paths {
          *     Supply `data_start_time`, `data_end_time`, `max_spans`,
          *     `override_evaluations`, and/or `experiment_ids` as needed.
          *     `run_experiment`-specific fields are not applicable for these task types.
+         *
+         *     **Valid example** (trigger a run_experiment run)
+         *     ```json
+         *     {
+         *       "experiment_name": "GPT-4o Baseline v2",
+         *       "max_examples": 50
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (run_experiment trigger missing required `experiment_name`)
+         *     ```json
+         *     {
+         *       "max_examples": 50
+         *     }
+         *     ```
          *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
@@ -2630,9 +2952,9 @@ export interface components {
         AiIntegrationProvider: "openAI" | "azureOpenAI" | "awsBedrock" | "vertexAI" | "anthropic" | "custom" | "nvidiaNim" | "gemini";
         /** @description Visibility scoping for the integration */
         AiIntegrationScoping: {
-            /** @description Organization global ID. Null means account-wide. */
+            /** @description Organization identifier (base64). Null means account-wide. */
             organization_id?: string | null;
-            /** @description Space global ID. Null means organization-wide (or account-wide if organization_id is also null). */
+            /** @description Space identifier (base64). Null means organization-wide (or account-wide if organization_id is also null). */
             space_id?: string | null;
         };
         /** @description AWS Bedrock provider metadata */
@@ -2746,15 +3068,11 @@ export interface components {
         /** @description A user assigned to a record with their completion status */
         AnnotationQueueAssignedUser: {
             user: components["schemas"]["AnnotatorUser"];
-            /**
-             * @description The completion status for this user on this record
-             * @enum {string}
-             */
-            completion_status: "pending" | "completed";
+            completion_status: components["schemas"]["AnnotationQueueCompletionStatus"];
         };
         AnnotationQueueExampleRecordInput: {
             /**
-             * @description The type of record (enum property replaced by openapi-typescript)
+             * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
             record_type: "example";
@@ -2771,11 +3089,7 @@ export interface components {
             id: string;
             /** @description The annotation queue this record belongs to */
             annotation_queue_id: string;
-            /**
-             * @description The source type of the record (spans or dataset)
-             * @enum {string}
-             */
-            source_type: "spans" | "dataset";
+            source_type: components["schemas"]["AnnotationQueueSourceType"];
             /** @description Record data as flat key-value pairs containing span or dataset fields. Does not include annotation or evaluation columns. */
             data: {
                 [key: string]: unknown;
@@ -2793,11 +3107,7 @@ export interface components {
             id: string;
             /** @description The annotation queue this record belongs to */
             annotation_queue_id: string;
-            /**
-             * @description The source type of the record (spans or dataset)
-             * @enum {string}
-             */
-            source_type: "spans" | "dataset";
+            source_type: components["schemas"]["AnnotationQueueSourceType"];
             /** @description The annotations that were submitted in this request */
             annotations: components["schemas"]["Annotation"][];
         };
@@ -2807,18 +3117,14 @@ export interface components {
             id: string;
             /** @description The annotation queue this record belongs to */
             annotation_queue_id: string;
-            /**
-             * @description The source type of the record (spans or dataset)
-             * @enum {string}
-             */
-            source_type: "spans" | "dataset";
+            source_type: components["schemas"]["AnnotationQueueSourceType"];
             /** @description The users now assigned to this record after this operation */
             assigned_users: components["schemas"]["AnnotationQueueAssignedUser"][];
         };
         AnnotationQueueRecordInput: components["schemas"]["AnnotationQueueExampleRecordInput"] | components["schemas"]["AnnotationQueueSpanRecordInput"];
         AnnotationQueueSpanRecordInput: {
             /**
-             * @description The type of record (enum property replaced by openapi-typescript)
+             * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
             record_type: "span";
@@ -2921,6 +3227,20 @@ export interface components {
              */
             annotator_emails?: components["schemas"]["Email"][];
         };
+        /**
+         * @description Completion status for a user's annotation assignment on a record.
+         *     - pending - The user has not yet submitted annotations.
+         *     - completed - The user has submitted annotations.
+         * @enum {string}
+         */
+        AnnotationQueueCompletionStatus: "pending" | "completed";
+        /**
+         * @description Source type of the annotation queue record.
+         *     - spans - The record originates from span data.
+         *     - dataset - The record originates from a dataset example.
+         * @enum {string}
+         */
+        AnnotationQueueSourceType: "spans" | "dataset";
         /** @description A single record to annotate in a batch, identified by its record ID. */
         AnnotateRecordInput: {
             /** @description The record identifier (span ID, dataset example ID, or experiment run ID, depending on the endpoint). */
@@ -2979,13 +3299,7 @@ export interface components {
             name: string;
             /** @description Optional user-defined description for the API key. */
             description?: string;
-            /**
-             * @description Type of the API key.
-             *     - user - Key associated with a specific user.
-             *     - service - Key associated with a bot user for service authentication.
-             * @enum {string}
-             */
-            key_type: "user" | "service";
+            key_type: components["schemas"]["ApiKeyType"];
             status: components["schemas"]["ApiKeyStatus"];
             /** @description Redacted version of the key suitable for display (e.g., "ak-abc...xyz"). */
             redacted_key: string;
@@ -3001,6 +3315,11 @@ export interface components {
             expires_at?: string;
             /** @description ID of the user who created the key. */
             created_by_user_id: string;
+            /**
+             * Format: date-time
+             * @description Approximate timestamp when the key was last used for authentication. This value is periodically updated and may not reflect the most recent usage.
+             */
+            last_used_at?: string;
         };
         ApiKeyCreate: {
             /**
@@ -3021,9 +3340,8 @@ export interface components {
              *       Requires `space_id`. All roles default to minimum privilege when omitted.
              * @default user
              * @example user
-             * @enum {string}
              */
-            key_type?: "user" | "service";
+            key_type?: components["schemas"]["ApiKeyType"];
             /**
              * Format: date-time
              * @description Optional expiration timestamp. If omitted the key never expires.
@@ -3055,23 +3373,20 @@ export interface components {
              * @description Role to assign the bot user within the space. Defaults to `member` when omitted.
              *     Must be at or below the caller's own effective space role.
              * @default member
-             * @enum {string}
              */
-            space_role?: "admin" | "member" | "read-only";
+            space_role?: components["schemas"]["ApiKeySpaceRole"];
             /**
              * @description Role to assign the bot user within the organization. Defaults to `read-only` when
              *     omitted. Must be at or below the caller's own organization role.
              * @default read-only
-             * @enum {string}
              */
-            org_role?: "admin" | "member" | "read-only";
+            org_role?: components["schemas"]["ApiKeyOrganizationRole"];
             /**
              * @description Account-level role to assign the bot user. Defaults to `member` when omitted.
              *     Must be at or below the caller's own account role.
              * @default member
-             * @enum {string}
              */
-            account_role?: "admin" | "member";
+            account_role?: components["schemas"]["ApiKeyAccountRole"];
         };
         /**
          * @description Current status of the API key.
@@ -3080,6 +3395,36 @@ export interface components {
          * @enum {string}
          */
         ApiKeyStatus: "active" | "deleted";
+        /**
+         * @description Type of the API key.
+         *     - user - Key associated with a specific user.
+         *     - service - Key associated with a bot user for service authentication.
+         * @enum {string}
+         */
+        ApiKeyType: "user" | "service";
+        /**
+         * @description Space-level role for a service key's bot user.
+         *     - admin - Full control within the space.
+         *     - member - Standard space access.
+         *     - read-only - View-only access.
+         * @enum {string}
+         */
+        ApiKeySpaceRole: "admin" | "member" | "read-only";
+        /**
+         * @description Organization-level role for a service key's bot user.
+         *     - admin - Full control within the organization.
+         *     - member - Standard organization access.
+         *     - read-only - View-only access.
+         * @enum {string}
+         */
+        ApiKeyOrganizationRole: "admin" | "member" | "read-only";
+        /**
+         * @description Account-level role for a service key's bot user.
+         *     - admin - Full account administrative access.
+         *     - member - Standard account access.
+         * @enum {string}
+         */
+        ApiKeyAccountRole: "admin" | "member";
         /**
          * @description An organization is a top-level container within an account for grouping
          *     spaces and managing access control. Organizations enable team separation
@@ -3114,7 +3459,7 @@ export interface components {
             created_at: string;
             status: components["schemas"]["UserStatus"];
             role: components["schemas"]["UserRoleAssignment"];
-            /** @description Whether the user has developer permissions (can create GraphQL API keys) */
+            /** @description Whether the user has developer permissions (can use the Arize API) */
             is_developer: boolean;
         };
         /**
@@ -3133,7 +3478,7 @@ export interface components {
         UserUpdate: {
             /** @description Updated display name for the user */
             name?: string;
-            /** @description Set to true to grant developer permissions, or false to revoke them. */
+            /** @description Set to `true` to grant developer permissions, or `false` to revoke them. When omitted, the current value is preserved. */
             is_developer?: boolean;
         };
         CreateUserRequest: {
@@ -3145,7 +3490,7 @@ export interface components {
             /** @description Controls whether and how an invitation is sent */
             invite_mode: components["schemas"]["InviteMode"];
             /**
-             * @description Whether the user should have developer permissions (can create GraphQL API keys).
+             * @description Whether the user should have developer permissions (can use the Arize API).
              *     Defaults to `true` for `admin` and `member` roles, and `false` for `annotator`.
              */
             is_developer?: boolean;
@@ -3172,7 +3517,7 @@ export interface components {
              */
             created_at: string;
             status: components["schemas"]["UserStatus"];
-            /** @description Whether the user has developer permissions (can create GraphQL API keys) */
+            /** @description Whether the user has developer permissions (can use the Arize API) */
             is_developer: boolean;
             /** @description The invite mode used when the user was created. */
             invite_mode: components["schemas"]["InviteMode"];
@@ -3189,7 +3534,7 @@ export interface components {
             temporary_password?: string;
         };
         /**
-         * @description A universally unique identifier
+         * @description A universally unique identifier (base64-encoded opaque string).
          * @example RW50aXR5OjEyMzQ1
          */
         Id: string;
@@ -3339,9 +3684,8 @@ export interface components {
             /**
              * @description Data granularity level for evaluation. When omitted or null, no granularity
              *     filter is applied (span-level evaluation is used by default on the server).
-             * @enum {string|null}
              */
-            data_granularity?: "span" | "trace" | "session" | null;
+            data_granularity?: components["schemas"]["DataGranularity"] | null;
             /**
              * @description Optional filter query over the chosen data granularity. When omitted or null,
              *     no filter is applied.
@@ -3349,10 +3693,7 @@ export interface components {
             query_filter?: string | null;
         };
         CustomCodeConfig: components["schemas"]["CodeConfigCommon"] & {
-            /**
-             * @description Discriminator for custom Python code evaluators
-             * @enum {string}
-             */
+            /** @enum {string} */
             type: "custom";
             /** @description Eval column name. Must match ^[a-zA-Z0-9_\s\-&()]+$ */
             name: string;
@@ -3403,7 +3744,7 @@ export interface components {
             created_by_user_id: string | null;
         };
         EvaluatorLlmConfig: {
-            /** @description AI integration global ID (base64) */
+            /** @description AI integration identifier (base64) */
             ai_integration_id: string;
             /** @description Model name (e.g. gpt-4o) */
             model_name: string;
@@ -3491,10 +3832,7 @@ export interface components {
             version: components["schemas"]["EvaluatorVersion"];
         };
         ManagedCodeConfig: components["schemas"]["CodeConfigCommon"] & {
-            /**
-             * @description Discriminator for managed (built-in) code evaluators
-             * @enum {string}
-             */
+            /** @enum {string} */
             type: "managed";
             /** @description Eval column name. Must match ^[a-zA-Z0-9_\s\-&()]+$ */
             name: string;
@@ -3527,17 +3865,29 @@ export interface components {
         StaticParam: {
             /** @description Parameter name (matches the managed evaluator's argument name) */
             name: string;
-            /**
-             * @description Argument type for static parameters
-             * @enum {string}
-             */
-            type: "STRING" | "STRING_ARRAY" | "REGEX";
+            type: components["schemas"]["StaticParamType"];
             /**
              * @description Default value. Must be a string when `type` is STRING or REGEX, and a string
              *     array when `type` is STRING_ARRAY. Mismatches are rejected with 400 by the server.
              */
             default_value: string | string[];
         };
+        /**
+         * @description Argument type for static evaluator parameters.
+         *     - STRING - A single string value.
+         *     - STRING_ARRAY - An array of string values.
+         *     - REGEX - A regular expression string.
+         * @enum {string}
+         */
+        StaticParamType: "STRING" | "STRING_ARRAY" | "REGEX";
+        /**
+         * @description Data granularity level for evaluation.
+         *     - span - Evaluate at the individual span level.
+         *     - trace - Evaluate at the full trace level.
+         *     - session - Evaluate at the session level.
+         * @enum {string}
+         */
+        DataGranularity: "span" | "trace" | "session";
         TemplateConfig: {
             /** @description Eval column name. Must match ^[a-zA-Z0-9_\s\-&()]+$ */
             name: string;
@@ -3553,11 +3903,8 @@ export interface components {
             } | null;
             /** @default maximize */
             direction?: components["schemas"]["OptimizationDirection"];
-            /**
-             * @description Data granularity level. Defaults to null when omitted.
-             * @enum {string|null}
-             */
-            data_granularity?: "span" | "trace" | "session" | null;
+            /** @description Data granularity level. Defaults to null when omitted. */
+            data_granularity?: components["schemas"]["DataGranularity"] | null;
             /** @description The LLM configuration for executing the template */
             llm_config: components["schemas"]["EvaluatorLlmConfig"];
         };
@@ -3664,8 +4011,22 @@ export interface components {
             presence_penalty?: number;
             /** @description Stop sequences */
             stop?: string[];
+            /** @description Response format configuration. Optional. When omitted, no structured output constraint is applied (the provider's default plain-text behavior is used). */
             response_format?: components["schemas"]["ResponseFormat"];
+            /** @description Tool configuration for the LLM invocation. Optional. When omitted, no tools are made available to the model. */
             tool_config?: components["schemas"]["ToolConfig"];
+            /** @description Top-K sampling parameter. A top-K of 1 means the next selected token is the most probable (greedy decoding). */
+            top_k?: number;
+            /** @description Controls how much reasoning the model performs before responding. Supported by Gemini 3.x models. Accepted values: 'low', 'high'. */
+            thinking_level?: string;
+            /** @description Maximum tokens the model may use for internal reasoning. Supported by Gemini 2.5 models. Range: 0-24576 (Flash/Flash-Lite) or 128-32768 (Pro). Set 0 to disable thinking on Flash models. */
+            thinking_budget?: number;
+            /** @description Controls how much reasoning the model performs before responding. Supported by OpenAI o-series and GPT-5 models. o-series: 'low' | 'medium' | 'high'. GPT-5: 'none' | 'low' | 'medium' | 'high' | 'xhigh'. */
+            reasoning_effort?: string;
+            /** @description Controls the verbosity of model output. Supported by OpenAI GPT-5 series. Accepted values: 'low' | 'medium' | 'high'. */
+            verbosity?: string;
+        } & {
+            [key: string]: unknown;
         };
         /** @description A message in the prompt template */
         LLMMessage: {
@@ -3750,6 +4111,10 @@ export interface components {
         PromptVersionCreateRequest: {
             /** @description Commit message describing this version */
             commit_message: string;
+            /**
+             * @description Format for input variables in the prompt messages. Defaults to `f_string` if not provided.
+             * @default f_string
+             */
             input_variable_format?: components["schemas"]["InputVariableFormat"];
             provider: components["schemas"]["LlmProvider"];
             /** @description The model to use for the call. Optional. If omitted, no default model is set on the prompt version. */
@@ -3789,14 +4154,23 @@ export interface components {
             anthropic_version?: string;
             /** @description AWS Bedrock options */
             bedrock_options?: {
-                /** @description Whether to use the AWS Bedrock Converse endpoint */
+                /**
+                 * @description Whether to use the AWS Bedrock Converse endpoint. Defaults to `false`.
+                 * @default false
+                 */
                 use_converse_endpoint?: boolean;
             };
             /** @description Region for the model deployment */
             region?: string;
+        } & {
+            [key: string]: unknown;
         };
         /** @description Response format configuration */
         ResponseFormat: {
+            /**
+             * @description The response format type. Defaults to `text` if not specified.
+             * @default text
+             */
             type?: components["schemas"]["ResponseFormatType"];
             /** @description JSON schema configuration (when type is json_schema) */
             json_schema?: {
@@ -3806,7 +4180,10 @@ export interface components {
                 description?: string;
                 /** @description The JSON schema object */
                 schema?: Record<string, unknown>;
-                /** @description Whether to enforce strict schema validation */
+                /**
+                 * @description Whether to enforce strict schema validation. Defaults to `false`.
+                 * @default false
+                 */
                 strict?: boolean;
             };
         };
@@ -3841,13 +4218,12 @@ export interface components {
             /** @description Tool choice configuration */
             tool_choice?: unknown;
         };
+        ResourceRestrictionCreate: {
+            /** @description The ID of the resource to restrict */
+            resource_id: components["schemas"]["Id"];
+        };
         ResourceRestriction: {
-            /**
-             * @description The type of the restricted resource (e.g. "PROJECT")
-             * @example PROJECT
-             * @enum {string}
-             */
-            resource_type: "PROJECT";
+            resource_type: components["schemas"]["ResourceRestrictionType"];
             /**
              * @description The ID of the restricted resource
              * @example TW9kZWw6MTIxOmFCY0Q=
@@ -3859,6 +4235,13 @@ export interface components {
              */
             created_at: string;
         };
+        /**
+         * @description Type of the restricted resource.
+         *     - PROJECT - A project within a space.
+         * @example PROJECT
+         * @enum {string}
+         */
+        ResourceRestrictionType: "PROJECT";
         RoleBinding: {
             /** @description Unique identifier for the role binding. */
             id: string;
@@ -3988,6 +4371,33 @@ export interface components {
             user_id: components["schemas"]["Id"];
             role: components["schemas"]["SpaceRoleAssignment"];
         };
+        ListSpansRequest: {
+            /** @description The project ID to list spans for */
+            project_id: string;
+            /**
+             * Format: date-time
+             * @description Filter to spans starting at or after this timestamp (inclusive).
+             *     ISO 8601 format (e.g., `2024-01-01T00:00:00Z`). Defaults to 1 week ago.
+             */
+            start_time?: string;
+            /**
+             * Format: date-time
+             * @description Filter to spans starting before this timestamp (exclusive).
+             *     ISO 8601 format (e.g., `2024-01-02T00:00:00Z`). Defaults to the current time.
+             */
+            end_time?: string;
+            /**
+             * @description Filter expression to apply to the query. Supports SQL-like syntax
+             *     for filtering spans by attributes (e.g., `status_code = 'ERROR'`).
+             */
+            filter?: string;
+        };
+        DeleteSpansRequest: {
+            /** @description The project ID containing the spans to delete */
+            project_id: string;
+            /** @description List of span IDs to delete (maximum 5000) */
+            span_ids: string[];
+        };
         /**
          * @description A Span represents a single unit of work within a distributed trace for an LLM application.
          *     It captures the operation’s input and output, start and end times, and a span kind indicating its role (such as LLM, Tool, Agent, Retriever, Chain, or Embedding).
@@ -4012,11 +4422,7 @@ export interface components {
              * @description Timestamp when the span ended
              */
             end_time: string;
-            /**
-             * @description Status code of the span
-             * @enum {string}
-             */
-            status_code?: "OK" | "ERROR" | "UNSET";
+            status_code?: components["schemas"]["SpanStatusCode"];
             /** @description Status message associated with the span */
             status_message?: string;
             /** @description Key-value pairs of span attributes */
@@ -4050,6 +4456,14 @@ export interface components {
             };
         };
         /**
+         * @description Status code of the span.
+         *     - OK - The operation completed successfully.
+         *     - ERROR - The operation failed with an error.
+         *     - UNSET - No status code was set (default, treated as OK).
+         * @enum {string}
+         */
+        SpanStatusCode: "OK" | "ERROR" | "UNSET";
+        /**
          * @description A task is a typed, configurable unit of work that ties one or more evaluators
          *     to a data source (project or dataset). `run_experiment` tasks additionally
          *     carry a `run_configuration` that defines the LLM or evaluator settings for
@@ -4060,14 +4474,10 @@ export interface components {
             id: string;
             /** @description The name of the task */
             name: string;
-            /**
-             * @description The task type: template_evaluation, code_evaluation, or run_experiment
-             * @enum {string}
-             */
-            type: "template_evaluation" | "code_evaluation" | "run_experiment";
-            /** @description The project global ID (base64). Present for project-based tasks. */
+            type: components["schemas"]["TaskType"];
+            /** @description The project identifier (base64). Present for project-based tasks. */
             project_id?: string | null;
-            /** @description The dataset global ID (base64). Present for dataset-based tasks. */
+            /** @description The dataset identifier (base64). Present for dataset-based tasks. */
             dataset_id?: string | null;
             /** @description Sampling rate between 0 and 1. Only applicable for project-based tasks. */
             sampling_rate?: number | null;
@@ -4077,7 +4487,7 @@ export interface components {
             query_filter: string | null;
             /** @description The evaluators attached to this task. Empty for run_experiment tasks. */
             evaluators: components["schemas"]["TaskEvaluator"][];
-            /** @description Experiment global IDs (base64) for dataset-based tasks. */
+            /** @description Experiment identifiers (base64) for dataset-based tasks. */
             experiment_ids: string[];
             /**
              * @description The run configuration for a `run_experiment` task. Present only when
@@ -4103,7 +4513,7 @@ export interface components {
             created_by_user_id: string | null;
         };
         TaskEvaluator: {
-            /** @description Evaluator global ID (base64). */
+            /** @description Evaluator identifier (base64). */
             evaluator_id: string;
             /** @description The name of the attached evaluator. */
             evaluator_name: string;
@@ -4124,18 +4534,14 @@ export interface components {
         TaskRun: {
             /** @description The unique identifier for the task run. */
             id: string;
-            /** @description The parent task global ID (base64). */
+            /** @description The parent task identifier (base64). */
             task_id: string;
             /**
-             * @description Created experiment global ID (base64). Present only for `run_experiment`
+             * @description Created experiment identifier (base64). Present only for `run_experiment`
              *     task runs; null for all other task types.
              */
             experiment_id?: string | null;
-            /**
-             * @description The current status of the run.
-             * @enum {string}
-             */
-            status: "pending" | "running" | "completed" | "failed" | "cancelled";
+            status: components["schemas"]["TaskRunStatus"];
             /**
              * Format: date-time
              * @description When the run started processing.
@@ -4177,7 +4583,7 @@ export interface components {
              * @enum {string}
              */
             experiment_type: "llm_generation";
-            /** @description AI integration global ID (base64). */
+            /** @description AI integration identifier (base64). */
             ai_integration_id: string;
             /** @description Model name (e.g. `gpt-4o`). Falls back to the integration's default if omitted. */
             model_name?: string;
@@ -4188,7 +4594,7 @@ export interface components {
             /** @description Provider-specific parameters. Defaults to `{}` (no overrides) if omitted. */
             provider_parameters?: Record<string, unknown>;
             tool_config?: components["schemas"]["ToolConfig"];
-            /** @description Prompt version global ID (base64). Links to a Prompt Hub version for traceability. */
+            /** @description Prompt version identifier (base64). Links to a Prompt Hub version for traceability. */
             prompt_version_id?: string | null;
         };
         /**
@@ -4204,7 +4610,7 @@ export interface components {
              * @enum {string}
              */
             experiment_type: "template_evaluation";
-            /** @description AI integration global ID (base64). The LLM that judges each example. */
+            /** @description AI integration identifier (base64). The LLM that judges each example. */
             ai_integration_id: string;
             /** @description Model name (e.g. `gpt-4o`). Falls back to the integration's default if omitted. */
             model_name?: string;
@@ -4223,12 +4629,30 @@ export interface components {
             column_mapping?: {
                 [key: string]: string;
             };
-            /** @description EvaluatorVersion global ID (base64). Links this run to an Eval Hub evaluator version. */
+            /** @description EvaluatorVersion identifier (base64). Links this run to an Eval Hub evaluator version. */
             evaluator_version_id?: string | null;
             invocation_parameters?: components["schemas"]["InvocationParams"];
             /** @description Provider-specific parameters. Defaults to `{}` (no overrides) if omitted. */
             provider_parameters?: Record<string, unknown>;
         };
+        /**
+         * @description The task type.
+         *     - template_evaluation - An LLM template-based evaluation task.
+         *     - code_evaluation - A code-based evaluation task.
+         *     - run_experiment - A task that runs experiments.
+         * @enum {string}
+         */
+        TaskType: "template_evaluation" | "code_evaluation" | "run_experiment";
+        /**
+         * @description Status of a task run.
+         *     - pending - The run has been created but not yet started.
+         *     - running - The run is currently in progress.
+         *     - completed - The run finished successfully.
+         *     - failed - The run encountered an error and stopped.
+         *     - cancelled - The run was cancelled before completion.
+         * @enum {string}
+         */
+        TaskRunStatus: "pending" | "running" | "completed" | "failed" | "cancelled";
         /**
          * @description Discriminator value identifying AWS Bedrock provider metadata.
          * @enum {string}
@@ -4239,6 +4663,12 @@ export interface components {
          * @enum {string}
          */
         GcpProviderMetadataKind: "gcp";
+        AiIntegrationListResponse: {
+            /** @description A list of AI integrations */
+            ai_integrations: components["schemas"]["AiIntegration"][];
+            /** @description Pagination metadata for cursor-based navigation */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
         AnnotationConfigBase: {
             /** @description The unique identifier for the annotation config */
             id: string;
@@ -4253,15 +4683,19 @@ export interface components {
             space_id: string;
         };
         /**
-         * @description The direction for optimization:
+         * @description The direction for optimization. Defaults to `none` when omitted.
          *     - maximize: higher scores are better
          *     - minimize: lower scores are better
          *     - none: higher or lower scores are neither better nor worse
+         * @default none
          * @enum {string}
          */
         OptimizationDirection: "maximize" | "minimize" | "none";
         ContinuousAnnotationConfig: components["schemas"]["AnnotationConfigBase"] & {
-            /** @enum {string} */
+            /**
+             * @description Discriminator value identifying a continuous annotation config.
+             * @enum {string}
+             */
             type: "continuous";
             /**
              * Format: double
@@ -4291,7 +4725,10 @@ export interface components {
             score?: number;
         };
         CategoricalAnnotationConfig: components["schemas"]["AnnotationConfigBase"] & {
-            /** @enum {string} */
+            /**
+             * @description Discriminator value identifying a categorical annotation config.
+             * @enum {string}
+             */
             type: "categorical";
             /** @description An array of categorical annotation values */
             values: components["schemas"]["CategoricalAnnotationValue"][];
@@ -4304,7 +4741,10 @@ export interface components {
             type: "categorical";
         };
         FreeformAnnotationConfig: components["schemas"]["AnnotationConfigBase"] & {
-            /** @enum {string} */
+            /**
+             * @description Discriminator value identifying a freeform annotation config.
+             * @enum {string}
+             */
             type: "freeform";
         } & {
             /**
@@ -4312,6 +4752,12 @@ export interface components {
              * @enum {string}
              */
             type: "freeform";
+        };
+        AnnotationConfigListResponse: {
+            /** @description A list of annotation configs */
+            annotation_configs: components["schemas"]["AnnotationConfig"][];
+            /** @description Pagination metadata for cursor-based navigation */
+            pagination: components["schemas"]["PaginationMetadata"];
         };
         /** @description The base annotation config creation parameters */
         AnnotationConfigCreateBase: {
@@ -4321,7 +4767,10 @@ export interface components {
             space_id: string;
         };
         ContinuousAnnotationConfigCreate: components["schemas"]["AnnotationConfigCreateBase"] & {
-            /** @enum {string} */
+            /**
+             * @description Discriminator value identifying a continuous annotation config.
+             * @enum {string}
+             */
             annotation_config_type: "continuous";
             /**
              * Format: double
@@ -4342,7 +4791,10 @@ export interface components {
             annotation_config_type: "continuous";
         };
         CategoricalAnnotationConfigCreate: components["schemas"]["AnnotationConfigCreateBase"] & {
-            /** @enum {string} */
+            /**
+             * @description Discriminator value identifying a categorical annotation config.
+             * @enum {string}
+             */
             annotation_config_type: "categorical";
             /** @description An array of categorical annotation values */
             values: components["schemas"]["CategoricalAnnotationValue"][];
@@ -4355,7 +4807,10 @@ export interface components {
             annotation_config_type: "categorical";
         };
         FreeformAnnotationConfigCreate: components["schemas"]["AnnotationConfigCreateBase"] & {
-            /** @enum {string} */
+            /**
+             * @description Discriminator value identifying a freeform annotation config.
+             * @enum {string}
+             */
             annotation_config_type: "freeform";
         } & {
             /**
@@ -4387,6 +4842,12 @@ export interface components {
             id: string;
             email: components["schemas"]["Email"];
         };
+        AnnotationQueueListResponse: {
+            /** @description A list of annotation queues */
+            annotation_queues: components["schemas"]["AnnotationQueue"][];
+            /** @description Pagination metadata for cursor-based navigation */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
         /**
          * @description How records are assigned to annotators. Defaults to "all".
          *     - `all`: Every annotator is assigned to every record.
@@ -4395,6 +4856,22 @@ export interface components {
          * @enum {string}
          */
         AssignmentMethod: "all" | "random";
+        AnnotationQueueRecordListResponse: {
+            /** @description A list of annotation queue records */
+            records: components["schemas"]["AnnotationQueueRecord"][];
+            /** @description Pagination metadata for cursor-based navigation */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
+        AnnotationQueueRecordCreateResponse: {
+            /** @description The created annotation queue records */
+            record_sources: components["schemas"]["AnnotationQueueRecord"][];
+        };
+        ApiKeyListResponse: {
+            /** @description API keys matching the request filters. */
+            api_keys: components["schemas"]["ApiKey"][];
+            /** @description Pagination metadata for cursor-based navigation. */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
         ApiKeyRefresh: {
             /**
              * Format: date-time
@@ -4403,6 +4880,18 @@ export interface components {
              * @example 2027-01-01T00:00:00Z
              */
             expires_at?: string;
+        };
+        DatasetListResponse: {
+            /** @description A list of datasets */
+            datasets: components["schemas"]["Dataset"][];
+            /** @description Pagination metadata for cursor-based navigation */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
+        DatasetExampleListResponse: {
+            /** @description Array of example objects from the dataset */
+            examples: components["schemas"]["DatasetExample"][];
+            /** @description Pagination metadata for cursor-based navigation */
+            pagination: components["schemas"]["PaginationMetadata"];
         };
         /**
          * @description A dataset with the IDs of examples that were inserted or updated.
@@ -4430,6 +4919,48 @@ export interface components {
             dataset_version_id: string;
             /** @description IDs of the examples that were inserted or updated */
             example_ids: string[];
+        };
+        EvaluatorListResponse: {
+            /** @description A list of evaluators */
+            evaluators: components["schemas"]["Evaluator"][];
+            /** @description Pagination metadata for cursor-based navigation */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
+        EvaluatorVersionListResponse: {
+            /** @description A list of evaluator versions */
+            evaluator_versions: components["schemas"]["EvaluatorVersion"][];
+            /** @description Pagination metadata for cursor-based navigation */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
+        ExperimentListResponse: {
+            /** @description A list of experiments */
+            experiments: components["schemas"]["Experiment"][];
+            /** @description Pagination metadata for cursor-based navigation */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
+        ExperimentRunsListResponse: {
+            /** @description Array of experiment run objects containing experiment fields and evaluations */
+            experiment_runs: components["schemas"]["ExperimentRun"][];
+            /** @description Pagination metadata for cursor-based navigation */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
+        OrganizationListResponse: {
+            /** @description A list of organizations */
+            organizations: components["schemas"]["Organization"][];
+            /** @description Pagination metadata for cursor-based navigation */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
+        OrganizationCreate: {
+            /** @description Name of the organization (must be unique within the account) */
+            name: string;
+            /** @description A brief description of the organization's purpose. Defaults to an empty string if omitted. */
+            description?: string;
+        };
+        OrganizationUpdate: {
+            /** @description Updated name for the organization (must be unique within the account) */
+            name?: string;
+            /** @description Updated description for the organization. Set to an empty string to clear it. */
+            description?: string;
         };
         /** @enum {string} */
         OrganizationRoleAssignmentType: "predefined" | "custom";
@@ -4485,6 +5016,60 @@ export interface components {
             /** @description The unique identifier of the organization */
             organization_id: components["schemas"]["Id"];
             role: components["schemas"]["OrganizationRoleAssignment"];
+        };
+        ProjectListResponse: {
+            /** @description A list of projects */
+            projects: components["schemas"]["Project"][];
+            /** @description Pagination metadata for cursor-based navigation */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
+        ProjectCreate: {
+            /** @description Name of the project (must be unique within the space) */
+            name: string;
+            /** @description ID of the space to create the project in */
+            space_id: string;
+        };
+        ProjectUpdate: {
+            /** @description New project name. Must be unique within the space. */
+            name: string;
+        };
+        PromptListResponse: {
+            /** @description A list of prompts */
+            prompts: components["schemas"]["Prompt"][];
+            /** @description Pagination metadata for cursor-based navigation */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
+        PromptVersionListResponse: {
+            /** @description A list of prompt versions */
+            prompt_versions: components["schemas"]["PromptVersion"][];
+            /** @description Pagination metadata for cursor-based navigation */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
+        PromptVersionLabelsResponse: {
+            /** @description Label names on the version */
+            labels: string[];
+        };
+        ResourceRestrictionResponseBody: {
+            /** @description The created resource restriction record */
+            resource_restriction: components["schemas"]["ResourceRestriction"];
+        };
+        RoleBindingListResponse: {
+            /** @description A list of role bindings. */
+            role_bindings: components["schemas"]["RoleBinding"][];
+            /** @description Pagination metadata for cursor-based navigation. */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
+        RoleListResponse: {
+            /** @description A list of roles. */
+            roles: components["schemas"]["Role"][];
+            /** @description Pagination metadata for cursor-based navigation. */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
+        SpaceListResponse: {
+            /** @description A list of spaces */
+            spaces: components["schemas"]["Space"][];
+            /** @description Pagination metadata for cursor-based navigation */
+            pagination: components["schemas"]["PaginationMetadata"];
         };
         /** @enum {string} */
         SpaceRoleAssignmentType: "predefined" | "custom";
@@ -4561,6 +5146,48 @@ export interface components {
          *     Note: `custom` role assignments are not yet supported and are reserved for future use.
          */
         UserRoleAssignment: components["schemas"]["PredefinedUserRoleAssignment"] | components["schemas"]["CustomUserRoleAssignment"];
+        UserListResponse: {
+            /** @description A list of account users */
+            users: components["schemas"]["User"][];
+            /** @description Pagination metadata for cursor-based navigation */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
+        SpanListResponse: {
+            /** @description A list of spans */
+            spans: components["schemas"]["Span"][];
+            /** @description Pagination metadata for cursor-based navigation */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
+        SpanDeletePartialResponse: {
+            /** @description Span IDs confirmed deleted across all successfully processed intervals. */
+            deleted_span_ids: string[];
+        };
+        SpanDeleteErrorResponse: {
+            /** @description A short, human-readable summary of the problem type */
+            title: string;
+            /** @description The HTTP status code generated by the origin server for this occurrence of the problem */
+            status: number;
+            /**
+             * Format: uri-reference
+             * @description A URI reference that identifies the problem type
+             */
+            type?: string;
+            /** @description A human-readable explanation specific to this occurrence of the problem */
+            detail?: string;
+            /**
+             * Format: uri-reference
+             * @description A URI reference that identifies the specific occurrence of the problem
+             */
+            instance?: string;
+            /** @description Span IDs confirmed deleted before the fatal error occurred. */
+            deleted_span_ids?: string[];
+        };
+        TaskListResponse: {
+            /** @description A list of tasks */
+            tasks: components["schemas"]["Task"][];
+            /** @description Pagination metadata for cursor-based navigation */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
         BaseEvaluationTaskRequest: {
             /** @description Task name */
             name: string;
@@ -4570,17 +5197,17 @@ export interface components {
              */
             type: string;
             /**
-             * @description Project global ID (base64). Required when `dataset_id` is not provided.
+             * @description Project identifier (base64). Required when `dataset_id` is not provided.
              *     Mutually exclusive with `dataset_id`.
              */
             project_id?: string;
             /**
-             * @description Dataset global ID (base64). Required when `project_id` is not provided.
+             * @description Dataset identifier (base64). Required when `project_id` is not provided.
              *     Mutually exclusive with `project_id`.
              */
             dataset_id?: string;
             /**
-             * @description Experiment global IDs (base64). Required when `dataset_id` is provided
+             * @description Experiment identifiers (base64). Required when `dataset_id` is provided
              *     (at least one entry). Must be omitted or empty for project-based tasks.
              */
             experiment_ids?: string[];
@@ -4595,7 +5222,7 @@ export interface components {
             query_filter?: string;
             /** @description Evaluators to attach (at least one required). */
             evaluators: {
-                /** @description Evaluator global ID (base64). Duplicates are not allowed. */
+                /** @description Evaluator identifier (base64). Duplicates are not allowed. */
                 evaluator_id: string;
                 /** @description Per-evaluator query filter. Combined with the task-level filter (AND). */
                 query_filter?: string;
@@ -4654,7 +5281,7 @@ export interface components {
              * @enum {string}
              */
             type: "run_experiment";
-            /** @description Dataset global ID (base64). Required for `run_experiment` tasks. */
+            /** @description Dataset identifier (base64). Required for `run_experiment` tasks. */
             dataset_id: string;
             run_configuration: components["schemas"]["RunConfiguration"];
         };
@@ -4674,7 +5301,7 @@ export interface components {
             query_filter?: string | null;
             /** @description Replaces the entire evaluator list. At least one evaluator is required when provided. */
             evaluators?: {
-                /** @description Evaluator global ID (base64). Duplicates are not allowed. */
+                /** @description Evaluator identifier (base64). Duplicates are not allowed. */
                 evaluator_id: string;
                 /** @description Per-evaluator query filter. Combined with the task-level filter (AND). */
                 query_filter?: string;
@@ -4696,6 +5323,12 @@ export interface components {
             name?: string;
             run_configuration?: components["schemas"]["RunConfiguration"];
         };
+        TaskRunListResponse: {
+            /** @description A list of task runs */
+            task_runs: components["schemas"]["TaskRun"][];
+            /** @description Pagination metadata for cursor-based navigation */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
         /**
          * @description Trigger request for `template_evaluation` or `code_evaluation` tasks.
          *     `data_start_time` and `data_end_time` together must span no more than 30 days.
@@ -4704,13 +5337,15 @@ export interface components {
         TriggerEvaluationTaskRunRequest: {
             /**
              * Format: date-time
-             * @description ISO 8601 start of the data window to evaluate. If omitted, defaults to
-             *     the task's last run time (or 7 days ago on first run).
+             * @description ISO 8601 start of the data window to evaluate. For model-based tasks,
+             *     defaults to the task's last run time. Required on the first run (when no
+             *     previous run exists). Not applicable to dataset-based tasks.
              */
             data_start_time?: string;
             /**
              * Format: date-time
-             * @description ISO 8601 end of the data window to evaluate. If omitted, defaults to now.
+             * @description ISO 8601 end of the data window to evaluate. For model-based tasks,
+             *     defaults to now. Not applicable to dataset-based tasks.
              */
             data_end_time?: string;
             /** @description Maximum number of spans to process (default 10000). */
@@ -4721,7 +5356,7 @@ export interface components {
              */
             override_evaluations?: boolean;
             /**
-             * @description Experiment global IDs (base64) to run against. Only for dataset-based
+             * @description Experiment identifiers (base64) to run against. Only for dataset-based
              *     `template_evaluation` / `code_evaluation` tasks.
              */
             experiment_ids?: string[];
@@ -4737,7 +5372,7 @@ export interface components {
              */
             experiment_name: string;
             /**
-             * @description Dataset version global ID (base64). Defaults to the latest version
+             * @description Dataset version identifier (base64). Defaults to the latest version
              *     when omitted.
              */
             dataset_version_id?: string;
@@ -4759,7 +5394,7 @@ export interface components {
                 [key: string]: string;
             };
             /**
-             * @description Task global IDs (base64) of evaluation tasks to trigger after the
+             * @description Task identifiers (base64) of evaluation tasks to trigger after the
              *     experiment run completes. Supported for all `run_experiment`
              *     experiment types.
              */
@@ -4838,12 +5473,7 @@ export interface components {
                  *       }
                  *     }
                  */
-                "application/json": {
-                    /** @description A list of AI integrations */
-                    ai_integrations: components["schemas"]["AiIntegration"][];
-                    /** @description Pagination metadata for cursor-based navigation */
-                    pagination: components["schemas"]["PaginationMetadata"];
-                };
+                "application/json": components["schemas"]["AiIntegrationListResponse"];
             };
         };
         /** @description An annotation config object */
@@ -4868,11 +5498,7 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                "application/json": {
-                    /** @description A list of annotation configs */
-                    annotation_configs: components["schemas"]["AnnotationConfig"][];
-                    pagination: components["schemas"]["PaginationMetadata"];
-                };
+                "application/json": components["schemas"]["AnnotationConfigListResponse"];
             };
         };
         /** @description An annotation queue object */
@@ -5060,12 +5686,7 @@ export interface components {
                  *       }
                  *     }
                  */
-                "application/json": {
-                    /** @description A list of annotation queues */
-                    annotation_queues: components["schemas"]["AnnotationQueue"][];
-                    /** @description Pagination metadata for cursor-based navigation */
-                    pagination: components["schemas"]["PaginationMetadata"];
-                };
+                "application/json": components["schemas"]["AnnotationQueueListResponse"];
             };
         };
         /** @description Returns a snapshot of the record fields updated by the annotate operation. Only the submitted annotations are included. Evaluations and user assignments are omitted; use the list records endpoint for the full record state. */
@@ -5172,10 +5793,7 @@ export interface components {
                  *       ]
                  *     }
                  */
-                "application/json": {
-                    /** @description The created annotation queue records */
-                    record_sources: components["schemas"]["AnnotationQueueRecord"][];
-                };
+                "application/json": components["schemas"]["AnnotationQueueRecordCreateResponse"];
             };
         };
         /** @description Annotation queue records successfully deleted */
@@ -5247,12 +5865,7 @@ export interface components {
                  *       }
                  *     }
                  */
-                "application/json": {
-                    /** @description A list of annotation queue records */
-                    records: components["schemas"]["AnnotationQueueRecord"][];
-                    /** @description Pagination metadata */
-                    pagination: components["schemas"]["PaginationMetadata"];
-                };
+                "application/json": components["schemas"]["AnnotationQueueRecordListResponse"];
             };
         };
         /** @description Annotation queue successfully updated */
@@ -5352,12 +5965,7 @@ export interface components {
                  *       }
                  *     }
                  */
-                "application/json": {
-                    /** @description API keys matching the request filters. */
-                    api_keys: components["schemas"]["ApiKey"][];
-                    /** @description Pagination metadata for cursor-based navigation. */
-                    pagination: components["schemas"]["PaginationMetadata"];
-                };
+                "application/json": components["schemas"]["ApiKeyListResponse"];
             };
         };
         /** @description Invalid request */
@@ -5372,7 +5980,7 @@ export interface components {
                  *       "title": "Invalid request parameters",
                  *       "detail": "The 'name' field is required and must be a non-empty string.",
                  *       "instance": "/resource",
-                 *       "type": "https://example.com/probs/invalid-request"
+                 *       "type": "https://arize.com/docs/ax/rest-reference/errors#invalid-request"
                  *     }
                  */
                 "application/problem+json": components["schemas"]["Problem"];
@@ -5390,7 +5998,7 @@ export interface components {
                  *       "title": "Resource conflict",
                  *       "detail": "A resource with the given identifier already exists.",
                  *       "instance": "/resource",
-                 *       "type": "https://example.com/probs/resource-conflict"
+                 *       "type": "https://arize.com/docs/ax/rest-reference/errors#resource-conflict"
                  *     }
                  */
                 "application/problem+json": components["schemas"]["Problem"];
@@ -5408,7 +6016,7 @@ export interface components {
                  *       "title": "Access forbidden",
                  *       "detail": "You do not have permission to access this resource.",
                  *       "instance": "/resource/12345",
-                 *       "type": "https://example.com/probs/access-forbidden"
+                 *       "type": "https://arize.com/docs/ax/rest-reference/errors#access-forbidden"
                  *     }
                  */
                 "application/problem+json": components["schemas"]["Problem"];
@@ -5426,7 +6034,7 @@ export interface components {
                  *       "title": "Resource not found",
                  *       "detail": "The requested resource with ID '12345' was not found.",
                  *       "instance": "/resource/12345",
-                 *       "type": "https://example.com/probs/resource-not-found"
+                 *       "type": "https://arize.com/docs/ax/rest-reference/errors#resource-not-found"
                  *     }
                  */
                 "application/problem+json": components["schemas"]["Problem"];
@@ -5450,7 +6058,7 @@ export interface components {
                  *       "title": "Rate limit exceeded",
                  *       "detail": "You have exceeded the allowed number of requests. Please try again later.",
                  *       "instance": "/resource",
-                 *       "type": "https://example.com/probs/rate-limit-exceeded"
+                 *       "type": "https://arize.com/docs/ax/rest-reference/errors#rate-limit-exceeded"
                  *     }
                  */
                 "application/problem+json": components["schemas"]["Problem"];
@@ -5468,7 +6076,25 @@ export interface components {
                  *       "title": "Authentication required",
                  *       "detail": "You must be authenticated to access this resource.",
                  *       "instance": "/resource",
-                 *       "type": "https://example.com/probs/authentication-required"
+                 *       "type": "https://arize.com/docs/ax/rest-reference/errors#authentication-required"
+                 *     }
+                 */
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description Unprocessable entity */
+        UnprocessableEntity: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "status": 422,
+                 *       "title": "Unprocessable Entity",
+                 *       "detail": "Minimum score must be less than maximum score.",
+                 *       "instance": "/annotation-configs",
+                 *       "type": "https://arize.com/docs/ax/rest-reference/errors#unprocessable-entity"
                  *     }
                  */
                 "application/problem+json": components["schemas"]["Problem"];
@@ -5558,12 +6184,7 @@ export interface components {
                  *       }
                  *     }
                  */
-                "application/json": {
-                    /** @description Array of example objects from the dataset */
-                    examples: components["schemas"]["DatasetExample"][];
-                    /** @description Pagination metadata for cursor-based navigation */
-                    pagination: components["schemas"]["PaginationMetadata"];
-                };
+                "application/json": components["schemas"]["DatasetExampleListResponse"];
             };
         };
         /** @description Returns a list of dataset objects */
@@ -5603,12 +6224,7 @@ export interface components {
                  *       }
                  *     }
                  */
-                "application/json": {
-                    /** @description A list of datasets */
-                    datasets: components["schemas"]["Dataset"][];
-                    /** @description Pagination metadata for cursor-based navigation */
-                    pagination: components["schemas"]["PaginationMetadata"];
-                };
+                "application/json": components["schemas"]["DatasetListResponse"];
             };
         };
         /**
@@ -5653,12 +6269,7 @@ export interface components {
                  *       }
                  *     }
                  */
-                "application/json": {
-                    /** @description A list of evaluators */
-                    evaluators: components["schemas"]["Evaluator"][];
-                    /** @description Pagination metadata for cursor-based navigation */
-                    pagination: components["schemas"]["PaginationMetadata"];
-                };
+                "application/json": components["schemas"]["EvaluatorListResponse"];
             };
         };
         /** @description Returns the updated evaluator */
@@ -5737,12 +6348,7 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                "application/json": {
-                    /** @description A list of evaluator versions */
-                    evaluator_versions: components["schemas"]["EvaluatorVersion"][];
-                    /** @description Pagination metadata for cursor-based navigation */
-                    pagination: components["schemas"]["PaginationMetadata"];
-                };
+                "application/json": components["schemas"]["EvaluatorVersionListResponse"];
             };
         };
         /** @description Returns an evaluator with a resolved version */
@@ -5903,12 +6509,7 @@ export interface components {
                  *       }
                  *     }
                  */
-                "application/json": {
-                    /** @description A list of experiments */
-                    experiments: components["schemas"]["Experiment"][];
-                    /** @description Pagination metadata for cursor-based navigation */
-                    pagination: components["schemas"]["PaginationMetadata"];
-                };
+                "application/json": components["schemas"]["ExperimentListResponse"];
             };
         };
         /** @description Returns a list of experiment run objects */
@@ -5948,12 +6549,7 @@ export interface components {
                  *       }
                  *     }
                  */
-                "application/json": {
-                    /** @description Array of experiment run objects containing experiment fields and evaluations */
-                    experiment_runs: components["schemas"]["ExperimentRun"][];
-                    /** @description Pagination metadata for cursor-based navigation */
-                    pagination: components["schemas"]["PaginationMetadata"];
-                };
+                "application/json": components["schemas"]["ExperimentRunsListResponse"];
             };
         };
         /**
@@ -5982,30 +6578,25 @@ export interface components {
                  * @example {
                  *       "organizations": [
                  *         {
-                 *           "id": "org_001",
+                 *           "id": "T3JnYW5pemF0aW9uOjE6YUJjRA==",
                  *           "name": "Agent Engineering Team",
                  *           "description": "Organization for the ML platform engineering team",
                  *           "created_at": "2024-01-01T12:00:00Z"
                  *         },
                  *         {
-                 *           "id": "org_002",
+                 *           "id": "T3JnYW5pemF0aW9uOjI6YUJjRA==",
                  *           "name": "Data Science",
                  *           "description": "Organization for the Agent Engineering team",
                  *           "created_at": "2024-01-02T12:00:00Z"
                  *         }
                  *       ],
                  *       "pagination": {
-                 *         "next_cursor": "cursor_12345",
+                 *         "next_cursor": "dXNlcl8yMDI0LTA2LTAx",
                  *         "has_more": true
                  *       }
                  *     }
                  */
-                "application/json": {
-                    /** @description A list of organizations */
-                    organizations: components["schemas"]["Organization"][];
-                    /** @description Pagination metadata for cursor-based navigation */
-                    pagination: components["schemas"]["PaginationMetadata"];
-                };
+                "application/json": components["schemas"]["OrganizationListResponse"];
             };
         };
         /** @description User successfully added to the organization */
@@ -6052,7 +6643,7 @@ export interface components {
                  *         "type": "predefined",
                  *         "name": "member"
                  *       },
-                 *       "is_developer": false
+                 *       "is_developer": true
                  *     }
                  */
                 "application/json": components["schemas"]["User"];
@@ -6089,7 +6680,7 @@ export interface components {
                  *             "type": "predefined",
                  *             "name": "admin"
                  *           },
-                 *           "is_developer": false
+                 *           "is_developer": true
                  *         }
                  *       ],
                  *       "pagination": {
@@ -6098,12 +6689,7 @@ export interface components {
                  *       }
                  *     }
                  */
-                "application/json": {
-                    /** @description A list of account users */
-                    users: components["schemas"]["User"][];
-                    /** @description Pagination metadata for cursor-based navigation */
-                    pagination: components["schemas"]["PaginationMetadata"];
-                };
+                "application/json": components["schemas"]["UserListResponse"];
             };
         };
         /** @description User successfully removed from the account */
@@ -6129,7 +6715,7 @@ export interface components {
                  *         "name": "member"
                  *       },
                  *       "status": "invited",
-                 *       "is_developer": false,
+                 *       "is_developer": true,
                  *       "invite_mode": "email_link",
                  *       "created_at": "2024-01-01T12:00:00Z"
                  *     }
@@ -6183,12 +6769,7 @@ export interface components {
                  *       }
                  *     }
                  */
-                "application/json": {
-                    /** @description A list of projects */
-                    projects: components["schemas"]["Project"][];
-                    /** @description Pagination metadata for cursor-based navigation */
-                    pagination: components["schemas"]["PaginationMetadata"];
-                };
+                "application/json": components["schemas"]["ProjectListResponse"];
             };
         };
         /** @description A prompt object */
@@ -6243,12 +6824,7 @@ export interface components {
                  *       }
                  *     }
                  */
-                "application/json": {
-                    /** @description A list of prompts */
-                    prompts: components["schemas"]["Prompt"][];
-                    /** @description Pagination metadata for cursor-based navigation */
-                    pagination: components["schemas"]["PaginationMetadata"];
-                };
+                "application/json": components["schemas"]["PromptListResponse"];
             };
         };
         /** @description A prompt version object */
@@ -6309,10 +6885,7 @@ export interface components {
                  *       ]
                  *     }
                  */
-                "application/json": {
-                    /** @description Label names on the version */
-                    labels: string[];
-                };
+                "application/json": components["schemas"]["PromptVersionLabelsResponse"];
             };
         };
         /** @description Returns a list of prompt version objects */
@@ -6365,12 +6938,7 @@ export interface components {
                  *       }
                  *     }
                  */
-                "application/json": {
-                    /** @description A list of prompt versions */
-                    prompt_versions: components["schemas"]["PromptVersion"][];
-                    /** @description Pagination metadata for cursor-based navigation */
-                    pagination: components["schemas"]["PaginationMetadata"];
-                };
+                "application/json": components["schemas"]["PromptVersionListResponse"];
             };
         };
         /** @description A prompt object with a resolved version */
@@ -6432,10 +7000,7 @@ export interface components {
                  *       }
                  *     }
                  */
-                "application/json": {
-                    /** @description The created resource restriction record */
-                    resource_restriction: components["schemas"]["ResourceRestriction"];
-                };
+                "application/json": components["schemas"]["ResourceRestrictionResponseBody"];
             };
         };
         /** @description Role binding successfully created. */
@@ -6446,11 +7011,11 @@ export interface components {
             content: {
                 /**
                  * @example {
-                 *       "id": "Rbd001",
-                 *       "role_id": "Rol001",
-                 *       "user_id": "Usr001",
+                 *       "id": "Um9sZUJpbmRpbmc6MTphQmNE",
+                 *       "role_id": "Um9sZToxOmFCY0Q=",
+                 *       "user_id": "VXNlcjo0MjphQmNE",
                  *       "resource_type": "SPACE",
-                 *       "resource_id": "Spa001",
+                 *       "resource_id": "U3BhY2U6MTpWNEth",
                  *       "created_at": "2024-06-01T10:00:00Z",
                  *       "updated_at": "2024-06-01T10:00:00Z"
                  *     }
@@ -6465,6 +7030,43 @@ export interface components {
             };
             content?: never;
         };
+        /** @description Returns a list of role binding objects. */
+        RoleBindingList: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "role_bindings": [
+                 *         {
+                 *           "id": "Um9sZUJpbmRpbmc6MTphQmNE",
+                 *           "role_id": "Um9sZToxOmFCY0Q=",
+                 *           "user_id": "VXNlcjo0MjphQmNE",
+                 *           "resource_type": "SPACE",
+                 *           "resource_id": "U3BhY2U6MTpWNEth",
+                 *           "created_at": "2024-06-01T10:00:00Z",
+                 *           "updated_at": "2024-06-01T10:00:00Z"
+                 *         },
+                 *         {
+                 *           "id": "Um9sZUJpbmRpbmc6MjphQmNE",
+                 *           "role_id": "Um9sZToyOmFCY0Q=",
+                 *           "user_id": "VXNlcjoxMDphQmNE",
+                 *           "resource_type": "PROJECT",
+                 *           "resource_id": "UHJvamVjdDo1OmFCY0Q=",
+                 *           "created_at": "2024-06-02T10:00:00Z",
+                 *           "updated_at": "2024-06-02T10:00:00Z"
+                 *         }
+                 *       ],
+                 *       "pagination": {
+                 *         "next_cursor": "cursor_12345",
+                 *         "has_more": true
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["RoleBindingListResponse"];
+            };
+        };
         /** @description A role binding object. */
         RoleBindingResponse: {
             headers: {
@@ -6473,11 +7075,11 @@ export interface components {
             content: {
                 /**
                  * @example {
-                 *       "id": "Rbd001",
-                 *       "role_id": "Rol001",
-                 *       "user_id": "Usr001",
+                 *       "id": "Um9sZUJpbmRpbmc6MTphQmNE",
+                 *       "role_id": "Um9sZToxOmFCY0Q=",
+                 *       "user_id": "VXNlcjo0MjphQmNE",
                  *       "resource_type": "SPACE",
-                 *       "resource_id": "Spa001",
+                 *       "resource_id": "U3BhY2U6MTpWNEth",
                  *       "created_at": "2024-06-01T10:00:00Z",
                  *       "updated_at": "2024-06-01T10:00:00Z"
                  *     }
@@ -6493,7 +7095,7 @@ export interface components {
             content: {
                 /**
                  * @example {
-                 *       "id": "Rol001",
+                 *       "id": "Um9sZToxOmFCY0Q=",
                  *       "name": "Data Scientist",
                  *       "description": "Can read and create datasets and experiments.",
                  *       "permissions": [
@@ -6526,7 +7128,7 @@ export interface components {
                  * @example {
                  *       "roles": [
                  *         {
-                 *           "id": "Rol001",
+                 *           "id": "Um9sZToxOmFCY0Q=",
                  *           "name": "Data Scientist",
                  *           "description": "Can read and create datasets and experiments.",
                  *           "permissions": [
@@ -6539,7 +7141,7 @@ export interface components {
                  *           "updated_at": "2024-06-01T10:00:00Z"
                  *         },
                  *         {
-                 *           "id": "Rol002",
+                 *           "id": "Um9sZToyOmFCY0Q=",
                  *           "name": "Annotator",
                  *           "description": "Can access annotation queues.",
                  *           "permissions": [
@@ -6553,17 +7155,12 @@ export interface components {
                  *         }
                  *       ],
                  *       "pagination": {
-                 *         "next_cursor": "cursor_12345",
+                 *         "next_cursor": "dXNlcl8yMDI0LTA2LTAx",
                  *         "has_more": true
                  *       }
                  *     }
                  */
-                "application/json": {
-                    /** @description A list of roles. */
-                    roles: components["schemas"]["Role"][];
-                    /** @description Pagination metadata for cursor-based navigation. */
-                    pagination: components["schemas"]["PaginationMetadata"];
-                };
+                "application/json": components["schemas"]["RoleListResponse"];
             };
         };
         /** @description A role object. */
@@ -6574,7 +7171,7 @@ export interface components {
             content: {
                 /**
                  * @example {
-                 *       "id": "Rol001",
+                 *       "id": "Um9sZToxOmFCY0Q=",
                  *       "name": "Data Scientist",
                  *       "description": "Can read and create datasets and experiments.",
                  *       "permissions": [
@@ -6666,12 +7263,7 @@ export interface components {
                  *       }
                  *     }
                  */
-                "application/json": {
-                    /** @description A list of spaces */
-                    spaces: components["schemas"]["Space"][];
-                    /** @description Pagination metadata for cursor-based navigation */
-                    pagination: components["schemas"]["PaginationMetadata"];
-                };
+                "application/json": components["schemas"]["SpaceListResponse"];
             };
         };
         /** @description Returns a list of spans */
@@ -6707,12 +7299,7 @@ export interface components {
                  *       }
                  *     }
                  */
-                "application/json": {
-                    /** @description A list of spans */
-                    spans: components["schemas"]["Span"][];
-                    /** @description Pagination metadata for cursor-based navigation */
-                    pagination: components["schemas"]["PaginationMetadata"];
-                };
+                "application/json": components["schemas"]["SpanListResponse"];
             };
         };
         /** @description Annotations accepted. Writes are idempotent; retry on failure is safe. */
@@ -6851,12 +7438,7 @@ export interface components {
                  *       }
                  *     }
                  */
-                "application/json": {
-                    /** @description A list of tasks */
-                    tasks: components["schemas"]["Task"][];
-                    /** @description Pagination metadata for cursor-based navigation */
-                    pagination: components["schemas"]["PaginationMetadata"];
-                };
+                "application/json": components["schemas"]["TaskListResponse"];
             };
         };
         /** @description Returns a single task run object */
@@ -6938,12 +7520,7 @@ export interface components {
                  *       }
                  *     }
                  */
-                "application/json": {
-                    /** @description A list of task runs */
-                    task_runs: components["schemas"]["TaskRun"][];
-                    /** @description Pagination metadata for cursor-based navigation */
-                    pagination: components["schemas"]["PaginationMetadata"];
-                };
+                "application/json": components["schemas"]["TaskRunListResponse"];
             };
         };
         /** @description Returns the updated task */
@@ -7037,7 +7614,7 @@ export interface components {
             content: {
                 /**
                  * @example {
-                 *       "id": "org_001",
+                 *       "id": "T3JnYW5pemF0aW9uOjE6YUJjRA==",
                  *       "name": "Agent Engineering Team",
                  *       "description": "Organization for the Agent Engineering team",
                  *       "created_at": "2024-01-01T12:00:00Z"
@@ -7052,6 +7629,23 @@ export interface components {
                 [name: string]: unknown;
             };
             content?: never;
+        };
+        /** @description Project successfully updated */
+        ProjectUpdated: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "project_001",
+                 *       "name": "My Project",
+                 *       "space_id": "space_12345",
+                 *       "created_at": "2024-01-01T12:00:00Z"
+                 *     }
+                 */
+                "application/json": components["schemas"]["Project"];
+            };
         };
         /**
          * @description Some span IDs could not be confirmed deleted within the allotted retries.
@@ -7069,10 +7663,7 @@ export interface components {
                  *       ]
                  *     }
                  */
-                "application/json": {
-                    /** @description Span IDs confirmed deleted across all successfully processed intervals. */
-                    deleted_span_ids: string[];
-                };
+                "application/json": components["schemas"]["SpanDeletePartialResponse"];
             };
         };
         /** @description Fatal mid-request error. Body carries any IDs already confirmed deleted. */
@@ -7081,62 +7672,33 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                /**
-                 * @example {
-                 *       "title": "Internal Server Error",
-                 *       "status": 500,
-                 *       "detail": "failed to delete spans for interval 2024-01-15/2024-01-16: broker unavailable",
-                 *       "deleted_span_ids": [
-                 *         "a1b2c3d4e5f6a7b8"
-                 *       ]
-                 *     }
-                 */
-                "application/problem+json": {
-                    /** @description A short, human-readable summary of the problem type */
-                    title: string;
-                    /** @description The HTTP status code generated by the origin server for this occurrence of the problem */
-                    status: number;
-                    /**
-                     * Format: uri-reference
-                     * @description A URI reference that identifies the problem type
-                     */
-                    type?: string;
-                    /** @description A human-readable explanation specific to this occurrence of the problem */
-                    detail?: string;
-                    /**
-                     * Format: uri-reference
-                     * @description A URI reference that identifies the specific occurrence of the problem
-                     */
-                    instance?: string;
-                    /** @description Span IDs confirmed deleted before the fatal error occurred. */
-                    deleted_span_ids?: string[];
-                };
+                "application/problem+json": components["schemas"]["SpanDeleteErrorResponse"];
             };
         };
     };
     parameters: {
         /**
-         * @description The unique identifier of the AI integration
+         * @description The unique AI integration identifier (base64)
          * @example TGxtSW50ZWdyYXRpb246MTI6YUJjRA==
          */
         AiIntegrationIdPathParam: components["schemas"]["Id"];
         /**
-         * @description The unique identifier of the annotation config
+         * @description The unique annotation config identifier (base64)
          * @example QW5ub3RhdGlvbkNvbmZpZzoxMjM0NQ==
          */
         AnnotationConfigIdPathParam: components["schemas"]["Id"];
         /**
-         * @description The unique identifier of the annotation queue
+         * @description The unique annotation queue identifier (base64)
          * @example QW5ub3RhdGlvblF1ZXVlOjEyMzQ1
          */
         AnnotationQueueIdPathParam: components["schemas"]["Id"];
         /**
-         * @description The unique identifier of the annotation queue record
+         * @description The unique annotation queue record identifier (base64)
          * @example QW5ub3RhdGlvblF1ZXVlOjEyMzQ1
          */
         AnnotationQueueRecordIdPathParam: components["schemas"]["Id"];
         /**
-         * @description The unique identifier of the API key
+         * @description The unique API key identifier (base64)
          * @example QXBpS2V5OjEyMzQ1
          */
         ApiKeyIdPathParam: components["schemas"]["Id"];
@@ -7155,7 +7717,7 @@ export interface components {
          *     - service - Key associated with a bot user for service authentication.
          * @example user
          */
-        ApiKeyTypeQueryParam: "user" | "service";
+        ApiKeyTypeQueryParam: components["schemas"]["ApiKeyType"];
         /**
          * @description Opaque pagination cursor returned from a previous response
          *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
@@ -7163,12 +7725,12 @@ export interface components {
          */
         CursorQueryParam: string;
         /**
-         * @description The unique identifier of the dataset
+         * @description The unique dataset identifier (base64)
          * @example RGF0YXNldDoxMjM0NQ==
          */
         DatasetIdPathParam: components["schemas"]["Id"];
         /**
-         * @description Filter to a specific dataset (base64 global ID)
+         * @description Filter to a specific dataset (base64 identifier (base64))
          * @example RGF0YXNldDoxMjM0NQ==
          */
         DatasetIdQueryParam: components["schemas"]["Id"];
@@ -7178,22 +7740,22 @@ export interface components {
          */
         DatasetVersionIdQueryParam: components["schemas"]["Id"];
         /**
-         * @description The evaluator global ID (base64)
+         * @description The unique evaluator identifier (base64)
          * @example RXZhbHVhdG9yOjEyMzQ1
          */
         EvaluatorIdPathParam: components["schemas"]["Id"];
         /**
-         * @description The evaluator version global ID (base64)
+         * @description The unique evaluator version identifier (base64)
          * @example RXZhbHVhdG9yVmVyc2lvbjoxMjM0NQ==
          */
         EvaluatorVersionIdPathParam: components["schemas"]["Id"];
         /**
-         * @description Return the evaluator with this specific version (base64 global ID). If omitted, returns the latest version.
+         * @description Return the evaluator with this specific version (base64 identifier (base64)). If omitted, returns the latest version.
          * @example RXZhbHVhdG9yVmVyc2lvbjoxMjM0NQ==
          */
         EvaluatorVersionIdQueryParam: components["schemas"]["Id"];
         /**
-         * @description The unique identifier of the experiment
+         * @description The unique experiment identifier (base64)
          * @example RXhwZXJpbWVudDoxMjM0NQ==
          */
         ExperimentIdPathParam: components["schemas"]["Id"];
@@ -7216,38 +7778,41 @@ export interface components {
          * @example production
          */
         NameSearchQueryParam: string;
-        /** @description The unique identifier of an organization. When provided, only spaces belonging to this organization are returned. */
+        /**
+         * @description The unique organization identifier (base64). When provided, only spaces belonging to this organization are returned.
+         * @example T3JnYW5pemF0aW9uOjEyMzQ1
+         */
         OrganizationIdQueryParam: components["schemas"]["Id"];
         /**
-         * @description The unique identifier of the project
-         * @example project_12345
+         * @description The unique project identifier (base64)
+         * @example UHJvamVjdDoxMjM0NQ==
          */
         ProjectIdPathParam: components["schemas"]["Id"];
         /**
-         * @description Filter to tasks for a specific project (base64 global ID)
+         * @description Filter to tasks for a specific project (base64 identifier (base64))
          * @example UHJvamVjdDoxMjM0NQ==
          */
         ProjectIdQueryParam: components["schemas"]["Id"];
         /**
-         * @description The unique identifier of the prompt
-         * @example prompt_12345
+         * @description The unique prompt identifier (base64)
+         * @example UHJvbXB0OjEyMzQ1
          */
         PromptIdPathParam: components["schemas"]["Id"];
         /**
-         * @description The unique identifier of the prompt version
-         * @example pv_12345
+         * @description The unique prompt version identifier (base64)
+         * @example UHJvbXB0VmVyc2lvbjoxMjM0NQ==
          */
         PromptVersionIdPathParam: components["schemas"]["Id"];
-        /** @description The unique identifier of the resource */
+        /** @description The unique resource identifier (base64) */
         ResourceIdPathParam: components["schemas"]["Id"];
         /**
-         * @description The unique identifier of the role binding.
-         * @example Rbd001
+         * @description The unique role binding identifier (base64)
+         * @example Um9sZUJpbmRpbmc6MTphQmNE
          */
         RoleBindingIdPathParam: components["schemas"]["Id"];
         /**
-         * @description The unique identifier of the role.
-         * @example Rol001
+         * @description The unique role identifier (base64)
+         * @example Um9sZToxOmFCY0Q=
          */
         RoleIdPathParam: components["schemas"]["Id"];
         /**
@@ -7259,8 +7824,8 @@ export interface components {
          */
         RolesIsPredefinedQueryParam: boolean;
         /**
-         * @description The unique identifier of the space
-         * @example spc_12345
+         * @description The unique space identifier (base64)
+         * @example U3BhY2U6MTIzNDU=
          */
         SpaceIdPathParam: components["schemas"]["Id"];
         /**
@@ -7276,12 +7841,12 @@ export interface components {
          */
         SpaceNameQueryParam: string;
         /**
-         * @description The task global ID (base64)
+         * @description The unique task identifier (base64)
          * @example VGFzazoxMjM0NQ==
          */
         TaskIdPathParam: components["schemas"]["Id"];
         /**
-         * @description The task run global ID (base64)
+         * @description The unique task run identifier (base64)
          * @example VGFza1J1bjoxMjM0NQ==
          */
         TaskRunIdPathParam: components["schemas"]["Id"];
@@ -7289,14 +7854,14 @@ export interface components {
          * @description Filter by run status: pending, running, completed, failed, cancelled
          * @example completed
          */
-        TaskRunStatusQueryParam: "pending" | "running" | "completed" | "failed" | "cancelled";
+        TaskRunStatusQueryParam: components["schemas"]["TaskRunStatus"];
         /**
          * @description Filter by task type: template_evaluation, code_evaluation, or run_experiment
          * @example template_evaluation
          */
-        TaskTypeQueryParam: "template_evaluation" | "code_evaluation" | "run_experiment";
+        TaskTypeQueryParam: components["schemas"]["TaskType"];
         /**
-         * @description The unique identifier of the user
+         * @description The unique user identifier (base64)
          * @example VXNlcjoxMjM0NQ==
          */
         UserIdPathParam: components["schemas"]["Id"];
@@ -7312,12 +7877,12 @@ export interface components {
          */
         UserStatusQueryParam: components["schemas"]["UserStatus"][];
         /**
-         * @description Return the prompt with this specific version. Mutually exclusive with `label`.
-         * @example pv_12345
+         * @description Return the prompt with this specific version (base64 identifier (base64)). Mutually exclusive with `label`.
+         * @example UHJvbXB0VmVyc2lvbjoxMjM0NQ==
          */
         VersionIdQueryParam: components["schemas"]["Id"];
         /**
-         * @description Filter API keys by the user who created them (base64 global ID).
+         * @description Filter API keys by the user who created them (base64 identifier (base64)).
          *     When used with `space_id`, filters service keys by creator — available to any user with space access.
          *     When used without `space_id`, filters user keys by creator — account admins only (non-admins receive `403`).
          *     Can be combined with `key_type` to further narrow results by key type.
@@ -7325,10 +7890,22 @@ export interface components {
          */
         UserIdQueryParam: components["schemas"]["Id"];
         /**
-         * @description The unique identifier of the organization
-         * @example org_12345
+         * @description The unique organization identifier (base64)
+         * @example T3JnYW5pemF0aW9uOjEyMzQ1
          */
         OrgIdPathParam: components["schemas"]["Id"];
+        /**
+         * @description Filter role bindings by user. When provided, only bindings assigned to this
+         *     user are returned. Must be a valid global user ID.
+         * @example VXNlcjoxOmxQZzI=
+         */
+        RoleBindingsUserIdQueryParam: components["schemas"]["Id"];
+        /**
+         * @description Filter role bindings by resource type.
+         *     - `SPACE` — Return only space-level bindings.
+         *     - `PROJECT` — Return only project-level bindings.
+         */
+        RoleBindingsResourceTypeQueryParam: components["schemas"]["RoleBindingResourceType"];
     };
     requestBodies: {
         /** @description Body containing AI integration creation parameters */
@@ -7621,6 +8198,20 @@ export interface components {
                 };
             };
         };
+        /** @description Body containing dataset update parameters. */
+        UpdateDatasetRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "name": "Updated Dataset Name"
+                 *     }
+                 */
+                "application/json": {
+                    /** @description New name for the dataset. Must be unique within the space. */
+                    name: string;
+                };
+            };
+        };
         /** @description Body containing dataset examples for update operation by ID matching */
         UpdateDatasetExamplesRequestBody: {
             content: {
@@ -7682,18 +8273,13 @@ export interface components {
         CreateEvaluatorRequestBody: {
             content: {
                 "application/json": {
-                    /** @description Space global ID (base64) */
+                    /** @description Space identifier (base64) */
                     space_id: string;
                     /** @description Evaluator name (must be unique within the space) */
                     name: string;
                     /** @description Evaluator description */
                     description?: string;
-                    /**
-                     * @description Evaluator type. Use `template` with `version.template_config`, or `code`
-                     *     with `version.code_config`.
-                     * @enum {string}
-                     */
-                    type: "template" | "code";
+                    type: components["schemas"]["EvaluatorType"];
                     version: components["schemas"]["EvaluatorVersionCreate"];
                 };
             };
@@ -7794,12 +8380,7 @@ export interface components {
                  *       "description": "Organization for the Agent Engineering team"
                  *     }
                  */
-                "application/json": {
-                    /** @description Name of the organization (must be unique within the account) */
-                    name: string;
-                    /** @description A brief description of the organization's purpose. Defaults to an empty string if omitted. */
-                    description?: string;
-                };
+                "application/json": components["schemas"]["OrganizationCreate"];
             };
         };
         /** @description Body containing organization update parameters. At least one field must be provided. */
@@ -7811,12 +8392,7 @@ export interface components {
                  *       "description": "Updated organization description"
                  *     }
                  */
-                "application/json": {
-                    /** @description Updated name for the organization (must be unique within the account) */
-                    name?: string;
-                    /** @description Updated description for the organization. Set to an empty string to clear it. */
-                    description?: string;
-                };
+                "application/json": components["schemas"]["OrganizationUpdate"];
             };
         };
         /** @description Body containing the user to add to the organization */
@@ -7843,12 +8419,18 @@ export interface components {
                  *       "space_id": "space_12345"
                  *     }
                  */
-                "application/json": {
-                    /** @description Name of the project (must be unique within the space) */
-                    name: string;
-                    /** @description ID of the space to create the project in */
-                    space_id: string;
-                };
+                "application/json": components["schemas"]["ProjectCreate"];
+            };
+        };
+        /** @description Body containing project update parameters. The `name` field must be provided. */
+        UpdateProjectRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "name": "Renamed Project"
+                 *     }
+                 */
+                "application/json": components["schemas"]["ProjectUpdate"];
             };
         };
         /** @description Body containing prompt creation parameters with an initial version */
@@ -7956,15 +8538,26 @@ export interface components {
                 };
             };
         };
+        /** @description Body containing resource restriction creation parameters. */
+        CreateResourceRestrictionRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "resource_id": "TW9kZWw6MTIxOmFCY0Q="
+                 *     }
+                 */
+                "application/json": components["schemas"]["ResourceRestrictionCreate"];
+            };
+        };
         /** @description Body containing role binding creation parameters. */
         CreateRoleBindingRequestBody: {
             content: {
                 /**
                  * @example {
-                 *       "role_id": "Rol001",
-                 *       "user_id": "Usr001",
+                 *       "role_id": "Um9sZToxOmFCY0Q=",
+                 *       "user_id": "VXNlcjo0MjphQmNE",
                  *       "resource_type": "SPACE",
-                 *       "resource_id": "Spa001"
+                 *       "resource_id": "U3BhY2U6MTpWNEth"
                  *     }
                  */
                 "application/json": components["schemas"]["RoleBindingCreate"];
@@ -7975,7 +8568,7 @@ export interface components {
             content: {
                 /**
                  * @example {
-                 *       "role_id": "Rol002"
+                 *       "role_id": "Um9sZToyOmFCY0Q="
                  *     }
                  */
                 "application/json": components["schemas"]["RoleBindingUpdate"];
@@ -8047,27 +8640,7 @@ export interface components {
                  *       "filter": "status_code = 'ERROR'"
                  *     }
                  */
-                "application/json": {
-                    /** @description The project ID to list spans for */
-                    project_id: string;
-                    /**
-                     * Format: date-time
-                     * @description Filter to spans starting at or after this timestamp (inclusive).
-                     *     ISO 8601 format (e.g., `2024-01-01T00:00:00Z`). Defaults to 1 week ago.
-                     */
-                    start_time?: string;
-                    /**
-                     * Format: date-time
-                     * @description Filter to spans starting before this timestamp (exclusive).
-                     *     ISO 8601 format (e.g., `2024-01-02T00:00:00Z`). Defaults to the current time.
-                     */
-                    end_time?: string;
-                    /**
-                     * @description Filter expression to apply to the query. Supports SQL-like syntax
-                     *     for filtering spans by attributes (e.g., `status_code = 'ERROR'`).
-                     */
-                    filter?: string;
-                };
+                "application/json": components["schemas"]["ListSpansRequest"];
             };
         };
         /** @description Body containing span IDs to delete */
@@ -8082,12 +8655,7 @@ export interface components {
                  *       ]
                  *     }
                  */
-                "application/json": {
-                    /** @description The project ID containing the spans to delete */
-                    project_id: string;
-                    /** @description List of span IDs to delete (maximum 5000) */
-                    span_ids: string[];
-                };
+                "application/json": components["schemas"]["DeleteSpansRequest"];
             };
         };
         /** @description Body containing span annotation batch */
@@ -8276,6 +8844,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -8285,7 +8854,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the AI integration
+                 * @description The unique AI integration identifier (base64)
                  * @example TGxtSW50ZWdyYXRpb246MTI6YUJjRA==
                  */
                 integration_id: components["parameters"]["AiIntegrationIdPathParam"];
@@ -8297,7 +8866,6 @@ export interface operations {
             200: components["responses"]["AiIntegration"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
@@ -8308,7 +8876,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the AI integration
+                 * @description The unique AI integration identifier (base64)
                  * @example TGxtSW50ZWdyYXRpb246MTI6YUJjRA==
                  */
                 integration_id: components["parameters"]["AiIntegrationIdPathParam"];
@@ -8331,7 +8899,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the AI integration
+                 * @description The unique AI integration identifier (base64)
                  * @example TGxtSW50ZWdyYXRpb246MTI6YUJjRA==
                  */
                 integration_id: components["parameters"]["AiIntegrationIdPathParam"];
@@ -8346,6 +8914,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -8409,6 +8978,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -8418,7 +8988,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the annotation config
+                 * @description The unique annotation config identifier (base64)
                  * @example QW5ub3RhdGlvbkNvbmZpZzoxMjM0NQ==
                  */
                 annotation_config_id: components["parameters"]["AnnotationConfigIdPathParam"];
@@ -8440,7 +9010,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the annotation config
+                 * @description The unique annotation config identifier (base64)
                  * @example QW5ub3RhdGlvbkNvbmZpZzoxMjM0NQ==
                  */
                 annotation_config_id: components["parameters"]["AnnotationConfigIdPathParam"];
@@ -8452,6 +9022,7 @@ export interface operations {
             204: components["responses"]["AnnotationConfigDeleted"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
@@ -8516,6 +9087,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -8525,7 +9097,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the annotation queue
+                 * @description The unique annotation queue identifier (base64)
                  * @example QW5ub3RhdGlvblF1ZXVlOjEyMzQ1
                  */
                 annotation_queue_id: components["parameters"]["AnnotationQueueIdPathParam"];
@@ -8537,7 +9109,6 @@ export interface operations {
             200: components["responses"]["AnnotationQueue"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
@@ -8548,7 +9119,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the annotation queue
+                 * @description The unique annotation queue identifier (base64)
                  * @example QW5ub3RhdGlvblF1ZXVlOjEyMzQ1
                  */
                 annotation_queue_id: components["parameters"]["AnnotationQueueIdPathParam"];
@@ -8571,7 +9142,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the annotation queue
+                 * @description The unique annotation queue identifier (base64)
                  * @example QW5ub3RhdGlvblF1ZXVlOjEyMzQ1
                  */
                 annotation_queue_id: components["parameters"]["AnnotationQueueIdPathParam"];
@@ -8586,6 +9157,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -8604,7 +9176,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the annotation queue
+                 * @description The unique annotation queue identifier (base64)
                  * @example QW5ub3RhdGlvblF1ZXVlOjEyMzQ1
                  */
                 annotation_queue_id: components["parameters"]["AnnotationQueueIdPathParam"];
@@ -8627,7 +9199,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the annotation queue
+                 * @description The unique annotation queue identifier (base64)
                  * @example QW5ub3RhdGlvblF1ZXVlOjEyMzQ1
                  */
                 annotation_queue_id: components["parameters"]["AnnotationQueueIdPathParam"];
@@ -8642,6 +9214,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -8651,7 +9224,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the annotation queue
+                 * @description The unique annotation queue identifier (base64)
                  * @example QW5ub3RhdGlvblF1ZXVlOjEyMzQ1
                  */
                 annotation_queue_id: components["parameters"]["AnnotationQueueIdPathParam"];
@@ -8665,6 +9238,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -8674,12 +9248,12 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the annotation queue
+                 * @description The unique annotation queue identifier (base64)
                  * @example QW5ub3RhdGlvblF1ZXVlOjEyMzQ1
                  */
                 annotation_queue_id: components["parameters"]["AnnotationQueueIdPathParam"];
                 /**
-                 * @description The unique identifier of the annotation queue record
+                 * @description The unique annotation queue record identifier (base64)
                  * @example QW5ub3RhdGlvblF1ZXVlOjEyMzQ1
                  */
                 annotation_queue_record_id: components["parameters"]["AnnotationQueueRecordIdPathParam"];
@@ -8693,6 +9267,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -8702,12 +9277,12 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the annotation queue
+                 * @description The unique annotation queue identifier (base64)
                  * @example QW5ub3RhdGlvblF1ZXVlOjEyMzQ1
                  */
                 annotation_queue_id: components["parameters"]["AnnotationQueueIdPathParam"];
                 /**
-                 * @description The unique identifier of the annotation queue record
+                 * @description The unique annotation queue record identifier (base64)
                  * @example QW5ub3RhdGlvblF1ZXVlOjEyMzQ1
                  */
                 annotation_queue_record_id: components["parameters"]["AnnotationQueueRecordIdPathParam"];
@@ -8721,6 +9296,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -8749,7 +9325,7 @@ export interface operations {
                  */
                 space_id?: components["parameters"]["SpaceIdQueryParam"];
                 /**
-                 * @description Filter API keys by the user who created them (base64 global ID).
+                 * @description Filter API keys by the user who created them (base64 identifier (base64)).
                  *     When used with `space_id`, filters service keys by creator — available to any user with space access.
                  *     When used without `space_id`, filters user keys by creator — account admins only (non-admins receive `403`).
                  *     Can be combined with `key_type` to further narrow results by key type.
@@ -8793,6 +9369,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -8802,7 +9379,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the API key
+                 * @description The unique API key identifier (base64)
                  * @example QXBpS2V5OjEyMzQ1
                  */
                 api_key_id: components["parameters"]["ApiKeyIdPathParam"];
@@ -8825,7 +9402,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the API key
+                 * @description The unique API key identifier (base64)
                  * @example QXBpS2V5OjEyMzQ1
                  */
                 api_key_id: components["parameters"]["ApiKeyIdPathParam"];
@@ -8839,6 +9416,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -8902,6 +9480,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
         };
     };
     datasets_get: {
@@ -8910,7 +9489,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the dataset
+                 * @description The unique dataset identifier (base64)
                  * @example RGF0YXNldDoxMjM0NQ==
                  */
                 dataset_id: components["parameters"]["DatasetIdPathParam"];
@@ -8922,7 +9501,6 @@ export interface operations {
             200: components["responses"]["Dataset"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
@@ -8933,7 +9511,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the dataset
+                 * @description The unique dataset identifier (base64)
                  * @example RGF0YXNldDoxMjM0NQ==
                  */
                 dataset_id: components["parameters"]["DatasetIdPathParam"];
@@ -8947,6 +9525,31 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    datasets_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique dataset identifier (base64)
+                 * @example RGF0YXNldDoxMjM0NQ==
+                 */
+                dataset_id: components["parameters"]["DatasetIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["UpdateDatasetRequestBody"];
+        responses: {
+            200: components["responses"]["Dataset"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -8964,7 +9567,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the dataset
+                 * @description The unique dataset identifier (base64)
                  * @example RGF0YXNldDoxMjM0NQ==
                  */
                 dataset_id: components["parameters"]["DatasetIdPathParam"];
@@ -8993,7 +9596,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the dataset
+                 * @description The unique dataset identifier (base64)
                  * @example RGF0YXNldDoxMjM0NQ==
                  */
                 dataset_id: components["parameters"]["DatasetIdPathParam"];
@@ -9007,6 +9610,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -9022,7 +9626,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the dataset
+                 * @description The unique dataset identifier (base64)
                  * @example RGF0YXNldDoxMjM0NQ==
                  */
                 dataset_id: components["parameters"]["DatasetIdPathParam"];
@@ -9037,6 +9641,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -9046,7 +9651,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the dataset
+                 * @description The unique dataset identifier (base64)
                  * @example RGF0YXNldDoxMjM0NQ==
                  */
                 dataset_id: components["parameters"]["DatasetIdPathParam"];
@@ -9060,6 +9665,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -9123,6 +9729,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -9130,7 +9737,7 @@ export interface operations {
         parameters: {
             query?: {
                 /**
-                 * @description Return the evaluator with this specific version (base64 global ID). If omitted, returns the latest version.
+                 * @description Return the evaluator with this specific version (base64 identifier (base64)). If omitted, returns the latest version.
                  * @example RXZhbHVhdG9yVmVyc2lvbjoxMjM0NQ==
                  */
                 version_id?: components["parameters"]["EvaluatorVersionIdQueryParam"];
@@ -9138,7 +9745,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The evaluator global ID (base64)
+                 * @description The unique evaluator identifier (base64)
                  * @example RXZhbHVhdG9yOjEyMzQ1
                  */
                 evaluator_id: components["parameters"]["EvaluatorIdPathParam"];
@@ -9150,7 +9757,6 @@ export interface operations {
             200: components["responses"]["EvaluatorWithVersion"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
@@ -9161,7 +9767,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The evaluator global ID (base64)
+                 * @description The unique evaluator identifier (base64)
                  * @example RXZhbHVhdG9yOjEyMzQ1
                  */
                 evaluator_id: components["parameters"]["EvaluatorIdPathParam"];
@@ -9184,7 +9790,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The evaluator global ID (base64)
+                 * @description The unique evaluator identifier (base64)
                  * @example RXZhbHVhdG9yOjEyMzQ1
                  */
                 evaluator_id: components["parameters"]["EvaluatorIdPathParam"];
@@ -9199,6 +9805,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -9217,7 +9824,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The evaluator global ID (base64)
+                 * @description The unique evaluator identifier (base64)
                  * @example RXZhbHVhdG9yOjEyMzQ1
                  */
                 evaluator_id: components["parameters"]["EvaluatorIdPathParam"];
@@ -9240,7 +9847,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The evaluator global ID (base64)
+                 * @description The unique evaluator identifier (base64)
                  * @example RXZhbHVhdG9yOjEyMzQ1
                  */
                 evaluator_id: components["parameters"]["EvaluatorIdPathParam"];
@@ -9254,6 +9861,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -9263,7 +9871,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The evaluator version global ID (base64)
+                 * @description The unique evaluator version identifier (base64)
                  * @example RXZhbHVhdG9yVmVyc2lvbjoxMjM0NQ==
                  */
                 version_id: components["parameters"]["EvaluatorVersionIdPathParam"];
@@ -9275,7 +9883,6 @@ export interface operations {
             200: components["responses"]["EvaluatorVersion"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
@@ -9284,7 +9891,7 @@ export interface operations {
         parameters: {
             query?: {
                 /**
-                 * @description Filter to a specific dataset (base64 global ID)
+                 * @description Filter to a specific dataset (base64 identifier (base64))
                  * @example RGF0YXNldDoxMjM0NQ==
                  */
                 dataset_id?: components["parameters"]["DatasetIdQueryParam"];
@@ -9333,6 +9940,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -9342,7 +9950,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the experiment
+                 * @description The unique experiment identifier (base64)
                  * @example RXhwZXJpbWVudDoxMjM0NQ==
                  */
                 experiment_id: components["parameters"]["ExperimentIdPathParam"];
@@ -9364,7 +9972,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the experiment
+                 * @description The unique experiment identifier (base64)
                  * @example RXhwZXJpbWVudDoxMjM0NQ==
                  */
                 experiment_id: components["parameters"]["ExperimentIdPathParam"];
@@ -9390,7 +9998,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the experiment
+                 * @description The unique experiment identifier (base64)
                  * @example RXhwZXJpbWVudDoxMjM0NQ==
                  */
                 experiment_id: components["parameters"]["ExperimentIdPathParam"];
@@ -9413,7 +10021,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the experiment
+                 * @description The unique experiment identifier (base64)
                  * @example RXhwZXJpbWVudDoxMjM0NQ==
                  */
                 experiment_id: components["parameters"]["ExperimentIdPathParam"];
@@ -9427,6 +10035,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -9477,6 +10086,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -9486,8 +10096,8 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the organization
-                 * @example org_12345
+                 * @description The unique organization identifier (base64)
+                 * @example T3JnYW5pemF0aW9uOjEyMzQ1
                  */
                 org_id: components["parameters"]["OrgIdPathParam"];
             };
@@ -9498,7 +10108,6 @@ export interface operations {
             200: components["responses"]["Organization"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
@@ -9509,8 +10118,8 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the organization
-                 * @example org_12345
+                 * @description The unique organization identifier (base64)
+                 * @example T3JnYW5pemF0aW9uOjEyMzQ1
                  */
                 org_id: components["parameters"]["OrgIdPathParam"];
             };
@@ -9532,8 +10141,8 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the organization
-                 * @example org_12345
+                 * @description The unique organization identifier (base64)
+                 * @example T3JnYW5pemF0aW9uOjEyMzQ1
                  */
                 org_id: components["parameters"]["OrgIdPathParam"];
             };
@@ -9547,6 +10156,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -9556,8 +10166,8 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the organization
-                 * @example org_12345
+                 * @description The unique organization identifier (base64)
+                 * @example T3JnYW5pemF0aW9uOjEyMzQ1
                  */
                 org_id: components["parameters"]["OrgIdPathParam"];
             };
@@ -9570,6 +10180,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -9579,12 +10190,12 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the organization
-                 * @example org_12345
+                 * @description The unique organization identifier (base64)
+                 * @example T3JnYW5pemF0aW9uOjEyMzQ1
                  */
                 org_id: components["parameters"]["OrgIdPathParam"];
                 /**
-                 * @description The unique identifier of the user
+                 * @description The unique user identifier (base64)
                  * @example VXNlcjoxMjM0NQ==
                  */
                 user_id: components["parameters"]["UserIdPathParam"];
@@ -9660,6 +10271,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -9669,8 +10281,8 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the project
-                 * @example project_12345
+                 * @description The unique project identifier (base64)
+                 * @example UHJvamVjdDoxMjM0NQ==
                  */
                 project_id: components["parameters"]["ProjectIdPathParam"];
             };
@@ -9692,8 +10304,8 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the project
-                 * @example project_12345
+                 * @description The unique project identifier (base64)
+                 * @example UHJvamVjdDoxMjM0NQ==
                  */
                 project_id: components["parameters"]["ProjectIdPathParam"];
             };
@@ -9706,6 +10318,30 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    projects_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique project identifier (base64)
+                 * @example UHJvamVjdDoxMjM0NQ==
+                 */
+                project_id: components["parameters"]["ProjectIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["UpdateProjectRequestBody"];
+        responses: {
+            200: components["responses"]["ProjectUpdated"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -9768,6 +10404,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -9775,8 +10412,8 @@ export interface operations {
         parameters: {
             query?: {
                 /**
-                 * @description Return the prompt with this specific version. Mutually exclusive with `label`.
-                 * @example pv_12345
+                 * @description Return the prompt with this specific version (base64 identifier (base64)). Mutually exclusive with `label`.
+                 * @example UHJvbXB0VmVyc2lvbjoxMjM0NQ==
                  */
                 version_id?: components["parameters"]["VersionIdQueryParam"];
                 /**
@@ -9788,8 +10425,8 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the prompt
-                 * @example prompt_12345
+                 * @description The unique prompt identifier (base64)
+                 * @example UHJvbXB0OjEyMzQ1
                  */
                 prompt_id: components["parameters"]["PromptIdPathParam"];
             };
@@ -9810,8 +10447,8 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the prompt
-                 * @example prompt_12345
+                 * @description The unique prompt identifier (base64)
+                 * @example UHJvbXB0OjEyMzQ1
                  */
                 prompt_id: components["parameters"]["PromptIdPathParam"];
             };
@@ -9822,6 +10459,7 @@ export interface operations {
             204: components["responses"]["PromptDeleted"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
@@ -9832,8 +10470,8 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the prompt
-                 * @example prompt_12345
+                 * @description The unique prompt identifier (base64)
+                 * @example UHJvbXB0OjEyMzQ1
                  */
                 prompt_id: components["parameters"]["PromptIdPathParam"];
             };
@@ -9844,7 +10482,9 @@ export interface operations {
             200: components["responses"]["Prompt"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -9863,8 +10503,8 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the prompt
-                 * @example prompt_12345
+                 * @description The unique prompt identifier (base64)
+                 * @example UHJvbXB0OjEyMzQ1
                  */
                 prompt_id: components["parameters"]["PromptIdPathParam"];
             };
@@ -9886,8 +10526,8 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the prompt
-                 * @example prompt_12345
+                 * @description The unique prompt identifier (base64)
+                 * @example UHJvbXB0OjEyMzQ1
                  */
                 prompt_id: components["parameters"]["PromptIdPathParam"];
             };
@@ -9900,6 +10540,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -9909,8 +10550,8 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the prompt
-                 * @example prompt_12345
+                 * @description The unique prompt identifier (base64)
+                 * @example UHJvbXB0OjEyMzQ1
                  */
                 prompt_id: components["parameters"]["PromptIdPathParam"];
                 /** @description The name of the label (e.g., "production", "staging") */
@@ -9923,7 +10564,6 @@ export interface operations {
             200: components["responses"]["PromptVersion"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
@@ -9934,8 +10574,8 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the prompt version
-                 * @example pv_12345
+                 * @description The unique prompt version identifier (base64)
+                 * @example UHJvbXB0VmVyc2lvbjoxMjM0NQ==
                  */
                 version_id: components["parameters"]["PromptVersionIdPathParam"];
             };
@@ -9946,7 +10586,6 @@ export interface operations {
             200: components["responses"]["PromptVersion"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
@@ -9957,8 +10596,8 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the prompt version
-                 * @example pv_12345
+                 * @description The unique prompt version identifier (base64)
+                 * @example UHJvbXB0VmVyc2lvbjoxMjM0NQ==
                  */
                 version_id: components["parameters"]["PromptVersionIdPathParam"];
             };
@@ -9971,6 +10610,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -9980,8 +10620,8 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the prompt version
-                 * @example pv_12345
+                 * @description The unique prompt version identifier (base64)
+                 * @example UHJvbXB0VmVyc2lvbjoxMjM0NQ==
                  */
                 version_id: components["parameters"]["PromptVersionIdPathParam"];
                 /** @description The name of the label (e.g., "production", "staging") */
@@ -10006,25 +10646,14 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                /**
-                 * @example {
-                 *       "resource_id": "TW9kZWw6MTIxOmFCY0Q="
-                 *     }
-                 */
-                "application/json": {
-                    /** @description The ID of the resource to restrict */
-                    resource_id: components["schemas"]["Id"];
-                };
-            };
-        };
+        requestBody: components["requestBodies"]["CreateResourceRestrictionRequestBody"];
         responses: {
             200: components["responses"]["ResourceRestrictionResponse"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -10033,7 +10662,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description The unique identifier of the resource */
+                /** @description The unique resource identifier (base64) */
                 resource_id: components["parameters"]["ResourceIdPathParam"];
             };
             cookie?: never;
@@ -10054,6 +10683,42 @@ export interface operations {
             429: components["responses"]["RateLimitExceeded"];
         };
     };
+    role_bindings_list: {
+        parameters: {
+            query: {
+                /** @description Maximum items to return */
+                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /**
+                 * @description Opaque pagination cursor returned from a previous response
+                 *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
+                 *     attempt to parse or construct it.
+                 */
+                cursor?: components["parameters"]["CursorQueryParam"];
+                /**
+                 * @description Filter role bindings by user. When provided, only bindings assigned to this
+                 *     user are returned. Must be a valid global user ID.
+                 * @example VXNlcjoxOmxQZzI=
+                 */
+                user_id?: components["parameters"]["RoleBindingsUserIdQueryParam"];
+                /**
+                 * @description Filter role bindings by resource type.
+                 *     - `SPACE` — Return only space-level bindings.
+                 *     - `PROJECT` — Return only project-level bindings.
+                 */
+                resource_type: components["parameters"]["RoleBindingsResourceTypeQueryParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["RoleBindingList"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
     role_bindings_create: {
         parameters: {
             query?: never;
@@ -10069,6 +10734,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -10078,8 +10744,8 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the role binding.
-                 * @example Rbd001
+                 * @description The unique role binding identifier (base64)
+                 * @example Um9sZUJpbmRpbmc6MTphQmNE
                  */
                 binding_id: components["parameters"]["RoleBindingIdPathParam"];
             };
@@ -10100,8 +10766,8 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the role binding.
-                 * @example Rbd001
+                 * @description The unique role binding identifier (base64)
+                 * @example Um9sZUJpbmRpbmc6MTphQmNE
                  */
                 binding_id: components["parameters"]["RoleBindingIdPathParam"];
             };
@@ -10122,8 +10788,8 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the role binding.
-                 * @example Rbd001
+                 * @description The unique role binding identifier (base64)
+                 * @example Um9sZUJpbmRpbmc6MTphQmNE
                  */
                 binding_id: components["parameters"]["RoleBindingIdPathParam"];
             };
@@ -10136,6 +10802,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -10186,6 +10853,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -10195,8 +10863,8 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the role.
-                 * @example Rol001
+                 * @description The unique role identifier (base64)
+                 * @example Um9sZToxOmFCY0Q=
                  */
                 role_id: components["parameters"]["RoleIdPathParam"];
             };
@@ -10217,8 +10885,8 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the role.
-                 * @example Rol001
+                 * @description The unique role identifier (base64)
+                 * @example Um9sZToxOmFCY0Q=
                  */
                 role_id: components["parameters"]["RoleIdPathParam"];
             };
@@ -10240,8 +10908,8 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the role.
-                 * @example Rol001
+                 * @description The unique role identifier (base64)
+                 * @example Um9sZToxOmFCY0Q=
                  */
                 role_id: components["parameters"]["RoleIdPathParam"];
             };
@@ -10255,13 +10923,17 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
     spaces_list: {
         parameters: {
             query?: {
-                /** @description The unique identifier of an organization. When provided, only spaces belonging to this organization are returned. */
+                /**
+                 * @description The unique organization identifier (base64). When provided, only spaces belonging to this organization are returned.
+                 * @example T3JnYW5pemF0aW9uOjEyMzQ1
+                 */
                 org_id?: components["parameters"]["OrganizationIdQueryParam"];
                 /**
                  * @description Case-insensitive substring filter on the resource name. Returns only
@@ -10308,6 +10980,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -10317,8 +10990,8 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the space
-                 * @example spc_12345
+                 * @description The unique space identifier (base64)
+                 * @example U3BhY2U6MTIzNDU=
                  */
                 space_id: components["parameters"]["SpaceIdPathParam"];
             };
@@ -10340,8 +11013,8 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the space
-                 * @example spc_12345
+                 * @description The unique space identifier (base64)
+                 * @example U3BhY2U6MTIzNDU=
                  */
                 space_id: components["parameters"]["SpaceIdPathParam"];
             };
@@ -10363,8 +11036,8 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the space
-                 * @example spc_12345
+                 * @description The unique space identifier (base64)
+                 * @example U3BhY2U6MTIzNDU=
                  */
                 space_id: components["parameters"]["SpaceIdPathParam"];
             };
@@ -10378,6 +11051,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -10387,8 +11061,8 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the space
-                 * @example spc_12345
+                 * @description The unique space identifier (base64)
+                 * @example U3BhY2U6MTIzNDU=
                  */
                 space_id: components["parameters"]["SpaceIdPathParam"];
             };
@@ -10401,6 +11075,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -10410,12 +11085,12 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the space
-                 * @example spc_12345
+                 * @description The unique space identifier (base64)
+                 * @example U3BhY2U6MTIzNDU=
                  */
                 space_id: components["parameters"]["SpaceIdPathParam"];
                 /**
-                 * @description The unique identifier of the user
+                 * @description The unique user identifier (base64)
                  * @example VXNlcjoxMjM0NQ==
                  */
                 user_id: components["parameters"]["UserIdPathParam"];
@@ -10484,6 +11159,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -10493,7 +11169,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the user
+                 * @description The unique user identifier (base64)
                  * @example VXNlcjoxMjM0NQ==
                  */
                 user_id: components["parameters"]["UserIdPathParam"];
@@ -10505,7 +11181,6 @@ export interface operations {
             200: components["responses"]["UserResponse"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
@@ -10516,7 +11191,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the user
+                 * @description The unique user identifier (base64)
                  * @example VXNlcjoxMjM0NQ==
                  */
                 user_id: components["parameters"]["UserIdPathParam"];
@@ -10539,7 +11214,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the user
+                 * @description The unique user identifier (base64)
                  * @example VXNlcjoxMjM0NQ==
                  */
                 user_id: components["parameters"]["UserIdPathParam"];
@@ -10553,6 +11228,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -10562,7 +11238,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the user
+                 * @description The unique user identifier (base64)
                  * @example VXNlcjoxMjM0NQ==
                  */
                 user_id: components["parameters"]["UserIdPathParam"];
@@ -10591,7 +11267,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique identifier of the user
+                 * @description The unique user identifier (base64)
                  * @example VXNlcjoxMjM0NQ==
                  */
                 user_id: components["parameters"]["UserIdPathParam"];
@@ -10637,6 +11313,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -10655,6 +11332,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
             500: components["responses"]["SpanDeleteError"];
         };
@@ -10673,6 +11351,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -10700,12 +11379,12 @@ export interface operations {
                  */
                 name?: components["parameters"]["NameSearchQueryParam"];
                 /**
-                 * @description Filter to tasks for a specific project (base64 global ID)
+                 * @description Filter to tasks for a specific project (base64 identifier (base64))
                  * @example UHJvamVjdDoxMjM0NQ==
                  */
                 project_id?: components["parameters"]["ProjectIdQueryParam"];
                 /**
-                 * @description Filter to a specific dataset (base64 global ID)
+                 * @description Filter to a specific dataset (base64 identifier (base64))
                  * @example RGF0YXNldDoxMjM0NQ==
                  */
                 dataset_id?: components["parameters"]["DatasetIdQueryParam"];
@@ -10751,6 +11430,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -10760,7 +11440,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The task global ID (base64)
+                 * @description The unique task identifier (base64)
                  * @example VGFzazoxMjM0NQ==
                  */
                 task_id: components["parameters"]["TaskIdPathParam"];
@@ -10782,7 +11462,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The task global ID (base64)
+                 * @description The unique task identifier (base64)
                  * @example VGFzazoxMjM0NQ==
                  */
                 task_id: components["parameters"]["TaskIdPathParam"];
@@ -10805,7 +11485,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The task global ID (base64)
+                 * @description The unique task identifier (base64)
                  * @example VGFzazoxMjM0NQ==
                  */
                 task_id: components["parameters"]["TaskIdPathParam"];
@@ -10819,6 +11499,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -10842,7 +11523,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The task global ID (base64)
+                 * @description The unique task identifier (base64)
                  * @example VGFzazoxMjM0NQ==
                  */
                 task_id: components["parameters"]["TaskIdPathParam"];
@@ -10865,7 +11546,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The task global ID (base64)
+                 * @description The unique task identifier (base64)
                  * @example VGFzazoxMjM0NQ==
                  */
                 task_id: components["parameters"]["TaskIdPathParam"];
@@ -10880,6 +11561,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -10889,7 +11571,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The task run global ID (base64)
+                 * @description The unique task run identifier (base64)
                  * @example VGFza1J1bjoxMjM0NQ==
                  */
                 run_id: components["parameters"]["TaskRunIdPathParam"];
@@ -10901,7 +11583,6 @@ export interface operations {
             200: components["responses"]["TaskRun"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
@@ -10912,7 +11593,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The task run global ID (base64)
+                 * @description The unique task run identifier (base64)
                  * @example VGFza1J1bjoxMjM0NQ==
                  */
                 run_id: components["parameters"]["TaskRunIdPathParam"];
