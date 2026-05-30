@@ -70,7 +70,7 @@ export async function listTaskRuns({
   limit,
   cursor,
 }: ListTaskRunsParams): Promise<PaginatedResponse<TaskRun>> {
-  warnPreRelease({ functionName: "listTaskRuns" });
+  warnPreRelease({ functionName: "listTaskRuns", stage: "alpha" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const taskId = await findTaskId(client, task, spaceRef);

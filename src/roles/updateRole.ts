@@ -43,7 +43,7 @@ export async function updateRole({
   description,
   permissions,
 }: UpdateRoleParams): Promise<Role> {
-  warnPreRelease({ functionName: "updateRole" });
+  warnPreRelease({ functionName: "updateRole", stage: "beta" });
   if (permissions !== undefined && permissions.length === 0) {
     throw new Error("'permissions' must contain at least one permission");
   }

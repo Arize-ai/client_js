@@ -32,7 +32,7 @@ export async function deleteSpace({
   client: clientInstance,
   space,
 }: DeleteSpaceParams): Promise<void> {
-  warnPreRelease({ functionName: "deleteSpace" });
+  warnPreRelease({ functionName: "deleteSpace", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceId = await findSpaceId(client, space);
   const response = await client.DELETE("/v2/spaces/{space_id}", {

@@ -41,7 +41,7 @@ export type ListProjectsParams = WithClient<
 export async function listProjects(
   params: ListProjectsParams = {},
 ): Promise<PaginatedResponse<Project>> {
-  warnPreRelease({ functionName: "listProjects" });
+  warnPreRelease({ functionName: "listProjects", stage: "beta" });
   const { client: clientInstance, space, name, limit, cursor } = params;
   const { spaceId, spaceName } = resolveSpace(space);
   const client = clientInstance ?? createClient();

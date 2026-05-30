@@ -79,7 +79,7 @@ export async function annotateSpans({
   startTime,
   endTime,
 }: AnnotateSpansParams): Promise<void> {
-  warnPreRelease({ functionName: "annotateSpans" });
+  warnPreRelease({ functionName: "annotateSpans", stage: "alpha" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const projectId = await findProjectId(client, project, spaceRef);

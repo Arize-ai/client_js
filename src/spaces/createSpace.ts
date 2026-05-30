@@ -36,7 +36,7 @@ export async function createSpace({
   organizationId,
   description,
 }: CreateSpaceParams): Promise<Space> {
-  warnPreRelease({ functionName: "createSpace" });
+  warnPreRelease({ functionName: "createSpace", stage: "beta" });
   const client = clientInstance ?? createClient();
   const response = await client.POST("/v2/spaces", {
     body: {

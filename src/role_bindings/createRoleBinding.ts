@@ -45,7 +45,7 @@ export async function createRoleBinding({
   resourceType,
   resourceId,
 }: CreateRoleBindingParams): Promise<RoleBinding> {
-  warnPreRelease({ functionName: "createRoleBinding" });
+  warnPreRelease({ functionName: "createRoleBinding", stage: "alpha" });
   const client = clientInstance ?? createClient();
   const response = await client.POST("/v2/role-bindings", {
     body: {

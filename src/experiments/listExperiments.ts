@@ -37,7 +37,7 @@ export type ListExperimentsParams = WithClient<
 export async function listExperiments(
   params: ListExperimentsParams = {},
 ): Promise<PaginatedResponse<Experiment>> {
-  warnPreRelease({ functionName: "listExperiments" });
+  warnPreRelease({ functionName: "listExperiments", stage: "beta" });
   const { client: clientInstance, dataset, space, limit, cursor } = params;
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);

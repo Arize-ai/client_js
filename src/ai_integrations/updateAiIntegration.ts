@@ -74,7 +74,7 @@ export async function updateAiIntegration({
   providerMetadata,
   scopings,
 }: UpdateAiIntegrationParams): Promise<AiIntegration> {
-  warnPreRelease({ functionName: "updateAiIntegration" });
+  warnPreRelease({ functionName: "updateAiIntegration", stage: "alpha" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const integrationId = await findAiIntegrationId(

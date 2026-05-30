@@ -45,7 +45,7 @@ export type ListDatasetsParams = WithClient<
 export async function listDatasets(
   params: ListDatasetsParams = {},
 ): Promise<PaginatedResponse<Dataset>> {
-  warnPreRelease({ functionName: "listDatasets" });
+  warnPreRelease({ functionName: "listDatasets", stage: "beta" });
   const { client: clientInstance, space, name, limit, cursor } = params;
   const { spaceId, spaceName } = resolveSpace(space);
   const client = clientInstance ?? createClient();

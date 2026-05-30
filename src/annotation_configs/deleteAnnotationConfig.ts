@@ -32,7 +32,7 @@ export async function deleteAnnotationConfig({
   annotationConfig,
   space,
 }: DeleteAnnotationConfigParams): Promise<void> {
-  warnPreRelease({ functionName: "deleteAnnotationConfig" });
+  warnPreRelease({ functionName: "deleteAnnotationConfig", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const annotationConfigId = await findAnnotationConfigId(

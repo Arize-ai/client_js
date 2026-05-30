@@ -58,7 +58,7 @@ export type ListTasksParams = WithClient<
 export async function listTasks(
   params: ListTasksParams = {},
 ): Promise<PaginatedResponse<Task>> {
-  warnPreRelease({ functionName: "listTasks" });
+  warnPreRelease({ functionName: "listTasks", stage: "alpha" });
   const {
     client: clientInstance,
     space,

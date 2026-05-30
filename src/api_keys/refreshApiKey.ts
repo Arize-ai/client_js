@@ -34,7 +34,7 @@ export async function refreshApiKey({
   apiKeyId,
   expiresAt,
 }: RefreshApiKeyParams): Promise<ApiKeyCreated> {
-  warnPreRelease({ functionName: "refreshApiKey" });
+  warnPreRelease({ functionName: "refreshApiKey", stage: "alpha" });
   const client = clientInstance ?? createClient();
   const response = await client.POST("/v2/api-keys/{api_key_id}/refresh", {
     params: { path: { api_key_id: apiKeyId } },

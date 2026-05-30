@@ -40,7 +40,7 @@ export async function createTask({
   client: clientInstance,
   ...input
 }: CreateTaskParams): Promise<Task> {
-  warnPreRelease({ functionName: "createTask" });
+  warnPreRelease({ functionName: "createTask", stage: "alpha" });
   const client = clientInstance ?? createClient();
 
   let body: CreateTaskBody;

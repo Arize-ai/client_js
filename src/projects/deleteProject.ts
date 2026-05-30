@@ -34,7 +34,7 @@ export async function deleteProject({
   project,
   space,
 }: DeleteProjectParams): Promise<void> {
-  warnPreRelease({ functionName: "deleteProject" });
+  warnPreRelease({ functionName: "deleteProject", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const projectId = await findProjectId(client, project, spaceRef);

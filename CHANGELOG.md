@@ -1,5 +1,17 @@
 # @arizeai/ax-client
 
+## [1.16.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.15.0...arize-js-sdk/v1.16.0) (2026-05-30)
+
+
+### 🎁 New Features
+
+* **projects:** support for project updates ([#72940](https://github.com/Arize-ai/arize/issues/72940)) ([92b70e6](https://github.com/Arize-ai/arize/commit/92b70e6073dab69679786adaf656c6c8e6d7fecb))
+
+
+### ❔ Miscellaneous Chores
+
+* promote annotation-queues, organizations, prompts, roles, spaces to BETA ([#72421](https://github.com/Arize-ai/arize/issues/72421)) ([745ee18](https://github.com/Arize-ai/arize/commit/745ee18a34b1b89f1b3a80d96a196c53ea838682))
+
 ## [1.15.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.14.0...arize-js-sdk/v1.15.0) (2026-05-27)
 
 

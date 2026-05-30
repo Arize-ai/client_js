@@ -46,7 +46,7 @@ export async function createExperiment({
   experimentRuns,
   space,
 }: CreateExperimentParams): Promise<Experiment> {
-  warnPreRelease({ functionName: "createExperiment" });
+  warnPreRelease({ functionName: "createExperiment", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const datasetId = await findDatasetId(client, dataset, spaceRef);

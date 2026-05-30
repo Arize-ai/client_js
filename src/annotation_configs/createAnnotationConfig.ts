@@ -48,7 +48,7 @@ export async function createAnnotationConfig({
   client: clientInstance,
   ...params
 }: CreateAnnotationConfigParams): Promise<AnnotationConfig> {
-  warnPreRelease({ functionName: "createAnnotationConfig" });
+  warnPreRelease({ functionName: "createAnnotationConfig", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceId = await findSpaceId(client, params.space);
   const annotationConfigType = params.type;

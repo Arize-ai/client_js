@@ -29,7 +29,7 @@ export async function deletePrompt({
   prompt,
   space,
 }: DeletePromptParams): Promise<void> {
-  warnPreRelease({ functionName: "deletePrompt" });
+  warnPreRelease({ functionName: "deletePrompt", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const promptId = await findPromptId(client, prompt, spaceRef);

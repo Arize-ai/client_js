@@ -52,7 +52,7 @@ export async function addOrganizationUser({
   userId,
   role,
 }: AddOrganizationUserParams): Promise<OrganizationMembership> {
-  warnPreRelease({ functionName: "addOrganizationUser" });
+  warnPreRelease({ functionName: "addOrganizationUser", stage: "alpha" });
   const client = clientInstance ?? createClient();
   const response = await client.POST("/v2/organizations/{org_id}/users", {
     params: {

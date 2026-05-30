@@ -29,7 +29,7 @@ export async function getSpace({
   client: clientInstance,
   space,
 }: GetSpaceParams): Promise<Space> {
-  warnPreRelease({ functionName: "getSpace" });
+  warnPreRelease({ functionName: "getSpace", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceId = await findSpaceId(client, space);
   const response = await client.GET("/v2/spaces/{space_id}", {

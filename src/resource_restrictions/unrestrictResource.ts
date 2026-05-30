@@ -28,7 +28,7 @@ export async function unrestrictResource({
   client: clientInstance,
   resourceId,
 }: UnrestrictResourceParams): Promise<void> {
-  warnPreRelease({ functionName: "unrestrictResource" });
+  warnPreRelease({ functionName: "unrestrictResource", stage: "alpha" });
   const client = clientInstance ?? createClient();
   const response = await client.DELETE(
     "/v2/resource-restrictions/{resource_id}",

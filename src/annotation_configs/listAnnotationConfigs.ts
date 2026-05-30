@@ -45,7 +45,7 @@ export type ListAnnotationConfigsParams = WithClient<
 export async function listAnnotationConfigs(
   params: ListAnnotationConfigsParams = {},
 ): Promise<PaginatedResponse<AnnotationConfig>> {
-  warnPreRelease({ functionName: "listAnnotationConfigs" });
+  warnPreRelease({ functionName: "listAnnotationConfigs", stage: "beta" });
   const { client: clientInstance, space, name, limit, cursor } = params;
   const { spaceId, spaceName } = resolveSpace(space);
   const client = clientInstance ?? createClient();

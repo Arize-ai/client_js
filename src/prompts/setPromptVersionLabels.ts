@@ -38,7 +38,7 @@ export async function setPromptVersionLabels({
   versionId,
   labels,
 }: SetPromptVersionLabelsParams): Promise<PromptVersionLabels> {
-  warnPreRelease({ functionName: "setPromptVersionLabels" });
+  warnPreRelease({ functionName: "setPromptVersionLabels", stage: "beta" });
   const client = clientInstance ?? createClient();
   const response = await client.PUT("/v2/prompt-versions/{version_id}/labels", {
     params: { path: { version_id: versionId } },

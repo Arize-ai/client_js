@@ -43,7 +43,7 @@ export async function listEvaluatorVersions({
   limit,
   cursor,
 }: ListEvaluatorVersionsParams): Promise<PaginatedResponse<EvaluatorVersion>> {
-  warnPreRelease({ functionName: "listEvaluatorVersions" });
+  warnPreRelease({ functionName: "listEvaluatorVersions", stage: "alpha" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const evaluatorId = await findEvaluatorId(client, evaluator, spaceRef);

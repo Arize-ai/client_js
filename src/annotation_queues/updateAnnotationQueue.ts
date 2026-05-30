@@ -55,7 +55,7 @@ export async function updateAnnotationQueue({
   annotationConfigIds,
   annotatorEmails,
 }: UpdateAnnotationQueueParams): Promise<AnnotationQueue> {
-  warnPreRelease({ functionName: "updateAnnotationQueue" });
+  warnPreRelease({ functionName: "updateAnnotationQueue", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const annotationQueueId = await findAnnotationQueueId(

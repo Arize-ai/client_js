@@ -36,7 +36,7 @@ export async function updateRoleBinding({
   bindingId,
   roleId,
 }: UpdateRoleBindingParams): Promise<RoleBinding> {
-  warnPreRelease({ functionName: "updateRoleBinding" });
+  warnPreRelease({ functionName: "updateRoleBinding", stage: "alpha" });
   const client = clientInstance ?? createClient();
   const response = await client.PATCH("/v2/role-bindings/{binding_id}", {
     params: {

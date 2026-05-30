@@ -34,7 +34,7 @@ export async function getAnnotationConfig({
   annotationConfig,
   space,
 }: GetAnnotationConfigParams): Promise<AnnotationConfig> {
-  warnPreRelease({ functionName: "getAnnotationConfig" });
+  warnPreRelease({ functionName: "getAnnotationConfig", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const annotationConfigId = await findAnnotationConfigId(

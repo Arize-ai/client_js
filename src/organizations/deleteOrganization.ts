@@ -36,7 +36,7 @@ export async function deleteOrganization({
   client: clientInstance,
   organization,
 }: DeleteOrganizationParams): Promise<void> {
-  warnPreRelease({ functionName: "deleteOrganization" });
+  warnPreRelease({ functionName: "deleteOrganization", stage: "beta" });
   const client = clientInstance ?? createClient();
   const orgId = await findOrganizationId(client, organization);
   const response = await client.DELETE("/v2/organizations/{org_id}", {

@@ -44,7 +44,7 @@ export async function createDataset({
   examples,
   name,
 }: CreateDatasetParams): Promise<Dataset> {
-  warnPreRelease({ functionName: "createDataset" });
+  warnPreRelease({ functionName: "createDataset", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceId = await findSpaceId(client, space);
   const response = await client.POST("/v2/datasets", {

@@ -38,7 +38,7 @@ export async function updateSpace({
   name,
   description,
 }: UpdateSpaceParams): Promise<Space> {
-  warnPreRelease({ functionName: "updateSpace" });
+  warnPreRelease({ functionName: "updateSpace", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceId = await findSpaceId(client, space);
   const response = await client.PATCH("/v2/spaces/{space_id}", {

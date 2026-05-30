@@ -35,7 +35,7 @@ export async function createProject({
   name,
   space,
 }: CreateProjectParams): Promise<Project> {
-  warnPreRelease({ functionName: "createProject" });
+  warnPreRelease({ functionName: "createProject", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceId = await findSpaceId(client, space);
   const response = await client.POST("/v2/projects", {

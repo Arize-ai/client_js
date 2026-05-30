@@ -37,7 +37,7 @@ export async function getDataset({
   dataset,
   space,
 }: GetDatasetParams): Promise<Dataset> {
-  warnPreRelease({ functionName: "getDataset" });
+  warnPreRelease({ functionName: "getDataset", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const datasetId = await findDatasetId(client, dataset, spaceRef);

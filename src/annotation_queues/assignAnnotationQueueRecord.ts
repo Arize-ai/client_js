@@ -46,7 +46,10 @@ export async function assignAnnotationQueueRecord({
   annotationQueueRecordId,
   assignedUserEmails,
 }: AssignAnnotationQueueRecordParams): Promise<AnnotationQueueRecordAssignResult> {
-  warnPreRelease({ functionName: "assignAnnotationQueueRecord" });
+  warnPreRelease({
+    functionName: "assignAnnotationQueueRecord",
+    stage: "beta",
+  });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const annotationQueueId = await findAnnotationQueueId(

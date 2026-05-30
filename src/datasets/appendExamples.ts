@@ -51,7 +51,7 @@ export async function appendExamples({
   datasetVersionId,
   examples,
 }: AppendExamplesParams): Promise<DatasetVersionWithExampleIds> {
-  warnPreRelease({ functionName: "appendExamples" });
+  warnPreRelease({ functionName: "appendExamples", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const datasetId = await findDatasetId(client, dataset, spaceRef);

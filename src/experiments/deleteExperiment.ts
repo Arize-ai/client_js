@@ -36,7 +36,7 @@ export async function deleteExperiment({
   dataset,
   space,
 }: DeleteExperimentParams): Promise<void> {
-  warnPreRelease({ functionName: "deleteExperiment" });
+  warnPreRelease({ functionName: "deleteExperiment", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const datasetId = dataset

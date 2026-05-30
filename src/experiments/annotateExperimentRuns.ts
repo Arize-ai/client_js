@@ -70,7 +70,7 @@ export async function annotateExperimentRuns({
   space,
   annotations,
 }: AnnotateExperimentRunsParams): Promise<void> {
-  warnPreRelease({ functionName: "annotateExperimentRuns" });
+  warnPreRelease({ functionName: "annotateExperimentRuns", stage: "alpha" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const datasetId = dataset

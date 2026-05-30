@@ -41,7 +41,7 @@ export async function getPromptLabel({
   space,
   labelName,
 }: GetPromptLabelParams): Promise<PromptVersion> {
-  warnPreRelease({ functionName: "getPromptLabel" });
+  warnPreRelease({ functionName: "getPromptLabel", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const promptId = await findPromptId(client, prompt, spaceRef);

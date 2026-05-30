@@ -48,7 +48,7 @@ export async function listDatasetExamples({
   datasetVersionId,
   limit,
 }: ListDatasetExamplesParams): Promise<DatasetExample[]> {
-  warnPreRelease({ functionName: "listDatasetExamples" });
+  warnPreRelease({ functionName: "listDatasetExamples", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const datasetId = await findDatasetId(client, dataset, spaceRef);

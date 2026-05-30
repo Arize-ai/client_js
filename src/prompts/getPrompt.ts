@@ -55,7 +55,7 @@ export async function getPrompt({
   versionId,
   label,
 }: GetPromptParams): Promise<PromptWithVersion> {
-  warnPreRelease({ functionName: "getPrompt" });
+  warnPreRelease({ functionName: "getPrompt", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const promptId = await findPromptId(client, prompt, spaceRef);

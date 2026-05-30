@@ -59,7 +59,7 @@ export async function waitForTaskRun({
   pollInterval = DEFAULT_POLL_INTERVAL_MS,
   timeout = DEFAULT_TIMEOUT_MS,
 }: WaitForTaskRunParams): Promise<TaskRun> {
-  warnPreRelease({ functionName: "waitForTaskRun" });
+  warnPreRelease({ functionName: "waitForTaskRun", stage: "alpha" });
   if (timeout <= 0) {
     throw new Error(`timeout must be positive, got ${timeout}`);
   }

@@ -27,7 +27,7 @@ export async function getRole({
   client: clientInstance,
   roleId,
 }: GetRoleParams): Promise<Role> {
-  warnPreRelease({ functionName: "getRole" });
+  warnPreRelease({ functionName: "getRole", stage: "beta" });
   const client = clientInstance ?? createClient();
   const response = await client.GET("/v2/roles/{role_id}", {
     params: {

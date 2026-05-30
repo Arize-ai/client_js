@@ -56,7 +56,7 @@ export async function triggerTaskRun({
   overrideEvaluations,
   experimentIds,
 }: TriggerTaskRunParams): Promise<TaskRun> {
-  warnPreRelease({ functionName: "triggerTaskRun" });
+  warnPreRelease({ functionName: "triggerTaskRun", stage: "alpha" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const taskId = await findTaskId(client, task, spaceRef);

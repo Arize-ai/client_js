@@ -42,7 +42,7 @@ export async function updatePrompt({
   space,
   description,
 }: UpdatePromptParams): Promise<Prompt> {
-  warnPreRelease({ functionName: "updatePrompt" });
+  warnPreRelease({ functionName: "updatePrompt", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const promptId = await findPromptId(client, prompt, spaceRef);

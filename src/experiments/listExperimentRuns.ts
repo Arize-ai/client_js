@@ -43,7 +43,7 @@ export async function listExperimentRuns({
   space,
   limit,
 }: ListExperimentRunsParams): Promise<ExperimentRun[]> {
-  warnPreRelease({ functionName: "listExperimentRuns" });
+  warnPreRelease({ functionName: "listExperimentRuns", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const datasetId = dataset

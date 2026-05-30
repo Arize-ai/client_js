@@ -51,7 +51,7 @@ export async function listAnnotationQueueRecords({
 }: ListAnnotationQueueRecordsParams): Promise<
   PaginatedResponse<AnnotationQueueRecord>
 > {
-  warnPreRelease({ functionName: "listAnnotationQueueRecords" });
+  warnPreRelease({ functionName: "listAnnotationQueueRecords", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const annotationQueueId = await findAnnotationQueueId(

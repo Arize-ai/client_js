@@ -25,7 +25,7 @@ export async function deleteApiKey({
   client: clientInstance,
   apiKeyId,
 }: DeleteApiKeyParams): Promise<void> {
-  warnPreRelease({ functionName: "deleteApiKey" });
+  warnPreRelease({ functionName: "deleteApiKey", stage: "alpha" });
   const client = clientInstance ?? createClient();
   const response = await client.DELETE("/v2/api-keys/{api_key_id}", {
     params: {

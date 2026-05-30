@@ -206,7 +206,7 @@ export interface paths {
          * List annotation queues
          * @description List annotation queues the user has access to.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["annotation_queues_list"];
         put?: never;
@@ -253,7 +253,7 @@ export interface paths {
          *     }
          *     ```
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["annotation_queues_create"];
         delete?: never;
@@ -279,7 +279,7 @@ export interface paths {
          *     This endpoint does not include queue records or annotation progress. To
          *     manage records in a queue, use the Annotation Queue Items endpoints.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["annotation_queues_get"];
         put?: never;
@@ -288,7 +288,7 @@ export interface paths {
          * Delete an annotation queue
          * @description Delete an annotation queue by its ID. This operation is irreversible.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         delete: operations["annotation_queues_delete"];
         options?: never;
@@ -317,7 +317,7 @@ export interface paths {
          *     {}
          *     ```
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         patch: operations["annotation_queues_update"];
         trace?: never;
@@ -343,7 +343,7 @@ export interface paths {
          *     - Use cursor-based pagination by passing the returned `next_cursor`
          *     value as the `cursor` query parameter in subsequent requests.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["annotation_queue_records_list"];
         put?: never;
@@ -391,7 +391,7 @@ export interface paths {
          *
          *     <Note>If no example_ids are provided for a dataset record source, all examples in the dataset will be added to the queue.</Note>
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["annotation_queues_records_create"];
         /**
@@ -405,7 +405,7 @@ export interface paths {
          *     Returns 404 if the annotation queue specified by `annotation_queue_id` is not found.
          *     Individual missing record IDs do not trigger a 404.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         delete: operations["annotation_queues_records_delete"];
         options?: never;
@@ -516,7 +516,7 @@ export interface paths {
          *     }
          *     ```
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["annotation_queues_records_assign"];
         delete?: never;
@@ -1390,7 +1390,7 @@ export interface paths {
          * List organizations
          * @description List organizations the user has access to.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["organizations_list"];
         put?: never;
@@ -1419,7 +1419,7 @@ export interface paths {
          *     ```
          *     Fails with 409 Conflict if an organization with that name already exists in the account.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["organizations_create"];
         delete?: never;
@@ -1439,7 +1439,7 @@ export interface paths {
          * Get an organization
          * @description Get a specific organization by its ID.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["organizations_get"];
         put?: never;
@@ -1455,7 +1455,7 @@ export interface paths {
          *
          *     This operation is irreversible.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         delete: operations["organizations_delete"];
         options?: never;
@@ -1482,7 +1482,7 @@ export interface paths {
          *     {}
          *     ```
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         patch: operations["organizations_update"];
         trace?: never;
@@ -1654,7 +1654,7 @@ export interface paths {
          *     The prompts are sorted by update date, with the most recently updated
          *     prompts coming first.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["prompts_list"];
         put?: never;
@@ -1666,7 +1666,7 @@ export interface paths {
          *     - The prompt name must be unique within the given space.
          *     - At least one message is required.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["prompts_create"];
         delete?: never;
@@ -1689,7 +1689,7 @@ export interface paths {
          *     or `label` query parameter to resolve a specific version instead. You
          *     cannot supply both `version_id` and `label`.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["prompts_get"];
         put?: never;
@@ -1698,7 +1698,7 @@ export interface paths {
          * Delete a prompt
          * @description Delete a prompt by its ID. This operation is irreversible.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         delete: operations["prompts_delete"];
         options?: never;
@@ -1709,7 +1709,7 @@ export interface paths {
          *     description. The prompt name is immutable after creation; to rename a
          *     prompt, delete it and create a new one (note: this loses version history).
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         patch: operations["prompts_update"];
         trace?: never;
@@ -1726,7 +1726,7 @@ export interface paths {
          * @description List all versions of a prompt, sorted by creation date with the most
          *     recently created versions first.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["prompt_versions_list"];
         put?: never;
@@ -1775,7 +1775,7 @@ export interface paths {
          *     }
          *     ```
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["prompt_versions_create"];
         delete?: never;
@@ -1796,7 +1796,7 @@ export interface paths {
          * @description Resolve a label on a prompt to the version it points to. Returns the
          *     full `PromptVersion` object that this label currently references.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["prompt_labels_get"];
         put?: never;
@@ -1818,7 +1818,7 @@ export interface paths {
          * Get a prompt version
          * @description Get a specific prompt version by its ID.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["prompt_versions_get"];
         put?: never;
@@ -1845,7 +1845,7 @@ export interface paths {
          *
          *     Labels not included in the request will be removed from this version.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         put: operations["prompt_version_labels_set"];
         post?: never;
@@ -1869,7 +1869,7 @@ export interface paths {
          * Remove a label from a prompt version
          * @description Remove a specific label from a prompt version.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         delete: operations["prompt_version_labels_delete"];
         options?: never;
@@ -2077,7 +2077,7 @@ export interface paths {
          * @description List custom and predefined roles for the authenticated user's account.
          *     Results are paginated; use `limit` and `cursor` for subsequent pages.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["roles_list"];
         put?: never;
@@ -2108,7 +2108,7 @@ export interface paths {
          *     }
          *     ```
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["roles_create"];
         delete?: never;
@@ -2128,7 +2128,7 @@ export interface paths {
          * Get a role
          * @description Get a role by its ID.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["roles_get"];
         put?: never;
@@ -2138,7 +2138,7 @@ export interface paths {
          * @description Delete a custom role by its ID (soft-delete). Predefined roles cannot
          *     be deleted.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         delete: operations["roles_delete"];
         options?: never;
@@ -2167,7 +2167,7 @@ export interface paths {
          *     {}
          *     ```
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         patch: operations["roles_update"];
         trace?: never;
@@ -2229,7 +2229,7 @@ export interface paths {
          *     that belong to it (models, monitors, dashboards, datasets, custom metrics, etc).
          *     This operation is irreversible.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         delete: operations["spaces_delete"];
         options?: never;
@@ -3072,7 +3072,7 @@ export interface components {
         };
         AnnotationQueueExampleRecordInput: {
             /**
-             * @description discriminator enum property added by openapi-typescript
+             * @description Discriminator identifying the record source type. Must be `example` for dataset example records. (enum property replaced by openapi-typescript)
              * @enum {string}
              */
             record_type: "example";
@@ -3124,7 +3124,7 @@ export interface components {
         AnnotationQueueRecordInput: components["schemas"]["AnnotationQueueExampleRecordInput"] | components["schemas"]["AnnotationQueueSpanRecordInput"];
         AnnotationQueueSpanRecordInput: {
             /**
-             * @description discriminator enum property added by openapi-typescript
+             * @description Discriminator identifying the record source type. Must be `span` for span records. (enum property replaced by openapi-typescript)
              * @enum {string}
              */
             record_type: "span";

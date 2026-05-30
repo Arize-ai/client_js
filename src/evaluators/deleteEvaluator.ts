@@ -29,7 +29,7 @@ export async function deleteEvaluator({
   evaluator,
   space,
 }: DeleteEvaluatorParams): Promise<void> {
-  warnPreRelease({ functionName: "deleteEvaluator" });
+  warnPreRelease({ functionName: "deleteEvaluator", stage: "alpha" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const evaluatorId = await findEvaluatorId(client, evaluator, spaceRef);

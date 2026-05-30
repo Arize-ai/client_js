@@ -39,7 +39,7 @@ export type ListSpacesParams = WithClient<
 export async function listSpaces(
   params: ListSpacesParams = {},
 ): Promise<PaginatedResponse<Space>> {
-  warnPreRelease({ functionName: "listSpaces" });
+  warnPreRelease({ functionName: "listSpaces", stage: "beta" });
   const {
     client: clientInstance,
     organizationId,

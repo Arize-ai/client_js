@@ -33,7 +33,7 @@ export async function cancelTaskRun({
   client: clientInstance,
   runId,
 }: CancelTaskRunParams): Promise<TaskRun> {
-  warnPreRelease({ functionName: "cancelTaskRun" });
+  warnPreRelease({ functionName: "cancelTaskRun", stage: "alpha" });
   const client = clientInstance ?? createClient();
   const response = await client.POST("/v2/task-runs/{run_id}/cancel", {
     params: {

@@ -81,7 +81,7 @@ export async function updateExamples({
   examples,
   newVersionName,
 }: UpdateExamplesParams): Promise<DatasetVersionWithExampleIds> {
-  warnPreRelease({ functionName: "updateExamples" });
+  warnPreRelease({ functionName: "updateExamples", stage: "alpha" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const datasetId = await findDatasetId(client, dataset, spaceRef);

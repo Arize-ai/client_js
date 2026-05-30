@@ -42,7 +42,7 @@ export async function createApiKey({
   spaceId,
   roles,
 }: CreateApiKeyParams): Promise<ApiKeyCreated> {
-  warnPreRelease({ functionName: "createApiKey" });
+  warnPreRelease({ functionName: "createApiKey", stage: "alpha" });
   const client = clientInstance ?? createClient();
   const response = await client.POST("/v2/api-keys", {
     body: {

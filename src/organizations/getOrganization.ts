@@ -29,7 +29,7 @@ export async function getOrganization({
   client: clientInstance,
   organization,
 }: GetOrganizationParams): Promise<Organization> {
-  warnPreRelease({ functionName: "getOrganization" });
+  warnPreRelease({ functionName: "getOrganization", stage: "beta" });
   const client = clientInstance ?? createClient();
   const orgId = await findOrganizationId(client, organization);
   const response = await client.GET("/v2/organizations/{org_id}", {

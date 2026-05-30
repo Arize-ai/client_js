@@ -35,7 +35,7 @@ export async function createOrganization({
   name,
   description,
 }: CreateOrganizationParams): Promise<Organization> {
-  warnPreRelease({ functionName: "createOrganization" });
+  warnPreRelease({ functionName: "createOrganization", stage: "beta" });
   const client = clientInstance ?? createClient();
   const response = await client.POST("/v2/organizations", {
     body: {

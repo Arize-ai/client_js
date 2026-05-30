@@ -33,7 +33,7 @@ export async function deleteUser({
   client: clientInstance,
   userId,
 }: DeleteUserParams): Promise<void> {
-  warnPreRelease({ functionName: "deleteUser" });
+  warnPreRelease({ functionName: "deleteUser", stage: "alpha" });
   const client = clientInstance ?? createClient();
   const response = await client.DELETE("/v2/users/{user_id}", {
     params: {

@@ -43,7 +43,7 @@ export type ListPromptsParams = WithClient<
 export async function listPrompts(
   params: ListPromptsParams = {},
 ): Promise<PaginatedResponse<Prompt>> {
-  warnPreRelease({ functionName: "listPrompts" });
+  warnPreRelease({ functionName: "listPrompts", stage: "beta" });
   const { client: clientInstance, space, name, limit, cursor } = params;
   const { spaceId, spaceName } = resolveSpace(space);
   const client = clientInstance ?? createClient();

@@ -42,7 +42,7 @@ export async function getAiIntegration({
   integration,
   space,
 }: GetAiIntegrationParams): Promise<AiIntegration> {
-  warnPreRelease({ functionName: "getAiIntegration" });
+  warnPreRelease({ functionName: "getAiIntegration", stage: "alpha" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const integrationId = await findAiIntegrationId(

@@ -58,7 +58,7 @@ export async function createRunExperimentTask({
   space,
   ...rest
 }: CreateRunExperimentTaskParams): Promise<Task> {
-  warnPreRelease({ functionName: "createRunExperimentTask" });
+  warnPreRelease({ functionName: "createRunExperimentTask", stage: "alpha" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
 

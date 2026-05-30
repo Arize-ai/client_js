@@ -38,7 +38,7 @@ export async function deleteDataset({
   dataset,
   space,
 }: DeleteDatasetParams): Promise<void> {
-  warnPreRelease({ functionName: "deleteDataset" });
+  warnPreRelease({ functionName: "deleteDataset", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const datasetId = await findDatasetId(client, dataset, spaceRef);

@@ -33,7 +33,7 @@ export async function getTaskRun({
   client: clientInstance,
   runId,
 }: GetTaskRunParams): Promise<TaskRun> {
-  warnPreRelease({ functionName: "getTaskRun" });
+  warnPreRelease({ functionName: "getTaskRun", stage: "alpha" });
   const client = clientInstance ?? createClient();
   return fetchTaskRun(client, runId);
 }

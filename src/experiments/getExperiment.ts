@@ -41,7 +41,7 @@ export async function getExperiment({
   dataset,
   space,
 }: GetExperimentParams): Promise<Experiment> {
-  warnPreRelease({ functionName: "getExperiment" });
+  warnPreRelease({ functionName: "getExperiment", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const datasetId = dataset

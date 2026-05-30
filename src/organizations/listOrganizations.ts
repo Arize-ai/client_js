@@ -37,7 +37,7 @@ export type ListOrganizationsParams = WithClient<
 export async function listOrganizations(
   params: ListOrganizationsParams = {},
 ): Promise<PaginatedResponse<Organization>> {
-  warnPreRelease({ functionName: "listOrganizations" });
+  warnPreRelease({ functionName: "listOrganizations", stage: "beta" });
   const { client: clientInstance, name, limit, cursor } = params;
   const client = clientInstance ?? createClient();
   const response = await client.GET("/v2/organizations", {

@@ -52,7 +52,7 @@ export type ListApiKeysParams = WithClient<
 export async function listApiKeys(
   params: ListApiKeysParams = {},
 ): Promise<PaginatedResponse<ApiKey>> {
-  warnPreRelease({ functionName: "listApiKeys" });
+  warnPreRelease({ functionName: "listApiKeys", stage: "alpha" });
   const {
     client: clientInstance,
     keyType,

@@ -36,7 +36,7 @@ export type ListRolesParams = WithClient<
 export async function listRoles(
   params: ListRolesParams = {},
 ): Promise<PaginatedResponse<Role>> {
-  warnPreRelease({ functionName: "listRoles" });
+  warnPreRelease({ functionName: "listRoles", stage: "beta" });
   const { client: clientInstance, isPredefined, limit, cursor } = params;
   const client = clientInstance ?? createClient();
   const response = await client.GET("/v2/roles", {

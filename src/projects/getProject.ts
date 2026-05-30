@@ -33,7 +33,7 @@ export async function getProject({
   project,
   space,
 }: GetProjectParams): Promise<Project> {
-  warnPreRelease({ functionName: "getProject" });
+  warnPreRelease({ functionName: "getProject", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const projectId = await findProjectId(client, project, spaceRef);

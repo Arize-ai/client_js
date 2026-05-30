@@ -25,7 +25,7 @@ export async function deleteRole({
   client: clientInstance,
   roleId,
 }: DeleteRoleParams): Promise<void> {
-  warnPreRelease({ functionName: "deleteRole" });
+  warnPreRelease({ functionName: "deleteRole", stage: "beta" });
   const client = clientInstance ?? createClient();
   const response = await client.DELETE("/v2/roles/{role_id}", {
     params: {

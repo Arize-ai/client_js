@@ -27,7 +27,7 @@ export async function getRoleBinding({
   client: clientInstance,
   bindingId,
 }: GetRoleBindingParams): Promise<RoleBinding> {
-  warnPreRelease({ functionName: "getRoleBinding" });
+  warnPreRelease({ functionName: "getRoleBinding", stage: "alpha" });
   const client = clientInstance ?? createClient();
   const response = await client.GET("/v2/role-bindings/{binding_id}", {
     params: {

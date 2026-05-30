@@ -44,7 +44,7 @@ export async function updateTask({
   queryFilter,
   evaluators,
 }: UpdateTaskParams): Promise<Task> {
-  warnPreRelease({ functionName: "updateTask" });
+  warnPreRelease({ functionName: "updateTask", stage: "alpha" });
 
   if (
     name === undefined &&

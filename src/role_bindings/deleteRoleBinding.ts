@@ -25,7 +25,7 @@ export async function deleteRoleBinding({
   client: clientInstance,
   bindingId,
 }: DeleteRoleBindingParams): Promise<void> {
-  warnPreRelease({ functionName: "deleteRoleBinding" });
+  warnPreRelease({ functionName: "deleteRoleBinding", stage: "alpha" });
   const client = clientInstance ?? createClient();
   const response = await client.DELETE("/v2/role-bindings/{binding_id}", {
     params: {

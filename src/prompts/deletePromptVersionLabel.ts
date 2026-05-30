@@ -31,7 +31,7 @@ export async function deletePromptVersionLabel({
   versionId,
   labelName,
 }: DeletePromptVersionLabelParams): Promise<void> {
-  warnPreRelease({ functionName: "deletePromptVersionLabel" });
+  warnPreRelease({ functionName: "deletePromptVersionLabel", stage: "beta" });
   const client = clientInstance ?? createClient();
   const response = await client.DELETE(
     "/v2/prompt-versions/{version_id}/labels/{label_name}",

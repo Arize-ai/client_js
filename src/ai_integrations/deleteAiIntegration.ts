@@ -45,7 +45,7 @@ export async function deleteAiIntegration({
   integration,
   space,
 }: DeleteAiIntegrationParams): Promise<void> {
-  warnPreRelease({ functionName: "deleteAiIntegration" });
+  warnPreRelease({ functionName: "deleteAiIntegration", stage: "alpha" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const integrationId = await findAiIntegrationId(

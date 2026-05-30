@@ -63,6 +63,64 @@ const experimentRuns = await listExperimentRuns({
 });
 ```
 
+## Projects
+
+The `@arizeai/ax-client` package allows you to create and manage projects.
+
+### Creating a project
+
+```typescript
+import { createProject } from "@arizeai/ax-client";
+
+const project = await createProject({
+  space: "my-space",
+  name: "my-project",
+});
+console.log(project);
+```
+
+### Getting a project
+
+```typescript
+import { getProject } from "@arizeai/ax-client";
+
+const project = await getProject({
+  project: "my-project",
+  space: "my-space",
+});
+console.log(project);
+```
+
+### Listing projects
+
+```typescript
+import { listProjects } from "@arizeai/ax-client";
+
+const { projects } = await listProjects({ space: "my-space" });
+console.log(projects);
+```
+
+### Updating a project
+
+```typescript
+import { updateProject } from "@arizeai/ax-client";
+
+const project = await updateProject({
+  project: "my-project",
+  space: "my-space",
+  name: "my-renamed-project",
+});
+console.log(project);
+```
+
+### Deleting a project
+
+```typescript
+import { deleteProject } from "@arizeai/ax-client";
+
+await deleteProject({ project: "my-project", space: "my-space" });
+```
+
 ## API Keys
 
 The `@arizeai/ax-client` package allows you to create, list, delete, and refresh API keys.

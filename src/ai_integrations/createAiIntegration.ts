@@ -51,7 +51,7 @@ export async function createAiIntegration({
   providerMetadata,
   scopings,
 }: CreateAiIntegrationParams): Promise<AiIntegration> {
-  warnPreRelease({ functionName: "createAiIntegration" });
+  warnPreRelease({ functionName: "createAiIntegration", stage: "alpha" });
   const client = clientInstance ?? createClient();
   const response = await client.POST("/v2/ai-integrations", {
     body: {

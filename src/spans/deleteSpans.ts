@@ -57,7 +57,7 @@ export async function deleteSpans({
   space,
   spanIds,
 }: DeleteSpansParams): Promise<void> {
-  warnPreRelease({ functionName: "deleteSpans" });
+  warnPreRelease({ functionName: "deleteSpans", stage: "alpha" });
   if (spanIds.length === 0) {
     throw new Error("spanIds must not be empty");
   }

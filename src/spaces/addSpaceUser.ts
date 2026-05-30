@@ -49,7 +49,7 @@ export async function addSpaceUser({
   userId,
   role,
 }: AddSpaceUserParams): Promise<SpaceMembership> {
-  warnPreRelease({ functionName: "addSpaceUser" });
+  warnPreRelease({ functionName: "addSpaceUser", stage: "alpha" });
   const client = clientInstance ?? createClient();
   const response = await client.POST("/v2/spaces/{space_id}/users", {
     params: {

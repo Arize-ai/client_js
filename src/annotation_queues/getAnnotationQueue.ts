@@ -37,7 +37,7 @@ export async function getAnnotationQueue({
   annotationQueue,
   space,
 }: GetAnnotationQueueParams): Promise<AnnotationQueue> {
-  warnPreRelease({ functionName: "getAnnotationQueue" });
+  warnPreRelease({ functionName: "getAnnotationQueue", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const annotationQueueId = await findAnnotationQueueId(

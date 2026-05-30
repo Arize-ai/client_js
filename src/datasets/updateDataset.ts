@@ -48,7 +48,7 @@ export async function updateDataset({
   space,
   name,
 }: UpdateDatasetParams): Promise<Dataset> {
-  warnPreRelease({ functionName: "updateDataset" });
+  warnPreRelease({ functionName: "updateDataset", stage: "alpha" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const datasetId = await findDatasetId(client, dataset, spaceRef);

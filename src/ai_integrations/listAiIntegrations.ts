@@ -45,7 +45,7 @@ export type ListAiIntegrationsParams = WithClient<
 export async function listAiIntegrations(
   params: ListAiIntegrationsParams = {},
 ): Promise<PaginatedResponse<AiIntegration>> {
-  warnPreRelease({ functionName: "listAiIntegrations" });
+  warnPreRelease({ functionName: "listAiIntegrations", stage: "alpha" });
   const { client: clientInstance, space, name, limit, cursor } = params;
   const { spaceId, spaceName } = resolveSpace(space);
   const client = clientInstance ?? createClient();

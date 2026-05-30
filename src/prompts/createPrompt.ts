@@ -69,7 +69,7 @@ export async function createPrompt({
   description,
   version,
 }: CreatePromptParams): Promise<PromptWithVersion> {
-  warnPreRelease({ functionName: "createPrompt" });
+  warnPreRelease({ functionName: "createPrompt", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceId = await findSpaceId(client, space);
   const response = await client.POST("/v2/prompts", {

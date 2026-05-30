@@ -37,7 +37,7 @@ export async function createRole({
   permissions,
   description,
 }: CreateRoleParams): Promise<Role> {
-  warnPreRelease({ functionName: "createRole" });
+  warnPreRelease({ functionName: "createRole", stage: "beta" });
   const client = clientInstance ?? createClient();
   const response = await client.POST("/v2/roles", {
     body: {

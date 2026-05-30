@@ -42,7 +42,7 @@ export async function listPromptVersions({
   limit,
   cursor,
 }: ListPromptVersionsParams): Promise<PaginatedResponse<PromptVersion>> {
-  warnPreRelease({ functionName: "listPromptVersions" });
+  warnPreRelease({ functionName: "listPromptVersions", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const promptId = await findPromptId(client, prompt, spaceRef);

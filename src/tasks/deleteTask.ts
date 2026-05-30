@@ -29,7 +29,7 @@ export async function deleteTask({
   task,
   space,
 }: DeleteTaskParams): Promise<void> {
-  warnPreRelease({ functionName: "deleteTask" });
+  warnPreRelease({ functionName: "deleteTask", stage: "alpha" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const taskId = await findTaskId(client, task, spaceRef);

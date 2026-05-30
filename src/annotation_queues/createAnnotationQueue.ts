@@ -48,7 +48,7 @@ export async function createAnnotationQueue({
   assignmentMethod,
   recordSources,
 }: CreateAnnotationQueueParams): Promise<AnnotationQueue> {
-  warnPreRelease({ functionName: "createAnnotationQueue" });
+  warnPreRelease({ functionName: "createAnnotationQueue", stage: "beta" });
   const client = clientInstance ?? createClient();
   const response = await client.POST("/v2/annotation-queues", {
     body: {

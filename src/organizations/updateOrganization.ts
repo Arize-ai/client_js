@@ -40,7 +40,7 @@ export async function updateOrganization({
   name,
   description,
 }: UpdateOrganizationParams): Promise<Organization> {
-  warnPreRelease({ functionName: "updateOrganization" });
+  warnPreRelease({ functionName: "updateOrganization", stage: "beta" });
   const client = clientInstance ?? createClient();
   const orgId = await findOrganizationId(client, organization);
   const response = await client.PATCH("/v2/organizations/{org_id}", {

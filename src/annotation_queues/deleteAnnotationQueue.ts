@@ -35,7 +35,7 @@ export async function deleteAnnotationQueue({
   annotationQueue,
   space,
 }: DeleteAnnotationQueueParams): Promise<void> {
-  warnPreRelease({ functionName: "deleteAnnotationQueue" });
+  warnPreRelease({ functionName: "deleteAnnotationQueue", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const annotationQueueId = await findAnnotationQueueId(

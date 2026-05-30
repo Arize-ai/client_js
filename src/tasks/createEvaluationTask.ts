@@ -55,7 +55,7 @@ export async function createEvaluationTask({
   type,
   ...rest
 }: CreateEvaluationTaskParams): Promise<Task> {
-  warnPreRelease({ functionName: "createEvaluationTask" });
+  warnPreRelease({ functionName: "createEvaluationTask", stage: "alpha" });
 
   if (!EVAL_TASK_TYPES.has(type)) {
     throw new Error(
