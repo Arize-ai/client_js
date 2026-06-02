@@ -6,7 +6,10 @@ import {
   TaskRunStatus,
   WithClient,
 } from "../types";
-import { transformPaginationMetadata } from "../utils/pagination";
+import {
+  DEFAULT_LIST_LIMIT,
+  transformPaginationMetadata,
+} from "../utils/pagination";
 import { toSpaceRef, findTaskId } from "../utils/resolve";
 import { warnPreRelease } from "../utils/warning";
 import { transformTaskRun } from "./utils";
@@ -67,7 +70,7 @@ export async function listTaskRuns({
   task,
   space,
   status,
-  limit,
+  limit = DEFAULT_LIST_LIMIT,
   cursor,
 }: ListTaskRunsParams): Promise<PaginatedResponse<TaskRun>> {
   warnPreRelease({ functionName: "listTaskRuns", stage: "alpha" });

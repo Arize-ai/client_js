@@ -62,7 +62,7 @@ describe("updateProject", () => {
     expect(resolveModule.findProjectId).toHaveBeenCalledWith(
       mockClient,
       "my-project",
-      "my-space",
+      { spaceName: "my-space" },
     );
   });
 

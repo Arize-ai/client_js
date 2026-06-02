@@ -3,6 +3,7 @@ import { DatasetExample } from "../types/datasets";
 import { createClient } from "../client";
 import { transformListDatasetExamplesResponseExample } from "./utils";
 import { warnPreRelease } from "../utils/warning";
+import { DEFAULT_LIST_LIMIT } from "../utils/pagination";
 import { handleApiError } from "../errors";
 import { findDatasetId, toSpaceRef } from "../utils/resolve";
 
@@ -46,7 +47,7 @@ export async function listDatasetExamples({
   dataset,
   space,
   datasetVersionId,
-  limit,
+  limit = DEFAULT_LIST_LIMIT,
 }: ListDatasetExamplesParams): Promise<DatasetExample[]> {
   warnPreRelease({ functionName: "listDatasetExamples", stage: "beta" });
   const client = clientInstance ?? createClient();

@@ -6,7 +6,10 @@ import {
   WithClient,
 } from "../types";
 import { UserStatus } from "../types/users";
-import { transformPaginationMetadata } from "../utils/pagination";
+import {
+  DEFAULT_LIST_LIMIT,
+  transformPaginationMetadata,
+} from "../utils/pagination";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { transformUser } from "./utils";
@@ -44,7 +47,13 @@ export async function listUsers(
   params: ListUsersParams = {},
 ): Promise<PaginatedResponse<User>> {
   warnPreRelease({ functionName: "listUsers", stage: "alpha" });
-  const { client: clientInstance, email, status, limit, cursor } = params;
+  const {
+    client: clientInstance,
+    email,
+    status,
+    limit = DEFAULT_LIST_LIMIT,
+    cursor,
+  } = params;
   const client = clientInstance ?? createClient();
   const response = await client.GET("/v2/users", {
     params: {

@@ -6,7 +6,10 @@ import {
   RoleBindingResourceType,
   WithClient,
 } from "../types";
-import { transformPaginationMetadata } from "../utils/pagination";
+import {
+  DEFAULT_LIST_LIMIT,
+  transformPaginationMetadata,
+} from "../utils/pagination";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { transformRoleBinding } from "./utils";
@@ -44,7 +47,7 @@ export async function listRoleBindings(
     client: clientInstance,
     userId,
     resourceType,
-    limit,
+    limit = DEFAULT_LIST_LIMIT,
     cursor,
   } = params;
   const client = clientInstance ?? createClient();

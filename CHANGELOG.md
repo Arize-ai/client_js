@@ -1,5 +1,23 @@
 # @arizeai/ax-client
 
+## [1.17.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.16.0...arize-js-sdk/v1.17.0) (2026-06-02)
+
+
+### 🎁 New Features
+
+* **prompts:** add get version support ([#73169](https://github.com/Arize-ai/arize/issues/73169)) ([ab4ad3a](https://github.com/Arize-ai/arize/commit/ab4ad3a4b18e0890e0135b15f4c4e89be4899046))
+
+
+### 🐛 Bug Fixes
+
+* set default pagination limit to 50 for all list operations ([#73195](https://github.com/Arize-ai/arize/issues/73195)) ([ac402f3](https://github.com/Arize-ai/arize/commit/ac402f37a099a09f0eee65952418509c89113ea2))
+
+
+### 💫 Code Refactoring
+
+* **prompts:** rename `prompts.get_label` to `prompts.get_version_by_label` ([#73168](https://github.com/Arize-ai/arize/issues/73168)) ([67094cb](https://github.com/Arize-ai/arize/commit/67094cb3b4bc8e632b30982b37e1c6fb3cb44429))
+* **spans:** `spans.annotate_spans` to `spans.annotate` ([#73168](https://github.com/Arize-ai/arize/issues/73168)) ([67094cb](https://github.com/Arize-ai/arize/commit/67094cb3b4bc8e632b30982b37e1c6fb3cb44429))
+
 ## [1.16.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.15.0...arize-js-sdk/v1.16.0) (2026-05-30)
 
 

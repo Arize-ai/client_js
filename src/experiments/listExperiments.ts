@@ -1,7 +1,10 @@
 import { createClient } from "../client";
 import { PaginatedResponse, PaginationParams, WithClient } from "../types";
 import { Experiment } from "../types/experiments";
-import { transformPaginationMetadata } from "../utils/pagination";
+import {
+  DEFAULT_LIST_LIMIT,
+  transformPaginationMetadata,
+} from "../utils/pagination";
 import { warnPreRelease } from "../utils/warning";
 import { findDatasetId, toSpaceRef } from "../utils/resolve";
 import { handleApiError } from "../errors";
@@ -38,7 +41,13 @@ export async function listExperiments(
   params: ListExperimentsParams = {},
 ): Promise<PaginatedResponse<Experiment>> {
   warnPreRelease({ functionName: "listExperiments", stage: "beta" });
-  const { client: clientInstance, dataset, space, limit, cursor } = params;
+  const {
+    client: clientInstance,
+    dataset,
+    space,
+    limit = DEFAULT_LIST_LIMIT,
+    cursor,
+  } = params;
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const datasetId = dataset

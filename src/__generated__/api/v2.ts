@@ -647,6 +647,9 @@ export interface paths {
          *     on the replacement key. Omit `expires_at` (or send an empty body `{}`) to create
          *     the replacement key with no expiration (infinite lifetime).
          *
+         *     **Grace period:** Supply `grace_period_seconds` in the request body to keep the old key
+         *     valid for that many seconds after the refresh. If not supplied, the old key is revoked immediately.
+         *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
         post: operations["api_keys_refresh"];
@@ -1314,7 +1317,40 @@ export interface paths {
          */
         get: operations["experiments_runs_list"];
         put?: never;
-        post?: never;
+        /**
+         * Append runs to an experiment
+         * @description Append new runs to an existing experiment.
+         *
+         *     **Payload Requirements**
+         *     - Provide between 1 and 1000 runs in `experiment_runs`.
+         *     - Each run must include:
+         *       - `example_id` -- the ID of an existing example in the dataset version
+         *       - `output` -- model/task output for that example
+         *       - You may include any additional fields per run that can be used for
+         *       analysis or filtering. For example: `model`, `latency_ms`,
+         *       `temperature`, `prompt`, `tool_calls`, etc.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "experiment_runs": [
+         *         {"example_id": "example_001", "output": "4", "model": "gpt-4o-mini"}
+         *       ]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (missing required output field)
+         *     ```json
+         *     {
+         *       "experiment_runs": [
+         *         {"example_id": "example_001"}
+         *       ]
+         *     }
+         *     ```
+         *
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
+         */
+        post: operations["experiments_runs_insert"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3964,6 +4000,10 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        ExperimentWithRunIds: components["schemas"]["Experiment"] & {
+            /** @description IDs of the newly inserted experiment runs, in input order. */
+            run_ids: string[];
+        };
         /**
          * @description A permission identifier following the pattern {RESOURCE}_{ACTION}.
          *     Auto-generated from proto/auth/protocol/permissions.proto.
@@ -4880,6 +4920,16 @@ export interface components {
              * @example 2027-01-01T00:00:00Z
              */
             expires_at?: string;
+            /**
+             * @description Grace period in seconds during which the old key remains valid after the
+             *     refresh. When set, the old key's expiration is updated to `now + grace_period_seconds`
+             *     instead of being immediately revoked — it expires naturally at the end of the window.
+             *     If the old key already has an `expires_at` that is sooner than the grace window end,
+             *     the shorter value is used (the grace period cannot extend a key's original lifetime).
+             *     Defaults to 0 (immediate revocation). Maximum is 86400 (24 hours).
+             * @example 300
+             */
+            grace_period_seconds?: number;
         };
         DatasetListResponse: {
             /** @description A list of datasets */
@@ -4943,6 +4993,10 @@ export interface components {
             experiment_runs: components["schemas"]["ExperimentRun"][];
             /** @description Pagination metadata for cursor-based navigation */
             pagination: components["schemas"]["PaginationMetadata"];
+        };
+        InsertExperimentRunsBody: {
+            /** @description Array of experiment run data to append to the experiment. Between 1 and 1000 runs per request. */
+            experiment_runs: components["schemas"]["ExperimentRunCreate"][];
         };
         OrganizationListResponse: {
             /** @description A list of organizations */
@@ -6562,6 +6616,29 @@ export interface components {
             };
             content?: never;
         };
+        /** @description Experiment with the IDs of the newly inserted runs. */
+        ExperimentWithRunIds: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "RXhwZXJpbWVudDoxOmFCY0Q=",
+                 *       "name": "Experiment 1",
+                 *       "dataset_id": "RGF0YXNldDoxOmFCY0Q=",
+                 *       "dataset_version_id": "RGF0YXNldFZlcnNpb246MTphQmNE",
+                 *       "created_at": "2024-01-01T12:00:00Z",
+                 *       "updated_at": "2024-01-02T12:00:00Z",
+                 *       "run_ids": [
+                 *         "run_001",
+                 *         "run_002"
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["ExperimentWithRunIds"];
+            };
+        };
         OrganizationResponse: {
             headers: {
                 [name: string]: unknown;
@@ -8126,7 +8203,7 @@ export interface components {
                 "application/json": components["schemas"]["ApiKeyCreate"];
             };
         };
-        /** @description Optional body for overriding expiry on a refreshed API key. */
+        /** @description Optional body for setting expiry on the new key and/or a grace period on the old key. */
         RefreshApiKeyRequestBody: {
             content: {
                 "application/json": components["schemas"]["ApiKeyRefresh"];
@@ -8369,6 +8446,32 @@ export interface components {
                  *     }
                  */
                 "application/json": components["schemas"]["AnnotateExperimentRunsRequestBody"];
+            };
+        };
+        /** @description Body containing experiment runs to append to the experiment */
+        InsertExperimentRunsRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "experiment_runs": [
+                 *         {
+                 *           "example_id": "example_001",
+                 *           "output": "4",
+                 *           "model": "gpt-4o-mini",
+                 *           "temperature": 0.2,
+                 *           "latency_ms": 118
+                 *         },
+                 *         {
+                 *           "example_id": "example_002",
+                 *           "output": "4",
+                 *           "model": "gpt-4o-mini",
+                 *           "temperature": 0.2,
+                 *           "latency_ms": 132
+                 *         }
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["InsertExperimentRunsBody"];
             };
         };
         /** @description Body containing organization creation parameters */
@@ -10012,6 +10115,30 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    experiments_runs_insert: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique experiment identifier (base64)
+                 * @example RXhwZXJpbWVudDoxMjM0NQ==
+                 */
+                experiment_id: components["parameters"]["ExperimentIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["InsertExperimentRunsRequestBody"];
+        responses: {
+            201: components["responses"]["ExperimentWithRunIds"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };

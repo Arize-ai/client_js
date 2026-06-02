@@ -5,7 +5,10 @@ import {
   PaginationParams,
   WithClient,
 } from "../types";
-import { transformPaginationMetadata } from "../utils/pagination";
+import {
+  DEFAULT_LIST_LIMIT,
+  transformPaginationMetadata,
+} from "../utils/pagination";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { transformAnnotationQueueRecord } from "./utils";
@@ -46,7 +49,7 @@ export async function listAnnotationQueueRecords({
   client: clientInstance,
   annotationQueue,
   space,
-  limit,
+  limit = DEFAULT_LIST_LIMIT,
   cursor,
 }: ListAnnotationQueueRecordsParams): Promise<
   PaginatedResponse<AnnotationQueueRecord>

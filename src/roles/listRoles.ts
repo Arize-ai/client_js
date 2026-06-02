@@ -5,7 +5,10 @@ import {
   Role,
   WithClient,
 } from "../types";
-import { transformPaginationMetadata } from "../utils/pagination";
+import {
+  DEFAULT_LIST_LIMIT,
+  transformPaginationMetadata,
+} from "../utils/pagination";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { transformRole } from "./utils";
@@ -37,7 +40,12 @@ export async function listRoles(
   params: ListRolesParams = {},
 ): Promise<PaginatedResponse<Role>> {
   warnPreRelease({ functionName: "listRoles", stage: "beta" });
-  const { client: clientInstance, isPredefined, limit, cursor } = params;
+  const {
+    client: clientInstance,
+    isPredefined,
+    limit = DEFAULT_LIST_LIMIT,
+    cursor,
+  } = params;
   const client = clientInstance ?? createClient();
   const response = await client.GET("/v2/roles", {
     params: {

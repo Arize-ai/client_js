@@ -5,7 +5,10 @@ import {
   Span,
   WithClient,
 } from "../types";
-import { transformPaginationMetadata } from "../utils/pagination";
+import {
+  DEFAULT_LIST_LIMIT,
+  transformPaginationMetadata,
+} from "../utils/pagination";
 import { warnPreRelease } from "../utils/warning";
 import { findProjectId, toSpaceRef } from "../utils/resolve";
 import { transformSpan } from "./utils";
@@ -62,7 +65,7 @@ export async function listSpans(
     startTime,
     endTime,
     filter,
-    limit,
+    limit = DEFAULT_LIST_LIMIT,
     cursor,
   } = params;
   const client = clientInstance ?? createClient();

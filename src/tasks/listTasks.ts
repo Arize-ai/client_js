@@ -6,7 +6,10 @@ import {
   TaskType,
   WithClient,
 } from "../types";
-import { transformPaginationMetadata } from "../utils/pagination";
+import {
+  DEFAULT_LIST_LIMIT,
+  transformPaginationMetadata,
+} from "../utils/pagination";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { resolveSpace } from "../utils/space";
@@ -66,7 +69,7 @@ export async function listTasks(
     project,
     dataset,
     type,
-    limit,
+    limit = DEFAULT_LIST_LIMIT,
     cursor,
   } = params;
   const { spaceId: filterSpaceId, spaceName } = resolveSpace(space);

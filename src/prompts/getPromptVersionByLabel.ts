@@ -6,7 +6,7 @@ import { warnPreRelease } from "../utils/warning";
 import { findPromptId, toSpaceRef } from "../utils/resolve";
 import { transformPromptVersion } from "./utils";
 
-export type GetPromptLabelParams = WithClient<{
+export type GetPromptVersionByLabelParams = WithClient<{
   prompt: string;
   space?: string;
   labelName: string;
@@ -25,9 +25,9 @@ export type GetPromptLabelParams = WithClient<{
  * @throws Error if the label cannot be resolved or the response is invalid.
  * @example
  * ```typescript
- * import { getPromptLabel } from "@arizeai/ax-client"
+ * import { getPromptVersionByLabel } from "@arizeai/ax-client"
  *
- * const version = await getPromptLabel({
+ * const version = await getPromptVersionByLabel({
  *   prompt: "customer-support",
  *   space: "my-space",
  *   labelName: "production",
@@ -35,13 +35,13 @@ export type GetPromptLabelParams = WithClient<{
  * console.log(version);
  * ```
  */
-export async function getPromptLabel({
+export async function getPromptVersionByLabel({
   client: clientInstance,
   prompt,
   space,
   labelName,
-}: GetPromptLabelParams): Promise<PromptVersion> {
-  warnPreRelease({ functionName: "getPromptLabel", stage: "beta" });
+}: GetPromptVersionByLabelParams): Promise<PromptVersion> {
+  warnPreRelease({ functionName: "getPromptVersionByLabel", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const promptId = await findPromptId(client, prompt, spaceRef);

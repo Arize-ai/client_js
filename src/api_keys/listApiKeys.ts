@@ -7,7 +7,10 @@ import {
   PaginationParams,
   WithClient,
 } from "../types";
-import { transformPaginationMetadata } from "../utils/pagination";
+import {
+  DEFAULT_LIST_LIMIT,
+  transformPaginationMetadata,
+} from "../utils/pagination";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { transformApiKey } from "./utils";
@@ -59,7 +62,7 @@ export async function listApiKeys(
     status,
     spaceId,
     userId,
-    limit,
+    limit = DEFAULT_LIST_LIMIT,
     cursor,
   } = params;
   const client = clientInstance ?? createClient();

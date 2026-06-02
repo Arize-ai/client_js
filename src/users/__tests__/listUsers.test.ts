@@ -46,7 +46,7 @@ describe("listUsers", () => {
     });
   });
 
-  it("calls GET /v2/users with no params when none provided", async () => {
+  it("defaults limit to 50 when no params provided", async () => {
     await listUsers({ client: mockClient });
 
     expect(getFn).toHaveBeenCalledWith("/v2/users", {
@@ -54,7 +54,7 @@ describe("listUsers", () => {
         query: {
           email: undefined,
           status: undefined,
-          limit: undefined,
+          limit: 50,
           cursor: undefined,
         },
       },

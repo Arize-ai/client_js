@@ -2,6 +2,7 @@ import { createClient } from "../client";
 import { WithClient } from "../types";
 import { ExperimentRun } from "../types/experiments";
 import { warnPreRelease } from "../utils/warning";
+import { DEFAULT_LIST_LIMIT } from "../utils/pagination";
 import { handleApiError } from "../errors";
 import { findDatasetId, findExperimentId, toSpaceRef } from "../utils/resolve";
 import { transformExperimentRun } from "./utils";
@@ -41,7 +42,7 @@ export async function listExperimentRuns({
   experiment,
   dataset,
   space,
-  limit,
+  limit = DEFAULT_LIST_LIMIT,
 }: ListExperimentRunsParams): Promise<ExperimentRun[]> {
   warnPreRelease({ functionName: "listExperimentRuns", stage: "beta" });
   const client = clientInstance ?? createClient();

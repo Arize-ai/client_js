@@ -5,7 +5,10 @@ import {
   PaginationParams,
   WithClient,
 } from "../types";
-import { transformPaginationMetadata } from "../utils/pagination";
+import {
+  DEFAULT_LIST_LIMIT,
+  transformPaginationMetadata,
+} from "../utils/pagination";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { resolveSpace } from "../utils/space";
@@ -46,7 +49,13 @@ export async function listAnnotationConfigs(
   params: ListAnnotationConfigsParams = {},
 ): Promise<PaginatedResponse<AnnotationConfig>> {
   warnPreRelease({ functionName: "listAnnotationConfigs", stage: "beta" });
-  const { client: clientInstance, space, name, limit, cursor } = params;
+  const {
+    client: clientInstance,
+    space,
+    name,
+    limit = DEFAULT_LIST_LIMIT,
+    cursor,
+  } = params;
   const { spaceId, spaceName } = resolveSpace(space);
   const client = clientInstance ?? createClient();
   const response = await client.GET("/v2/annotation-configs", {

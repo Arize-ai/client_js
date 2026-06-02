@@ -1,7 +1,10 @@
 import { createClient } from "../client";
 import { PaginatedResponse, PaginationParams, WithClient } from "../types";
 import { PromptVersion } from "../types/prompts";
-import { transformPaginationMetadata } from "../utils/pagination";
+import {
+  DEFAULT_LIST_LIMIT,
+  transformPaginationMetadata,
+} from "../utils/pagination";
 import { handleApiError } from "../errors";
 import { warnPreRelease } from "../utils/warning";
 import { findPromptId, toSpaceRef } from "../utils/resolve";
@@ -39,7 +42,7 @@ export async function listPromptVersions({
   client: clientInstance,
   prompt,
   space,
-  limit,
+  limit = DEFAULT_LIST_LIMIT,
   cursor,
 }: ListPromptVersionsParams): Promise<PaginatedResponse<PromptVersion>> {
   warnPreRelease({ functionName: "listPromptVersions", stage: "beta" });

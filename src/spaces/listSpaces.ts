@@ -5,7 +5,10 @@ import {
   Space,
   WithClient,
 } from "../types";
-import { transformPaginationMetadata } from "../utils/pagination";
+import {
+  DEFAULT_LIST_LIMIT,
+  transformPaginationMetadata,
+} from "../utils/pagination";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { transformSpace } from "./utils";
@@ -44,7 +47,7 @@ export async function listSpaces(
     client: clientInstance,
     organizationId,
     name,
-    limit,
+    limit = DEFAULT_LIST_LIMIT,
     cursor,
   } = params;
   const client = clientInstance ?? createClient();
