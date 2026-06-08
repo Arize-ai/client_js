@@ -46,7 +46,7 @@ export async function updateUser({
   name,
   isDeveloper,
 }: UpdateUserParams): Promise<User> {
-  warnPreRelease({ functionName: "updateUser", stage: "alpha" });
+  warnPreRelease({ functionName: "updateUser", stage: "beta" });
   const client = clientInstance ?? createClient();
   const response = await client.PATCH("/v2/users/{user_id}", {
     params: {

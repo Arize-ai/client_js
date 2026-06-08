@@ -57,7 +57,7 @@ export type ListSpansParams = WithClient<
 export async function listSpans(
   params: ListSpansParams,
 ): Promise<PaginatedResponse<Span>> {
-  warnPreRelease({ functionName: "listSpans", stage: "alpha" });
+  warnPreRelease({ functionName: "listSpans", stage: "beta" });
   const {
     client: clientInstance,
     project,

@@ -1,5 +1,17 @@
 # @arizeai/ax-client
 
+## [1.18.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.17.0...arize-js-sdk/v1.18.0) (2026-06-08)
+
+
+### 🎁 New Features
+
+* **experiments:** support for appending experiment runs ([#72134](https://github.com/Arize-ai/arize/issues/72134)) ([f761a25](https://github.com/Arize-ai/arize/commit/f761a259acb04dd40ea489f1e8e1f09143d01ecb))
+
+
+### ❔ Miscellaneous Chores
+
+* promote evaluators, role-bindings (CRUD), spans list, and users to BETA ([#73280](https://github.com/Arize-ai/arize/issues/73280)) ([ad1ee37](https://github.com/Arize-ai/arize/commit/ad1ee374872dd0d9afdbcccec1b74275b26d3a7c))
+
 ## [1.17.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.16.0...arize-js-sdk/v1.17.0) (2026-06-02)
 
 

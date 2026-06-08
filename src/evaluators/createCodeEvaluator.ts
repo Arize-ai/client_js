@@ -47,7 +47,7 @@ export type CreateCodeEvaluatorParams = WithClient<CreateCodeEvaluatorInput>;
 export async function createCodeEvaluator(
   params: CreateCodeEvaluatorParams,
 ): Promise<EvaluatorWithVersion> {
-  warnPreRelease({ functionName: "createCodeEvaluator", stage: "alpha" });
+  warnPreRelease({ functionName: "createCodeEvaluator", stage: "beta" });
   const {
     client: clientInstance,
     name,

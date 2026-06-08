@@ -48,7 +48,7 @@ export type ListEvaluatorsParams = WithClient<
 export async function listEvaluators(
   params: ListEvaluatorsParams = {},
 ): Promise<PaginatedResponse<Evaluator>> {
-  warnPreRelease({ functionName: "listEvaluators", stage: "alpha" });
+  warnPreRelease({ functionName: "listEvaluators", stage: "beta" });
   const {
     client: clientInstance,
     space,

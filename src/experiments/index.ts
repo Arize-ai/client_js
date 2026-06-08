@@ -4,3 +4,4 @@ export * from "./deleteExperiment";
 export * from "./listExperimentRuns";
 export * from "./createExperiment";
 export * from "./annotateExperimentRuns";
+export * from "./appendExperimentRuns";

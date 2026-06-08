@@ -78,7 +78,7 @@ export async function createUser({
   inviteMode,
   isDeveloper,
 }: CreateUserParams): Promise<User | UserCreated> {
-  warnPreRelease({ functionName: "createUser", stage: "alpha" });
+  warnPreRelease({ functionName: "createUser", stage: "beta" });
   const client = clientInstance ?? createClient();
   const response = await client.POST("/v2/users", {
     body: {

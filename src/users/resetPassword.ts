@@ -32,7 +32,7 @@ export async function resetPassword({
   client: clientInstance,
   userId,
 }: ResetPasswordParams): Promise<void> {
-  warnPreRelease({ functionName: "resetPassword", stage: "alpha" });
+  warnPreRelease({ functionName: "resetPassword", stage: "beta" });
   const client = clientInstance ?? createClient();
   const response = await client.POST("/v2/users/{user_id}/reset-password", {
     params: {

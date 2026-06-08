@@ -52,7 +52,7 @@ export type CreateTemplateEvaluatorParams =
 export async function createTemplateEvaluator(
   params: CreateTemplateEvaluatorParams,
 ): Promise<EvaluatorWithVersion> {
-  warnPreRelease({ functionName: "createTemplateEvaluator", stage: "alpha" });
+  warnPreRelease({ functionName: "createTemplateEvaluator", stage: "beta" });
   const {
     client: clientInstance,
     name,

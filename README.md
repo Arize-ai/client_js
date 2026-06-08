@@ -59,6 +59,7 @@ Arize has both Enterprise and OSS products to support this goal:
   - [Getting an experiment](#getting-an-experiment)
   - [Deleting an experiment](#deleting-an-experiment)
   - [Listing experiment runs](#listing-experiment-runs)
+  - [Appending experiment runs](#appending-experiment-runs)
   - [Annotating experiment runs](#annotating-experiment-runs)
 - [Prompts](#prompts)
   - [Creating a prompt](#creating-a-prompt)
@@ -361,6 +362,22 @@ const experimentRuns = await listExperimentRuns({
   dataset: "my-dataset",
   space: "my-space",
 });
+```
+
+## Appending experiment runs
+
+Append between 1 and 1000 new runs to an existing experiment. Each run must include `exampleId` (the ID of an example from the experiment's dataset) and `output`. The response includes the updated experiment and the generated run IDs in input order.
+
+```typescript
+import { appendExperimentRuns } from "@arizeai/ax-client";
+
+const result = await appendExperimentRuns({
+  space: "my-space",
+  dataset: "my-dataset",
+  experiment: "my-experiment",
+  experimentRuns: [{ exampleId: "ex_abc123", output: "The answer is 42" }],
+});
+console.log(result.runIds); // IDs of the appended runs
 ```
 
 ## Annotating experiment runs

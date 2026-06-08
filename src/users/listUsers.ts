@@ -46,7 +46,7 @@ export type ListUsersParams = WithClient<
 export async function listUsers(
   params: ListUsersParams = {},
 ): Promise<PaginatedResponse<User>> {
-  warnPreRelease({ functionName: "listUsers", stage: "alpha" });
+  warnPreRelease({ functionName: "listUsers", stage: "beta" });
   const {
     client: clientInstance,
     email,

@@ -27,7 +27,7 @@ export async function getEvaluatorVersion({
   client: clientInstance,
   versionId,
 }: GetEvaluatorVersionParams): Promise<EvaluatorVersion> {
-  warnPreRelease({ functionName: "getEvaluatorVersion", stage: "alpha" });
+  warnPreRelease({ functionName: "getEvaluatorVersion", stage: "beta" });
   const client = clientInstance ?? createClient();
   const response = await client.GET("/v2/evaluator-versions/{version_id}", {
     params: {

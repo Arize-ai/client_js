@@ -56,7 +56,7 @@ export async function createTemplateEvaluatorVersion(
 ): Promise<EvaluatorVersion> {
   warnPreRelease({
     functionName: "createTemplateEvaluatorVersion",
-    stage: "alpha",
+    stage: "beta",
   });
   const {
     client: clientInstance,

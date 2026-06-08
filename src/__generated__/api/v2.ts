@@ -26,7 +26,7 @@ export interface paths {
          *     **Payload Requirements**
          *     - `name` and `provider` are required.
          *     - The integration name must be unique within the account.
-         *     - `provider` must be one of: `openAI`, `azureOpenAI`, `awsBedrock`, `vertexAI`, `anthropic`, `custom`.
+         *     - `provider` must be one of: `openAI`, `azureOpenAI`, `awsBedrock`, `vertexAI`, `anthropic`, `nvidiaNim`, `gemini`, `custom`.
          *     - If `scopings` is omitted, the integration defaults to account-wide visibility.
          *     - `enable_default_models` defaults to `false` if not provided.
          *     - `function_calling_enabled` defaults to `true` if not provided.
@@ -992,7 +992,7 @@ export interface paths {
          *     When `space_id` is provided, results are limited to that space. When omitted,
          *     evaluators from all permitted spaces are returned.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["evaluators_list"];
         put?: never;
@@ -1054,7 +1054,7 @@ export interface paths {
          *     }
          *     ```
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["evaluators_create"];
         delete?: never;
@@ -1075,7 +1075,7 @@ export interface paths {
          * @description Returns an evaluator and a resolved version. By default, the latest version
          *     is included. Use the version_id query parameter to resolve a specific version.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["evaluators_get"];
         put?: never;
@@ -1084,7 +1084,7 @@ export interface paths {
          * Delete evaluator
          * @description Deletes an evaluator and all its versions. This operation is irreversible.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         delete: operations["evaluators_delete"];
         options?: never;
@@ -1112,7 +1112,7 @@ export interface paths {
          *     {}
          *     ```
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         patch: operations["evaluators_update"];
         trace?: never;
@@ -1128,7 +1128,7 @@ export interface paths {
          * List evaluator versions
          * @description List all versions of an evaluator with cursor-based pagination.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["evaluator_versions_list"];
         put?: never;
@@ -1181,7 +1181,7 @@ export interface paths {
          *     }
          *     ```
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["evaluator_versions_create"];
         delete?: never;
@@ -1201,7 +1201,7 @@ export interface paths {
          * Get evaluator version
          * @description Get a specific evaluator version by its unique identifier.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["evaluator_versions_get"];
         put?: never;
@@ -2034,7 +2034,7 @@ export interface paths {
          *     Use `PATCH /v2/role-bindings/{binding_id}` to change the assigned role
          *     for an existing binding.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["role_bindings_create"];
         delete?: never;
@@ -2054,7 +2054,7 @@ export interface paths {
          * Get a role binding
          * @description Get a single role binding by its ID.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["role_bindings_get"];
         put?: never;
@@ -2063,7 +2063,7 @@ export interface paths {
          * Delete a role binding
          * @description Delete a role binding by its ID.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         delete: operations["role_bindings_delete"];
         options?: never;
@@ -2096,7 +2096,7 @@ export interface paths {
          *     ```
          *     This fails because only `role_id` can be updated on an existing binding.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         patch: operations["role_bindings_update"];
         trace?: never;
@@ -2366,7 +2366,7 @@ export interface paths {
          *     Requires account admin role, account member role, or USER_READ permission at the
          *     account level.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["users_list"];
         put?: never;
@@ -2403,7 +2403,7 @@ export interface paths {
          *
          *     Requires account admin role or USER_CREATE permission.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["users_create"];
         delete?: never;
@@ -2427,7 +2427,7 @@ export interface paths {
          *
          *     Returns 404 if the user does not exist, does not belong to the caller's account, or the caller lacks read permission.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["users_get"];
         put?: never;
@@ -2447,7 +2447,7 @@ export interface paths {
          *
          *     Requires account admin role or USER_DELETE permission.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         delete: operations["users_delete"];
         options?: never;
@@ -2473,9 +2473,12 @@ export interface paths {
          *     - `{}` — at least one field must be provided
          *     - `{ "name": "   " }` — name cannot be whitespace only
          *
-         *     Requires account admin role or USER_UPDATE permission.
+         *     Updating `name` requires account admin role or USER_UPDATE permission.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     Updating `is_developer` requires account admin role. Callers without account admin that include
+         *     `is_developer` in the body receive `403`.
+         *
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         patch: operations["users_update"];
         trace?: never;
@@ -2504,7 +2507,7 @@ export interface paths {
          *
          *     Requires account admin role or USER_CREATE permission.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["users_resend_invitation"];
         delete?: never;
@@ -2530,7 +2533,7 @@ export interface paths {
          *     - Returns 400 if the target user authenticates via SSO/SAML or has not
          *       yet verified their account (no password hash to key the token against).
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["users_password_reset"];
         delete?: never;
@@ -2552,7 +2555,7 @@ export interface paths {
          * List spans
          * @description Returns a paginated list of spans.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["spans_list"];
         /**
@@ -2809,7 +2812,7 @@ export interface paths {
          *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
-        get: operations["tasks_list_runs"];
+        get: operations["task_runs_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3108,7 +3111,7 @@ export interface components {
         };
         AnnotationQueueExampleRecordInput: {
             /**
-             * @description Discriminator identifying the record source type. Must be `example` for dataset example records. (enum property replaced by openapi-typescript)
+             * @description Discriminator identifying this record source as dataset examples. Must be `example` for dataset example records. (enum property replaced by openapi-typescript)
              * @enum {string}
              */
             record_type: "example";
@@ -3160,7 +3163,7 @@ export interface components {
         AnnotationQueueRecordInput: components["schemas"]["AnnotationQueueExampleRecordInput"] | components["schemas"]["AnnotationQueueSpanRecordInput"];
         AnnotationQueueSpanRecordInput: {
             /**
-             * @description Discriminator identifying the record source type. Must be `span` for span records. (enum property replaced by openapi-typescript)
+             * @description Discriminator identifying this record source as project spans. Must be `span` for span records. (enum property replaced by openapi-typescript)
              * @enum {string}
              */
             record_type: "span";
@@ -3222,6 +3225,10 @@ export interface components {
              *     ]
              */
             annotator_emails: components["schemas"]["Email"][];
+            /**
+             * @description How records are assigned to annotators. Defaults to `all` when omitted.
+             * @default all
+             */
             assignment_method?: components["schemas"]["AssignmentMethod"];
             /** @description Record sources to add to the annotation queue on creation. At most 2 record sources (projects or datasets) may be provided in a single create request. Additional records from other sources can be added after creation. */
             record_sources?: components["schemas"]["AnnotationQueueRecordInput"][];
@@ -3392,7 +3399,8 @@ export interface components {
             space_id?: string;
             /**
              * @description Role assignments for the service key's bot user. Only valid when `key_type` is `service`;
-             *     invalid for `user` keys (returns `400`).
+             *     invalid for `user` keys (returns `400`). When omitted, each role field defaults to
+             *     minimum privilege: `space_role` → `member`, `org_role` → `read-only`, `account_role` → `member`.
              */
             roles?: components["schemas"]["ApiKeyRoles"];
         };
@@ -3729,7 +3737,10 @@ export interface components {
             query_filter?: string | null;
         };
         CustomCodeConfig: components["schemas"]["CodeConfigCommon"] & {
-            /** @enum {string} */
+            /**
+             * @description Discriminator identifying this as a custom (user-supplied Python) code evaluator
+             * @enum {string}
+             */
             type: "custom";
             /** @description Eval column name. Must match ^[a-zA-Z0-9_\s\-&()]+$ */
             name: string;
@@ -3804,7 +3815,10 @@ export interface components {
         EvaluatorVersion: components["schemas"]["EvaluatorVersionTemplate"] | components["schemas"]["EvaluatorVersionCode"];
         /** @description Evaluator version carrying a code configuration. */
         EvaluatorVersionCode: components["schemas"]["EvaluatorVersionCommon"] & {
-            /** @enum {string} */
+            /**
+             * @description Discriminator identifying this as a code evaluator version. Always `code` for this variant.
+             * @enum {string}
+             */
             type?: "code";
             /** @description The code evaluator configuration for this version */
             code_config: components["schemas"]["CodeConfig"];
@@ -3846,7 +3860,10 @@ export interface components {
         EvaluatorVersionCreate: components["schemas"]["EvaluatorVersionTemplateCreate"] | components["schemas"]["EvaluatorVersionCodeCreate"];
         /** @description Evaluator version carrying a template (LLM) configuration. */
         EvaluatorVersionTemplate: components["schemas"]["EvaluatorVersionCommon"] & {
-            /** @enum {string} */
+            /**
+             * @description Discriminator identifying this as a template evaluator version. Always `template` for this variant.
+             * @enum {string}
+             */
             type?: "template";
             /** @description The LLM template configuration for this version */
             template_config: components["schemas"]["TemplateConfig"];
@@ -3868,7 +3885,10 @@ export interface components {
             version: components["schemas"]["EvaluatorVersion"];
         };
         ManagedCodeConfig: components["schemas"]["CodeConfigCommon"] & {
-            /** @enum {string} */
+            /**
+             * @description Discriminator identifying this as a managed (built-in) code evaluator
+             * @enum {string}
+             */
             type: "managed";
             /** @description Eval column name. Must match ^[a-zA-Z0-9_\s\-&()]+$ */
             name: string;
@@ -3937,7 +3957,10 @@ export interface components {
             classification_choices?: {
                 [key: string]: number;
             } | null;
-            /** @default maximize */
+            /**
+             * @description Direction for optimization applied to this template's evaluation scores. Defaults to `maximize` when omitted.
+             * @default maximize
+             */
             direction?: components["schemas"]["OptimizationDirection"];
             /** @description Data granularity level. Defaults to null when omitted. */
             data_granularity?: components["schemas"]["DataGranularity"] | null;
@@ -4135,7 +4158,9 @@ export interface components {
             provider: components["schemas"]["LlmProvider"];
             /** @description The model to use for the call */
             model: string;
+            /** @description LLM invocation parameters for this version. When absent, no invocation parameters were set on this version. */
             invocation_params?: components["schemas"]["InvocationParams"];
+            /** @description Provider-specific parameters for this version. When absent, no provider-specific parameters were set on this version. */
             provider_params?: components["schemas"]["ProviderParams"];
             /**
              * Format: date-time
@@ -4462,6 +4487,7 @@ export interface components {
              * @description Timestamp when the span ended
              */
             end_time: string;
+            /** @description Status code of the span. When absent, the server treats the value as `UNSET` (equivalent to OK). */
             status_code?: components["schemas"]["SpanStatusCode"];
             /** @description Status message associated with the span */
             status_message?: string;
@@ -4747,6 +4773,7 @@ export interface components {
              * @description The maximum score value
              */
             maximum_score: number;
+            /** @description Direction for optimization. When absent, the server treats the value as `none`. */
             optimization_direction?: components["schemas"]["OptimizationDirection"];
         } & {
             /**
@@ -4772,6 +4799,7 @@ export interface components {
             type: "categorical";
             /** @description An array of categorical annotation values */
             values: components["schemas"]["CategoricalAnnotationValue"][];
+            /** @description Direction for optimization. When absent, the server treats the value as `none`. */
             optimization_direction?: components["schemas"]["OptimizationDirection"];
         } & {
             /**
@@ -4822,6 +4850,10 @@ export interface components {
              * @description The maximum score value
              */
             maximum_score: number;
+            /**
+             * @description Direction for optimization. Defaults to `none` when omitted.
+             * @default none
+             */
             optimization_direction?: components["schemas"]["OptimizationDirection"];
         } & {
             /**
@@ -4838,6 +4870,10 @@ export interface components {
             annotation_config_type: "categorical";
             /** @description An array of categorical annotation values */
             values: components["schemas"]["CategoricalAnnotationValue"][];
+            /**
+             * @description Direction for optimization. Defaults to `none` when omitted.
+             * @default none
+             */
             optimization_direction?: components["schemas"]["OptimizationDirection"];
         } & {
             /**
@@ -11630,7 +11666,7 @@ export interface operations {
             429: components["responses"]["RateLimitExceeded"];
         };
     };
-    tasks_list_runs: {
+    task_runs_list: {
         parameters: {
             query?: {
                 /**

@@ -48,7 +48,7 @@ export async function createCodeEvaluatorVersion(
 ): Promise<EvaluatorVersion> {
   warnPreRelease({
     functionName: "createCodeEvaluatorVersion",
-    stage: "alpha",
+    stage: "beta",
   });
   const {
     client: clientInstance,

@@ -46,7 +46,7 @@ export async function listEvaluatorVersions({
   limit = DEFAULT_LIST_LIMIT,
   cursor,
 }: ListEvaluatorVersionsParams): Promise<PaginatedResponse<EvaluatorVersion>> {
-  warnPreRelease({ functionName: "listEvaluatorVersions", stage: "alpha" });
+  warnPreRelease({ functionName: "listEvaluatorVersions", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const evaluatorId = await findEvaluatorId(client, evaluator, spaceRef);

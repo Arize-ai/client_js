@@ -34,7 +34,7 @@ export async function getEvaluator({
   space,
   versionId,
 }: GetEvaluatorParams): Promise<EvaluatorWithVersion> {
-  warnPreRelease({ functionName: "getEvaluator", stage: "alpha" });
+  warnPreRelease({ functionName: "getEvaluator", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const evaluatorId = await findEvaluatorId(client, evaluator, spaceRef);

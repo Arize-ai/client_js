@@ -53,7 +53,7 @@ export async function bulkDeleteUsers({
   userIds = [],
   emails = [],
 }: BulkDeleteUsersParams): Promise<BulkUserDeletionResult[]> {
-  warnPreRelease({ functionName: "bulkDeleteUsers", stage: "alpha" });
+  warnPreRelease({ functionName: "bulkDeleteUsers", stage: "beta" });
 
   if (userIds.length === 0 && emails.length === 0) {
     throw new Error(

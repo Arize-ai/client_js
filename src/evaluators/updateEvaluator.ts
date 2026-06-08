@@ -41,7 +41,7 @@ export async function updateEvaluator({
   name,
   description,
 }: UpdateEvaluatorParams): Promise<Evaluator> {
-  warnPreRelease({ functionName: "updateEvaluator", stage: "alpha" });
+  warnPreRelease({ functionName: "updateEvaluator", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const evaluatorId = await findEvaluatorId(client, evaluator, spaceRef);

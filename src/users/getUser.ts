@@ -33,7 +33,7 @@ export async function getUser({
   client: clientInstance,
   userId,
 }: GetUserParams): Promise<User> {
-  warnPreRelease({ functionName: "getUser", stage: "alpha" });
+  warnPreRelease({ functionName: "getUser", stage: "beta" });
   const client = clientInstance ?? createClient();
   const response = await client.GET("/v2/users/{user_id}", {
     params: {

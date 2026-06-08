@@ -36,7 +36,7 @@ export async function resendInvitation({
   client: clientInstance,
   userId,
 }: ResendInvitationParams): Promise<void> {
-  warnPreRelease({ functionName: "resendInvitation", stage: "alpha" });
+  warnPreRelease({ functionName: "resendInvitation", stage: "beta" });
   const client = clientInstance ?? createClient();
   const response = await client.POST("/v2/users/{user_id}/resend-invitation", {
     params: {
