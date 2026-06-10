@@ -3435,10 +3435,10 @@ export interface components {
         /**
          * @description Current status of the API key.
          *     - active - The key is valid for use.
-         *     - deleted - The key has been deleted by a user.
+         *     - revoked - The key has been revoked and is no longer valid.
          * @enum {string}
          */
-        ApiKeyStatus: "active" | "deleted";
+        ApiKeyStatus: "active" | "revoked";
         /**
          * @description Type of the API key.
          *     - user - Key associated with a specific user.

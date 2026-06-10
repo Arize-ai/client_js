@@ -1,5 +1,12 @@
 # @arizeai/ax-client
 
+## [1.18.1](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.18.0...arize-js-sdk/v1.18.1) (2026-06-10)
+
+
+### ❔ Miscellaneous Chores
+
+* send SDK identity via headers ([#74487](https://github.com/Arize-ai/arize/issues/74487)) ([f0b7bbb](https://github.com/Arize-ai/arize/commit/f0b7bbba087d349311e1b6ad1497c062c8aa6474))
+
 ## [1.18.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.17.0...arize-js-sdk/v1.18.0) (2026-06-08)
 
 

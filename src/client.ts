@@ -83,6 +83,12 @@ const arizeConfigToClientOptions = (
       "sdk-language": "javascript",
       "sdk-version": ARIZE_SDK_VERSION,
       "sdk-package-name": "@arizeai/ax-client",
+      // The runtime version is only meaningful on Node; in browser/edge
+      // runtimes `process` is absent, so omit the header rather than send a
+      // bogus value (the server tolerates an absent runtime version).
+      ...(typeof process !== "undefined" && process.version
+        ? { "language-version": process.version }
+        : {}),
     },
   };
   return options;
