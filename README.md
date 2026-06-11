@@ -114,6 +114,7 @@ Arize has both Enterprise and OSS products to support this goal:
   - [Creating an API key](#creating-an-api-key)
   - [Listing API keys](#listing-api-keys)
   - [Deleting an API key](#deleting-an-api-key)
+  - [Revoking an API key](#revoking-an-api-key)
   - [Refreshing an API key](#refreshing-an-api-key)
 - [Roles](#roles)
   - [Creating a role](#creating-a-role)
@@ -1117,7 +1118,7 @@ await deleteProject({ project: "my-project", space: "my-space" });
 
 # API Keys
 
-The `@arizeai/ax-client` package allows you to create, list, delete, and refresh API keys.
+The `@arizeai/ax-client` package allows you to create, list, delete, revoke, and refresh API keys.
 
 ## Creating an API key
 
@@ -1165,12 +1166,14 @@ const { data: byUser } = await listApiKeys({
 });
 ```
 
-## Deleting an API key
+## Revoking an API key
+
+Sets the key's status to `revoked` and deactivates it immediately. This operation is irreversible; revoking an already-revoked key is a no-op and still succeeds.
 
 ```typescript
-import { deleteApiKey } from "@arizeai/ax-client";
+import { revokeApiKey } from "@arizeai/ax-client";
 
-await deleteApiKey({ apiKeyId: "your-api-key-id" });
+await revokeApiKey({ apiKeyId: "your-api-key-id" });
 ```
 
 ## Refreshing an API key

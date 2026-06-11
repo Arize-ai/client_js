@@ -659,6 +659,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v2/api-keys/{api_key_id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Revoke an API key
+         * @description Revoke an API key by its ID. The key will immediately stop working for authentication. Revoking an
+         *     already-revoked key is a no-op and still returns `204`.
+         *
+         *     **Authorization:**
+         *     Requires the `developer` user permission flag and account admin role. Returns `403` when conditions are not met.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        put: operations["api_keys_revoke"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v2/datasets": {
         parameters: {
             query?: never;
@@ -7673,6 +7699,13 @@ export interface components {
                 "application/json": components["schemas"]["Task"];
             };
         };
+        /** @description API key successfully revoked */
+        ApiKeyRevoked: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
         /** @description Examples successfully added to the dataset. */
         DatasetExamplesInserted: {
             headers: {
@@ -9556,6 +9589,29 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             422: components["responses"]["UnprocessableEntity"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    api_keys_revoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique API key identifier (base64)
+                 * @example QXBpS2V5OjEyMzQ1
+                 */
+                api_key_id: components["parameters"]["ApiKeyIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: components["responses"]["ApiKeyRevoked"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };

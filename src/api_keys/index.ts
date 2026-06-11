@@ -1,4 +1,4 @@
 export * from "./createApiKey";
-export * from "./deleteApiKey";
 export * from "./listApiKeys";
 export * from "./refreshApiKey";
+export * from "./revokeApiKey";

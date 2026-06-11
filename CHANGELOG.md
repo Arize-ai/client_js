@@ -1,5 +1,16 @@
 # @arizeai/ax-client
 
+## [1.19.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.18.1...arize-js-sdk/v1.19.0) (2026-06-11)
+
+
+### 🎁 New Features
+
+* **api-keys:** add revoke support ([#74113](https://github.com/Arize-ai/arize/issues/74113)) ([9fe89af](https://github.com/Arize-ai/arize/commit/9fe89afce869d4ee1990d3fdd7e3548584e77b36))
+
+### 💫 Code Refactoring
+
+* **api-keys:** remove delete method ([#74113](https://github.com/Arize-ai/arize/issues/74113)) ([9fe89af](https://github.com/Arize-ai/arize/commit/9fe89afce869d4ee1990d3fdd7e3548584e77b36))
+
 ## [1.18.1](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.18.0...arize-js-sdk/v1.18.1) (2026-06-10)
 
 
