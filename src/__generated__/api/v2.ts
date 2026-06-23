@@ -337,6 +337,7 @@ export interface paths {
          *     - The record's data as flat key-value pairs
          *     - Any annotations that have been added to the record
          *     - The users assigned to annotate the record and their completion status
+         *     - The record's granularity, applicable when the source type is spans
          *
          *     **Pagination**:
          *     - Response includes `pagination` with `has_more` and `next_cursor`.
@@ -349,17 +350,19 @@ export interface paths {
         put?: never;
         /**
          * Create annotation queue records
-         * @description Add new records from either spans (a project) or from dataset examples to an existing annotation queue.
+         * @description Add new records from spans, traces, or dataset examples to an existing annotation queue.
          *
          *     **Payload Requirements**
          *       - At least one record source is required.
          *       - At most 2 record sources are allowed per request
          *       - For span record source: `start_time` must be before `end_time`, and the range must not exceed 7 days.
          *       - For dataset record source: all `example_ids` must be non-empty strings.
-         *       - For spans record source: all `span_ids` must be non-empty strings.
+         *       - For project record source:
+         *         - span records: all `span_ids` must be non-empty strings.
+         *         - trace records: all `trace_ids` must be non-empty strings.
          *       - At most 500 records total may be added in one request
          *
-         *     **Valid example**
+         *     **Valid example (span record)**
          *     ```json
          *     {
          *       "record_sources": [
@@ -369,6 +372,21 @@ export interface paths {
          *           "start_time": "2026-01-15T00:00:00Z",
          *           "end_time": "2026-01-16T00:00:00Z",
          *           "span_ids": ["U3BhbjoxOmFCY0Q="]
+         *         }
+         *       ]
+         *     }
+         *     ```
+         *
+         *     **Valid example (trace record)**
+         *     ```json
+         *     {
+         *       "record_sources": [
+         *         {
+         *           "record_type": "trace",
+         *           "project_id": "TW9kZWw6MTIzOmFCY0Q=",
+         *           "start_time": "2026-01-15T00:00:00Z",
+         *           "end_time": "2026-01-16T00:00:00Z",
+         *           "trace_ids": ["8fe3373f-0da4-4a8e-b57f-5c8878cfb747"]
          *         }
          *       ]
          *     }
@@ -430,8 +448,7 @@ export interface paths {
          *     Omitted annotation configs are left unchanged.
          *
          *     **Payload Requirements**
-         *     - `annotations` must contain at least one entry.
-         *     - There is no maximum limit on the number of annotations — you may submit one annotation per annotation config associated with the queue.
+         *     - `annotations` must contain at least one entry and at most 500.
          *     - Each annotation `name` must match an annotation config associated with the queue.
          *     - Omit `label`, `score`, or `text` to leave the existing value unchanged. Individual fields cannot be set to null; annotations cannot be removed once written.
          *
@@ -459,7 +476,7 @@ export interface paths {
          *     }
          *     ```
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["annotation_queues_records_annotate"];
         delete?: never;
@@ -585,35 +602,6 @@ export interface paths {
          */
         post: operations["api_keys_create"];
         delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v2/api-keys/{api_key_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /**
-         * Delete an API key
-         * @description Delete an API key by its ID (soft-delete). This operation is irreversible. The key will
-         *     immediately stop working for authentication.
-         *
-         *     **Authorization:**
-         *     - **User keys:** the creator or an account admin may delete the key. Requires the
-         *       `developer` user permission flag. Returns `403` when this flag is absent.
-         *     - **Service keys:** space admins (and higher) may delete any service key in their space.
-         *       Non-admins require the `SERVICE_KEY_DELETE` permission and must be the creator of the key.
-         *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
-         */
-        delete: operations["api_keys_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -829,7 +817,9 @@ export interface paths {
          * @description List examples for a given dataset and version.
          *
          *     If version is not passed, the latest version is selected. Examples are
-         *     sorted by insertion order.
+         *     returned in ascending order of `created_at`, with `id` as a tiebreaker.
+         *     This order is stable across pages, so cursor pagination never skips or
+         *     repeats an example.
          *
          *     **Human annotations**: returned in the structured `annotations` array on
          *     each example. Each entry includes `name`, optional `label` / `score` /
@@ -837,10 +827,9 @@ export interface paths {
          *     annotations.
          *
          *     **Pagination**:
-         *     - Response includes `pagination` for forward compatibility.
-         *     - **Currently not implemented**: `pagination.next_cursor` is omitted
-         *     - When pagination is enabled in the future, the behavior will match
-         *     other list endpoints (cursor-based, opaque tokens).
+         *     - Response includes `pagination` with `has_more` and `next_cursor`.
+         *     - Use cursor-based pagination by passing the returned `next_cursor`
+         *     value as the `cursor` query parameter in subsequent requests.
          *
          *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
@@ -995,7 +984,7 @@ export interface paths {
          *     }
          *     ```
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["datasets_examples_annotate"];
         delete?: never;
@@ -1432,7 +1421,7 @@ export interface paths {
          *     }
          *     ```
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["experiments_runs_annotate"];
         delete?: never;
@@ -2680,7 +2669,7 @@ export interface paths {
          *     }
          *     ```
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["spans_annotate"];
         delete?: never;
@@ -3072,7 +3061,7 @@ export interface components {
         AnnotationConfig: components["schemas"]["ContinuousAnnotationConfig"] | components["schemas"]["CategoricalAnnotationConfig"] | components["schemas"]["FreeformAnnotationConfig"];
         /** @description Annotations to submit for an annotation queue record. Annotations are upserted by annotation config name; omitted configs are left unchanged. */
         AnnotateAnnotationQueueRecordRequestBody: {
-            /** @description Annotations to upsert on this record, keyed by annotation config name. There is no maximum limit — you may submit one annotation per annotation config associated with the queue. */
+            /** @description Annotations to upsert on this record, keyed by annotation config name. At most 500 annotations may be submitted per request — one per annotation config associated with the queue. */
             annotations: components["schemas"]["AnnotationInput"][];
         };
         /** @description An annotation value to set on a record, identified by its annotation config name. Omitting a field leaves the existing value unchanged. */
@@ -3155,6 +3144,8 @@ export interface components {
             /** @description The annotation queue this record belongs to */
             annotation_queue_id: string;
             source_type: components["schemas"]["AnnotationQueueSourceType"];
+            /** @description The granularity of the record, if applicable. */
+            granularity?: components["schemas"]["RecordGranularity"] | null;
             /** @description Record data as flat key-value pairs containing span or dataset fields. Does not include annotation or evaluation columns. */
             data: {
                 [key: string]: unknown;
@@ -3173,6 +3164,8 @@ export interface components {
             /** @description The annotation queue this record belongs to */
             annotation_queue_id: string;
             source_type: components["schemas"]["AnnotationQueueSourceType"];
+            /** @description The granularity of the record, if applicable. */
+            granularity?: components["schemas"]["RecordGranularity"] | null;
             /** @description The annotations that were submitted in this request */
             annotations: components["schemas"]["Annotation"][];
         };
@@ -3183,10 +3176,12 @@ export interface components {
             /** @description The annotation queue this record belongs to */
             annotation_queue_id: string;
             source_type: components["schemas"]["AnnotationQueueSourceType"];
+            /** @description The granularity of the record, if applicable. */
+            granularity?: components["schemas"]["RecordGranularity"] | null;
             /** @description The users now assigned to this record after this operation */
             assigned_users: components["schemas"]["AnnotationQueueAssignedUser"][];
         };
-        AnnotationQueueRecordInput: components["schemas"]["AnnotationQueueExampleRecordInput"] | components["schemas"]["AnnotationQueueSpanRecordInput"];
+        AnnotationQueueRecordInput: components["schemas"]["AnnotationQueueExampleRecordInput"] | components["schemas"]["AnnotationQueueSpanRecordInput"] | components["schemas"]["AnnotationQueueTraceRecordInput"];
         AnnotationQueueSpanRecordInput: {
             /**
              * @description Discriminator identifying this record source as project spans. Must be `span` for span records. (enum property replaced by openapi-typescript)
@@ -3207,6 +3202,27 @@ export interface components {
             end_time: string;
             /** @description List of span IDs to add to the queue */
             span_ids: string[];
+        };
+        AnnotationQueueTraceRecordInput: {
+            /**
+             * @description Discriminator identifying this record as a trace record. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            record_type: "trace";
+            /** @description The project ID these traces belong to. */
+            project_id: string;
+            /**
+             * Format: date-time
+             * @description Start of the time range used to resolve each trace's root span. The range (end_time - start_time) must not exceed 7 days.
+             */
+            start_time: string;
+            /**
+             * Format: date-time
+             * @description End of the time range. Must be after start_time.
+             */
+            end_time: string;
+            /** @description List of trace IDs to add to the queue. */
+            trace_ids: string[];
         };
         /** @description User assignment for an annotation queue record. Fully replaces the current record-level user assignment. Pass an empty array to remove all assignments. */
         AssignAnnotationQueueRecordRequestBody: {
@@ -3361,6 +3377,13 @@ export interface components {
             /** @description Batch of span annotations to write. Up to 1000 spans per request. */
             annotations: components["schemas"]["AnnotateRecordInput"][];
         };
+        /**
+         * @description Granularity of an annotation queue record.
+         *     - span: The record represents a span.
+         *     - trace: The record represents a trace.
+         * @enum {string}
+         */
+        RecordGranularity: "span" | "trace";
         ApiKey: {
             /** @description Unique identifier for the API key. */
             id: string;
@@ -3615,7 +3638,7 @@ export interface components {
         PaginationMetadata: {
             /**
              * @description Opaque cursor for fetching the next page. Treat as an unreadable token.
-             *     Present when `has_more` is true; omitted when `hasMore` is false.
+             *     Present when `has_more` is true; omitted when `has_more` is false.
              */
             next_cursor?: string;
             /** @description True if another page of results is available. */
@@ -6035,13 +6058,6 @@ export interface components {
                  */
                 "application/json": components["schemas"]["ApiKeyCreated"];
             };
-        };
-        /** @description API key successfully deleted */
-        ApiKeyDeleted: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content?: never;
         };
         /** @description Returns a list of API keys matching the request filters. The raw key secret is never returned. */
         ApiKeyList: {
@@ -9545,29 +9561,6 @@ export interface operations {
             429: components["responses"]["RateLimitExceeded"];
         };
     };
-    api_keys_delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /**
-                 * @description The unique API key identifier (base64)
-                 * @example QXBpS2V5OjEyMzQ1
-                 */
-                api_key_id: components["parameters"]["ApiKeyIdPathParam"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            204: components["responses"]["ApiKeyDeleted"];
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            429: components["responses"]["RateLimitExceeded"];
-        };
-    };
     api_keys_refresh: {
         parameters: {
             query?: never;
@@ -9758,6 +9751,12 @@ export interface operations {
                 dataset_version_id?: components["parameters"]["DatasetVersionIdQueryParam"];
                 /** @description Maximum items to return */
                 limit?: components["parameters"]["LimitQueryParamMax500"];
+                /**
+                 * @description Opaque pagination cursor returned from a previous response
+                 *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
+                 *     attempt to parse or construct it.
+                 */
+                cursor?: components["parameters"]["CursorQueryParam"];
             };
             header?: never;
             path: {

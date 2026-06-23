@@ -63,7 +63,7 @@ export async function annotateDatasetExamples({
   space,
   annotations,
 }: AnnotateDatasetExamplesParams): Promise<void> {
-  warnPreRelease({ functionName: "annotateDatasetExamples", stage: "alpha" });
+  warnPreRelease({ functionName: "annotateDatasetExamples", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const datasetId = await findDatasetId(client, dataset, spaceRef);

@@ -49,7 +49,7 @@ export async function annotateAnnotationQueueRecord({
 }: AnnotateAnnotationQueueRecordParams): Promise<AnnotationQueueRecordAnnotateResult> {
   warnPreRelease({
     functionName: "annotateAnnotationQueueRecord",
-    stage: "alpha",
+    stage: "beta",
   });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);

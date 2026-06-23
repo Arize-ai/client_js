@@ -1,6 +1,6 @@
 {
   "name": "@arizeai/ax-client",
-  "version": "1.19.0",
+  "version": "1.20.0",
   "description": "A Typescript client for the Arize AX API",
   "license": "Apache-2.0",
   "author": "Arize AI",

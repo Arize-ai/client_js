@@ -1,5 +1,12 @@
 # @arizeai/ax-client
 
+## [1.20.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.19.0...arize-js-sdk/v1.20.0) (2026-06-23)
+
+
+### 🎁 New Features
+
+* promote annotation /annotate endpoints to beta + cap queue annotate array ([#75836](https://github.com/Arize-ai/arize/issues/75836)) ([d1bf960](https://github.com/Arize-ai/arize/commit/d1bf960076ff425d4f4cfd979ba2fa2976ab75b1))
+
 ## [1.19.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.18.1...arize-js-sdk/v1.19.0) (2026-06-11)
 
 
