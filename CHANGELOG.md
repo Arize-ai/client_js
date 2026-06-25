@@ -1,5 +1,17 @@
 # @arizeai/ax-client
 
+## [1.21.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.20.0...arize-js-sdk/v1.21.0) (2026-06-25)
+
+
+### 🎁 New Features
+
+* **datasets:** cursor pagination for List Dataset Examples ([#76007](https://github.com/Arize-ai/arize/issues/76007)) ([47a9d4a](https://github.com/Arize-ai/arize/commit/47a9d4ab3d17b8ccaf741cceb848ef0c8ba9dec4))
+
+
+### 🐛 Bug Fixes
+
+* **rest-api:** spans DELETE — structured 200 with completed/deleted/not_deleted, 503 for errors ([#73611](https://github.com/Arize-ai/arize/issues/73611)) ([d9ceb12](https://github.com/Arize-ai/arize/commit/d9ceb122a2484302767bb1e86539be3abca8b0aa))
+
 ## [1.20.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.19.0...arize-js-sdk/v1.20.0) (2026-06-23)
 
 
@@ -9,76 +21,65 @@
 
 ## [1.19.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.18.1...arize-js-sdk/v1.19.0) (2026-06-11)
 
-
 ### 🎁 New Features
 
-* **api-keys:** add revoke support ([#74113](https://github.com/Arize-ai/arize/issues/74113)) ([9fe89af](https://github.com/Arize-ai/arize/commit/9fe89afce869d4ee1990d3fdd7e3548584e77b36))
+- **api-keys:** add revoke support ([#74113](https://github.com/Arize-ai/arize/issues/74113)) ([9fe89af](https://github.com/Arize-ai/arize/commit/9fe89afce869d4ee1990d3fdd7e3548584e77b36))
 
 ### 💫 Code Refactoring
 
-* **api-keys:** remove delete method ([#74113](https://github.com/Arize-ai/arize/issues/74113)) ([9fe89af](https://github.com/Arize-ai/arize/commit/9fe89afce869d4ee1990d3fdd7e3548584e77b36))
+- **api-keys:** remove delete method ([#74113](https://github.com/Arize-ai/arize/issues/74113)) ([9fe89af](https://github.com/Arize-ai/arize/commit/9fe89afce869d4ee1990d3fdd7e3548584e77b36))
 
 ## [1.18.1](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.18.0...arize-js-sdk/v1.18.1) (2026-06-10)
 
-
 ### ❔ Miscellaneous Chores
 
-* send SDK identity via headers ([#74487](https://github.com/Arize-ai/arize/issues/74487)) ([f0b7bbb](https://github.com/Arize-ai/arize/commit/f0b7bbba087d349311e1b6ad1497c062c8aa6474))
+- send SDK identity via headers ([#74487](https://github.com/Arize-ai/arize/issues/74487)) ([f0b7bbb](https://github.com/Arize-ai/arize/commit/f0b7bbba087d349311e1b6ad1497c062c8aa6474))
 
 ## [1.18.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.17.0...arize-js-sdk/v1.18.0) (2026-06-08)
 
-
 ### 🎁 New Features
 
-* **experiments:** support for appending experiment runs ([#72134](https://github.com/Arize-ai/arize/issues/72134)) ([f761a25](https://github.com/Arize-ai/arize/commit/f761a259acb04dd40ea489f1e8e1f09143d01ecb))
-
+- **experiments:** support for appending experiment runs ([#72134](https://github.com/Arize-ai/arize/issues/72134)) ([f761a25](https://github.com/Arize-ai/arize/commit/f761a259acb04dd40ea489f1e8e1f09143d01ecb))
 
 ### ❔ Miscellaneous Chores
 
-* promote evaluators, role-bindings (CRUD), spans list, and users to BETA ([#73280](https://github.com/Arize-ai/arize/issues/73280)) ([ad1ee37](https://github.com/Arize-ai/arize/commit/ad1ee374872dd0d9afdbcccec1b74275b26d3a7c))
+- promote evaluators, role-bindings (CRUD), spans list, and users to BETA ([#73280](https://github.com/Arize-ai/arize/issues/73280)) ([ad1ee37](https://github.com/Arize-ai/arize/commit/ad1ee374872dd0d9afdbcccec1b74275b26d3a7c))
 
 ## [1.17.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.16.0...arize-js-sdk/v1.17.0) (2026-06-02)
 
-
 ### 🎁 New Features
 
-* **prompts:** add get version support ([#73169](https://github.com/Arize-ai/arize/issues/73169)) ([ab4ad3a](https://github.com/Arize-ai/arize/commit/ab4ad3a4b18e0890e0135b15f4c4e89be4899046))
-
+- **prompts:** add get version support ([#73169](https://github.com/Arize-ai/arize/issues/73169)) ([ab4ad3a](https://github.com/Arize-ai/arize/commit/ab4ad3a4b18e0890e0135b15f4c4e89be4899046))
 
 ### 🐛 Bug Fixes
 
-* set default pagination limit to 50 for all list operations ([#73195](https://github.com/Arize-ai/arize/issues/73195)) ([ac402f3](https://github.com/Arize-ai/arize/commit/ac402f37a099a09f0eee65952418509c89113ea2))
-
+- set default pagination limit to 50 for all list operations ([#73195](https://github.com/Arize-ai/arize/issues/73195)) ([ac402f3](https://github.com/Arize-ai/arize/commit/ac402f37a099a09f0eee65952418509c89113ea2))
 
 ### 💫 Code Refactoring
 
-* **prompts:** rename `prompts.get_label` to `prompts.get_version_by_label` ([#73168](https://github.com/Arize-ai/arize/issues/73168)) ([67094cb](https://github.com/Arize-ai/arize/commit/67094cb3b4bc8e632b30982b37e1c6fb3cb44429))
-* **spans:** `spans.annotate_spans` to `spans.annotate` ([#73168](https://github.com/Arize-ai/arize/issues/73168)) ([67094cb](https://github.com/Arize-ai/arize/commit/67094cb3b4bc8e632b30982b37e1c6fb3cb44429))
+- **prompts:** rename `prompts.get_label` to `prompts.get_version_by_label` ([#73168](https://github.com/Arize-ai/arize/issues/73168)) ([67094cb](https://github.com/Arize-ai/arize/commit/67094cb3b4bc8e632b30982b37e1c6fb3cb44429))
+- **spans:** `spans.annotate_spans` to `spans.annotate` ([#73168](https://github.com/Arize-ai/arize/issues/73168)) ([67094cb](https://github.com/Arize-ai/arize/commit/67094cb3b4bc8e632b30982b37e1c6fb3cb44429))
 
 ## [1.16.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.15.0...arize-js-sdk/v1.16.0) (2026-05-30)
 
-
 ### 🎁 New Features
 
-* **projects:** support for project updates ([#72940](https://github.com/Arize-ai/arize/issues/72940)) ([92b70e6](https://github.com/Arize-ai/arize/commit/92b70e6073dab69679786adaf656c6c8e6d7fecb))
-
+- **projects:** support for project updates ([#72940](https://github.com/Arize-ai/arize/issues/72940)) ([92b70e6](https://github.com/Arize-ai/arize/commit/92b70e6073dab69679786adaf656c6c8e6d7fecb))
 
 ### ❔ Miscellaneous Chores
 
-* promote annotation-queues, organizations, prompts, roles, spaces to BETA ([#72421](https://github.com/Arize-ai/arize/issues/72421)) ([745ee18](https://github.com/Arize-ai/arize/commit/745ee18a34b1b89f1b3a80d96a196c53ea838682))
+- promote annotation-queues, organizations, prompts, roles, spaces to BETA ([#72421](https://github.com/Arize-ai/arize/issues/72421)) ([745ee18](https://github.com/Arize-ai/arize/commit/745ee18a34b1b89f1b3a80d96a196c53ea838682))
 
 ## [1.15.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.14.0...arize-js-sdk/v1.15.0) (2026-05-27)
 
-
 ### 🎁 New Features
 
-* **datasets:** add updateDataset function ([#72037](https://github.com/Arize-ai/arize/issues/72037)) ([25623b4](https://github.com/Arize-ai/arize/commit/25623b4ef59383c1cc68b24cd083ae6427f89945))
-
+- **datasets:** add updateDataset function ([#72037](https://github.com/Arize-ai/arize/issues/72037)) ([25623b4](https://github.com/Arize-ai/arize/commit/25623b4ef59383c1cc68b24cd083ae6427f89945))
 
 ### 🐛 Bug Fixes
 
-* raise AmbiguousNameError when multiple spaces share a name ([#72449](https://github.com/Arize-ai/arize/issues/72449)) ([6e71959](https://github.com/Arize-ai/arize/commit/6e71959db6b952aad77648532921355c028cfb98))
-* **rest-api:** use base64 Relay global IDs in OpenAPI spec examples ([#71993](https://github.com/Arize-ai/arize/issues/71993)) ([5903e5b](https://github.com/Arize-ai/arize/commit/5903e5b6bea4b149906f1fc45eb7aa8993eac2c9)), closes [#71246](https://github.com/Arize-ai/arize/issues/71246)
+- raise AmbiguousNameError when multiple spaces share a name ([#72449](https://github.com/Arize-ai/arize/issues/72449)) ([6e71959](https://github.com/Arize-ai/arize/commit/6e71959db6b952aad77648532921355c028cfb98))
+- **rest-api:** use base64 Relay global IDs in OpenAPI spec examples ([#71993](https://github.com/Arize-ai/arize/issues/71993)) ([5903e5b](https://github.com/Arize-ai/arize/commit/5903e5b6bea4b149906f1fc45eb7aa8993eac2c9)), closes [#71246](https://github.com/Arize-ai/arize/issues/71246)
 
 ## [1.14.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.13.0...arize-js-sdk/v1.14.0) (2026-05-14)
 

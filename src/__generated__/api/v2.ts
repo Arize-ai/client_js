@@ -935,6 +935,33 @@ export interface paths {
         patch: operations["datasets_examples_update"];
         trace?: never;
     };
+    "/v2/datasets/{dataset_id}/examples/{example_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a dataset example
+         * @description Delete a single example from a dataset by its ID.
+         *
+         *     If `dataset_version_id` is provided, the example is deleted from that
+         *     specific version. If omitted, the latest version is used. The example
+         *     is removed in place from the selected version; no new version is
+         *     created. This operation is irreversible.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        delete: operations["datasets_example_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v2/datasets/{dataset_id}/examples/annotate": {
         parameters: {
             query?: never;
@@ -2580,11 +2607,14 @@ export interface paths {
          *     Accepts between 1 and 5000 span IDs per request. Only spans within the
          *     supported lookback window (2 years) are considered; older spans are not affected.
          *
-         *     A `204 No Content` response indicates all extant IDs provided
-         *     within the supported lookback window were deleted.
+         *     A `200 OK` response always includes:
+         *     - `completed` — `true` if the operation finished and no retry is needed;
+         *       `false` if the operation could not fully complete (retry the full request).
+         *     - `deleted_span_ids` — span IDs confirmed deleted in this request.
+         *     - `not_deleted_span_ids` — requested IDs not deleted: either not found within
+         *       the supported lookback window, or not reached when `completed` is `false`.
          *
-         *     A `200 OK` response indicates one or more intervals could not be fully processed
-         *     within the retry budget. Retry the original request for a correct result.
+         *     The delete operation is idempotent — re-submitting already-deleted IDs is safe.
          *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
@@ -5297,29 +5327,59 @@ export interface components {
             /** @description Pagination metadata for cursor-based navigation */
             pagination: components["schemas"]["PaginationMetadata"];
         };
-        SpanDeletePartialResponse: {
-            /** @description Span IDs confirmed deleted across all successfully processed intervals. */
+        /**
+         * @description Result of a DELETE /v2/spans request.
+         *
+         *     `deleted_span_ids` lists every span ID confirmed deleted. `not_deleted_span_ids`
+         *     lists every requested span ID that was **not** deleted.
+         *
+         *     `completed` indicates whether the server fully processed all data for the
+         *     request — **not** whether all spans were found and deleted. A span may appear
+         *     in `not_deleted_span_ids` even when `completed` is `true` if it was not found
+         *     in the system (never ingested or already deleted).
+         *
+         *     When `completed` is `true`, every requested ID appears in exactly one of
+         *     `deleted_span_ids` or `not_deleted_span_ids`. No retry is needed.
+         *
+         *     When `completed` is `false`, the server could not fully process all data.
+         *     Some IDs in `not_deleted_span_ids` may still be deletable — retry the
+         *     original full request to resolve them. The delete is idempotent.
+         */
+        SpanDeleteResponse: {
+            /**
+             * @description `true` when the server fully processed all data for the request — both
+             *     lists are complete and no retry is needed. `false` when processing could
+             *     not fully complete; retry the original request. Note: `completed` reflects
+             *     whether all data was processed, not whether all requested spans existed.
+             */
+            completed: boolean;
+            /** @description Span IDs confirmed deleted in this request. */
             deleted_span_ids: string[];
+            /**
+             * @description Requested span IDs that were not deleted. When `completed` is `true`,
+             *     these were not found in the system (never ingested or already deleted).
+             *     When `completed` is `false`, some IDs may not have been reached — retry
+             *     to resolve them.
+             */
+            not_deleted_span_ids: string[];
         };
-        SpanDeleteErrorResponse: {
-            /** @description A short, human-readable summary of the problem type */
-            title: string;
-            /** @description The HTTP status code generated by the origin server for this occurrence of the problem */
-            status: number;
+        /**
+         * @description RFC 9457 Problem Details extended with span delete context. Returned when the
+         *     request fails after partially completing, so the caller knows which IDs were
+         *     already deleted and which still need to be retried. The delete operation is
+         *     idempotent — retrying the original full request is safe.
+         */
+        SpanDeleteProblem: components["schemas"]["Problem"] & {
             /**
-             * Format: uri-reference
-             * @description A URI reference that identifies the problem type
+             * @description Span IDs confirmed deleted before the failure occurred. Safe to include
+             *     or omit on retry, as the delete operation is idempotent.
              */
-            type?: string;
-            /** @description A human-readable explanation specific to this occurrence of the problem */
-            detail?: string;
-            /**
-             * Format: uri-reference
-             * @description A URI reference that identifies the specific occurrence of the problem
-             */
-            instance?: string;
-            /** @description Span IDs confirmed deleted before the fatal error occurred. */
             deleted_span_ids?: string[];
+            /**
+             * @description Span IDs that were not deleted before the failure occurred. Retry the
+             *     original request to attempt deletion of these IDs.
+             */
+            not_deleted_span_ids?: string[];
         };
         TaskListResponse: {
             /** @description A list of tasks */
@@ -6191,6 +6251,24 @@ export interface components {
                  *       "detail": "You have exceeded the allowed number of requests. Please try again later.",
                  *       "instance": "/resource",
                  *       "type": "https://arize.com/docs/ax/rest-reference/errors#rate-limit-exceeded"
+                 *     }
+                 */
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description Service temporarily unavailable */
+        ServiceUnavailable: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "status": 503,
+                 *       "title": "Service Unavailable",
+                 *       "detail": "The service is temporarily unable to process this request. Please retry later.",
+                 *       "instance": "/resource",
+                 *       "type": "https://arize.com/docs/ax/rest-reference/errors#service-unavailable"
                  *     }
                  */
                 "application/problem+json": components["schemas"]["Problem"];
@@ -7464,12 +7542,47 @@ export interface components {
             };
             content?: never;
         };
-        /** @description Spans successfully deleted */
-        SpanDeleted: {
+        /**
+         * @description Spans deleted. The response body always includes:
+         *     - `completed`: whether all requested spans were fully processed. This endpoint is idempotent — retries are safe.
+         *     - `deleted_span_ids`: IDs of spans confirmed deleted.
+         *     - `not_deleted_span_ids`: IDs of spans not deleted — either not found, or not yet processed when `completed` is `false`.
+         */
+        SpanDeleteSuccess: {
             headers: {
                 [name: string]: unknown;
             };
-            content?: never;
+            content: {
+                "application/json": components["schemas"]["SpanDeleteResponse"];
+            };
+        };
+        /**
+         * @description Fatal mid-request error. Returned as `503 Service Unavailable` when the
+         *     server encountered an unrecoverable error after partially processing the
+         *     request. The caller should retry the original full request — the delete
+         *     operation is idempotent.
+         */
+        SpanDeleteError: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "status": 503,
+                 *       "title": "Service Unavailable",
+                 *       "detail": "Result incomplete: inspect deleted_span_ids, then retry the full request.",
+                 *       "type": "https://arize.com/docs/ax/rest-reference/errors#service-unavailable",
+                 *       "deleted_span_ids": [
+                 *         "a1b2c3d4e5f6a7b8"
+                 *       ],
+                 *       "not_deleted_span_ids": [
+                 *         "b2c3d4e5f6a7b8c9"
+                 *       ]
+                 *     }
+                 */
+                "application/problem+json": components["schemas"]["SpanDeleteProblem"];
+            };
         };
         /** @description Returns a single task object */
         Task: {
@@ -7768,6 +7881,13 @@ export interface components {
                 "application/json": components["schemas"]["DatasetVersionWithExampleIds"];
             };
         };
+        /** @description Dataset example successfully deleted */
+        DatasetExampleDeleted: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
         /** @description An organization object */
         Organization: {
             headers: {
@@ -7807,34 +7927,6 @@ export interface components {
                  *     }
                  */
                 "application/json": components["schemas"]["Project"];
-            };
-        };
-        /**
-         * @description Some span IDs could not be confirmed deleted within the allotted retries.
-         *     Retry the original request for a completed deletion result.
-         */
-        SpanDeletePartial: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                /**
-                 * @example {
-                 *       "deleted_span_ids": [
-                 *         "a1b2c3d4e5f6a7b8"
-                 *       ]
-                 *     }
-                 */
-                "application/json": components["schemas"]["SpanDeletePartialResponse"];
-            };
-        };
-        /** @description Fatal mid-request error. Body carries any IDs already confirmed deleted. */
-        SpanDeleteError: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/problem+json": components["schemas"]["SpanDeleteErrorResponse"];
             };
         };
     };
@@ -8051,6 +8143,11 @@ export interface components {
          * @example VXNlcjoxMjM0NQ==
          */
         UserIdQueryParam: components["schemas"]["Id"];
+        /**
+         * @description The unique dataset example identifier (UUID)
+         * @example 550e8400-e29b-41d4-a716-446655440000
+         */
+        ExampleIdPathParam: string;
         /**
          * @description The unique organization identifier (base64)
          * @example T3JnYW5pemF0aW9uOjEyMzQ1
@@ -9839,6 +9936,40 @@ export interface operations {
             429: components["responses"]["RateLimitExceeded"];
         };
     };
+    datasets_example_delete: {
+        parameters: {
+            query?: {
+                /**
+                 * @description The unique identifier of the dataset version
+                 * @example RGF0YXNldFZlcnNpb246MTIzNDU=
+                 */
+                dataset_version_id?: components["parameters"]["DatasetVersionIdQueryParam"];
+            };
+            header?: never;
+            path: {
+                /**
+                 * @description The unique dataset identifier (base64)
+                 * @example RGF0YXNldDoxMjM0NQ==
+                 */
+                dataset_id: components["parameters"]["DatasetIdPathParam"];
+                /**
+                 * @description The unique dataset example identifier (UUID)
+                 * @example 550e8400-e29b-41d4-a716-446655440000
+                 */
+                example_id: components["parameters"]["ExampleIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: components["responses"]["DatasetExampleDeleted"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
     datasets_examples_annotate: {
         parameters: {
             query?: never;
@@ -11544,15 +11675,14 @@ export interface operations {
         };
         requestBody: components["requestBodies"]["DeleteSpansRequestBody"];
         responses: {
-            200: components["responses"]["SpanDeletePartial"];
-            204: components["responses"]["SpanDeleted"];
+            200: components["responses"]["SpanDeleteSuccess"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
-            500: components["responses"]["SpanDeleteError"];
+            503: components["responses"]["SpanDeleteError"];
         };
     };
     spans_annotate: {
