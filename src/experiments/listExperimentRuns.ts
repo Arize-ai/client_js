@@ -1,8 +1,11 @@
 import { createClient } from "../client";
 import { WithClient } from "../types";
-import { ExperimentRun } from "../types/experiments";
+import { ExperimentRunsListResponse } from "../types/experiments";
 import { warnPreRelease } from "../utils/warning";
-import { DEFAULT_LIST_LIMIT } from "../utils/pagination";
+import {
+  DEFAULT_LIST_LIMIT,
+  transformPaginationMetadata,
+} from "../utils/pagination";
 import { handleApiError } from "../errors";
 import { findDatasetId, findExperimentId, toSpaceRef } from "../utils/resolve";
 import { transformExperimentRun } from "./utils";
@@ -12,29 +15,42 @@ export type ListExperimentRunsParams = WithClient<{
   dataset?: string;
   space?: string;
   limit?: number;
+  /** Opaque pagination cursor from a previous response's `pagination.next_cursor`. */
+  cursor?: string;
 }>;
 
 /**
- * List the experiment runs for a specific experiment. Does not currently support pagination.
+ * List the experiment runs for a specific experiment.
+ *
+ * Runs are returned in a stable insertion order that survives segment compaction.
+ *
+ * Pass `pagination.next_cursor` from the response back as `cursor` to retrieve
+ * the next page. The cursor is opaque — do not parse or construct it.
  *
  * @param client - An optional ArizeClient instance to use for the request.
  * @param experiment - The experiment name or base64 encoded experiment ID.
  *   When a name is provided, it is resolved to an ID automatically (requires `dataset`).
  * @param dataset - The dataset name or ID. Required when `experiment` is a name.
  * @param space - The space name or ID. Required when `dataset` is a name.
- * @param limit - An optional limit on the number of experiment runs to return.
- * @returns A list of experiment runs.
+ * @param limit - An optional limit on the number of experiment runs to return (max 500).
+ * @param cursor - An optional opaque pagination cursor from a previous response.
+ * @returns An object containing `experiment_runs` and `pagination` metadata.
  * @throws Error if the experiment runs cannot be listed or the response is invalid.
  * @example
  * ```typescript
  * import { listExperimentRuns } from "@arizeai/ax-client"
  *
  * // Using names
- * const experimentRuns = await listExperimentRuns({ experiment: "my-experiment", dataset: "my-dataset", space: "my-space" });
+ * const result = await listExperimentRuns({ experiment: "my-experiment", dataset: "my-dataset", space: "my-space" });
+ * console.log(result.experiment_runs);
  *
- * // Using an ID directly
- * const experimentRuns = await listExperimentRuns({ experiment: "your_experiment_id" });
- * console.log(experimentRuns);
+ * // Paginating through all runs
+ * let cursor: string | undefined;
+ * do {
+ *   const result = await listExperimentRuns({ experiment: "your_experiment_id", cursor });
+ *   console.log(result.experiment_runs);
+ *   cursor = result.pagination.next_cursor ?? undefined;
+ * } while (cursor);
  * ```
  */
 export async function listExperimentRuns({
@@ -43,7 +59,8 @@ export async function listExperimentRuns({
   dataset,
   space,
   limit = DEFAULT_LIST_LIMIT,
-}: ListExperimentRunsParams): Promise<ExperimentRun[]> {
+  cursor,
+}: ListExperimentRunsParams): Promise<ExperimentRunsListResponse> {
   warnPreRelease({ functionName: "listExperimentRuns", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
@@ -56,11 +73,15 @@ export async function listExperimentRuns({
       path: { experiment_id: experimentId },
       query: {
         limit,
+        cursor,
       },
     },
   });
   if (response.error) {
     return handleApiError(response);
   }
-  return response.data.experiment_runs.map(transformExperimentRun);
+  return {
+    experiment_runs: response.data.experiment_runs.map(transformExperimentRun),
+    pagination: transformPaginationMetadata(response.data.pagination),
+  };
 }

@@ -21,8 +21,10 @@ import {
   mockRawEvaluatorNullableFields,
   mockRawEvaluatorVersion,
   mockRawEvaluatorVersionCustomCode,
+  mockRawEvaluatorVersionHarness,
   mockRawEvaluatorVersionManagedCode,
   mockRawEvaluatorVersionNullableFields,
+  mockRawEvaluatorVersionRemote,
   mockRawEvaluatorWithVersion,
   mockRawLlmConfig,
   mockRawManagedCodeConfig,
@@ -130,6 +132,36 @@ describe("transformEvaluatorVersion — custom code branch", () => {
     expect(result.codeConfig.imports).toBe("from typing import Any");
     expect(result.codeConfig.variables).toEqual(["output"]);
     expect(result.codeConfig.staticParams).toBeUndefined();
+  });
+});
+
+describe("transformEvaluatorVersion — harness branch", () => {
+  it("returns a harness version with only common metadata", () => {
+    const result = transformEvaluatorVersion(mockRawEvaluatorVersionHarness);
+    expect(result).toEqual({
+      id: mockVersionId,
+      evaluatorId: mockEvaluatorId,
+      commitHash: "harness123",
+      commitMessage: "Initial harness version",
+      type: "harness",
+      createdAt: new Date("2024-01-01T00:00:00.000Z"),
+      createdByUserId: mockUserId,
+    });
+  });
+});
+
+describe("transformEvaluatorVersion — remote branch", () => {
+  it("returns a remote version with only common metadata", () => {
+    const result = transformEvaluatorVersion(mockRawEvaluatorVersionRemote);
+    expect(result).toEqual({
+      id: mockVersionId,
+      evaluatorId: mockEvaluatorId,
+      commitHash: "remote123",
+      commitMessage: "Initial remote version",
+      type: "remote",
+      createdAt: new Date("2024-01-01T00:00:00.000Z"),
+      createdByUserId: mockUserId,
+    });
   });
 });
 

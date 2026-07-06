@@ -1,6 +1,6 @@
 import type { components } from "../__generated__/api/v2";
 
-export type EvaluatorType = "template" | "code";
+export type EvaluatorType = "template" | "code" | "harness" | "remote";
 
 export type EvaluatorDirection = components["schemas"]["OptimizationDirection"];
 
@@ -87,7 +87,23 @@ export interface EvaluatorVersionCode extends EvaluatorVersionBase {
   codeConfig: CodeConfig;
 }
 
-export type EvaluatorVersion = EvaluatorVersionTemplate | EvaluatorVersionCode;
+/**
+ * Harness and remote versions expose only common version metadata; their
+ * configurations are not yet accessible via the REST API.
+ */
+export interface EvaluatorVersionHarness extends EvaluatorVersionBase {
+  type: "harness";
+}
+
+export interface EvaluatorVersionRemote extends EvaluatorVersionBase {
+  type: "remote";
+}
+
+export type EvaluatorVersion =
+  | EvaluatorVersionTemplate
+  | EvaluatorVersionCode
+  | EvaluatorVersionHarness
+  | EvaluatorVersionRemote;
 
 export interface EvaluatorWithVersion extends Evaluator {
   version: EvaluatorVersion;

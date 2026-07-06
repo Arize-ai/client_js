@@ -3,8 +3,6 @@ import {
   Evaluator,
   EvaluatorLlmConfig,
   EvaluatorVersion,
-  EvaluatorVersionCode,
-  EvaluatorVersionTemplate,
   EvaluatorWithVersion,
   ManagedCodeConfig,
   StaticParam,
@@ -157,21 +155,26 @@ export function transformEvaluatorVersion(
     createdByUserId: raw.created_by_user_id,
   };
 
-  if (raw.type === "code") {
-    const codeVersion: EvaluatorVersionCode = {
-      ...base,
-      type: "code",
-      codeConfig: transformCodeConfig(raw.code_config),
-    };
-    return codeVersion;
+  switch (raw.type) {
+    case "code":
+      return {
+        ...base,
+        type: "code",
+        codeConfig: transformCodeConfig(raw.code_config),
+      };
+    case "template":
+      return {
+        ...base,
+        type: "template",
+        templateConfig: transformTemplateConfig(raw.template_config),
+      };
+    // Harness and remote versions expose only common version metadata; their
+    // configurations are not yet accessible via the REST API.
+    case "harness":
+      return { ...base, type: "harness" };
+    case "remote":
+      return { ...base, type: "remote" };
   }
-
-  const templateVersion: EvaluatorVersionTemplate = {
-    ...base,
-    type: "template",
-    templateConfig: transformTemplateConfig(raw.template_config),
-  };
-  return templateVersion;
 }
 
 export function transformEvaluator(raw: RawEvaluator): Evaluator {

@@ -67,3 +67,4 @@ export type RawAnnotateRecordResult =
 export type RawUser = components["schemas"]["User"];
 export type RawUserCreatedResponse =
   components["schemas"]["UserCreatedResponse"];
+export type RawAuditLog = components["schemas"]["AuditLog"];

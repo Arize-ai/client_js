@@ -1,4 +1,5 @@
 export * from "./client";
+export * from "./audit_logs";
 export * from "./pagination";
 export * from "./datasets";
 export * from "./experiments";

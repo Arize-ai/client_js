@@ -103,6 +103,26 @@ export const mockRawEvaluatorVersionManagedCode: RawEvaluatorVersion = {
   created_by_user_id: mockUserId,
 };
 
+export const mockRawEvaluatorVersionHarness: RawEvaluatorVersion = {
+  id: mockVersionId,
+  evaluator_id: mockEvaluatorId,
+  commit_hash: "harness123",
+  commit_message: "Initial harness version",
+  type: "harness",
+  created_at: mockDateString,
+  created_by_user_id: mockUserId,
+};
+
+export const mockRawEvaluatorVersionRemote: RawEvaluatorVersion = {
+  id: mockVersionId,
+  evaluator_id: mockEvaluatorId,
+  commit_hash: "remote123",
+  commit_message: "Initial remote version",
+  type: "remote",
+  created_at: mockDateString,
+  created_by_user_id: mockUserId,
+};
+
 export const mockRawEvaluatorVersionCustomCode: RawEvaluatorVersion = {
   id: mockCodeVersionId,
   evaluator_id: mockCodeEvaluatorId,

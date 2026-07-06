@@ -61,6 +61,35 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v2/audit-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List audit logs
+         * @description Retrieve a paginated list of authenticated user audit log entries for the
+         *     account. Results are ordered newest first.
+         *
+         *     **Access requirements:**
+         *     - The caller must be an account admin.
+         *     - The account must have audit logging enabled.
+         *
+         *     Returns `403` if either condition is not met.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["audit_logs_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v2/ai-integrations/{integration_id}": {
         parameters: {
             query?: never;
@@ -114,6 +143,75 @@ export interface paths {
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
         patch: operations["ai_integrations_update"];
+        trace?: never;
+    };
+    "/v2/integrations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List integrations
+         * @description List integrations the user has access to. The response is polymorphic:
+         *     each item carries a `type` (and, for `llm`, `config.provider`) for
+         *     client-side discrimination. Use `?type=` to filter to a single type.
+         *
+         *     Integrations are owned at the account level but carry visibility scopings
+         *     (account-wide, organization, or space). `space_id` / `space_name` filter
+         *     the list to integrations visible in a given space.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["integrations_list"];
+        put?: never;
+        /**
+         * Create an integration
+         * @description Create a new integration. The `type` field selects the config shape.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["integrations_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/integrations/{integration_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get an integration
+         * @description Get a specific integration by its ID.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["integrations_get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete an integration
+         * @description Delete an integration by its ID. This operation is irreversible.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        delete: operations["integrations_delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update an integration
+         * @description Partially update an integration. `type` and `provider` are immutable.
+         *     At least one field must be provided.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        patch: operations["integrations_update"];
         trace?: never;
     };
     "/v2/annotation-configs": {
@@ -192,7 +290,46 @@ export interface paths {
         delete: operations["annotation_configs_delete"];
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update an annotation config
+         * @description Update an annotation config by its ID.
+         *
+         *     **Payload Requirements**
+         *     - `annotation_config_type` is required and must match the stored config's type. The
+         *       type is immutable and cannot be changed.
+         *     - The updatable fields depend on the type:
+         *       - `categorical`: `name`, `values`, `optimization_direction`.
+         *       - `continuous`: `name`, `minimum_score`, `maximum_score`, `optimization_direction`.
+         *       - `freeform`: `name`.
+         *     - All fields other than `annotation_config_type` are optional; omitted fields are left
+         *       unchanged.
+         *     - `name`, if provided, must be unique within the space (409 Conflict if duplicate).
+         *     - `values` replaces the full label set (2-100 labels).
+         *     - System-managed fields (`id`, `space_id`, `created_at`) cannot be modified.
+         *
+         *     **Valid example** (categorical config)
+         *     ```json
+         *     {
+         *       "annotation_config_type": "categorical",
+         *       "name": "quality-v2",
+         *       "values": [
+         *         { "label": "good", "score": 1 },
+         *         { "label": "bad", "score": 0 }
+         *       ],
+         *       "optimization_direction": "maximize"
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (missing `annotation_config_type`)
+         *     ```json
+         *     {
+         *       "name": "quality-v2"
+         *     }
+         *     ```
+         *
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
+         */
+        patch: operations["annotation_configs_update"];
         trace?: never;
     };
     "/v2/annotation-queues": {
@@ -1342,7 +1479,7 @@ export interface paths {
          * List experiment runs
          * @description List runs for a given experiment.
          *
-         *     The runs are sorted by insertion order.
+         *     The runs are returned in a stable insertion order.
          *
          *     **Human annotations**: returned in the structured `annotations` array on
          *     each run. Each entry includes `name`, optional `label` / `score` /
@@ -1350,10 +1487,9 @@ export interface paths {
          *     annotations.
          *
          *     **Pagination**:
-         *     - Response includes `pagination` for forward compatibility.
-         *     - **Currently not implemented**: `pagination.next_cursor` is omitted
-         *     - When pagination is enabled in the future, the behavior will match
-         *     other list endpoints (cursor-based, opaque tokens).
+         *     - Response includes `pagination` with `has_more` and `next_cursor`.
+         *     - Use cursor-based pagination by passing the returned `next_cursor`
+         *     value as the `cursor` query parameter in subsequent requests.
          *
          *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
@@ -1962,7 +2098,24 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * List resource restrictions the caller is permitted to manage.
+         * @description List active resource restrictions the authenticated user is permitted to manage.
+         *     A restriction is returned only if the caller can manage it — i.e. an account/org admin
+         *     (via admin escalation), a holder of the `PROJECT_RESTRICT` permission in the project's
+         *     space, or a holder of `PROJECT_RESTRICT` granted directly on the project.
+         *
+         *     Results are paginated; use `limit` and `cursor` for subsequent pages. Because entries
+         *     are authorization-filtered after a page is read, a page may contain fewer items than
+         *     `limit` (or be empty) while `has_more` is still `true`. Clients MUST keep paging until
+         *     `has_more` is `false` — do not stop on an empty page.
+         *
+         *     Use the optional `resource_type` query param to filter to a single resource type.
+         *     When omitted, `PROJECT` restrictions are returned (currently the only supported type).
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["resource_restrictions_list"];
         put?: never;
         /**
          * Restrict a resource
@@ -3067,6 +3220,149 @@ export interface components {
             /** @description Display label for the project */
             project_access_label: string;
         };
+        /** @description A polymorphic integration resource. The `type` field selects the `config` shape; for `llm`, `config.provider` selects the per-provider config. */
+        Integration: components["schemas"]["LlmIntegration"];
+        /**
+         * @description The integration category. Selects the shape of `config`. Currently only `llm` is implemented; additional types (agent, alerting, webhook) are added non-breakingly.
+         * @enum {string}
+         */
+        IntegrationType: "llm";
+        /** @description Visibility scoping for the integration. */
+        IntegrationScoping: {
+            /** @description Organization identifier (base64). Null means account-wide. */
+            organization_id?: string | null;
+            /** @description Space identifier (base64). Null means organization-wide (or account-wide when organization_id is also null). */
+            space_id?: string | null;
+        };
+        /** @description Fields shared by every integration, regardless of `type`. */
+        IntegrationBase: {
+            /** @description The integration ID (base64 global ID). */
+            id: string;
+            type: components["schemas"]["IntegrationType"];
+            /** @description The integration name. Unique per (account, type). */
+            name: string;
+            /** @description Visibility scoping rules. Account-wide when empty. */
+            scopings: components["schemas"]["IntegrationScoping"][];
+            /**
+             * Format: date-time
+             * @description When the integration was created.
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description When the integration was last updated.
+             */
+            updated_at: string;
+            /** @description Global ID of the user who created the integration. */
+            created_by_user_id: string;
+        };
+        IntegrationListResponse: {
+            /** @description A polymorphic, type-tagged list of integrations. */
+            integrations: components["schemas"]["Integration"][];
+            /** @description Cursor-based pagination metadata. */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
+        CreateIntegrationRequest: components["schemas"]["CreateLlmIntegrationRequest"];
+        /** @description Partial update of an integration, discriminated by `type` (immutable). The `type` field selects the per-type PATCH shape. Provide at least one updatable field in addition to `type`. */
+        UpdateIntegrationRequest: components["schemas"]["UpdateLlmIntegrationRequest"];
+        /**
+         * @description The LLM vendor for an `llm` integration. Selects the per-provider `config` member. Currently only `openAI` is implemented; additional providers are added non-breakingly.
+         * @enum {string}
+         */
+        LlmIntegrationProvider: "openAI";
+        /** @description LLM config fields common across providers. */
+        LlmConfigBase: {
+            /** @description Whether the provider's default model list is enabled. */
+            is_default_models_enabled: boolean;
+            /** @description Whether function/tool calling is enabled. */
+            is_function_calling_enabled: boolean;
+        };
+        /** @description Config for an OpenAI LLM integration. */
+        OpenAiConfig: components["schemas"]["LlmConfigBase"] & {
+            /**
+             * @description Discriminator identifying the OpenAI provider.
+             * @enum {string}
+             */
+            provider: "openAI";
+            /** @description Whether an API key is configured (the key itself is never returned). */
+            has_api_key: boolean;
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            provider: "openAI";
+        };
+        /** @description Per-provider LLM config, discriminated by `provider`. */
+        LlmConfig: components["schemas"]["OpenAiConfig"];
+        /** @description An LLM integration (type=llm). */
+        LlmIntegration: components["schemas"]["IntegrationBase"] & {
+            /**
+             * @description Discriminator identifying an LLM integration.
+             * @enum {string}
+             */
+            type: "llm";
+            config: components["schemas"]["LlmConfig"];
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "llm";
+        };
+        CreateLlmConfigBase: {
+            /** @description Enable the provider's default model list. Defaults to false. */
+            is_default_models_enabled?: boolean;
+            /** @description Enable function/tool calling. Defaults to true. */
+            is_function_calling_enabled?: boolean;
+        };
+        /** @description Create config for an OpenAI LLM integration. `api_key` is required and is write-only (never returned in responses). */
+        CreateOpenAiConfig: components["schemas"]["CreateLlmConfigBase"] & {
+            /** @enum {string} */
+            provider: "openAI";
+            /** @description API key for the provider (write-only, never returned). */
+            api_key: string;
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            provider: "openAI";
+        };
+        CreateLlmConfig: components["schemas"]["CreateOpenAiConfig"];
+        CreateLlmIntegrationRequest: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "llm";
+            /** @description Integration name. Unique per (account, type). */
+            name: string;
+            /** @description Visibility scoping rules. Defaults to account-wide. */
+            scopings?: components["schemas"]["IntegrationScoping"][];
+            config: components["schemas"]["CreateLlmConfig"];
+        };
+        /** @description Partial LLM config for PATCH. `provider` is immutable; if present it must match the stored value. */
+        UpdateLlmConfig: {
+            provider?: components["schemas"]["LlmIntegrationProvider"];
+            /** @description Rotate the API key. Pass null to clear it. Omit to keep unchanged. */
+            api_key?: string | null;
+            is_default_models_enabled?: boolean;
+            is_function_calling_enabled?: boolean;
+        };
+        /** @description PATCH body for an `llm` integration. `type` is required (it selects the union member) and immutable. Provide at least one updatable field (`name`, `scopings`, or `config`) in addition to `type`. `scopings` replaces on provide. */
+        UpdateLlmIntegrationRequest: {
+            /**
+             * @description Discriminator. Immutable; must match the integration's type. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "llm";
+            /** @description New integration name. */
+            name?: string;
+            /** @description Replaces the existing scoping rules. */
+            scopings?: components["schemas"]["IntegrationScoping"][];
+            config?: components["schemas"]["UpdateLlmConfig"];
+        };
         /** @description A human annotation on a record. */
         Annotation: {
             /** @description The name of the annotation */
@@ -3088,7 +3384,9 @@ export interface components {
             /** @description The user who made this annotation */
             annotator?: components["schemas"]["AnnotatorUser"];
         };
-        AnnotationConfig: components["schemas"]["ContinuousAnnotationConfig"] | components["schemas"]["CategoricalAnnotationConfig"] | components["schemas"]["FreeformAnnotationConfig"];
+        AnnotationConfig: {
+            [key: string]: unknown;
+        } & (components["schemas"]["ContinuousAnnotationConfig"] | components["schemas"]["CategoricalAnnotationConfig"] | components["schemas"]["FreeformAnnotationConfig"]);
         /** @description Annotations to submit for an annotation queue record. Annotations are upserted by annotation config name; omitted configs are left unchanged. */
         AnnotateAnnotationQueueRecordRequestBody: {
             /** @description Annotations to upsert on this record, keyed by annotation config name. At most 500 annotations may be submitted per request — one per annotation config associated with the queue. */
@@ -3407,6 +3705,51 @@ export interface components {
             /** @description Batch of span annotations to write. Up to 1000 spans per request. */
             annotations: components["schemas"]["AnnotateRecordInput"][];
         };
+        /** @description A single audit log entry recording an authenticated user action. */
+        AuditLog: {
+            /**
+             * @description The base64-encoded opaque identifier of the audit log entry.
+             * @example QXVkaXRMb2c6NDI=
+             */
+            id: components["schemas"]["Id"];
+            /**
+             * @description The global identifier of the user who performed the action.
+             * @example VXNlcjoxMjM0NQ==
+             */
+            user_id: components["schemas"]["Id"];
+            /**
+             * @description The IP address from which the request originated.
+             * @example 1.2.3.4
+             */
+            ip: string;
+            operation_type: components["schemas"]["AuditLogOperationType"];
+            /**
+             * @description The name of the GraphQL operation or REST endpoint.
+             * @example createAiIntegration
+             */
+            operation_name?: string | null;
+            /**
+             * @description The full text of the operation (query or mutation body, or REST request body).
+             * @example mutation createAiIntegration { ... }
+             */
+            operation_text?: string | null;
+            /**
+             * @description JSON-serialized variables passed with the operation.
+             * @example {}
+             */
+            variables?: string | null;
+            /**
+             * Format: date-time
+             * @description ISO 8601 timestamp when the action was recorded.
+             * @example 2026-05-18T12:00:00.000Z
+             */
+            created_at: string;
+        };
+        /**
+         * @description The type of operation that was audited.
+         * @enum {string}
+         */
+        AuditLogOperationType: "QUERY" | "MUTATION" | "SUBSCRIPTION";
         /**
          * @description Granularity of an annotation queue record.
          *     - span: The record represents a span.
@@ -3878,20 +4221,25 @@ export interface components {
             provider_parameters: components["schemas"]["ProviderParams"];
         };
         /**
-         * @description The evaluator type: `template` (LLM-based) or `code` (managed built-in
-         *     evaluators or custom Python code — both are subtypes of `code`,
-         *     discriminated by the nested `CodeConfig.type` = `managed` | `custom`).
+         * @description The evaluator type:
+         *
+         *     - `template` — LLM-based evaluator.
+         *     - `code` — managed built-in evaluators or custom Python code (both are
+         *       subtypes of `code`, discriminated by the nested `CodeConfig.type` =
+         *       `managed` | `custom`).
+         *     - `harness` — test harness evaluator.
+         *     - `remote` — remote evaluator.
+         *
          *     Applies to both the parent `Evaluator.type` field and every version's `type`
          *     discriminator — a version's `type` must always match its parent evaluator's `type`.
          * @enum {string}
          */
-        EvaluatorType: "template" | "code";
+        EvaluatorType: "template" | "code" | "harness" | "remote";
         /**
-         * @description A versioned snapshot of an evaluator's configuration. Exactly one of
-         *     `template_config` or `code_config` is present. The `type` field discriminates
-         *     the branch and matches the parent evaluator's `type`.
+         * @description A versioned snapshot of an evaluator's configuration. The `type` field
+         *     discriminates the branch and matches the parent evaluator's `type`.
          */
-        EvaluatorVersion: components["schemas"]["EvaluatorVersionTemplate"] | components["schemas"]["EvaluatorVersionCode"];
+        EvaluatorVersion: components["schemas"]["EvaluatorVersionTemplate"] | components["schemas"]["EvaluatorVersionCode"] | components["schemas"]["EvaluatorVersionHarness"] | components["schemas"]["EvaluatorVersionRemote"];
         /** @description Evaluator version carrying a code configuration. */
         EvaluatorVersionCode: components["schemas"]["EvaluatorVersionCommon"] & {
             /**
@@ -4386,6 +4734,12 @@ export interface components {
          * @enum {string}
          */
         ResourceRestrictionType: "PROJECT";
+        ResourceRestrictionListResponse: {
+            /** @description A list of resource restriction records. */
+            resource_restrictions: components["schemas"]["ResourceRestriction"][];
+            /** @description Pagination metadata for cursor-based navigation. */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
         RoleBinding: {
             /** @description Unique identifier for the role binding. */
             id: string;
@@ -4985,6 +5339,72 @@ export interface components {
         CreateAnnotationConfigRequestBody: {
             annotation_config_type: components["schemas"]["AnnotationConfigType"];
         } & (components["schemas"]["ContinuousAnnotationConfigCreate"] | components["schemas"]["CategoricalAnnotationConfigCreate"] | components["schemas"]["FreeformAnnotationConfigCreate"]);
+        /** @description The base annotation config update parameters */
+        AnnotationConfigUpdateBase: {
+            /** @description New name for the annotation config. Must be unique within the space. */
+            name?: string;
+        };
+        ContinuousAnnotationConfigUpdate: components["schemas"]["AnnotationConfigUpdateBase"] & {
+            /**
+             * @description Discriminator value identifying a continuous annotation config. The config
+             *     `type` is immutable and must match the stored config's type.
+             * @enum {string}
+             */
+            annotation_config_type: "continuous";
+            /**
+             * Format: double
+             * @description New minimum score value.
+             */
+            minimum_score?: number;
+            /**
+             * Format: double
+             * @description New maximum score value.
+             */
+            maximum_score?: number;
+            /** @description New optimization direction. */
+            optimization_direction?: components["schemas"]["OptimizationDirection"];
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            annotation_config_type: "continuous";
+        };
+        CategoricalAnnotationConfigUpdate: components["schemas"]["AnnotationConfigUpdateBase"] & {
+            /**
+             * @description Discriminator value identifying a categorical annotation config. The config
+             *     `type` is immutable and must match the stored config's type.
+             * @enum {string}
+             */
+            annotation_config_type: "categorical";
+            /** @description The full replacement set of categorical annotation values (2–100 items). */
+            values?: components["schemas"]["CategoricalAnnotationValue"][];
+            /** @description New optimization direction. */
+            optimization_direction?: components["schemas"]["OptimizationDirection"];
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            annotation_config_type: "categorical";
+        };
+        FreeformAnnotationConfigUpdate: components["schemas"]["AnnotationConfigUpdateBase"] & {
+            /**
+             * @description Discriminator value identifying a freeform annotation config. The config
+             *     `type` is immutable and must match the stored config's type.
+             * @enum {string}
+             */
+            annotation_config_type: "freeform";
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            annotation_config_type: "freeform";
+        };
+        UpdateAnnotationConfigRequestBody: {
+            annotation_config_type: components["schemas"]["AnnotationConfigType"];
+        } & (components["schemas"]["ContinuousAnnotationConfigUpdate"] | components["schemas"]["CategoricalAnnotationConfigUpdate"] | components["schemas"]["FreeformAnnotationConfigUpdate"]);
         /**
          * Format: email
          * @description An email address
@@ -5090,6 +5510,42 @@ export interface components {
             evaluators: components["schemas"]["Evaluator"][];
             /** @description Pagination metadata for cursor-based navigation */
             pagination: components["schemas"]["PaginationMetadata"];
+        };
+        /**
+         * @description Evaluator version backed by a harness evaluation config. Only common
+         *     version metadata (id, commit info, timestamps) is returned — the harness
+         *     configuration is not yet accessible and will be a future addition.
+         */
+        EvaluatorVersionHarness: components["schemas"]["EvaluatorVersionCommon"] & {
+            /**
+             * @description Discriminator identifying this as a harness evaluator version.
+             * @enum {string}
+             */
+            type?: "harness";
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "harness";
+        };
+        /**
+         * @description Evaluator version backed by a remote evaluation config. Only common
+         *     version metadata (id, commit info, timestamps) is returned — the remote
+         *     configuration is not yet accessible and will be a future addition.
+         */
+        EvaluatorVersionRemote: components["schemas"]["EvaluatorVersionCommon"] & {
+            /**
+             * @description Discriminator identifying this as a remote evaluator version.
+             * @enum {string}
+             */
+            type?: "remote";
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "remote";
         };
         EvaluatorVersionListResponse: {
             /** @description A list of evaluator versions */
@@ -5675,12 +6131,108 @@ export interface components {
                 "application/json": components["schemas"]["AiIntegrationListResponse"];
             };
         };
+        /** @description An integration object. */
+        Integration: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "TGxtSW50ZWdyYXRpb246MTI6YUJjRA==",
+                 *       "type": "llm",
+                 *       "name": "Production OpenAI",
+                 *       "scopings": [
+                 *         {
+                 *           "organization_id": null,
+                 *           "space_id": null
+                 *         }
+                 *       ],
+                 *       "created_at": "2026-02-13T21:27:19.055Z",
+                 *       "updated_at": "2026-02-13T21:27:19.279Z",
+                 *       "created_by_user_id": "VXNlcjoxOm5OYkM=",
+                 *       "config": {
+                 *         "provider": "openAI",
+                 *         "has_api_key": true,
+                 *         "is_default_models_enabled": true,
+                 *         "is_function_calling_enabled": true
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["Integration"];
+            };
+        };
+        /** @description Integration successfully deleted. */
+        IntegrationDeleted: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
+        /** @description A paginated, polymorphic list of integrations. */
+        IntegrationList: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "integrations": [
+                 *         {
+                 *           "id": "TGxtSW50ZWdyYXRpb246MTI6YUJjRA==",
+                 *           "type": "llm",
+                 *           "name": "Production OpenAI",
+                 *           "scopings": [
+                 *             {
+                 *               "organization_id": null,
+                 *               "space_id": null
+                 *             }
+                 *           ],
+                 *           "created_at": "2026-02-13T21:27:19.055Z",
+                 *           "updated_at": "2026-02-13T21:27:19.279Z",
+                 *           "created_by_user_id": "VXNlcjoxOm5OYkM=",
+                 *           "config": {
+                 *             "provider": "openAI",
+                 *             "has_api_key": true,
+                 *             "is_default_models_enabled": true,
+                 *             "is_function_calling_enabled": true
+                 *           }
+                 *         }
+                 *       ],
+                 *       "pagination": {
+                 *         "has_more": false
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["IntegrationListResponse"];
+            };
+        };
         /** @description An annotation config object */
         AnnotationConfig: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
+                /**
+                 * @example {
+                 *       "id": "QW5ub3RhdGlvbkNvbmZpZzoxMjM0NQ==",
+                 *       "name": "quality-v2",
+                 *       "space_id": "space_12345",
+                 *       "type": "categorical",
+                 *       "values": [
+                 *         {
+                 *           "label": "good",
+                 *           "score": 1
+                 *         },
+                 *         {
+                 *           "label": "bad",
+                 *           "score": 0
+                 *         }
+                 *       ],
+                 *       "optimization_direction": "maximize",
+                 *       "created_at": "2024-01-01T00:00:00Z"
+                 *     }
+                 */
                 "application/json": components["schemas"]["AnnotationConfig"];
             };
         };
@@ -6095,6 +6647,40 @@ export interface components {
                  *     }
                  */
                 "application/json": components["schemas"]["AnnotationQueue"];
+            };
+        };
+        /** @description A paginated list of audit log entries. */
+        AuditLogList: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "logs": [
+                 *         {
+                 *           "id": "QXVkaXRMb2c6NDI=",
+                 *           "user_id": "VXNlcjoxMjM0NQ==",
+                 *           "ip": "1.2.3.4",
+                 *           "operation_type": "MUTATION",
+                 *           "operation_name": "createAiIntegration",
+                 *           "operation_text": "mutation createAiIntegration { ... }",
+                 *           "variables": "{}",
+                 *           "created_at": "2026-05-18T12:00:00.000Z"
+                 *         }
+                 *       ],
+                 *       "pagination": {
+                 *         "next_cursor": "eyJjcmVhdGVkQXQiOiIyMDI2LTA1LTE4VDEyOjAwOjAwLjAwMFoiLCJpZCI6NDJ9",
+                 *         "has_more": true
+                 *       }
+                 *     }
+                 */
+                "application/json": {
+                    /** @description A list of audit log entries, newest first. */
+                    logs: components["schemas"]["AuditLog"][];
+                    /** @description Pagination metadata for cursor-based navigation. */
+                    pagination: components["schemas"]["PaginationMetadata"];
+                };
             };
         };
         /** @description API key successfully created or refreshed. The raw key is only returned once. */
@@ -7236,6 +7822,35 @@ export interface components {
                 "application/json": components["schemas"]["ResourceRestrictionResponseBody"];
             };
         };
+        /** @description A list of resource restriction records. */
+        ResourceRestrictionList: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "resource_restrictions": [
+                 *         {
+                 *           "resource_type": "PROJECT",
+                 *           "resource_id": "TW9kZWw6MTIxOmFCY0Q=",
+                 *           "created_at": "2026-01-01T12:00:00Z"
+                 *         },
+                 *         {
+                 *           "resource_type": "PROJECT",
+                 *           "resource_id": "TW9kZWw6OTg3OnhZelc=",
+                 *           "created_at": "2026-03-15T09:30:00Z"
+                 *         }
+                 *       ],
+                 *       "pagination": {
+                 *         "next_cursor": "cursor_12345",
+                 *         "has_more": true
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["ResourceRestrictionListResponse"];
+            };
+        };
         /** @description Role binding successfully created. */
         RoleBindingCreated: {
             headers: {
@@ -7937,6 +8552,13 @@ export interface components {
          */
         AiIntegrationIdPathParam: components["schemas"]["Id"];
         /**
+         * @description The unique integration identifier (base64 global ID).
+         * @example TGxtSW50ZWdyYXRpb246MTI6YUJjRA==
+         */
+        IntegrationIdPathParam: components["schemas"]["Id"];
+        /** @description Filter the list to a single integration type. Omit to list all types. */
+        IntegrationTypeQueryParam: components["schemas"]["IntegrationType"];
+        /**
          * @description The unique annotation config identifier (base64)
          * @example QW5ub3RhdGlvbkNvbmZpZzoxMjM0NQ==
          */
@@ -7978,6 +8600,12 @@ export interface components {
          *     attempt to parse or construct it.
          */
         CursorQueryParam: string;
+        /**
+         * @description Inclusive upper bound on `created_at` (ISO 8601 datetime).
+         *     Defaults to the current time when omitted.
+         * @example 2026-05-18T23:59:59Z
+         */
+        EndTimeQueryParam: string;
         /**
          * @description The unique dataset identifier (base64)
          * @example RGF0YXNldDoxMjM0NQ==
@@ -8033,6 +8661,11 @@ export interface components {
          */
         NameSearchQueryParam: string;
         /**
+         * @description Filter results to a specific operation type.
+         * @example MUTATION
+         */
+        OperationTypeQueryParam: components["schemas"]["AuditLogOperationType"];
+        /**
          * @description The unique organization identifier (base64). When provided, only spaces belonging to this organization are returned.
          * @example T3JnYW5pemF0aW9uOjEyMzQ1
          */
@@ -8078,6 +8711,12 @@ export interface components {
          */
         RolesIsPredefinedQueryParam: boolean;
         /**
+         * @description Inclusive lower bound on `created_at` (ISO 8601 datetime).
+         *     Defaults to 30 days before `end_time` when omitted.
+         * @example 2026-04-18T00:00:00Z
+         */
+        StartTimeQueryParam: string;
+        /**
          * @description The unique space identifier (base64)
          * @example U3BhY2U6MTIzNDU=
          */
@@ -8120,6 +8759,13 @@ export interface components {
          */
         UserIdPathParam: components["schemas"]["Id"];
         /**
+         * @description Filter results by user (base64 global user ID). When provided, only records
+         *     associated with this user are returned. Access requirements vary by endpoint —
+         *     some endpoints restrict this filter to account admins.
+         * @example VXNlcjoxMjM0NQ==
+         */
+        UserIdQueryParam: components["schemas"]["Id"];
+        /**
          * @description Filter users by email address (case-insensitive partial match, up to 255 characters).
          *     Results are scoped to users visible to the caller.
          * @example jane@example.com
@@ -8136,14 +8782,6 @@ export interface components {
          */
         VersionIdQueryParam: components["schemas"]["Id"];
         /**
-         * @description Filter API keys by the user who created them (base64 identifier (base64)).
-         *     When used with `space_id`, filters service keys by creator — available to any user with space access.
-         *     When used without `space_id`, filters user keys by creator — account admins only (non-admins receive `403`).
-         *     Can be combined with `key_type` to further narrow results by key type.
-         * @example VXNlcjoxMjM0NQ==
-         */
-        UserIdQueryParam: components["schemas"]["Id"];
-        /**
          * @description The unique dataset example identifier (UUID)
          * @example 550e8400-e29b-41d4-a716-446655440000
          */
@@ -8153,6 +8791,15 @@ export interface components {
          * @example T3JnYW5pemF0aW9uOjEyMzQ1
          */
         OrgIdPathParam: components["schemas"]["Id"];
+        /**
+         * @description Filter restrictions to a single resource type.
+         *     - `PROJECT` — Return only restricted projects.
+         *
+         *     When not specified, restrictions of all supported resource types are
+         *     returned (currently only `PROJECT`).
+         * @example PROJECT
+         */
+        ResourceRestrictionTypeQueryParam: components["schemas"]["ResourceRestrictionType"];
         /**
          * @description Filter role bindings by user. When provided, only bindings assigned to this
          *     user are returned. Must be a valid global user ID.
@@ -8251,6 +8898,98 @@ export interface components {
                     /** @description Visibility scoping rules (replaces all existing scopings) */
                     scopings?: components["schemas"]["AiIntegrationScoping"][];
                 };
+            };
+        };
+        /**
+         * @description Create a new integration. The `type` field selects the config shape; for
+         *     `llm`, `config.provider` selects the per-provider config.
+         *
+         *     **Payload Requirements**
+         *     - `type`, `name`, and `config` are required.
+         *     - `name` must be unique within the account for the given `type`.
+         *     - For `type: llm`, `config.provider` is required. Each provider's config
+         *       defines its own required fields — see the per-provider `config` schema.
+         *     - `config.is_default_models_enabled` defaults to `false` when omitted.
+         *     - `config.is_function_calling_enabled` defaults to `true` when omitted.
+         *     - `scopings` defaults to account-wide visibility when omitted.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "type": "llm",
+         *       "name": "Production OpenAI",
+         *       "config": {
+         *         "provider": "openAI",
+         *         "api_key": "sk-abc123..."
+         *       }
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (missing required `config`)
+         *     ```json
+         *     {
+         *       "type": "llm",
+         *       "name": "Bad Integration"
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (missing required `config.provider` for `type: llm`)
+         *     ```json
+         *     {
+         *       "type": "llm",
+         *       "name": "Bad Integration",
+         *       "config": {}
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (missing required `config.api_key` for `openAI`)
+         *     ```json
+         *     {
+         *       "type": "llm",
+         *       "name": "Bad OpenAI",
+         *       "config": { "provider": "openAI" }
+         *     }
+         *     ```
+         */
+        CreateIntegrationRequestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateIntegrationRequest"];
+            };
+        };
+        /**
+         * @description Partially update an integration. The body is discriminated by `type`.
+         *     Omitted fields are left unchanged.
+         *
+         *     **Payload Requirements**
+         *     - `type` is **required** (it selects the per-type PATCH shape) and is
+         *       immutable: it must match the stored integration's type, otherwise the
+         *       request is rejected with 422 (change category by delete + recreate).
+         *     - At least one updatable field (`name`, `scopings`, or `config`) must be
+         *       provided in addition to `type`.
+         *     - `provider` is immutable. Supplying a value that differs from the stored
+         *       integration is rejected with 422.
+         *     - Envelope and `config` scalar fields deep-merge: omit = keep, explicit
+         *       `null` = clear (for nullable fields).
+         *     - `scopings`, if provided, replaces the existing values.
+         *     - `config.api_key` may be sent to rotate the key; it is never returned.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "type": "llm",
+         *       "name": "Updated OpenAI",
+         *       "config": { "is_default_models_enabled": true }
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (empty body)
+         *     ```json
+         *     {}
+         *     ```
+         */
+        UpdateIntegrationRequestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateIntegrationRequest"];
             };
         };
         /** @description Body containing annotation config creation parameters */
@@ -9056,6 +9795,29 @@ export interface components {
                 "application/json": components["schemas"]["UserUpdate"];
             };
         };
+        /** @description Body containing annotation config update parameters. The annotation_config_type is required and must match the stored config's type. */
+        UpdateAnnotationConfigRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "annotation_config_type": "categorical",
+                 *       "name": "quality-v2",
+                 *       "values": [
+                 *         {
+                 *           "label": "good",
+                 *           "score": 1
+                 *         },
+                 *         {
+                 *           "label": "bad",
+                 *           "score": 0
+                 *         }
+                 *       ],
+                 *       "optimization_direction": "maximize"
+                 *     }
+                 */
+                "application/json": components["schemas"]["UpdateAnnotationConfigRequestBody"];
+            };
+        };
     };
     headers: {
         /**
@@ -9133,6 +9895,55 @@ export interface operations {
             429: components["responses"]["RateLimitExceeded"];
         };
     };
+    audit_logs_list: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Inclusive lower bound on `created_at` (ISO 8601 datetime).
+                 *     Defaults to 30 days before `end_time` when omitted.
+                 * @example 2026-04-18T00:00:00Z
+                 */
+                start_time?: components["parameters"]["StartTimeQueryParam"];
+                /**
+                 * @description Inclusive upper bound on `created_at` (ISO 8601 datetime).
+                 *     Defaults to the current time when omitted.
+                 * @example 2026-05-18T23:59:59Z
+                 */
+                end_time?: components["parameters"]["EndTimeQueryParam"];
+                /**
+                 * @description Filter results by user (base64 global user ID). When provided, only records
+                 *     associated with this user are returned. Access requirements vary by endpoint —
+                 *     some endpoints restrict this filter to account admins.
+                 * @example VXNlcjoxMjM0NQ==
+                 */
+                user_id?: components["parameters"]["UserIdQueryParam"];
+                /**
+                 * @description Filter results to a specific operation type.
+                 * @example MUTATION
+                 */
+                operation_type?: components["parameters"]["OperationTypeQueryParam"];
+                /** @description Maximum items to return */
+                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /**
+                 * @description Opaque pagination cursor returned from a previous response
+                 *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
+                 *     attempt to parse or construct it.
+                 */
+                cursor?: components["parameters"]["CursorQueryParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AuditLogList"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
     ai_integrations_get: {
         parameters: {
             query?: never;
@@ -9194,6 +10005,142 @@ export interface operations {
         requestBody: components["requestBodies"]["UpdateAiIntegrationRequestBody"];
         responses: {
             200: components["responses"]["AiIntegration"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    integrations_list: {
+        parameters: {
+            query?: {
+                /** @description Filter the list to a single integration type. Omit to list all types. */
+                type?: components["parameters"]["IntegrationTypeQueryParam"];
+                /**
+                 * @description Filter search results to a particular space ID
+                 * @example U3BhY2U6MTIzNDU=
+                 */
+                space_id?: components["parameters"]["SpaceIdQueryParam"];
+                /**
+                 * @description Case-insensitive substring filter on the space name. Narrows results
+                 *     to resources in spaces whose name contains the given string. If omitted,
+                 *     no space name filtering is applied and all resources are returned.
+                 * @example my-space
+                 */
+                space_name?: components["parameters"]["SpaceNameQueryParam"];
+                /**
+                 * @description Case-insensitive substring filter on the resource name. Returns only
+                 *     resources whose name contains the given string. For example,
+                 *     `name=prod` matches "production", "my-prod-dataset", etc. If omitted,
+                 *     no name filtering is applied and all resources are returned.
+                 * @example production
+                 */
+                name?: components["parameters"]["NameSearchQueryParam"];
+                /** @description Maximum items to return */
+                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /**
+                 * @description Opaque pagination cursor returned from a previous response
+                 *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
+                 *     attempt to parse or construct it.
+                 */
+                cursor?: components["parameters"]["CursorQueryParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["IntegrationList"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    integrations_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["CreateIntegrationRequestBody"];
+        responses: {
+            201: components["responses"]["Integration"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    integrations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique integration identifier (base64 global ID).
+                 * @example TGxtSW50ZWdyYXRpb246MTI6YUJjRA==
+                 */
+                integration_id: components["parameters"]["IntegrationIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Integration"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    integrations_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique integration identifier (base64 global ID).
+                 * @example TGxtSW50ZWdyYXRpb246MTI6YUJjRA==
+                 */
+                integration_id: components["parameters"]["IntegrationIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: components["responses"]["IntegrationDeleted"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    integrations_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique integration identifier (base64 global ID).
+                 * @example TGxtSW50ZWdyYXRpb246MTI6YUJjRA==
+                 */
+                integration_id: components["parameters"]["IntegrationIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["UpdateIntegrationRequestBody"];
+        responses: {
+            200: components["responses"]["Integration"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
@@ -9309,6 +10256,31 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    annotation_configs_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique annotation config identifier (base64)
+                 * @example QW5ub3RhdGlvbkNvbmZpZzoxMjM0NQ==
+                 */
+                annotation_config_id: components["parameters"]["AnnotationConfigIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["UpdateAnnotationConfigRequestBody"];
+        responses: {
+            200: components["responses"]["AnnotationConfig"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -9610,10 +10582,9 @@ export interface operations {
                  */
                 space_id?: components["parameters"]["SpaceIdQueryParam"];
                 /**
-                 * @description Filter API keys by the user who created them (base64 identifier (base64)).
-                 *     When used with `space_id`, filters service keys by creator — available to any user with space access.
-                 *     When used without `space_id`, filters user keys by creator — account admins only (non-admins receive `403`).
-                 *     Can be combined with `key_type` to further narrow results by key type.
+                 * @description Filter results by user (base64 global user ID). When provided, only records
+                 *     associated with this user are returned. Access requirements vary by endpoint —
+                 *     some endpoints restrict this filter to account admins.
                  * @example VXNlcjoxMjM0NQ==
                  */
                 user_id?: components["parameters"]["UserIdQueryParam"];
@@ -10319,6 +11290,12 @@ export interface operations {
             query?: {
                 /** @description Maximum items to return */
                 limit?: components["parameters"]["LimitQueryParamMax500"];
+                /**
+                 * @description Opaque pagination cursor returned from a previous response
+                 *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
+                 *     attempt to parse or construct it.
+                 */
+                cursor?: components["parameters"]["CursorQueryParam"];
             };
             header?: never;
             path: {
@@ -10985,6 +11962,39 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    resource_restrictions_list: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Filter restrictions to a single resource type.
+                 *     - `PROJECT` — Return only restricted projects.
+                 *
+                 *     When not specified, restrictions of all supported resource types are
+                 *     returned (currently only `PROJECT`).
+                 * @example PROJECT
+                 */
+                resource_type?: components["parameters"]["ResourceRestrictionTypeQueryParam"];
+                /** @description Maximum items to return */
+                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /**
+                 * @description Opaque pagination cursor returned from a previous response
+                 *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
+                 *     attempt to parse or construct it.
+                 */
+                cursor?: components["parameters"]["CursorQueryParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ResourceRestrictionList"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };

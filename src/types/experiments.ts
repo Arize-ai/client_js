@@ -1,4 +1,5 @@
 import { Annotation } from "./spans";
+import { PaginationMetadata } from "./pagination";
 
 export type Experiment = {
   id: string;
@@ -36,4 +37,9 @@ export type ExperimentRun = {
   error?: string | null;
   annotations?: Annotation[];
   [key: string]: unknown;
+};
+
+export type ExperimentRunsListResponse = {
+  experiment_runs: ExperimentRun[];
+  pagination: PaginationMetadata;
 };
