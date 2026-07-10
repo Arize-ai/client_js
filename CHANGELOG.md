@@ -1,5 +1,18 @@
 # @arizeai/ax-client
 
+## [1.23.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.22.0...arize-js-sdk/v1.23.0) (2026-07-10)
+
+
+### 🎁 New Features
+
+* **resource-restrictions:** adding list functionality ([#77893](https://github.com/Arize-ai/arize/issues/77893)) ([c7ab635](https://github.com/Arize-ai/arize/commit/c7ab63571be8568373178d78c7f8023e033efea0))
+* **datasets:** add batched `delete_examples` ([#77138](https://github.com/Arize-ai/arize/issues/77138)) ([906ffbd](https://github.com/Arize-ai/arize/commit/906ffbd7e15430dbdd4864390d58c51e2d2845eb))
+* **annotation-configs:** splitting create function into functions per type ([#78082](https://github.com/Arize-ai/arize/issues/78082)) ([c7ec542](https://github.com/Arize-ai/arize/commit/c7ec542450d3c34a1a6724176e3705db4a7b1eee))
+
+### 💫 Code Refactoring
+
+* promote 5 endpoints from alpha to beta ([#77386](https://github.com/Arize-ai/arize/issues/77386)) ([64fd321](https://github.com/Arize-ai/arize/commit/64fd321a7be190ed1e91d4b0133122644e11d441))
+
 ## [1.22.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.21.0...arize-js-sdk/v1.22.0) (2026-07-02)
 
 

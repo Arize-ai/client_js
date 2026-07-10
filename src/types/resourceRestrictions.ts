@@ -1,6 +1,6 @@
-import type { RawRoleBindingResourceType } from "./internal";
+import type { RawResourceRestrictionType } from "./internal";
 
-export type ResourceRestrictionResourceType = RawRoleBindingResourceType;
+export type ResourceRestrictionResourceType = RawResourceRestrictionType;
 
 export type ResourceRestriction = {
   resourceType: ResourceRestrictionResourceType;

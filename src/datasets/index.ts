@@ -7,3 +7,4 @@ export * from "./updateDataset";
 export * from "./updateExamples";
 export * from "./appendExamples";
 export * from "./annotateDatasetExamples";
+export * from "./deleteDatasetExamples";

@@ -92,6 +92,7 @@ Arize has both Enterprise and OSS products to support this goal:
   - [Listing annotation configs](#listing-annotation-configs)
   - [Creating an annotation config](#creating-an-annotation-config)
   - [Getting an annotation config](#getting-an-annotation-config)
+  - [Updating an annotation config](#updating-an-annotation-config)
   - [Deleting an annotation config](#deleting-an-annotation-config)
 - [Annotation Queues](#annotation-queues)
   - [Listing annotation queues](#listing-annotation-queues)
@@ -129,6 +130,7 @@ Arize has both Enterprise and OSS products to support this goal:
   - [Updating a role binding](#updating-a-role-binding)
   - [Deleting a role binding](#deleting-a-role-binding)
 - [Resource restrictions](#resource-restrictions)
+  - [Listing resource restrictions](#listing-resource-restrictions)
 - [Organizations](#organizations)
   - [Listing organizations](#listing-organizations)
   - [Getting an organization](#getting-an-organization)
@@ -291,6 +293,26 @@ await annotateDatasetExamples({
     },
   ],
 });
+```
+
+## Deleting dataset examples
+
+Examples are removed in place from the given version; no new version is created. The delete is partial-tolerant and idempotent — the result reports which IDs were deleted and which were not.
+
+```typescript
+import { deleteDatasetExamples } from "@arizeai/ax-client";
+
+const result = await deleteDatasetExamples({
+  dataset: "my-dataset",
+  space: "my-space",
+  datasetVersionId: "your_dataset_version_id",
+  examples: ["example_id_1", "example_id_2"],
+});
+console.log(
+  result.completed,
+  result.deletedExampleIds,
+  result.notDeletedExampleIds,
+);
 ```
 
 # Experiments
@@ -848,18 +870,39 @@ console.log(annotationConfigs);
 
 ## Creating an annotation config
 
-```typescript
-import { createAnnotationConfig } from "@arizeai/ax-client";
+Three config types are supported: continuous (a numeric score in a range), categorical (a fixed set of labeled values), and freeform (open-ended text with no scale). Use whichever type-specific function matches the config type you want.
 
-const annotationConfig = await createAnnotationConfig({
+```typescript
+import {
+  createContinuousAnnotationConfig,
+  createCategoricalAnnotationConfig,
+  createFreeformAnnotationConfig,
+} from "@arizeai/ax-client";
+
+// Continuous (numeric) annotation config
+const scoreConfig = await createContinuousAnnotationConfig({
+  name: "quality-score",
+  space: "my-space",
+  minimumScore: 0,
+  maximumScore: 1,
+  optimizationDirection: "maximize",
+});
+
+// Categorical annotation config
+const annotationConfig = await createCategoricalAnnotationConfig({
   name: "Accuracy",
   space: "my-space",
-  type: "categorical",
   values: [
     { label: "accurate", score: 1 },
     { label: "inaccurate", score: 0 },
   ],
   optimizationDirection: "maximize",
+});
+
+// Freeform (open-ended text) annotation config
+const notesConfig = await createFreeformAnnotationConfig({
+  name: "reviewer-notes",
+  space: "my-space",
 });
 ```
 
@@ -871,6 +914,50 @@ import { getAnnotationConfig } from "@arizeai/ax-client";
 const annotationConfig = await getAnnotationConfig({
   annotationConfig: "Accuracy",
   space: "my-space",
+});
+```
+
+## Updating an annotation config
+
+There is a dedicated update function per annotation config type. Each one
+must be called with the stored config's type — a config's type is immutable
+and cannot be changed. Any fields you omit are left unchanged.
+
+```typescript
+import { updateCategoricalAnnotationConfig } from "@arizeai/ax-client";
+
+const annotationConfig = await updateCategoricalAnnotationConfig({
+  annotationConfig: "Accuracy",
+  space: "my-space",
+  name: "Accuracy v2",
+  values: [
+    { label: "accurate", score: 1 },
+    { label: "inaccurate", score: 0 },
+  ],
+  optimizationDirection: "maximize",
+});
+```
+
+```typescript
+import { updateContinuousAnnotationConfig } from "@arizeai/ax-client";
+
+const annotationConfig = await updateContinuousAnnotationConfig({
+  annotationConfig: "Accuracy",
+  space: "my-space",
+  name: "Accuracy v2",
+  minimumScore: 0,
+  maximumScore: 10,
+  optimizationDirection: "maximize",
+});
+```
+
+```typescript
+import { updateFreeformAnnotationConfig } from "@arizeai/ax-client";
+
+const annotationConfig = await updateFreeformAnnotationConfig({
+  annotationConfig: "Notes",
+  space: "my-space",
+  name: "Notes v2",
 });
 ```
 
@@ -1330,6 +1417,22 @@ console.log(restriction);
 
 // Lift the restriction
 await unrestrictResource({ resourceId: "your_project_id" });
+```
+
+## Listing resource restrictions
+
+List the active resource restrictions the authenticated user is permitted to manage.
+
+```typescript
+import { listResourceRestrictions } from "@arizeai/ax-client";
+
+const { data } = await listResourceRestrictions();
+console.log(data.map((r) => r.resourceId));
+
+// Filter to a single resource type
+const { data: projects } = await listResourceRestrictions({
+  resourceType: "PROJECT",
+});
 ```
 
 # Organizations

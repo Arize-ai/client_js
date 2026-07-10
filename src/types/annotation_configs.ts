@@ -61,3 +61,20 @@ export type CreateAnnotationConfigInput =
   | CreateContinuousAnnotationConfig
   | CreateCategoricalAnnotationConfig
   | CreateFreeformAnnotationConfig;
+
+export interface UpdateContinuousAnnotationConfig {
+  name?: string;
+  minimumScore?: number;
+  maximumScore?: number;
+  optimizationDirection?: OptimizationDirection;
+}
+
+export interface UpdateCategoricalAnnotationConfig {
+  name?: string;
+  values?: CategoricalAnnotationValue[];
+  optimizationDirection?: OptimizationDirection;
+}
+
+export interface UpdateFreeformAnnotationConfig {
+  name?: string;
+}

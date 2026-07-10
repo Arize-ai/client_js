@@ -48,7 +48,7 @@ export async function updateProject({
   name,
   space,
 }: UpdateProjectParams): Promise<Project> {
-  warnPreRelease({ functionName: "updateProject", stage: "alpha" });
+  warnPreRelease({ functionName: "updateProject", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const projectId = await findProjectId(client, project, spaceRef);

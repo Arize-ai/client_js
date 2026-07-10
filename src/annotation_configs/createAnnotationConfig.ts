@@ -1,95 +1,175 @@
 import { createClient } from "../client";
 import {
-  AnnotationConfig,
-  CreateAnnotationConfigInput,
+  CategoricalAnnotationConfig,
+  ContinuousAnnotationConfig,
+  CreateCategoricalAnnotationConfig,
+  CreateContinuousAnnotationConfig,
+  CreateFreeformAnnotationConfig,
+  FreeformAnnotationConfig,
   WithClient,
 } from "../types";
-import { assertUnreachable } from "../utils/assertUnreachable";
 import { findSpaceId } from "../utils/resolve";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { transformAnnotationConfig } from "./utils";
 
-export type CreateAnnotationConfigParams =
-  WithClient<CreateAnnotationConfigInput>;
+export type CreateContinuousAnnotationConfigParams = WithClient<
+  Omit<CreateContinuousAnnotationConfig, "type">
+>;
 
 /**
- * Create a new annotation config.
+ * Create a continuous annotation config, i.e. a numeric score within a fixed
+ * range (e.g. a 0-1 quality score).
  *
  * @param client - An optional ArizeClient instance to use for the request.
  * @param name - The name of the annotation config to create.
  * @param space - The space name or ID to create the annotation config in.
- * @param type - The annotation config type: "continuous", "categorical", or "freeform".
- * @param minimumScore - The minimum score an annotation can be. Required when `type` is "continuous".
- * @param maximumScore - The maximum score an annotation can be. Required when `type` is "continuous".
- * @param values - A list of labels and optionally associated scores. Required when `type` is "categorical".
- * @param optimizationDirection - An optional direction of optimization. Relevant when `type` is "continuous" or "categorical".
- * @returns A created {@link AnnotationConfig}.
+ * @param minimumScore - The minimum score an annotation can be.
+ * @param maximumScore - The maximum score an annotation can be.
+ * @param optimizationDirection - An optional direction of optimization.
+ * @returns A created {@link ContinuousAnnotationConfig}.
  * @throws Error if the annotation config cannot be created or the response is invalid.
  * @example
  * ```typescript
- * import { createAnnotationConfig } from "@arizeai/ax-client"
+ * import { createContinuousAnnotationConfig } from "@arizeai/ax-client"
  *
- * const annotationConfig = await createAnnotationConfig({
- *   name: "Accuracy",
+ * const annotationConfig = await createContinuousAnnotationConfig({
+ *   name: "quality-score",
  *   space: "your_space",
- *   type: "categorical",
+ *   minimumScore: 0,
+ *   maximumScore: 1,
+ *   optimizationDirection: "maximize",
+ * });
+ * console.log(annotationConfig);
+ * ```
+ */
+export async function createContinuousAnnotationConfig({
+  client: clientInstance,
+  ...params
+}: CreateContinuousAnnotationConfigParams): Promise<ContinuousAnnotationConfig> {
+  warnPreRelease({
+    functionName: "createContinuousAnnotationConfig",
+    stage: "beta",
+  });
+  const client = clientInstance ?? createClient();
+  const spaceId = await findSpaceId(client, params.space);
+  const response = await client.POST("/v2/annotation-configs", {
+    body: {
+      name: params.name,
+      space_id: spaceId,
+      annotation_config_type: "continuous" as const,
+      minimum_score: params.minimumScore,
+      maximum_score: params.maximumScore,
+      optimization_direction: params.optimizationDirection,
+    },
+  });
+  if (response.error) {
+    return handleApiError(response);
+  }
+  return transformAnnotationConfig(response.data) as ContinuousAnnotationConfig;
+}
+
+export type CreateCategoricalAnnotationConfigParams = WithClient<
+  Omit<CreateCategoricalAnnotationConfig, "type">
+>;
+
+/**
+ * Create a categorical annotation config, i.e. a fixed set of labeled values
+ * a scorer can choose from (e.g. "correct" / "incorrect").
+ *
+ * @param client - An optional ArizeClient instance to use for the request.
+ * @param name - The name of the annotation config to create.
+ * @param space - The space name or ID to create the annotation config in.
+ * @param values - A list of labels and optionally associated scores.
+ * @param optimizationDirection - An optional direction of optimization.
+ * @returns A created {@link CategoricalAnnotationConfig}.
+ * @throws Error if the annotation config cannot be created or the response is invalid.
+ * @example
+ * ```typescript
+ * import { createCategoricalAnnotationConfig } from "@arizeai/ax-client"
+ *
+ * const annotationConfig = await createCategoricalAnnotationConfig({
+ *   name: "correctness",
+ *   space: "your_space",
  *   values: [
- *     { label: "accurate", score: 1 },
- *     { label: "inaccurate", score: 0 },
+ *     { label: "correct", score: 1 },
+ *     { label: "incorrect", score: 0 },
  *   ],
  *   optimizationDirection: "maximize",
  * });
  * console.log(annotationConfig);
  * ```
- *
  */
-export async function createAnnotationConfig({
+export async function createCategoricalAnnotationConfig({
   client: clientInstance,
   ...params
-}: CreateAnnotationConfigParams): Promise<AnnotationConfig> {
-  warnPreRelease({ functionName: "createAnnotationConfig", stage: "beta" });
+}: CreateCategoricalAnnotationConfigParams): Promise<CategoricalAnnotationConfig> {
+  warnPreRelease({
+    functionName: "createCategoricalAnnotationConfig",
+    stage: "beta",
+  });
   const client = clientInstance ?? createClient();
   const spaceId = await findSpaceId(client, params.space);
-  const annotationConfigType = params.type;
-  let body;
-  switch (annotationConfigType) {
-    case "continuous":
-      body = {
-        name: params.name,
-        space_id: spaceId,
-        annotation_config_type: "continuous" as const,
-        minimum_score: params.minimumScore,
-        maximum_score: params.maximumScore,
-        optimization_direction: params.optimizationDirection,
-      };
-      break;
-    case "categorical":
-      body = {
-        name: params.name,
-        space_id: spaceId,
-        annotation_config_type: "categorical" as const,
-        values: params.values,
-        optimization_direction: params.optimizationDirection,
-      };
-      break;
-    case "freeform":
-      body = {
-        name: params.name,
-        space_id: spaceId,
-        annotation_config_type: "freeform" as const,
-      };
-      break;
-    default: {
-      assertUnreachable(annotationConfigType);
-    }
-  }
-
   const response = await client.POST("/v2/annotation-configs", {
-    body,
+    body: {
+      name: params.name,
+      space_id: spaceId,
+      annotation_config_type: "categorical" as const,
+      values: params.values,
+      optimization_direction: params.optimizationDirection,
+    },
   });
   if (response.error) {
     return handleApiError(response);
   }
-  return transformAnnotationConfig(response.data);
+  return transformAnnotationConfig(
+    response.data,
+  ) as CategoricalAnnotationConfig;
+}
+
+export type CreateFreeformAnnotationConfigParams = WithClient<
+  Omit<CreateFreeformAnnotationConfig, "type">
+>;
+
+/**
+ * Create a freeform annotation config, i.e. open-ended text feedback with no
+ * predefined scale or set of values.
+ *
+ * @param client - An optional ArizeClient instance to use for the request.
+ * @param name - The name of the annotation config to create.
+ * @param space - The space name or ID to create the annotation config in.
+ * @returns A created {@link FreeformAnnotationConfig}.
+ * @throws Error if the annotation config cannot be created or the response is invalid.
+ * @example
+ * ```typescript
+ * import { createFreeformAnnotationConfig } from "@arizeai/ax-client"
+ *
+ * const annotationConfig = await createFreeformAnnotationConfig({
+ *   name: "reviewer-notes",
+ *   space: "your_space",
+ * });
+ * console.log(annotationConfig);
+ * ```
+ */
+export async function createFreeformAnnotationConfig({
+  client: clientInstance,
+  ...params
+}: CreateFreeformAnnotationConfigParams): Promise<FreeformAnnotationConfig> {
+  warnPreRelease({
+    functionName: "createFreeformAnnotationConfig",
+    stage: "beta",
+  });
+  const client = clientInstance ?? createClient();
+  const spaceId = await findSpaceId(client, params.space);
+  const response = await client.POST("/v2/annotation-configs", {
+    body: {
+      name: params.name,
+      space_id: spaceId,
+      annotation_config_type: "freeform" as const,
+    },
+  });
+  if (response.error) {
+    return handleApiError(response);
+  }
+  return transformAnnotationConfig(response.data) as FreeformAnnotationConfig;
 }

@@ -42,7 +42,7 @@ export type ListRoleBindingsParams = WithClient<
 export async function listRoleBindings(
   params: ListRoleBindingsParams,
 ): Promise<PaginatedResponse<RoleBinding>> {
-  warnPreRelease({ functionName: "listRoleBindings", stage: "alpha" });
+  warnPreRelease({ functionName: "listRoleBindings", stage: "beta" });
   const {
     client: clientInstance,
     userId,

@@ -52,6 +52,8 @@ export type RawRole = components["schemas"]["Role"];
 export type RawPermission = components["schemas"]["Permission"];
 export type RawResourceRestriction =
   components["schemas"]["ResourceRestriction"];
+export type RawResourceRestrictionType =
+  components["schemas"]["ResourceRestrictionType"];
 export type RawRoleBinding = components["schemas"]["RoleBinding"];
 export type RawSpaceMembership = components["schemas"]["SpaceMembership"];
 export type RawOrganization = components["schemas"]["Organization"];

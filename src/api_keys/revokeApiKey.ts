@@ -29,7 +29,7 @@ export async function revokeApiKey({
   client: clientInstance,
   apiKeyId,
 }: RevokeApiKeyParams): Promise<void> {
-  warnPreRelease({ functionName: "revokeApiKey", stage: "alpha" });
+  warnPreRelease({ functionName: "revokeApiKey", stage: "beta" });
   const client = clientInstance ?? createClient();
   const response = await client.PUT("/v2/api-keys/{api_key_id}/revoke", {
     params: {

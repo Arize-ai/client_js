@@ -768,9 +768,11 @@ export interface paths {
          *     - **Service keys:** space admins (and higher) may refresh any service key in their space.
          *       Non-admins require the `SERVICE_KEY_CREATE` permission and must be the creator of the key.
          *
-         *     **Expiry behaviour:** Supply `expires_at` in the request body to set an expiration
-         *     on the replacement key. Omit `expires_at` (or send an empty body `{}`) to create
-         *     the replacement key with no expiration (infinite lifetime).
+         *     **Expiry behaviour:** `expires_at` is **required** when the existing key has an expiry
+         *     — omitting it would extend the key's lifetime to unbounded and is rejected with `422`.
+         *     For unbounded existing keys, `expires_at` may be omitted (the replacement is also
+         *     unbounded) or supplied to add a specific expiry. The value must not be later than the
+         *     existing key's expiry; to issue a key with a longer lifetime, use `POST /v2/api-keys`.
          *
          *     **Grace period:** Supply `grace_period_seconds` in the request body to keep the old key
          *     valid for that many seconds after the refresh. If not supplied, the old key is revoked immediately.
@@ -800,7 +802,7 @@ export interface paths {
          *     **Authorization:**
          *     Requires the `developer` user permission flag and account admin role. Returns `403` when conditions are not met.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *       <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         put: operations["api_keys_revoke"];
         post?: never;
@@ -937,7 +939,7 @@ export interface paths {
          *     {}
          *     ```
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *       <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         patch: operations["datasets_update"];
         trace?: never;
@@ -1013,7 +1015,49 @@ export interface paths {
          *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["datasets_examples_insert"];
-        delete?: never;
+        /**
+         * Delete dataset examples
+         * @description Delete a collection of examples from a dataset by their IDs.
+         *
+         *     The delete is partial-tolerant: examples that exist in the selected version
+         *     are deleted, and every requested ID that was not deleted is reported back.
+         *
+         *     A `200 OK` response always includes:
+         *     - `completed` — `true` if the operation finished and no retry is needed;
+         *       `false` if it could not fully complete (retry the full request).
+         *     - `deleted_example_ids` — example IDs confirmed deleted in this request.
+         *     - `not_deleted_example_ids` — requested IDs not deleted: either not found in
+         *       the selected version (never added, or already deleted), or not completed
+         *       when `completed` is `false`.
+         *
+         *     The delete operation is idempotent — re-submitting already-deleted IDs is safe.
+         *
+         *     **Payload Requirements**
+         *     - `dataset_version_id` is required and identifies the version to delete from.
+         *     - `example_ids` must contain at least one ID and at most 1000 IDs.
+         *     - `example_ids` must not contain duplicate or empty IDs.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "dataset_version_id": "RGF0YXNldFZlcnNpb246MTIzNDU=",
+         *       "example_ids": [
+         *         "550e8400-e29b-41d4-a716-446655440000",
+         *         "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+         *       ]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (missing `dataset_version_id`)
+         *     ```json
+         *     {
+         *       "example_ids": ["550e8400-e29b-41d4-a716-446655440000"]
+         *     }
+         *     ```
+         *
+         *       <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        delete: operations["datasets_examples_delete"];
         options?: never;
         head?: never;
         /**
@@ -1070,33 +1114,6 @@ export interface paths {
          *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         patch: operations["datasets_examples_update"];
-        trace?: never;
-    };
-    "/v2/datasets/{dataset_id}/examples/{example_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /**
-         * Delete a dataset example
-         * @description Delete a single example from a dataset by its ID.
-         *
-         *     If `dataset_version_id` is provided, the example is deleted from that
-         *     specific version. If omitted, the latest version is used. The example
-         *     is removed in place from the selected version; no new version is
-         *     created. This operation is irreversible.
-         *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
-         */
-        delete: operations["datasets_example_delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/v2/datasets/{dataset_id}/examples/annotate": {
@@ -1849,7 +1866,7 @@ export interface paths {
          *     {}
          *     ```
          *
-         *     <Note>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
+         *       <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         patch: operations["projects_update"];
         trace?: never;
@@ -2186,7 +2203,7 @@ export interface paths {
          *     authenticated account member. Use `user_id` to narrow to a specific
          *     user.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *       <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["role_bindings_list"];
         put?: never;
@@ -2750,6 +2767,8 @@ export interface paths {
          * List spans
          * @description Returns a paginated list of spans.
          *
+         *     The spans are sorted by their timestamp, with the most recent coming first.
+         *
          *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["spans_list"];
@@ -2769,7 +2788,7 @@ export interface paths {
          *
          *     The delete operation is idempotent — re-submitting already-deleted IDs is safe.
          *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         *       <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         delete: operations["spans_delete"];
         options?: never;
@@ -2855,6 +2874,50 @@ export interface paths {
          *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["spans_annotate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/traces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * List traces
+         * @description Returns a paginated list of traces for a project, each carrying its full
+         *     (flat) list of spans plus lightweight roll-up metadata. It accepts the
+         *     same `project_id`, `filter`, and time-range parameters as `POST /v2/spans`;
+         *     the `filter` uses the identical expression syntax, so there's no separate
+         *     filter language to learn.
+         *
+         *     **Filtering is trace-contains-match**: the syntax matches `/v2/spans`, but
+         *     the semantics differ — a `filter` selects traces that contain at least one
+         *     matching span (e.g. `status_code = 'ERROR'` or `span_kind = 'LLM'`), not
+         *     only traces whose root span matches. The matching span is usually a child,
+         *     not the root.
+         *
+         *     Traces are returned newest-first.
+         *
+         *     **Behaviors and limitations**
+         *     - Traces are anchored on their root span (the span with no parent). A
+         *       trace with no root span in the requested time window is omitted.
+         *     - Trace assembly is scoped to the requested time window: spans of a
+         *       boundary-straddling trace that fall outside the range are not included.
+         *     - A trace with more than one root span is returned as multiple entries
+         *       sharing the same `trace_id`, distinguished by `root_span_id`.
+         *     - Each trace returns at most 1,000 spans. When a trace has more, its
+         *       `spans_truncated` flag is `true`.
+         *
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
+         */
+        post: operations["traces_list"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3266,14 +3329,12 @@ export interface components {
         /** @description Partial update of an integration, discriminated by `type` (immutable). The `type` field selects the per-type PATCH shape. Provide at least one updatable field in addition to `type`. */
         UpdateIntegrationRequest: components["schemas"]["UpdateLlmIntegrationRequest"];
         /**
-         * @description The LLM vendor for an `llm` integration. Selects the per-provider `config` member. Currently only `openAI` is implemented; additional providers are added non-breakingly.
+         * @description The LLM vendor for an `llm` integration. Selects the per-provider `config` member. `openAI` and `anthropic` are implemented; additional providers are added non-breakingly.
          * @enum {string}
          */
-        LlmIntegrationProvider: "openAI";
+        LlmIntegrationProvider: "openAI" | "anthropic";
         /** @description LLM config fields common across providers. */
         LlmConfigBase: {
-            /** @description Whether the provider's default model list is enabled. */
-            is_default_models_enabled: boolean;
             /** @description Whether function/tool calling is enabled. */
             is_function_calling_enabled: boolean;
         };
@@ -3293,8 +3354,24 @@ export interface components {
              */
             provider: "openAI";
         };
+        /** @description Config for an Anthropic LLM integration. */
+        AnthropicConfig: components["schemas"]["LlmConfigBase"] & {
+            /**
+             * @description Discriminator identifying the Anthropic provider.
+             * @enum {string}
+             */
+            provider: "anthropic";
+            /** @description Whether an API key is configured (the key itself is never returned). */
+            has_api_key: boolean;
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            provider: "anthropic";
+        };
         /** @description Per-provider LLM config, discriminated by `provider`. */
-        LlmConfig: components["schemas"]["OpenAiConfig"];
+        LlmConfig: components["schemas"]["OpenAiConfig"] | components["schemas"]["AnthropicConfig"];
         /** @description An LLM integration (type=llm). */
         LlmIntegration: components["schemas"]["IntegrationBase"] & {
             /**
@@ -3311,8 +3388,6 @@ export interface components {
             type: "llm";
         };
         CreateLlmConfigBase: {
-            /** @description Enable the provider's default model list. Defaults to false. */
-            is_default_models_enabled?: boolean;
             /** @description Enable function/tool calling. Defaults to true. */
             is_function_calling_enabled?: boolean;
         };
@@ -3329,7 +3404,20 @@ export interface components {
              */
             provider: "openAI";
         };
-        CreateLlmConfig: components["schemas"]["CreateOpenAiConfig"];
+        /** @description Create config for an Anthropic LLM integration. `api_key` is required and is write-only (never returned in responses). */
+        CreateAnthropicConfig: components["schemas"]["CreateLlmConfigBase"] & {
+            /** @enum {string} */
+            provider: "anthropic";
+            /** @description API key for the provider (write-only, never returned). */
+            api_key: string;
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            provider: "anthropic";
+        };
+        CreateLlmConfig: components["schemas"]["CreateOpenAiConfig"] | components["schemas"]["CreateAnthropicConfig"];
         CreateLlmIntegrationRequest: {
             /**
              * @description discriminator enum property added by openapi-typescript
@@ -3347,7 +3435,6 @@ export interface components {
             provider?: components["schemas"]["LlmIntegrationProvider"];
             /** @description Rotate the API key. Pass null to clear it. Omit to keep unchanged. */
             api_key?: string | null;
-            is_default_models_enabled?: boolean;
             is_function_calling_enabled?: boolean;
         };
         /** @description PATCH body for an `llm` integration. `type` is required (it selects the union member) and immutable. Provide at least one updatable field (`name`, `scopings`, or `config`) in addition to `type`. `scopings` replaces on provide. */
@@ -4459,7 +4546,7 @@ export interface components {
          *     Auto-generated from proto/auth/protocol/permissions.proto.
          * @enum {string}
          */
-        Permission: "AI_PROVIDER_READ" | "ALYX_RUN" | "ANNOTATION_CONFIG_CREATE" | "ANNOTATION_CONFIG_DELETE" | "ANNOTATION_CONFIG_READ" | "ANNOTATION_CONFIG_UPDATE" | "CUSTOM_METRIC_CREATE" | "CUSTOM_METRIC_DELETE" | "CUSTOM_METRIC_READ" | "CUSTOM_METRIC_UPDATE" | "DASHBOARD_CREATE" | "DASHBOARD_DELETE" | "DASHBOARD_READ" | "DASHBOARD_UPDATE" | "DATASET_CREATE" | "DATASET_DELETE" | "DATASET_EXAMPLE_ANNOTATE" | "DATASET_EXAMPLE_CREATE" | "DATASET_EXAMPLE_DELETE" | "DATASET_EXAMPLE_READ" | "DATASET_EXAMPLE_UPDATE" | "DATASET_READ" | "DATASET_UPDATE" | "DATA_FABRIC_CONNECTOR_CREATE" | "DATA_FABRIC_CONNECTOR_DELETE" | "DATA_FABRIC_CONNECTOR_READ" | "DATA_FABRIC_CONNECTOR_UPDATE" | "EVALUATOR_CREATE" | "EVALUATOR_DELETE" | "EVALUATOR_READ" | "EVALUATOR_UPDATE" | "EXPERIMENT_CREATE" | "EXPERIMENT_DELETE" | "EXPERIMENT_EVAL_TASK_CREATE" | "EXPERIMENT_EVAL_TASK_DELETE" | "EXPERIMENT_EVAL_TASK_READ" | "EXPERIMENT_EVAL_TASK_UPDATE" | "EXPERIMENT_READ" | "EXPERIMENT_RUN_ANNOTATE" | "EXPERIMENT_RUN_READ" | "EXPERIMENT_UPDATE" | "FILE_IMPORT_CREATE" | "FILE_IMPORT_DELETE" | "FILE_IMPORT_READ" | "FILE_IMPORT_UPDATE" | "ML_MODEL_CREATE" | "ML_MODEL_DELETE" | "ML_MODEL_READ" | "ML_MODEL_UPDATE" | "MONITOR_CREATE" | "MONITOR_DELETE" | "MONITOR_READ" | "MONITOR_TRIGGER" | "MONITOR_UPDATE" | "ORGANIZATION_CREATE" | "ORGANIZATION_DELETE" | "ORGANIZATION_READ" | "ORGANIZATION_UPDATE" | "PLAYGROUND_RUN" | "PLAYGROUND_VIEW_CREATE" | "PLAYGROUND_VIEW_DELETE" | "PLAYGROUND_VIEW_READ" | "PLAYGROUND_VIEW_UPDATE" | "PROJECT_CREATE" | "PROJECT_DELETE" | "PROJECT_EVAL_TASK_CREATE" | "PROJECT_EVAL_TASK_DELETE" | "PROJECT_EVAL_TASK_READ" | "PROJECT_EVAL_TASK_UPDATE" | "PROJECT_READ" | "PROJECT_RESTRICT" | "PROJECT_SPAN_ANNOTATE" | "PROJECT_SPAN_CREATE" | "PROJECT_SPAN_DELETE" | "PROJECT_SPAN_READ" | "PROJECT_SPAN_UPDATE" | "PROJECT_UPDATE" | "PROMPT_CREATE" | "PROMPT_DELETE" | "PROMPT_OPTIMIZE_TASK_CREATE" | "PROMPT_OPTIMIZE_TASK_DELETE" | "PROMPT_OPTIMIZE_TASK_READ" | "PROMPT_OPTIMIZE_TASK_UPDATE" | "PROMPT_READ" | "PROMPT_UPDATE" | "QUEUE_CREATE" | "QUEUE_DELETE" | "QUEUE_READ" | "QUEUE_RECORD_ANNOTATE" | "QUEUE_RECORD_CREATE" | "QUEUE_RECORD_DELETE" | "QUEUE_RECORD_READ" | "QUEUE_RECORD_UPDATE" | "QUEUE_UPDATE" | "REMOTE_ENDPOINT_INTEGRATION_CREATE" | "REMOTE_ENDPOINT_INTEGRATION_DELETE" | "REMOTE_ENDPOINT_INTEGRATION_READ" | "REMOTE_ENDPOINT_INTEGRATION_UPDATE" | "ROLE_BINDING_CREATE" | "ROLE_BINDING_DELETE" | "ROLE_BINDING_READ" | "SERVICE_KEY_CREATE" | "SERVICE_KEY_DELETE" | "SERVICE_KEY_READ" | "SPACE_CREATE" | "SPACE_DELETE" | "SPACE_READ" | "SPACE_UPDATE" | "TAG_CREATE" | "TAG_DELETE" | "TAG_READ" | "TAG_UPDATE" | "TRACE_VIEW_CREATE" | "TRACE_VIEW_DELETE" | "TRACE_VIEW_READ" | "TRACE_VIEW_UPDATE" | "USER_CREATE" | "USER_DELETE" | "USER_PERMISSION_UPDATE" | "USER_READ" | "USER_UPDATE";
+        Permission: "AI_PROVIDER_READ" | "ALYX_RUN" | "ANNOTATION_CONFIG_CREATE" | "ANNOTATION_CONFIG_DELETE" | "ANNOTATION_CONFIG_READ" | "ANNOTATION_CONFIG_UPDATE" | "CUSTOM_METRIC_CREATE" | "CUSTOM_METRIC_DELETE" | "CUSTOM_METRIC_READ" | "CUSTOM_METRIC_UPDATE" | "DASHBOARD_CREATE" | "DASHBOARD_DELETE" | "DASHBOARD_READ" | "DASHBOARD_UPDATE" | "DATASET_CREATE" | "DATASET_DELETE" | "DATASET_EXAMPLE_ANNOTATE" | "DATASET_EXAMPLE_CREATE" | "DATASET_EXAMPLE_DELETE" | "DATASET_EXAMPLE_READ" | "DATASET_EXAMPLE_UPDATE" | "DATASET_READ" | "DATASET_UPDATE" | "DATASET_VIEW_CREATE" | "DATASET_VIEW_DELETE" | "DATASET_VIEW_READ" | "DATASET_VIEW_UPDATE" | "DATA_FABRIC_CONNECTOR_CREATE" | "DATA_FABRIC_CONNECTOR_DELETE" | "DATA_FABRIC_CONNECTOR_READ" | "DATA_FABRIC_CONNECTOR_UPDATE" | "EVALUATOR_CREATE" | "EVALUATOR_DELETE" | "EVALUATOR_READ" | "EVALUATOR_UPDATE" | "EXPERIMENT_CREATE" | "EXPERIMENT_DELETE" | "EXPERIMENT_EVAL_TASK_CREATE" | "EXPERIMENT_EVAL_TASK_DELETE" | "EXPERIMENT_EVAL_TASK_READ" | "EXPERIMENT_EVAL_TASK_UPDATE" | "EXPERIMENT_READ" | "EXPERIMENT_RUN_ANNOTATE" | "EXPERIMENT_RUN_READ" | "EXPERIMENT_UPDATE" | "FILE_IMPORT_CREATE" | "FILE_IMPORT_DELETE" | "FILE_IMPORT_READ" | "FILE_IMPORT_UPDATE" | "ML_MODEL_CREATE" | "ML_MODEL_DELETE" | "ML_MODEL_READ" | "ML_MODEL_UPDATE" | "MONITOR_CREATE" | "MONITOR_DELETE" | "MONITOR_READ" | "MONITOR_TRIGGER" | "MONITOR_UPDATE" | "ORGANIZATION_CREATE" | "ORGANIZATION_DELETE" | "ORGANIZATION_READ" | "ORGANIZATION_UPDATE" | "PLAYGROUND_RUN" | "PLAYGROUND_VIEW_CREATE" | "PLAYGROUND_VIEW_DELETE" | "PLAYGROUND_VIEW_READ" | "PLAYGROUND_VIEW_UPDATE" | "PROJECT_CREATE" | "PROJECT_DELETE" | "PROJECT_EVAL_TASK_CREATE" | "PROJECT_EVAL_TASK_DELETE" | "PROJECT_EVAL_TASK_READ" | "PROJECT_EVAL_TASK_UPDATE" | "PROJECT_READ" | "PROJECT_RESTRICT" | "PROJECT_SPAN_ANNOTATE" | "PROJECT_SPAN_CREATE" | "PROJECT_SPAN_DELETE" | "PROJECT_SPAN_READ" | "PROJECT_SPAN_UPDATE" | "PROJECT_UPDATE" | "PROMPT_CREATE" | "PROMPT_DELETE" | "PROMPT_OPTIMIZE_TASK_CREATE" | "PROMPT_OPTIMIZE_TASK_DELETE" | "PROMPT_OPTIMIZE_TASK_READ" | "PROMPT_OPTIMIZE_TASK_UPDATE" | "PROMPT_READ" | "PROMPT_UPDATE" | "QUEUE_CREATE" | "QUEUE_DELETE" | "QUEUE_READ" | "QUEUE_RECORD_ANNOTATE" | "QUEUE_RECORD_CREATE" | "QUEUE_RECORD_DELETE" | "QUEUE_RECORD_READ" | "QUEUE_RECORD_UPDATE" | "QUEUE_UPDATE" | "REMOTE_ENDPOINT_INTEGRATION_CREATE" | "REMOTE_ENDPOINT_INTEGRATION_DELETE" | "REMOTE_ENDPOINT_INTEGRATION_READ" | "REMOTE_ENDPOINT_INTEGRATION_UPDATE" | "ROLE_BINDING_CREATE" | "ROLE_BINDING_DELETE" | "ROLE_BINDING_READ" | "SERVICE_KEY_CREATE" | "SERVICE_KEY_DELETE" | "SERVICE_KEY_READ" | "SPACE_CREATE" | "SPACE_DELETE" | "SPACE_READ" | "SPACE_UPDATE" | "TAG_CREATE" | "TAG_DELETE" | "TAG_READ" | "TAG_UPDATE" | "TRACE_VIEW_CREATE" | "TRACE_VIEW_DELETE" | "TRACE_VIEW_READ" | "TRACE_VIEW_UPDATE" | "USER_CREATE" | "USER_DELETE" | "USER_PERMISSION_UPDATE" | "USER_READ" | "USER_UPDATE";
         /**
          * @description A project represents an LLM application and serves as the primary container for observability data. Each project collects traces and spans that capture the execution flow of your application, enabling you to debug issues, monitor latency, and analyze token usage.
          *     Projects belong to a space and provide a centralized view of your application's performance. Use projects to organize related traces, run experiments against datasets, and track improvements over time.
@@ -4887,6 +4974,8 @@ export interface components {
             /**
              * @description Filter expression to apply to the query. Supports SQL-like syntax
              *     for filtering spans by attributes (e.g., `status_code = 'ERROR'`).
+             *     Optional; omit it to apply no filter. If provided, it must not be
+             *     empty or whitespace-only.
              */
             filter?: string;
         };
@@ -4962,6 +5051,82 @@ export interface components {
          * @enum {string}
          */
         SpanStatusCode: "OK" | "ERROR" | "UNSET";
+        ListTracesRequest: {
+            /** @description The project ID to list traces for */
+            project_id: string;
+            /**
+             * Format: date-time
+             * @description Return traces whose spans start at or after this timestamp (inclusive).
+             *     ISO 8601 format (e.g., `2024-01-01T00:00:00Z`). Defaults to 1 week ago.
+             */
+            start_time?: string;
+            /**
+             * Format: date-time
+             * @description Return traces whose spans start before this timestamp (exclusive).
+             *     ISO 8601 format (e.g., `2024-01-02T00:00:00Z`). Defaults to the current time.
+             */
+            end_time?: string;
+            /**
+             * @description Filter expression to apply to the query. Supports SQL-like syntax for
+             *     filtering spans by attributes (e.g., `status_code = 'ERROR'` or
+             *     `span_kind = 'LLM'`). A trace is returned when **any** of its spans
+             *     matches the filter — the matching span is usually a child, not the root.
+             *     Optional; omit it to apply no filter. If provided, it must not be empty
+             *     or whitespace-only.
+             */
+            filter?: string;
+        };
+        /**
+         * @description A Trace is the collection of spans sharing a `trace_id`, anchored on a root
+         *     span (a span with no parent). It captures a single end-to-end request
+         *     through an LLM application, with lightweight roll-up metadata plus the full
+         *     flat list of its spans.
+         */
+        Trace: {
+            /** @description Unique identifier for the trace. */
+            trace_id: string;
+            /**
+             * @description Span ID of the root span (the span with no parent) that anchors this
+             *     trace entry. A trace with more than one root span is returned as
+             *     multiple entries sharing the same `trace_id`, distinguished by
+             *     `root_span_id`.
+             */
+            root_span_id: string;
+            /**
+             * Format: date-time
+             * @description Earliest span start time across the returned spans.
+             */
+            start_time?: string;
+            /**
+             * Format: date-time
+             * @description Latest span end time across the returned spans.
+             */
+            end_time?: string;
+            /**
+             * @description `true` when this trace contained more spans than the per-trace limit and
+             *     its returned span list is incomplete. `false` otherwise.
+             *
+             *     Note: each page also has an overall cap on the total number of spans
+             *     returned across all of its traces. On pages that include unusually large
+             *     traces, an individual trace may return fewer spans than it actually has
+             *     even when `spans_truncated` is `false`. To retrieve a trace's spans in
+             *     full, narrow the time window or fetch them directly with
+             *     `POST /v2/spans` filtered to that `trace_id`.
+             */
+            spans_truncated: boolean;
+            /**
+             * @description Flat list of spans belonging to this trace. Each span has the same shape
+             *     and enrichment as spans returned by `POST /v2/spans`. Reconstruct the
+             *     trace tree client-side using each span's `parent_id`.
+             */
+            spans: components["schemas"]["Span"][];
+        };
+        TraceListResponse: {
+            /** @description A list of traces, ordered newest-first. */
+            traces: components["schemas"]["Trace"][];
+            /** @description Pagination metadata for cursor-based navigation */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
         /**
          * @description A task is a typed, configurable unit of work that ties one or more evaluators
          *     to a data source (project or dataset). `run_experiment` tasks additionally
@@ -5450,8 +5615,14 @@ export interface components {
         ApiKeyRefresh: {
             /**
              * Format: date-time
-             * @description Expiration timestamp for the refreshed key. If omitted, the refreshed key
-             *     has no expiration (infinite lifetime).
+             * @description Expiration timestamp for the refreshed key. Required when the existing key
+             *     has an expiry — omitting it would extend the key's lifetime to unbounded,
+             *     which is rejected with 422. For an unbounded existing key, `expires_at` may
+             *     be omitted (the refreshed key is also unbounded) or provided to add a
+             *     specific expiry. The value must be no later than the old key's expiry — a
+             *     request that would extend the key's lifetime is rejected with 422. To create
+             *     a key with a longer lifetime, use `POST /v2/api-keys` to issue a new key
+             *     rather than refreshing.
              * @example 2027-01-01T00:00:00Z
              */
             expires_at?: string;
@@ -5504,6 +5675,65 @@ export interface components {
             dataset_version_id: string;
             /** @description IDs of the examples that were inserted or updated */
             example_ids: string[];
+        };
+        /** @description Body containing the IDs of dataset examples to delete */
+        DatasetExampleDeleteRequest: {
+            /**
+             * @description Version to delete the examples from. Required. Examples are
+             *     removed in place from this version; no new version is created.
+             */
+            dataset_version_id: string;
+            /** @description IDs of the examples to delete. Up to 1000 per request. */
+            example_ids: string[];
+        };
+        /**
+         * @description Result of a DELETE dataset examples request.
+         *
+         *     The delete is partial-tolerant: examples that exist in the selected version
+         *     are deleted, and every requested ID that was not deleted is reported in
+         *     `not_deleted_example_ids` so the caller can act on it.
+         *
+         *     A `200 OK` response always includes:
+         *     - `completed` — `true` if the operation finished and no retry is needed;
+         *       `false` if it could not fully complete (retry the full request).
+         *     - `deleted_example_ids` — example IDs confirmed deleted in this request.
+         *     - `not_deleted_example_ids` — requested IDs not deleted: either not found in
+         *       the selected version (never added, or already deleted), or whose deletion
+         *       did not complete when `completed` is `false`.
+         */
+        DatasetExampleDeleteResponse: {
+            /**
+             * @description `true` when the operation finished and no retry is needed. `false` when
+             *     the operation could not fully complete — retry the original full request
+             *     (the delete is idempotent).
+             */
+            completed: boolean;
+            /** @description Example IDs confirmed deleted in this request. */
+            deleted_example_ids: string[];
+            /**
+             * @description Requested example IDs that were not deleted: either not found in the
+             *     selected version (never added, or already deleted), or whose deletion did
+             *     not complete when `completed` is `false`.
+             */
+            not_deleted_example_ids: string[];
+        };
+        /**
+         * @description RFC 9457 Problem Details extended with dataset example delete context.
+         *     Returned as `503` when the request fails after partially completing, so the
+         *     caller knows which IDs were already deleted and which still need to be retried.
+         *     The delete operation is idempotent — retrying the original full request is safe.
+         */
+        DatasetExampleDeleteProblem: components["schemas"]["Problem"] & {
+            /**
+             * @description Example IDs confirmed deleted before the failure occurred. Safe to
+             *     include or omit on retry, as the delete operation is idempotent.
+             */
+            deleted_example_ids?: string[];
+            /**
+             * @description Requested example IDs that were not deleted before the failure
+             *     occurred. Retry the original request to attempt deletion of these IDs.
+             */
+            not_deleted_example_ids?: string[];
         };
         EvaluatorListResponse: {
             /** @description A list of evaluators */
@@ -6154,7 +6384,6 @@ export interface components {
                  *       "config": {
                  *         "provider": "openAI",
                  *         "has_api_key": true,
-                 *         "is_default_models_enabled": true,
                  *         "is_function_calling_enabled": true
                  *       }
                  *     }
@@ -6194,7 +6423,6 @@ export interface components {
                  *           "config": {
                  *             "provider": "openAI",
                  *             "has_api_key": true,
-                 *             "is_default_models_enabled": true,
                  *             "is_function_calling_enabled": true
                  *           }
                  *         }
@@ -6888,8 +7116,8 @@ export interface components {
                  * @example {
                  *       "status": 422,
                  *       "title": "Unprocessable Entity",
-                 *       "detail": "Minimum score must be less than maximum score.",
-                 *       "instance": "/annotation-configs",
+                 *       "detail": "One or more fields failed validation.",
+                 *       "instance": "/resource/12345",
                  *       "type": "https://arize.com/docs/ax/rest-reference/errors#unprocessable-entity"
                  *     }
                  */
@@ -8199,6 +8427,60 @@ export interface components {
                 "application/problem+json": components["schemas"]["SpanDeleteProblem"];
             };
         };
+        /** @description Returns a list of traces */
+        TraceList: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "traces": [
+                 *         {
+                 *           "trace_id": "trace_001",
+                 *           "root_span_id": "span_000",
+                 *           "start_time": "2024-01-01T12:00:00Z",
+                 *           "end_time": "2024-01-01T12:00:03Z",
+                 *           "spans_truncated": false,
+                 *           "spans": [
+                 *             {
+                 *               "name": "agent.run",
+                 *               "context": {
+                 *                 "trace_id": "trace_001",
+                 *                 "span_id": "span_000"
+                 *               },
+                 *               "kind": "AGENT",
+                 *               "status_code": "OK",
+                 *               "start_time": "2024-01-01T12:00:00Z",
+                 *               "end_time": "2024-01-01T12:00:03Z"
+                 *             },
+                 *             {
+                 *               "name": "llm.chat.completion",
+                 *               "context": {
+                 *                 "trace_id": "trace_001",
+                 *                 "span_id": "span_001"
+                 *               },
+                 *               "kind": "LLM",
+                 *               "parent_id": "span_000",
+                 *               "status_code": "OK",
+                 *               "start_time": "2024-01-01T12:00:01Z",
+                 *               "end_time": "2024-01-01T12:00:02Z",
+                 *               "attributes": {
+                 *                 "llm.model_name": "gpt-4o"
+                 *               }
+                 *             }
+                 *           ]
+                 *         }
+                 *       ],
+                 *       "pagination": {
+                 *         "next_cursor": "cursor_12345",
+                 *         "has_more": true
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["TraceListResponse"];
+            };
+        };
         /** @description Returns a single task object */
         Task: {
             headers: {
@@ -8473,6 +8755,52 @@ export interface components {
                 "application/json": components["schemas"]["DatasetVersionWithExampleIds"];
             };
         };
+        /**
+         * @description Dataset examples deleted. The delete is partial-tolerant: existing examples
+         *     are deleted and every requested ID not deleted is reported back.
+         *     The response body always includes:
+         *     - `completed`: `true` if the operation finished; `false` if it could not fully
+         *       complete (retry the full request).
+         *     - `deleted_example_ids`: IDs confirmed deleted.
+         *     - `not_deleted_example_ids`: requested IDs not deleted — not found in the
+         *       selected version, or not completed when `completed` is `false`.
+         */
+        DatasetExamplesDeleteSuccess: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["DatasetExampleDeleteResponse"];
+            };
+        };
+        /**
+         * @description Returned as `503 Service Unavailable` when the request fails after partially
+         *     completing. `deleted_example_ids` lists what was already deleted and
+         *     `not_deleted_example_ids` lists what still needs deletion. The caller should
+         *     retry the original full request — the delete operation is idempotent.
+         */
+        DatasetExamplesDeleteError: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "status": 503,
+                 *       "title": "Service Unavailable",
+                 *       "detail": "Result incomplete: inspect deleted_example_ids, then retry the full request.",
+                 *       "type": "https://arize.com/docs/ax/rest-reference/errors#service-unavailable",
+                 *       "deleted_example_ids": [
+                 *         "550e8400-e29b-41d4-a716-446655440000"
+                 *       ],
+                 *       "not_deleted_example_ids": [
+                 *         "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+                 *       ]
+                 *     }
+                 */
+                "application/problem+json": components["schemas"]["DatasetExampleDeleteProblem"];
+            };
+        };
         /** @description Examples successfully updated in the dataset. */
         DatasetExamplesUpdated: {
             headers: {
@@ -8495,13 +8823,6 @@ export interface components {
                  */
                 "application/json": components["schemas"]["DatasetVersionWithExampleIds"];
             };
-        };
-        /** @description Dataset example successfully deleted */
-        DatasetExampleDeleted: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content?: never;
         };
         /** @description An organization object */
         Organization: {
@@ -8649,6 +8970,8 @@ export interface components {
          */
         LabelQueryParam: string;
         /** @description Maximum items to return */
+        LimitQueryParamMax50: number;
+        /** @description Maximum items to return */
         LimitQueryParamMax100: number;
         /** @description Maximum items to return */
         LimitQueryParamMax500: number;
@@ -8782,11 +9105,6 @@ export interface components {
          */
         VersionIdQueryParam: components["schemas"]["Id"];
         /**
-         * @description The unique dataset example identifier (UUID)
-         * @example 550e8400-e29b-41d4-a716-446655440000
-         */
-        ExampleIdPathParam: string;
-        /**
          * @description The unique organization identifier (base64)
          * @example T3JnYW5pemF0aW9uOjEyMzQ1
          */
@@ -8909,7 +9227,6 @@ export interface components {
          *     - `name` must be unique within the account for the given `type`.
          *     - For `type: llm`, `config.provider` is required. Each provider's config
          *       defines its own required fields — see the per-provider `config` schema.
-         *     - `config.is_default_models_enabled` defaults to `false` when omitted.
          *     - `config.is_function_calling_enabled` defaults to `true` when omitted.
          *     - `scopings` defaults to account-wide visibility when omitted.
          *
@@ -8978,7 +9295,7 @@ export interface components {
          *     {
          *       "type": "llm",
          *       "name": "Updated OpenAI",
-         *       "config": { "is_default_models_enabled": true }
+         *       "config": { "is_function_calling_enabled": true }
          *     }
          *     ```
          *
@@ -9124,7 +9441,11 @@ export interface components {
                 "application/json": components["schemas"]["ApiKeyCreate"];
             };
         };
-        /** @description Optional body for setting expiry on the new key and/or a grace period on the old key. */
+        /**
+         * @description Optional body for tightening expiry on the new key and/or setting a grace period on the old key.
+         *     Refresh cannot extend a key's lifetime: with an empty body the refreshed key inherits the old key's expiry,
+         *     and an explicit `expires_at` later than the old key's expiry is rejected with 422.
+         */
         RefreshApiKeyRequestBody: {
             content: {
                 "application/json": components["schemas"]["ApiKeyRefresh"];
@@ -9267,7 +9588,11 @@ export interface components {
                 "application/json": components["schemas"]["AnnotateDatasetExamplesRequestBody"];
             };
         };
-        /** @description Body containing evaluator creation parameters with an initial version */
+        /**
+         * @description Body containing evaluator creation parameters with an initial version.
+         *
+         *     Only `type: template` and `type: code` are currently accepted on creation.
+         */
         CreateEvaluatorRequestBody: {
             content: {
                 "application/json": {
@@ -9707,6 +10032,20 @@ export interface components {
                 "application/json": components["schemas"]["AnnotateSpansRequestBody"];
             };
         };
+        /** @description Body containing trace query parameters */
+        ListTracesRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "project_id": "my-project",
+                 *       "start_time": "2024-01-01T00:00:00Z",
+                 *       "end_time": "2024-01-02T00:00:00Z",
+                 *       "filter": "status_code = 'ERROR'"
+                 *     }
+                 */
+                "application/json": components["schemas"]["ListTracesRequest"];
+            };
+        };
         /**
          * @description Body containing task creation parameters. The `type` field is the discriminator.
          *
@@ -9816,6 +10155,21 @@ export interface components {
                  *     }
                  */
                 "application/json": components["schemas"]["UpdateAnnotationConfigRequestBody"];
+            };
+        };
+        /** @description Body containing the IDs of dataset examples to delete */
+        DeleteDatasetExamplesRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "dataset_version_id": "RGF0YXNldFZlcnNpb246MTIzNDU=",
+                 *       "example_ids": [
+                 *         "550e8400-e29b-41d4-a716-446655440000",
+                 *         "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["DatasetExampleDeleteRequest"];
             };
         };
     };
@@ -10876,6 +11230,31 @@ export interface operations {
             429: components["responses"]["RateLimitExceeded"];
         };
     };
+    datasets_examples_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique dataset identifier (base64)
+                 * @example RGF0YXNldDoxMjM0NQ==
+                 */
+                dataset_id: components["parameters"]["DatasetIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["DeleteDatasetExamplesRequestBody"];
+        responses: {
+            200: components["responses"]["DatasetExamplesDeleteSuccess"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
+            429: components["responses"]["RateLimitExceeded"];
+            503: components["responses"]["DatasetExamplesDeleteError"];
+        };
+    };
     datasets_examples_update: {
         parameters: {
             query?: {
@@ -10904,40 +11283,6 @@ export interface operations {
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             422: components["responses"]["UnprocessableEntity"];
-            429: components["responses"]["RateLimitExceeded"];
-        };
-    };
-    datasets_example_delete: {
-        parameters: {
-            query?: {
-                /**
-                 * @description The unique identifier of the dataset version
-                 * @example RGF0YXNldFZlcnNpb246MTIzNDU=
-                 */
-                dataset_version_id?: components["parameters"]["DatasetVersionIdQueryParam"];
-            };
-            header?: never;
-            path: {
-                /**
-                 * @description The unique dataset identifier (base64)
-                 * @example RGF0YXNldDoxMjM0NQ==
-                 */
-                dataset_id: components["parameters"]["DatasetIdPathParam"];
-                /**
-                 * @description The unique dataset example identifier (UUID)
-                 * @example 550e8400-e29b-41d4-a716-446655440000
-                 */
-                example_id: components["parameters"]["ExampleIdPathParam"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            204: components["responses"]["DatasetExampleDeleted"];
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -12705,6 +13050,33 @@ export interface operations {
         requestBody: components["requestBodies"]["AnnotateSpansRequestBody"];
         responses: {
             202: components["responses"]["SpansAnnotated"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    traces_list: {
+        parameters: {
+            query?: {
+                /** @description Maximum items to return */
+                limit?: components["parameters"]["LimitQueryParamMax50"];
+                /**
+                 * @description Opaque pagination cursor returned from a previous response
+                 *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
+                 *     attempt to parse or construct it.
+                 */
+                cursor?: components["parameters"]["CursorQueryParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["ListTracesRequestBody"];
+        responses: {
+            200: components["responses"]["TraceList"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
