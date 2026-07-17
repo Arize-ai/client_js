@@ -4,7 +4,7 @@ import { createTask } from "../src/tasks";
   try {
     const task = await createTask({
       name: "Weekly Quality Check",
-      type: "template_evaluation",
+      type: "TEMPLATE_EVALUATION",
       space: "your_space_name",
       project: "your_project_name",
       evaluators: [

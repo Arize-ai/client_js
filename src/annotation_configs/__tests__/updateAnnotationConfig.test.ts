@@ -52,7 +52,7 @@ describe("updateAnnotationConfig", () => {
         {
           params: { path: { annotation_config_id: "resolved-config-id" } },
           body: {
-            annotation_config_type: "continuous",
+            annotation_config_type: "CONTINUOUS",
             name: undefined,
             minimum_score: 0,
             maximum_score: 10,
@@ -95,7 +95,7 @@ describe("updateAnnotationConfig", () => {
           { label: "accurate", score: 1 },
           { label: "inaccurate", score: 0 },
         ],
-        optimizationDirection: "maximize",
+        optimizationDirection: "MAXIMIZE",
       });
 
       expect(patch).toHaveBeenCalledTimes(1);
@@ -104,13 +104,13 @@ describe("updateAnnotationConfig", () => {
         {
           params: { path: { annotation_config_id: "resolved-config-id" } },
           body: {
-            annotation_config_type: "categorical",
+            annotation_config_type: "CATEGORICAL",
             name: "Accuracy v2",
             values: [
               { label: "accurate", score: 1 },
               { label: "inaccurate", score: 0 },
             ],
-            optimization_direction: "maximize",
+            optimization_direction: "MAXIMIZE",
           },
         },
       );
@@ -128,12 +128,12 @@ describe("updateAnnotationConfig", () => {
         name: "Accuracy",
         createdAt: new Date("2024-01-15T00:00:00Z"),
         spaceId: "spc_xyz789",
-        type: "categorical",
+        type: "CATEGORICAL",
         values: [
           { label: "accurate", score: 1 },
           { label: "inaccurate", score: 0 },
         ],
-        optimizationDirection: "maximize",
+        optimizationDirection: "MAXIMIZE",
       });
     });
 
@@ -174,7 +174,7 @@ describe("updateAnnotationConfig", () => {
         {
           params: { path: { annotation_config_id: "resolved-config-id" } },
           body: {
-            annotation_config_type: "freeform",
+            annotation_config_type: "FREEFORM",
             name: "Notes",
           },
         },

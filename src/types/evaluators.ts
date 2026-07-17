@@ -1,10 +1,10 @@
 import type { components } from "../__generated__/api/v2";
 
-export type EvaluatorType = "template" | "code" | "harness" | "remote";
+export type EvaluatorType = components["schemas"]["EvaluatorType"];
 
 export type EvaluatorDirection = components["schemas"]["OptimizationDirection"];
 
-export type EvaluatorDataGranularity = "span" | "trace" | "session";
+export type EvaluatorDataGranularity = components["schemas"]["DataGranularity"];
 
 export type ManagedCodeEvaluator =
   components["schemas"]["ManagedCodeEvaluator"];
@@ -33,7 +33,7 @@ export interface TemplateConfig {
 }
 
 export interface ManagedCodeConfig {
-  type: "managed";
+  type: "MANAGED";
   name: string;
   managedEvaluator: ManagedCodeEvaluator;
   variables: string[];
@@ -43,7 +43,7 @@ export interface ManagedCodeConfig {
 }
 
 export interface CustomCodeConfig {
-  type: "custom";
+  type: "CUSTOM";
   name: string;
   code: string;
   imports?: string | null;
@@ -78,12 +78,12 @@ interface EvaluatorVersionBase {
 }
 
 export interface EvaluatorVersionTemplate extends EvaluatorVersionBase {
-  type: "template";
+  type: "TEMPLATE";
   templateConfig: TemplateConfig;
 }
 
 export interface EvaluatorVersionCode extends EvaluatorVersionBase {
-  type: "code";
+  type: "CODE";
   codeConfig: CodeConfig;
 }
 
@@ -92,11 +92,11 @@ export interface EvaluatorVersionCode extends EvaluatorVersionBase {
  * configurations are not yet accessible via the REST API.
  */
 export interface EvaluatorVersionHarness extends EvaluatorVersionBase {
-  type: "harness";
+  type: "HARNESS";
 }
 
 export interface EvaluatorVersionRemote extends EvaluatorVersionBase {
-  type: "remote";
+  type: "REMOTE";
 }
 
 export type EvaluatorVersion =

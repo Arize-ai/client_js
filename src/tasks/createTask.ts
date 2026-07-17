@@ -15,14 +15,14 @@ type CreateTaskBody = CreateRunExpBody | CreateEvalBody;
 
 /**
  * Create a new task. Dispatches on `type`:
- * - `"template_evaluation"` | `"code_evaluation"` — evaluation task.
- * - `"run_experiment"` — server-side experiment task.
+ * - `"TEMPLATE_EVALUATION"` | `"CODE_EVALUATION"` — evaluation task.
+ * - `"RUN_EXPERIMENT"` — server-side experiment task.
  *
  * For ergonomic, narrowly-typed helpers prefer {@link createEvaluationTask}
- * (for eval types) or {@link createRunExperimentTask} (for run_experiment tasks,
+ * (for eval types) or {@link createRunExperimentTask} (for RUN_EXPERIMENT tasks,
  * which also supports resolving AI integration by name).
  *
- * **Note for `run_experiment` tasks**: `runConfiguration` must include
+ * **Note for `RUN_EXPERIMENT` tasks**: `runConfiguration` must include
  * `ai_integration_id` directly. The convenience `aiIntegration` name field is
  * only resolved by {@link createRunExperimentTask} — passing it here without
  * a corresponding `ai_integration_id` will throw immediately.
@@ -40,12 +40,12 @@ export async function createTask({
   client: clientInstance,
   ...input
 }: CreateTaskParams): Promise<Task> {
-  warnPreRelease({ functionName: "createTask", stage: "alpha" });
+  warnPreRelease({ functionName: "createTask", stage: "beta" });
   const client = clientInstance ?? createClient();
 
   let body: CreateTaskBody;
 
-  if (input.type === "run_experiment") {
+  if (input.type === "RUN_EXPERIMENT") {
     const spaceRef = toSpaceRef(input.space);
     const datasetId = await findDatasetId(client, input.dataset, spaceRef);
 
@@ -70,7 +70,7 @@ export async function createTask({
 
     const runExpBody: CreateRunExpBody = {
       name: input.name,
-      type: "run_experiment",
+      type: "RUN_EXPERIMENT",
       dataset_id: datasetId,
       run_configuration: rawConfig as components["schemas"]["RunConfiguration"],
     };

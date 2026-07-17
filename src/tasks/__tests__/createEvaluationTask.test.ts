@@ -12,7 +12,7 @@ function makeClient(): ArizeClient {
     data: {
       id: TASK_ID,
       name: "Eval Task",
-      type: "template_evaluation",
+      type: "TEMPLATE_EVALUATION",
       dataset_id: null,
       project_id: PROJECT_ID,
       sampling_rate: null,
@@ -32,41 +32,41 @@ function makeClient(): ArizeClient {
 }
 
 describe("createEvaluationTask", () => {
-  it("delegates to createTask with type=template_evaluation", async () => {
+  it("delegates to createTask with type=TEMPLATE_EVALUATION", async () => {
     vi.spyOn(resolveModule, "findProjectId").mockResolvedValue(PROJECT_ID);
     const client = makeClient();
 
     const task = await createEvaluationTask({
       client,
       name: "Eval Task",
-      type: "template_evaluation",
+      type: "TEMPLATE_EVALUATION",
       project: PROJECT_ID,
       evaluators: [{ evaluatorId: "ev-1" }],
     });
 
     expect(client.POST).toHaveBeenCalledWith("/v2/tasks", {
       body: expect.objectContaining({
-        type: "template_evaluation",
+        type: "TEMPLATE_EVALUATION",
         project_id: PROJECT_ID,
       }),
     });
     expect(task.id).toBe(TASK_ID);
   });
 
-  it("delegates to createTask with type=code_evaluation", async () => {
+  it("delegates to createTask with type=CODE_EVALUATION", async () => {
     vi.spyOn(resolveModule, "findProjectId").mockResolvedValue(PROJECT_ID);
     const client = makeClient();
 
     await createEvaluationTask({
       client,
       name: "Code Task",
-      type: "code_evaluation",
+      type: "CODE_EVALUATION",
       project: PROJECT_ID,
       evaluators: [],
     });
 
     expect(client.POST).toHaveBeenCalledWith("/v2/tasks", {
-      body: expect.objectContaining({ type: "code_evaluation" }),
+      body: expect.objectContaining({ type: "CODE_EVALUATION" }),
     });
   });
 
@@ -76,7 +76,7 @@ describe("createEvaluationTask", () => {
       createEvaluationTask({
         client,
         // @ts-expect-error intentionally passing wrong type
-        type: "run_experiment",
+        type: "RUN_EXPERIMENT",
         name: "Bad",
         evaluators: [],
       }),
@@ -90,12 +90,12 @@ describe("createEvaluationTask", () => {
     const task = await createEvaluationTask({
       client,
       name: "Eval Task",
-      type: "template_evaluation",
+      type: "TEMPLATE_EVALUATION",
       project: PROJECT_ID,
       evaluators: [],
     });
 
     expect(task.id).toBe(TASK_ID);
-    expect(task.type).toBe("template_evaluation");
+    expect(task.type).toBe("TEMPLATE_EVALUATION");
   });
 });

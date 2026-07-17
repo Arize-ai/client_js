@@ -13,7 +13,7 @@ import { createTemplateEvaluatorVersion } from "../src/evaluators";
         includeExplanations: true,
         useFunctionCallingIfAvailable: true,
         classificationChoices: { relevant: 1, irrelevant: 0 },
-        direction: "maximize",
+        direction: "MAXIMIZE",
         llmConfig: {
           aiIntegrationId: "your_ai_integration_id",
           modelName: "gpt-4o",

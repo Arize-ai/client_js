@@ -23,8 +23,8 @@ describe("createUser", () => {
       client: mockClient,
       name: "Jane Smith",
       email: "jane.smith@example.com",
-      role: { type: "predefined", name: "member" },
-      inviteMode: "email_link",
+      role: { type: "PREDEFINED", name: "MEMBER" },
+      inviteMode: "EMAIL_LINK",
     });
 
     expect(postFn).toHaveBeenCalledTimes(1);
@@ -32,8 +32,8 @@ describe("createUser", () => {
       body: {
         name: "Jane Smith",
         email: "jane.smith@example.com",
-        role: { type: "predefined", name: "member" },
-        invite_mode: "email_link",
+        role: { type: "PREDEFINED", name: "MEMBER" },
+        invite_mode: "EMAIL_LINK",
       },
     });
   });
@@ -43,8 +43,8 @@ describe("createUser", () => {
       client: mockClient,
       name: "Jane Smith",
       email: "jane.smith@example.com",
-      role: { type: "predefined", name: "member" },
-      inviteMode: "email_link",
+      role: { type: "PREDEFINED", name: "MEMBER" },
+      inviteMode: "EMAIL_LINK",
     });
 
     expect(user).toEqual({
@@ -65,8 +65,8 @@ describe("createUser", () => {
       client: mockClient,
       name: "Jane Smith",
       email: "jane.smith@example.com",
-      role: { type: "predefined", name: "annotator" },
-      inviteMode: "email_link",
+      role: { type: "PREDEFINED", name: "ANNOTATOR" },
+      inviteMode: "EMAIL_LINK",
       isDeveloper: true,
     });
 
@@ -74,8 +74,8 @@ describe("createUser", () => {
       body: {
         name: "Jane Smith",
         email: "jane.smith@example.com",
-        role: { type: "predefined", name: "annotator" },
-        invite_mode: "email_link",
+        role: { type: "PREDEFINED", name: "ANNOTATOR" },
+        invite_mode: "EMAIL_LINK",
         is_developer: true,
       },
     });
@@ -86,8 +86,8 @@ describe("createUser", () => {
       client: mockClient,
       name: "Jane Smith",
       email: "jane.smith@example.com",
-      role: { type: "predefined", name: "member" },
-      inviteMode: "email_link",
+      role: { type: "PREDEFINED", name: "MEMBER" },
+      inviteMode: "EMAIL_LINK",
     });
 
     const body = postFn.mock.calls[0]?.[1]?.body as Record<string, unknown>;
@@ -104,8 +104,8 @@ describe("createUser", () => {
       client: mockClient,
       name: mockRawUser.name,
       email: mockRawUser.email,
-      role: { type: "predefined", name: "member" },
-      inviteMode: "email_link",
+      role: { type: "PREDEFINED", name: "MEMBER" },
+      inviteMode: "EMAIL_LINK",
     });
 
     expect(user).toEqual({
@@ -130,8 +130,8 @@ describe("createUser", () => {
         client: mockClient,
         name: "Jane Smith",
         email: "jane.smith@example.com",
-        role: { type: "predefined", name: "member" },
-        inviteMode: "email_link",
+        role: { type: "PREDEFINED", name: "MEMBER" },
+        inviteMode: "EMAIL_LINK",
       }),
     ).rejects.toThrow("email already exists");
   });

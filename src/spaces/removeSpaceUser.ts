@@ -38,7 +38,7 @@ export async function removeSpaceUser({
   spaceId,
   userId,
 }: RemoveSpaceUserParams): Promise<void> {
-  warnPreRelease({ functionName: "removeSpaceUser", stage: "alpha" });
+  warnPreRelease({ functionName: "removeSpaceUser", stage: "beta" });
   const client = clientInstance ?? createClient();
   const response = await client.DELETE(
     "/v2/spaces/{space_id}/users/{user_id}",

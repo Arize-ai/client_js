@@ -23,8 +23,8 @@ export type AddOrganizationUserParams = WithClient<{
  * Uses upsert semantics — if the user is already a member, their role is updated.
  *
  * Role constraints:
- * - An `annotator` account role may only be assigned the `annotator` organization role.
- * - A non-annotator account role may not be assigned the `annotator` organization role.
+ * - An `ANNOTATOR` account role may only be assigned the `ANNOTATOR` organization role.
+ * - A non-annotator account role may not be assigned the `ANNOTATOR` organization role.
  *
  * Requires organization admin role.
  *
@@ -41,7 +41,7 @@ export type AddOrganizationUserParams = WithClient<{
  * const membership = await addOrganizationUser({
  *   organizationId: "T3JnYW5pemF0aW9uOmFiYzEyMw==",
  *   userId: "VXNlcjoxMjM0NQ==",
- *   role: { type: "predefined", name: "member" },
+ *   role: { type: "PREDEFINED", name: "MEMBER" },
  * });
  * console.log(membership);
  * ```
@@ -52,7 +52,7 @@ export async function addOrganizationUser({
   userId,
   role,
 }: AddOrganizationUserParams): Promise<OrganizationMembership> {
-  warnPreRelease({ functionName: "addOrganizationUser", stage: "alpha" });
+  warnPreRelease({ functionName: "addOrganizationUser", stage: "beta" });
   const client = clientInstance ?? createClient();
   const response = await client.POST("/v2/organizations/{org_id}/users", {
     params: {

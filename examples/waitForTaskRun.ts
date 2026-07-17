@@ -14,7 +14,7 @@ import { triggerTaskRun, waitForTaskRun } from "../src/tasks";
       timeout: 5 * 60_000, // give up after 5 minutes
     });
 
-    if (finalRun.status === "completed") {
+    if (finalRun.status === "COMPLETED") {
       // eslint-disable-next-line no-console
       console.log(
         `Run completed: ${finalRun.numSuccesses} successes, ${finalRun.numErrors} errors`,

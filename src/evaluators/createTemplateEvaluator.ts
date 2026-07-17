@@ -37,7 +37,7 @@ export type CreateTemplateEvaluatorParams =
  *     includeExplanations: true,
  *     useFunctionCallingIfAvailable: true,
  *     classificationChoices: { relevant: 1, irrelevant: 0 },
- *     direction: "maximize",
+ *     direction: "MAXIMIZE",
  *     llmConfig: {
  *       aiIntegrationId: "QUlJbnRlZ3JhdGlvbjphYmMxMjM=",
  *       modelName: "gpt-4o",
@@ -68,7 +68,7 @@ export async function createTemplateEvaluator(
       name,
       description,
       space_id: spaceId,
-      type: "template",
+      type: "TEMPLATE",
       version: {
         commit_message: commitMessage,
         template_config: templateConfigToRaw(templateConfig),

@@ -28,7 +28,7 @@ describe("listUsers", () => {
     await listUsers({
       client: mockClient,
       email: "jane@example.com",
-      status: ["active", "invited"],
+      status: ["ACTIVE", "INVITED"],
       limit: 50,
       cursor: "cursor_123",
     });
@@ -38,7 +38,7 @@ describe("listUsers", () => {
       params: {
         query: {
           email: "jane@example.com",
-          status: ["active", "invited"],
+          status: ["ACTIVE", "INVITED"],
           limit: 50,
           cursor: "cursor_123",
         },

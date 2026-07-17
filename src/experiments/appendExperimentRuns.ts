@@ -67,7 +67,7 @@ export async function appendExperimentRuns({
   space,
   experimentRuns,
 }: AppendExperimentRunsParams): Promise<ExperimentWithRunIds> {
-  warnPreRelease({ functionName: "appendExperimentRuns", stage: "alpha" });
+  warnPreRelease({ functionName: "appendExperimentRuns", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const datasetId = dataset

@@ -27,7 +27,7 @@ export type UpdateContinuousAnnotationConfigParams = WithClient<
 /**
  * Update a continuous annotation config.
  *
- * The stored config must be of type "continuous" — a config's type is
+ * The stored config must be of type "CONTINUOUS" — a config's type is
  * immutable and cannot be changed. Any fields that are omitted are left
  * unchanged.
  *
@@ -50,7 +50,7 @@ export type UpdateContinuousAnnotationConfigParams = WithClient<
  *   name: "Accuracy v2",
  *   minimumScore: 0,
  *   maximumScore: 10,
- *   optimizationDirection: "maximize",
+ *   optimizationDirection: "MAXIMIZE",
  * });
  * console.log(annotationConfig);
  * ```
@@ -85,7 +85,7 @@ export async function updateContinuousAnnotationConfig({
         },
       },
       body: {
-        annotation_config_type: "continuous",
+        annotation_config_type: "CONTINUOUS",
         name,
         minimum_score: minimumScore,
         maximum_score: maximumScore,
@@ -115,7 +115,7 @@ export type UpdateCategoricalAnnotationConfigParams = WithClient<
 /**
  * Update a categorical annotation config.
  *
- * The stored config must be of type "categorical" — a config's type is
+ * The stored config must be of type "CATEGORICAL" — a config's type is
  * immutable and cannot be changed. Any fields that are omitted are left
  * unchanged.
  *
@@ -139,7 +139,7 @@ export type UpdateCategoricalAnnotationConfigParams = WithClient<
  *     { label: "accurate", score: 1 },
  *     { label: "inaccurate", score: 0 },
  *   ],
- *   optimizationDirection: "maximize",
+ *   optimizationDirection: "MAXIMIZE",
  * });
  * console.log(annotationConfig);
  * ```
@@ -173,7 +173,7 @@ export async function updateCategoricalAnnotationConfig({
         },
       },
       body: {
-        annotation_config_type: "categorical",
+        annotation_config_type: "CATEGORICAL",
         name,
         values,
         optimization_direction: optimizationDirection,
@@ -202,7 +202,7 @@ export type UpdateFreeformAnnotationConfigParams = WithClient<
 /**
  * Update a freeform annotation config.
  *
- * The stored config must be of type "freeform" — a config's type is
+ * The stored config must be of type "FREEFORM" — a config's type is
  * immutable and cannot be changed. Any fields that are omitted are left
  * unchanged.
  *
@@ -251,7 +251,7 @@ export async function updateFreeformAnnotationConfig({
         },
       },
       body: {
-        annotation_config_type: "freeform",
+        annotation_config_type: "FREEFORM",
         name,
       },
     },

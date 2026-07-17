@@ -52,17 +52,17 @@ export function codeConfigToRaw(config: CodeConfig): RawCodeConfig {
     data_granularity: config.dataGranularity,
     query_filter: config.queryFilter,
   };
-  if (config.type === "managed") {
+  if (config.type === "MANAGED") {
     const raw: RawManagedCodeConfig = {
       ...base,
-      type: "managed",
+      type: "MANAGED",
       managed_evaluator: config.managedEvaluator,
     };
     return raw;
   }
   const raw: RawCustomCodeConfig = {
     ...base,
-    type: "custom",
+    type: "CUSTOM",
     code: config.code,
     imports: config.imports,
   };
@@ -127,17 +127,17 @@ function transformCodeConfig(raw: RawCodeConfig): CodeConfig {
     dataGranularity: raw.data_granularity,
     queryFilter: raw.query_filter,
   };
-  if (raw.type === "managed") {
+  if (raw.type === "MANAGED") {
     const managed: ManagedCodeConfig = {
       ...base,
-      type: "managed",
+      type: "MANAGED",
       managedEvaluator: raw.managed_evaluator,
     };
     return managed;
   }
   return {
     ...base,
-    type: "custom",
+    type: "CUSTOM",
     code: raw.code,
     imports: raw.imports,
   };
@@ -156,24 +156,24 @@ export function transformEvaluatorVersion(
   };
 
   switch (raw.type) {
-    case "code":
+    case "CODE":
       return {
         ...base,
-        type: "code",
+        type: "CODE",
         codeConfig: transformCodeConfig(raw.code_config),
       };
-    case "template":
+    case "TEMPLATE":
       return {
         ...base,
-        type: "template",
+        type: "TEMPLATE",
         templateConfig: transformTemplateConfig(raw.template_config),
       };
     // Harness and remote versions expose only common version metadata; their
     // configurations are not yet accessible via the REST API.
-    case "harness":
-      return { ...base, type: "harness" };
-    case "remote":
-      return { ...base, type: "remote" };
+    case "HARNESS":
+      return { ...base, type: "HARNESS" };
+    case "REMOTE":
+      return { ...base, type: "REMOTE" };
   }
 }
 

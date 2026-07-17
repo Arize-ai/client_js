@@ -1,17 +1,17 @@
-import { RawUser, RawUserCreatedResponse } from "../../types/internal";
+import { RawUser, RawCreateUserResponse } from "../../types/internal";
 
 export const mockRawUser: RawUser = {
   id: "VXNlcjoxMjM0NQ==",
   name: "Jane Smith",
   email: "jane.smith@example.com",
-  role: { type: "predefined", name: "member" },
+  role: { type: "PREDEFINED", name: "MEMBER" },
   created_at: "2024-01-01T12:00:00Z",
-  status: "active",
+  status: "ACTIVE",
   is_developer: false,
 };
 
-export const mockRawUserCreated: RawUserCreatedResponse = {
+export const mockRawUserCreated: RawCreateUserResponse = {
   ...mockRawUser,
-  invite_mode: "email_link",
-  status: "invited",
+  invite_mode: "EMAIL_LINK",
+  status: "INVITED",
 };

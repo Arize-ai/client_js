@@ -16,5 +16,5 @@ export const mockRawSpaceMembership: RawSpaceMembership = {
   id: "spm_001",
   user_id: "VXNlcjoxMjM0NQ==",
   space_id: "U3BhY2U6YWJjMTIz",
-  role: { type: "predefined", name: "member" },
+  role: { type: "PREDEFINED", name: "MEMBER" },
 };

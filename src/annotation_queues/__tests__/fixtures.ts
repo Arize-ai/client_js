@@ -1,8 +1,8 @@
 import {
   RawAnnotationQueue,
   RawAnnotationQueueRecord,
-  RawAnnotationQueueRecordAnnotateResult,
-  RawAnnotationQueueRecordAssignResult,
+  RawAnnotateAnnotationQueueRecordResponse,
+  RawAssignAnnotationQueueRecordResponse,
 } from "../../types/internal";
 
 const mockDateString = "2021-01-01T00:00:00.000Z";
@@ -26,31 +26,31 @@ export const mockRawAnnotationQueue: RawAnnotationQueue = {
 
 const mockAssignedUser = {
   user: { id: mockUserId, email: mockUserEmail },
-  completion_status: "pending" as const,
+  completion_status: "PENDING" as const,
 };
 
 export const mockRawAnnotationQueueRecord: RawAnnotationQueueRecord = {
   id: mockRecordId,
   annotation_queue_id: mockQueueId,
-  source_type: "spans",
+  source_type: "SPANS",
   data: { span_id: "span_001", latency_ms: 42 },
   annotations: [],
   evaluations: [],
   assigned_users: [mockAssignedUser],
 };
 
-export const mockRawAnnotationQueueRecordAnnotateResult: RawAnnotationQueueRecordAnnotateResult =
+export const mockRawAnnotateAnnotationQueueRecordResponse: RawAnnotateAnnotationQueueRecordResponse =
   {
     id: mockRecordId,
     annotation_queue_id: mockQueueId,
-    source_type: "spans",
+    source_type: "SPANS",
     annotations: [],
   };
 
-export const mockRawAnnotationQueueRecordAssignResult: RawAnnotationQueueRecordAssignResult =
+export const mockRawAssignAnnotationQueueRecordResponse: RawAssignAnnotationQueueRecordResponse =
   {
     id: mockRecordId,
     annotation_queue_id: mockQueueId,
-    source_type: "spans",
+    source_type: "SPANS",
     assigned_users: [mockAssignedUser],
   };

@@ -6,9 +6,9 @@ import { mockCodeVersionId } from "./fixtures";
 const mockCodeEvaluatorGlobalId = "RXZhbHVhdG9yOjQ1Ng==";
 
 const mockManagedCodeConfig = {
-  type: "managed" as const,
+  type: "MANAGED" as const,
   name: "json_parseable",
-  managedEvaluator: "JSONParseable" as const,
+  managedEvaluator: "JSON_PARSEABLE" as const,
   variables: ["output"],
 };
 
@@ -17,11 +17,11 @@ const mockResponseData = {
   evaluator_id: mockCodeEvaluatorGlobalId,
   commit_hash: "ghi789",
   commit_message: "v2 code update",
-  type: "code" as const,
+  type: "CODE" as const,
   code_config: {
-    type: "managed" as const,
+    type: "MANAGED" as const,
     name: "json_parseable",
-    managed_evaluator: "JSONParseable",
+    managed_evaluator: "JSON_PARSEABLE",
     variables: ["output"],
     static_params: undefined,
     data_granularity: null,
@@ -68,7 +68,7 @@ describe("createCodeEvaluatorVersion", () => {
     });
 
     expect(result.id).toBe(mockCodeVersionId);
-    expect(result.type).toBe("code");
+    expect(result.type).toBe("CODE");
     expect(result.createdAt).toBeInstanceOf(Date);
   });
 });

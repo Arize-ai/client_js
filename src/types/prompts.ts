@@ -18,10 +18,6 @@ export type Prompt = {
   createdByUserId: string;
 };
 
-export type PromptVersionLabels = {
-  labels: string[];
-};
-
 export type PromptVersion = {
   id: string;
   promptId: string;

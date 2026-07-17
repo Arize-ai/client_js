@@ -37,12 +37,12 @@ describe("transformUserCreated", () => {
   it("should include temporaryPassword when present", () => {
     const rawWithPassword = {
       ...mockRawUserCreated,
-      invite_mode: "temporary_password" as const,
+      invite_mode: "TEMPORARY_PASSWORD" as const,
       temporary_password: "temp-pass-123",
     };
     const user = transformUserCreated(rawWithPassword);
-    expect(user.inviteMode).toBe("temporary_password");
-    if (user.inviteMode === "temporary_password") {
+    expect(user.inviteMode).toBe("TEMPORARY_PASSWORD");
+    if (user.inviteMode === "TEMPORARY_PASSWORD") {
       expect(user.temporaryPassword).toBe("temp-pass-123");
     }
   });

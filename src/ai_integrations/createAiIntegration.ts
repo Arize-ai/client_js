@@ -11,14 +11,14 @@ export type CreateAiIntegrationParams = WithClient<CreateAiIntegrationInput>;
  *
  * @param client - An optional ArizeClient instance to use for the request.
  * @param name - The name of the integration.
- * @param provider - The AI provider (e.g. "openAI", "anthropic", "awsBedrock").
+ * @param provider - The AI provider (e.g. "OPEN_AI", "ANTHROPIC", "AWS_BEDROCK").
  * @param apiKey - An optional API key for the provider.
  * @param baseUrl - An optional custom base URL for the provider.
  * @param modelNames - An optional list of supported model names.
  * @param headers - An optional map of custom headers to include in requests.
  * @param enableDefaultModels - Whether to enable the provider's default model list.
  * @param functionCallingEnabled - Whether to enable function/tool calling.
- * @param authType - The authentication method ("default" or "proxy_with_headers").
+ * @param authType - The authentication method ("DEFAULT" or "PROXY_WITH_HEADERS").
  * @param providerMetadata - Optional provider-specific configuration.
  * @param scopings - Optional visibility scoping rules. Defaults to account-wide.
  * @returns A created {@link AiIntegration}.
@@ -29,7 +29,7 @@ export type CreateAiIntegrationParams = WithClient<CreateAiIntegrationInput>;
  *
  * const integration = await createAiIntegration({
  *   name: "Production OpenAI",
- *   provider: "openAI",
+ *   provider: "OPEN_AI",
  *   apiKey: "sk-...",
  *   modelNames: ["gpt-4o", "gpt-4o-mini"],
  *   enableDefaultModels: true,

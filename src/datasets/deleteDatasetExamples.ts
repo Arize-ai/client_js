@@ -44,7 +44,7 @@ export type DeleteDatasetExamplesResult = {
 };
 
 function transformDeleteResponse(
-  raw: components["schemas"]["DatasetExampleDeleteResponse"],
+  raw: components["schemas"]["DeleteDatasetExamplesResponse"],
 ): DeleteDatasetExamplesResult {
   return {
     completed: raw.completed,
@@ -92,7 +92,7 @@ export async function deleteDatasetExamples({
   datasetVersionId,
   examples,
 }: DeleteDatasetExamplesParams): Promise<DeleteDatasetExamplesResult> {
-  warnPreRelease({ functionName: "deleteDatasetExamples", stage: "alpha" });
+  warnPreRelease({ functionName: "deleteDatasetExamples", stage: "beta" });
   if (examples.length === 0) {
     throw new Error("examples must not be empty");
   }

@@ -14,20 +14,20 @@ export interface AnnotationConfigBase {
 }
 
 export interface ContinuousAnnotationConfig extends AnnotationConfigBase {
-  type: "continuous";
+  type: "CONTINUOUS";
   minimumScore: number;
   maximumScore: number;
   optimizationDirection?: OptimizationDirection;
 }
 
 export interface CategoricalAnnotationConfig extends AnnotationConfigBase {
-  type: "categorical";
+  type: "CATEGORICAL";
   values: CategoricalAnnotationValue[];
   optimizationDirection?: OptimizationDirection;
 }
 
 export interface FreeformAnnotationConfig extends AnnotationConfigBase {
-  type: "freeform";
+  type: "FREEFORM";
 }
 
 export type AnnotationConfig =
@@ -41,20 +41,20 @@ export interface AnnotationConfigCreateBase {
 }
 
 export interface CreateContinuousAnnotationConfig extends AnnotationConfigCreateBase {
-  type: "continuous";
+  type: "CONTINUOUS";
   minimumScore: number;
   maximumScore: number;
   optimizationDirection?: OptimizationDirection;
 }
 
 export interface CreateCategoricalAnnotationConfig extends AnnotationConfigCreateBase {
-  type: "categorical";
+  type: "CATEGORICAL";
   values: CategoricalAnnotationValue[];
   optimizationDirection?: OptimizationDirection;
 }
 
 export interface CreateFreeformAnnotationConfig extends AnnotationConfigCreateBase {
-  type: "freeform";
+  type: "FREEFORM";
 }
 
 export type CreateAnnotationConfigInput =

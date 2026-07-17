@@ -40,7 +40,7 @@ export async function getTask({
   task,
   space,
 }: GetTaskParams): Promise<Task> {
-  warnPreRelease({ functionName: "getTask", stage: "alpha" });
+  warnPreRelease({ functionName: "getTask", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const taskId = await findTaskId(client, task, spaceRef);

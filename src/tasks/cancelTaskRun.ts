@@ -26,14 +26,14 @@ export type CancelTaskRunParams = WithClient<{
  * import { cancelTaskRun } from "@arizeai/ax-client"
  *
  * const run = await cancelTaskRun({ runId: "your_run_id" });
- * console.log(run.status); // "cancelled"
+ * console.log(run.status); // "CANCELLED"
  * ```
  */
 export async function cancelTaskRun({
   client: clientInstance,
   runId,
 }: CancelTaskRunParams): Promise<TaskRun> {
-  warnPreRelease({ functionName: "cancelTaskRun", stage: "alpha" });
+  warnPreRelease({ functionName: "cancelTaskRun", stage: "beta" });
   const client = clientInstance ?? createClient();
   const response = await client.POST("/v2/task-runs/{run_id}/cancel", {
     params: {

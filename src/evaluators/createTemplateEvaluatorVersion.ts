@@ -39,7 +39,7 @@ export type CreateTemplateEvaluatorVersionParams =
  *     includeExplanations: true,
  *     useFunctionCallingIfAvailable: true,
  *     classificationChoices: { relevant: 1, irrelevant: 0 },
- *     direction: "maximize",
+ *     direction: "MAXIMIZE",
  *     llmConfig: {
  *       aiIntegrationId: "QUlJbnRlZ3JhdGlvbjphYmMxMjM=",
  *       modelName: "gpt-4o",

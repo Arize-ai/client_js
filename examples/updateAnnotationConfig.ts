@@ -13,7 +13,7 @@ async function updateCategorical() {
       { label: "accurate", score: 1 },
       { label: "inaccurate", score: 0 },
     ],
-    optimizationDirection: "maximize",
+    optimizationDirection: "MAXIMIZE",
   });
   // eslint-disable-next-line no-console
   console.dir(annotationConfig, { depth: null });
@@ -26,7 +26,7 @@ async function updateContinuous() {
     name: "Response Quality v2",
     minimumScore: 0,
     maximumScore: 10,
-    optimizationDirection: "maximize",
+    optimizationDirection: "MAXIMIZE",
   });
   // eslint-disable-next-line no-console
   console.dir(annotationConfig, { depth: null });

@@ -40,7 +40,7 @@ export type AddAnnotationQueueRecordsParams = WithClient<
  *   space: "my_space",
  *   recordSources: [
  *     {
- *       recordType: "span",
+ *       recordType: "SPAN",
  *       projectId: "proj_abc123",
  *       startTime: "2024-01-15T00:00:00Z",
  *       endTime: "2024-01-15T23:59:59Z",

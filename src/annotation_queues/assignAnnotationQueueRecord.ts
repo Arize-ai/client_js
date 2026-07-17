@@ -1,12 +1,12 @@
 import { createClient } from "../client";
 import {
   AssignAnnotationQueueRecordInput,
-  AnnotationQueueRecordAssignResult,
+  AssignAnnotationQueueRecordResponse,
   WithClient,
 } from "../types";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
-import { transformAnnotationQueueRecordAssignResult } from "./utils";
+import { transformAssignAnnotationQueueRecordResponse } from "./utils";
 import { findAnnotationQueueId, toSpaceRef } from "../utils/resolve";
 
 export type AssignAnnotationQueueRecordParams =
@@ -45,7 +45,7 @@ export async function assignAnnotationQueueRecord({
   space,
   annotationQueueRecordId,
   assignedUserEmails,
-}: AssignAnnotationQueueRecordParams): Promise<AnnotationQueueRecordAssignResult> {
+}: AssignAnnotationQueueRecordParams): Promise<AssignAnnotationQueueRecordResponse> {
   warnPreRelease({
     functionName: "assignAnnotationQueueRecord",
     stage: "beta",
@@ -74,5 +74,5 @@ export async function assignAnnotationQueueRecord({
   if (response.error) {
     return handleApiError(response);
   }
-  return transformAnnotationQueueRecordAssignResult(response.data);
+  return transformAssignAnnotationQueueRecordResponse(response.data);
 }

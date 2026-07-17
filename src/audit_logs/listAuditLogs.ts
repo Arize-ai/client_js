@@ -65,7 +65,7 @@ export type ListAuditLogsParams = WithClient<
 export async function listAuditLogs(
   params: ListAuditLogsParams = {},
 ): Promise<PaginatedResponse<AuditLog>> {
-  warnPreRelease({ functionName: "listAuditLogs", stage: "alpha" });
+  warnPreRelease({ functionName: "listAuditLogs", stage: "beta" });
   const {
     client: clientInstance,
     startTime,

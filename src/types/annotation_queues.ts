@@ -7,7 +7,7 @@ type Evaluation = components["schemas"]["Evaluation"];
 
 export interface AnnotationQueueAssignedUser {
   user: AnnotatorUser;
-  completionStatus: "pending" | "completed";
+  completionStatus: components["schemas"]["AnnotationQueueCompletionStatus"];
 }
 
 export interface AnnotationQueue {
@@ -21,7 +21,8 @@ export interface AnnotationQueue {
   updatedAt: Date;
 }
 
-export type AnnotationQueueRecordSourceType = "spans" | "dataset";
+export type AnnotationQueueRecordSourceType =
+  components["schemas"]["AnnotationQueueSourceType"];
 
 export interface AnnotationQueueRecord {
   id: string;
@@ -33,14 +34,14 @@ export interface AnnotationQueueRecord {
   assignedUsers: AnnotationQueueAssignedUser[];
 }
 
-export interface AnnotationQueueRecordAnnotateResult {
+export interface AnnotateAnnotationQueueRecordResponse {
   id: string;
   annotationQueueId: string;
   sourceType: AnnotationQueueRecordSourceType;
   annotations: Annotation[];
 }
 
-export interface AnnotationQueueRecordAssignResult {
+export interface AssignAnnotationQueueRecordResponse {
   id: string;
   annotationQueueId: string;
   sourceType: AnnotationQueueRecordSourceType;
@@ -55,14 +56,14 @@ export interface AnnotationInput {
 }
 
 export interface AnnotationQueueExampleRecordInput {
-  recordType: "example";
+  recordType: "EXAMPLE";
   datasetId: string;
   datasetVersionId?: string;
   exampleIds?: string[];
 }
 
 export interface AnnotationQueueSpanRecordInput {
-  recordType: "span";
+  recordType: "SPAN";
   projectId: string;
   startTime: string;
   endTime: string;
@@ -79,7 +80,7 @@ export interface CreateAnnotationQueueInput {
   instructions?: string;
   annotationConfigIds: string[];
   annotatorEmails: string[];
-  assignmentMethod?: "all" | "random";
+  assignmentMethod?: components["schemas"]["AssignmentMethod"];
   recordSources?: AnnotationQueueRecordInput[];
 }
 

@@ -15,7 +15,7 @@ import {
         { label: "accurate", score: 1 },
         { label: "inaccurate", score: 0 },
       ],
-      optimizationDirection: "maximize",
+      optimizationDirection: "MAXIMIZE",
     });
     // eslint-disable-next-line no-console
     console.dir(categorical, { depth: null });
@@ -25,7 +25,7 @@ import {
       space: "your_space_name",
       minimumScore: 0,
       maximumScore: 1,
-      optimizationDirection: "maximize",
+      optimizationDirection: "MAXIMIZE",
     });
     // eslint-disable-next-line no-console
     console.dir(continuous, { depth: null });

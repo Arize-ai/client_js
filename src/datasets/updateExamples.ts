@@ -1,7 +1,7 @@
 import { createClient } from "../client";
 import { WithClient } from "../types";
 import {
-  DatasetExampleUpdate,
+  UpdateDatasetExampleInput,
   DatasetVersionWithExampleIds,
 } from "../types/datasets";
 import { warnPreRelease } from "../utils/warning";
@@ -24,9 +24,9 @@ export type UpdateExamplesParams = WithClient<{
    */
   datasetVersionId?: string;
   /**
-   * The array of examples ({@link DatasetExampleUpdate}) to update in the dataset.
+   * The array of examples ({@link UpdateDatasetExampleInput}) to update in the dataset.
    */
-  examples: DatasetExampleUpdate[];
+  examples: UpdateDatasetExampleInput[];
   /**
    * An optional new version name for the dataset. If provided, a new version of the dataset will be created with the update.
    * If not the version will be updated in place.
@@ -40,7 +40,7 @@ export type UpdateExamplesParams = WithClient<{
  * @param dataset - The name or ID of the dataset to update examples in.
  * @param space - An optional space name or ID. Required when `dataset` is a name.
  * @param datasetVersionId - An optional version of the dataset to update examples in. @default latest dataset version
- * @param examples - The array of examples ({@link DatasetExampleUpdate}) to update in the dataset.
+ * @param examples - The array of examples ({@link UpdateDatasetExampleInput}) to update in the dataset.
  * The examples must follow the following rules:
  * - Each item in `examples[]` must include the `id` field to identify the example to update.
  * - Each item in `examples[]` may contain **any user-defined fields**.
@@ -81,7 +81,7 @@ export async function updateExamples({
   examples,
   newVersionName,
 }: UpdateExamplesParams): Promise<DatasetVersionWithExampleIds> {
-  warnPreRelease({ functionName: "updateExamples", stage: "alpha" });
+  warnPreRelease({ functionName: "updateExamples", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const datasetId = await findDatasetId(client, dataset, spaceRef);

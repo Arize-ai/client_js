@@ -20,7 +20,7 @@ export type CreateAnnotationQueueParams =
  * @param annotationConfigIds - IDs of annotation configs to associate with this queue.
  * @param annotatorEmails - Email addresses of annotators to assign to the queue.
  * @param instructions - Optional instructions for annotators.
- * @param assignmentMethod - How records are assigned to annotators: "all" or "random". Defaults to "all".
+ * @param assignmentMethod - How records are assigned to annotators: "ALL" or "RANDOM". Defaults to "ALL".
  * @param recordSources - Optional record sources to add on creation.
  * @returns A created {@link AnnotationQueue}.
  * @throws Error if the annotation queue cannot be created or the response is invalid.
@@ -33,7 +33,7 @@ export type CreateAnnotationQueueParams =
  *   spaceId: "your_space_id",
  *   annotationConfigIds: ["ac_abc123"],
  *   annotatorEmails: ["reviewer@example.com"],
- *   assignmentMethod: "all",
+ *   assignmentMethod: "ALL",
  * });
  * console.log(queue);
  * ```

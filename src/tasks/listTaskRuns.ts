@@ -47,7 +47,7 @@ export type ListTaskRunsParams = WithClient<
  * const { data: runs, pagination } = await listTaskRuns({
  *   task: "My Task",
  *   space: "my-space",
- *   status: "completed",
+ *   status: "COMPLETED",
  *   limit: 10,
  * });
  *
@@ -73,7 +73,7 @@ export async function listTaskRuns({
   limit = DEFAULT_LIST_LIMIT,
   cursor,
 }: ListTaskRunsParams): Promise<PaginatedResponse<TaskRun>> {
-  warnPreRelease({ functionName: "listTaskRuns", stage: "alpha" });
+  warnPreRelease({ functionName: "listTaskRuns", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const taskId = await findTaskId(client, task, spaceRef);

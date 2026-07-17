@@ -1,7 +1,7 @@
 import { createClient } from "../client";
 import { WithClient } from "../types";
 import {
-  DatasetExampleInput,
+  CreateDatasetExampleInput,
   DatasetVersionWithExampleIds,
 } from "../types/datasets";
 import { warnPreRelease } from "../utils/warning";
@@ -19,7 +19,7 @@ export type AppendExamplesParams = WithClient<{
    */
   space?: string;
   datasetVersionId?: string;
-  examples: DatasetExampleInput[];
+  examples: CreateDatasetExampleInput[];
 }>;
 
 /**
@@ -29,7 +29,7 @@ export type AppendExamplesParams = WithClient<{
  * @param dataset - The name or ID of the dataset to add examples to.
  * @param space - An optional space name or ID. Required when `dataset` is a name.
  * @param datasetVersionId - An optional version of the dataset to add examples to. @default latest dataset version
- * @param examples - The array of examples ({@link DatasetExampleInput}) to add to the dataset. The examples must follow the following rules:
+ * @param examples - The array of examples ({@link CreateDatasetExampleInput}) to add to the dataset. The examples must follow the following rules:
  * - Each item in `examples[]` may contain **any user-defined fields**.
  * - **Do not** include system-managed fields on input: `id`, `created_at`, `updated_at`.
  *   Requests that contain these fields in any example **will be rejected**.

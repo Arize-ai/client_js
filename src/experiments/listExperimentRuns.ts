@@ -1,6 +1,6 @@
 import { createClient } from "../client";
-import { WithClient } from "../types";
-import { ExperimentRunsListResponse } from "../types/experiments";
+import { PaginatedResponse, WithClient } from "../types";
+import { ExperimentRun } from "../types/experiments";
 import { warnPreRelease } from "../utils/warning";
 import {
   DEFAULT_LIST_LIMIT,
@@ -34,7 +34,7 @@ export type ListExperimentRunsParams = WithClient<{
  * @param space - The space name or ID. Required when `dataset` is a name.
  * @param limit - An optional limit on the number of experiment runs to return (max 500).
  * @param cursor - An optional opaque pagination cursor from a previous response.
- * @returns An object containing `experiment_runs` and `pagination` metadata.
+ * @returns A {@link PaginatedResponse} of {@link ExperimentRun} objects.
  * @throws Error if the experiment runs cannot be listed or the response is invalid.
  * @example
  * ```typescript
@@ -42,14 +42,14 @@ export type ListExperimentRunsParams = WithClient<{
  *
  * // Using names
  * const result = await listExperimentRuns({ experiment: "my-experiment", dataset: "my-dataset", space: "my-space" });
- * console.log(result.experiment_runs);
+ * console.log(result.data);
  *
  * // Paginating through all runs
  * let cursor: string | undefined;
  * do {
  *   const result = await listExperimentRuns({ experiment: "your_experiment_id", cursor });
- *   console.log(result.experiment_runs);
- *   cursor = result.pagination.next_cursor ?? undefined;
+ *   console.log(result.data);
+ *   cursor = result.pagination.nextCursor ?? undefined;
  * } while (cursor);
  * ```
  */
@@ -60,7 +60,7 @@ export async function listExperimentRuns({
   space,
   limit = DEFAULT_LIST_LIMIT,
   cursor,
-}: ListExperimentRunsParams): Promise<ExperimentRunsListResponse> {
+}: ListExperimentRunsParams): Promise<PaginatedResponse<ExperimentRun>> {
   warnPreRelease({ functionName: "listExperimentRuns", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
@@ -81,7 +81,7 @@ export async function listExperimentRuns({
     return handleApiError(response);
   }
   return {
-    experiment_runs: response.data.experiment_runs.map(transformExperimentRun),
+    data: response.data.experiment_runs.map(transformExperimentRun),
     pagination: transformPaginationMetadata(response.data.pagination),
   };
 }

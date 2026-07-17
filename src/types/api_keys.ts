@@ -1,15 +1,19 @@
 import { components } from "../__generated__/api/v2";
 
-export type KeyType = "user" | "service";
+export type KeyType = components["schemas"]["ApiKeyType"];
 export type ApiKeyStatus = components["schemas"]["ApiKeyStatus"];
 
 export type ApiKeyRoles = {
-  spaceRole?: "admin" | "member" | "read-only";
-  orgRole?: "admin" | "member" | "read-only";
-  accountRole?: "admin" | "member";
+  spaceRole?: components["schemas"]["ApiKeySpaceRole"];
+  orgRole?: components["schemas"]["ApiKeyOrganizationRole"];
+  accountRole?: components["schemas"]["ApiKeyAccountRole"];
 };
 
-export type ApiKey = {
+/**
+ * An API key as returned in list results. Carries the redacted (masked) key for
+ * display; the raw secret is never returned.
+ */
+export type ApiKeyRedacted = {
   id: string;
   name: string;
   description?: string;
@@ -22,10 +26,17 @@ export type ApiKey = {
 };
 
 /**
- * Returned only from createApiKey and refreshApiKey.
- * The `key` field contains the full API key value and is **only returned once**.
- * Store it securely — it cannot be retrieved again.
+ * A created or refreshed API key. The `key` field contains the full API key value
+ * and is **only returned once** — store it securely, it cannot be retrieved again.
  */
-export type ApiKeyCreated = ApiKey & {
+export type ApiKey = {
+  id: string;
+  name: string;
+  description?: string;
+  keyType: KeyType;
+  status: ApiKeyStatus;
   key: string;
+  createdAt: Date;
+  expiresAt?: Date;
+  createdByUserId: string;
 };

@@ -4,13 +4,13 @@ import { findAiIntegrationId, toSpaceRef } from "../utils/resolve";
 import { warnPreRelease } from "../utils/warning";
 import { createTask } from "./createTask";
 
-// `type` is always "run_experiment" — callers don't need to supply it.
+// `type` is always "RUN_EXPERIMENT" — callers don't need to supply it.
 export type CreateRunExperimentTaskParams = WithClient<
   Omit<CreateRunExperimentTaskInput, "type">
 >;
 
 /**
- * Create a new `run_experiment` task.
+ * Create a new `RUN_EXPERIMENT` task.
  *
  * The server drives all LLM calls using the AI integration specified in
  * `runConfiguration`. No local execution is required.
@@ -20,8 +20,8 @@ export type CreateRunExperimentTaskParams = WithClient<
  * @param dataset - The dataset name or global ID (base64).
  * @param space - The space name or ID. Required when `dataset` is a name.
  * @param runConfiguration - Discriminated experiment configuration:
- *   - `experiment_type: "llm_generation"` — runs an LLM prompt against each example.
- *   - `experiment_type: "template_evaluation"` — runs a template-based LLM evaluator.
+ *   - `experiment_type: "LLM_GENERATION"` — runs an LLM prompt against each example.
+ *   - `experiment_type: "TEMPLATE_EVALUATION"` — runs a template-based LLM evaluator.
  *   Either variant may include an optional `aiIntegration` name field to resolve
  *   the AI integration by name instead of supplying `ai_integration_id` directly.
  * @returns A created {@link Task}.
@@ -35,13 +35,13 @@ export type CreateRunExperimentTaskParams = WithClient<
  *   dataset: "my-dataset",
  *   space: "my-space",
  *   runConfiguration: {
- *     experiment_type: "llm_generation",
+ *     experiment_type: "LLM_GENERATION",
  *     aiIntegration: "my-openai-integration",
  *     model_name: "gpt-4o",
- *     input_variable_format: "f_string",
+ *     input_variable_format: "F_STRING",
  *     messages: [
- *       { role: "system", content: "You are a helpful assistant." },
- *       { role: "user", content: "Answer: {question}" },
+ *       { role: "SYSTEM", content: "You are a helpful assistant." },
+ *       { role: "USER", content: "Answer: {question}" },
  *     ],
  *   },
  * });
@@ -49,7 +49,7 @@ export type CreateRunExperimentTaskParams = WithClient<
  * // Trigger a run against the task
  * const run = await triggerTaskRun({ task: task.id, experimentName: "Run 1" });
  * const finalRun = await waitForTaskRun({ runId: run.id });
- * console.log(finalRun.status); // "completed" | "failed" | "cancelled"
+ * console.log(finalRun.status); // "COMPLETED" | "FAILED" | "CANCELLED"
  * ```
  */
 export async function createRunExperimentTask({
@@ -58,7 +58,7 @@ export async function createRunExperimentTask({
   space,
   ...rest
 }: CreateRunExperimentTaskParams): Promise<Task> {
-  warnPreRelease({ functionName: "createRunExperimentTask", stage: "alpha" });
+  warnPreRelease({ functionName: "createRunExperimentTask", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
 
@@ -80,7 +80,7 @@ export async function createRunExperimentTask({
 
   return createTask({
     client,
-    type: "run_experiment" as const,
+    type: "RUN_EXPERIMENT" as const,
     space,
     runConfiguration: resolvedConfig,
     name: rest.name,

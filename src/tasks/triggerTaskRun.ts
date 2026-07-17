@@ -43,7 +43,7 @@ export type TriggerTaskRunParams = WithClient<
  *
  * // Poll until the run finishes
  * const finalRun = await waitForTaskRun({ runId: run.id });
- * console.log(finalRun.status); // "completed" | "failed" | "cancelled"
+ * console.log(finalRun.status); // "COMPLETED" | "FAILED" | "CANCELLED"
  * ```
  */
 export async function triggerTaskRun({
@@ -56,7 +56,7 @@ export async function triggerTaskRun({
   overrideEvaluations,
   experimentIds,
 }: TriggerTaskRunParams): Promise<TaskRun> {
-  warnPreRelease({ functionName: "triggerTaskRun", stage: "alpha" });
+  warnPreRelease({ functionName: "triggerTaskRun", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const taskId = await findTaskId(client, task, spaceRef);

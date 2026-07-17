@@ -2,31 +2,32 @@ import {
   AnnotationQueue,
   AnnotationQueueAssignedUser,
   AnnotationQueueRecord,
-  AnnotationQueueRecordAnnotateResult,
-  AnnotationQueueRecordAssignResult,
+  AnnotateAnnotationQueueRecordResponse,
+  AssignAnnotationQueueRecordResponse,
   AnnotationQueueRecordInput,
 } from "../types";
 import { assertUnreachable } from "../utils/assertUnreachable";
 import {
   RawAnnotationQueue,
   RawAnnotationQueueRecord,
-  RawAnnotationQueueRecordAnnotateResult,
-  RawAnnotationQueueRecordAssignResult,
+  RawAnnotateAnnotationQueueRecordResponse,
+  RawAssignAnnotationQueueRecordResponse,
 } from "../types/internal";
 import { transformAnnotationConfig } from "../annotation_configs/utils";
+import { components } from "../__generated__/api/v2";
 
 export function serializeRecordInput(input: AnnotationQueueRecordInput) {
   switch (input.recordType) {
-    case "example":
+    case "EXAMPLE":
       return {
-        record_type: "example" as const,
+        record_type: "EXAMPLE" as const,
         dataset_id: input.datasetId,
         dataset_version_id: input.datasetVersionId,
         example_ids: input.exampleIds,
       };
-    case "span":
+    case "SPAN":
       return {
-        record_type: "span" as const,
+        record_type: "SPAN" as const,
         project_id: input.projectId,
         start_time: input.startTime,
         end_time: input.endTime,
@@ -39,7 +40,7 @@ export function serializeRecordInput(input: AnnotationQueueRecordInput) {
 
 function transformAssignedUser(raw: {
   user: { id: string; email: string };
-  completion_status: "pending" | "completed";
+  completion_status: components["schemas"]["AnnotationQueueCompletionStatus"];
 }): AnnotationQueueAssignedUser {
   return {
     user: raw.user,
@@ -76,9 +77,9 @@ export function transformAnnotationQueueRecord(
   };
 }
 
-export function transformAnnotationQueueRecordAnnotateResult(
-  raw: RawAnnotationQueueRecordAnnotateResult,
-): AnnotationQueueRecordAnnotateResult {
+export function transformAnnotateAnnotationQueueRecordResponse(
+  raw: RawAnnotateAnnotationQueueRecordResponse,
+): AnnotateAnnotationQueueRecordResponse {
   return {
     id: raw.id,
     annotationQueueId: raw.annotation_queue_id,
@@ -87,9 +88,9 @@ export function transformAnnotationQueueRecordAnnotateResult(
   };
 }
 
-export function transformAnnotationQueueRecordAssignResult(
-  raw: RawAnnotationQueueRecordAssignResult,
-): AnnotationQueueRecordAssignResult {
+export function transformAssignAnnotationQueueRecordResponse(
+  raw: RawAssignAnnotationQueueRecordResponse,
+): AssignAnnotationQueueRecordResponse {
   return {
     id: raw.id,
     annotationQueueId: raw.annotation_queue_id,

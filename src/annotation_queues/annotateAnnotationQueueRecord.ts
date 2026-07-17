@@ -1,12 +1,12 @@
 import { createClient } from "../client";
 import {
   AnnotateAnnotationQueueRecordInput,
-  AnnotationQueueRecordAnnotateResult,
+  AnnotateAnnotationQueueRecordResponse,
   WithClient,
 } from "../types";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
-import { transformAnnotationQueueRecordAnnotateResult } from "./utils";
+import { transformAnnotateAnnotationQueueRecordResponse } from "./utils";
 import { findAnnotationQueueId, toSpaceRef } from "../utils/resolve";
 
 export type AnnotateAnnotationQueueRecordParams =
@@ -46,7 +46,7 @@ export async function annotateAnnotationQueueRecord({
   space,
   annotationQueueRecordId,
   annotations,
-}: AnnotateAnnotationQueueRecordParams): Promise<AnnotationQueueRecordAnnotateResult> {
+}: AnnotateAnnotationQueueRecordParams): Promise<AnnotateAnnotationQueueRecordResponse> {
   warnPreRelease({
     functionName: "annotateAnnotationQueueRecord",
     stage: "beta",
@@ -75,5 +75,5 @@ export async function annotateAnnotationQueueRecord({
   if (response.error) {
     return handleApiError(response);
   }
-  return transformAnnotationQueueRecordAnnotateResult(response.data);
+  return transformAnnotateAnnotationQueueRecordResponse(response.data);
 }

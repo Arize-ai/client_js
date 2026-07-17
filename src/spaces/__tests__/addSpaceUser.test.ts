@@ -23,7 +23,7 @@ describe("addSpaceUser", () => {
       client: mockClient,
       spaceId: "U3BhY2U6YWJjMTIz",
       userId: "VXNlcjoxMjM0NQ==",
-      role: { type: "predefined", name: "member" },
+      role: { type: "PREDEFINED", name: "MEMBER" },
     });
 
     expect(postFn).toHaveBeenCalledTimes(1);
@@ -31,7 +31,7 @@ describe("addSpaceUser", () => {
       params: { path: { space_id: "U3BhY2U6YWJjMTIz" } },
       body: {
         user_id: "VXNlcjoxMjM0NQ==",
-        role: { type: "predefined", name: "member" },
+        role: { type: "PREDEFINED", name: "MEMBER" },
       },
     });
   });
@@ -41,14 +41,14 @@ describe("addSpaceUser", () => {
       client: mockClient,
       spaceId: "U3BhY2U6YWJjMTIz",
       userId: "VXNlcjoxMjM0NQ==",
-      role: { type: "custom", id: "role_xyz" },
+      role: { type: "CUSTOM", id: "role_xyz" },
     });
 
     expect(postFn).toHaveBeenCalledWith("/v2/spaces/{space_id}/users", {
       params: { path: { space_id: "U3BhY2U6YWJjMTIz" } },
       body: {
         user_id: "VXNlcjoxMjM0NQ==",
-        role: { type: "custom", id: "role_xyz" },
+        role: { type: "CUSTOM", id: "role_xyz" },
       },
     });
   });
@@ -58,14 +58,14 @@ describe("addSpaceUser", () => {
       client: mockClient,
       spaceId: "U3BhY2U6YWJjMTIz",
       userId: "VXNlcjoxMjM0NQ==",
-      role: { type: "predefined", name: "member" },
+      role: { type: "PREDEFINED", name: "MEMBER" },
     });
 
     expect(membership).toEqual({
       id: mockRawSpaceMembership.id,
       userId: mockRawSpaceMembership.user_id,
       spaceId: mockRawSpaceMembership.space_id,
-      role: { type: "predefined", name: "member" },
+      role: { type: "PREDEFINED", name: "MEMBER" },
     });
   });
 
@@ -79,7 +79,7 @@ describe("addSpaceUser", () => {
         client: mockClient,
         spaceId: "U3BhY2U6YWJjMTIz",
         userId: "VXNlcjoxMjM0NQ==",
-        role: { type: "predefined", name: "member" },
+        role: { type: "PREDEFINED", name: "MEMBER" },
       }),
     ).rejects.toThrow("user not found");
   });

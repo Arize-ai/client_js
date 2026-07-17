@@ -50,12 +50,12 @@ export type CreatePromptParams = WithClient<{
  *   description: "A prompt for customer support interactions",
  *   version: {
  *     commitMessage: "Initial version",
- *     inputVariableFormat: "f_string",
- *     provider: "open_ai",
+ *     inputVariableFormat: "F_STRING",
+ *     provider: "OPEN_AI",
  *     model: "gpt-4",
  *     messages: [
- *       { role: "system", content: "You are a helpful assistant." },
- *       { role: "user", content: "Hello, {name}!" },
+ *       { role: "SYSTEM", content: "You are a helpful assistant." },
+ *       { role: "USER", content: "Hello, {name}!" },
  *     ],
  *   },
  * });

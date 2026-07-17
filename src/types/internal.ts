@@ -10,7 +10,7 @@ export type RawDatasetExample = components["schemas"]["DatasetExample"];
 export type RawProject = components["schemas"]["Project"];
 export type RawPaginationMetadata = components["schemas"]["PaginationMetadata"];
 export type RawListExamplesResponse =
-  components["responses"]["DatasetExampleList"]["content"]["application/json"];
+  components["responses"]["ListDatasetExamplesResponse"]["content"]["application/json"];
 export type RawCreateDatasetRequestBodyExample =
   components["requestBodies"]["CreateDatasetRequestBody"]["content"]["application/json"]["examples"][number];
 export type RawUpdateDatasetRequestBodyExample =
@@ -26,8 +26,8 @@ export type RawPrompt = components["schemas"]["Prompt"];
 export type RawPromptVersion = components["schemas"]["PromptVersion"];
 export type RawPromptWithVersion = components["schemas"]["PromptWithVersion"];
 export type RawAiIntegration = components["schemas"]["AiIntegration"];
+export type RawApiKeyRedacted = components["schemas"]["ApiKeyRedacted"];
 export type RawApiKey = components["schemas"]["ApiKey"];
-export type RawApiKeyCreated = components["schemas"]["ApiKeyCreated"];
 export type RawTask = components["schemas"]["Task"];
 export type RawTaskEvaluator = components["schemas"]["TaskEvaluator"];
 export type RawTaskRun = components["schemas"]["TaskRun"];
@@ -44,10 +44,10 @@ export type RawStaticParam = components["schemas"]["StaticParam"];
 export type RawAnnotationQueue = components["schemas"]["AnnotationQueue"];
 export type RawAnnotationQueueRecord =
   components["schemas"]["AnnotationQueueRecord"];
-export type RawAnnotationQueueRecordAnnotateResult =
-  components["schemas"]["AnnotationQueueRecordAnnotateResult"];
-export type RawAnnotationQueueRecordAssignResult =
-  components["schemas"]["AnnotationQueueRecordAssignResult"];
+export type RawAnnotateAnnotationQueueRecordResponse =
+  components["schemas"]["AnnotateAnnotationQueueRecordResponse"];
+export type RawAssignAnnotationQueueRecordResponse =
+  components["schemas"]["AssignAnnotationQueueRecordResponse"];
 export type RawRole = components["schemas"]["Role"];
 export type RawPermission = components["schemas"]["Permission"];
 export type RawResourceRestriction =
@@ -59,7 +59,8 @@ export type RawSpaceMembership = components["schemas"]["SpaceMembership"];
 export type RawOrganization = components["schemas"]["Organization"];
 export type RawOrganizationMembership =
   components["schemas"]["OrganizationMembership"];
-export type RawRoleBindingCreate = components["schemas"]["RoleBindingCreate"];
+export type RawCreateRoleBindingRequest =
+  components["schemas"]["CreateRoleBindingRequest"];
 export type RawRoleBindingResourceType =
   components["schemas"]["RoleBindingResourceType"];
 export type RawAnnotationBatchResult =
@@ -67,6 +68,5 @@ export type RawAnnotationBatchResult =
 export type RawAnnotateRecordResult =
   components["schemas"]["AnnotateRecordResult"];
 export type RawUser = components["schemas"]["User"];
-export type RawUserCreatedResponse =
-  components["schemas"]["UserCreatedResponse"];
+export type RawCreateUserResponse = components["schemas"]["CreateUserResponse"];
 export type RawAuditLog = components["schemas"]["AuditLog"];

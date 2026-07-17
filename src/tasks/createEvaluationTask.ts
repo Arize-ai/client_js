@@ -4,20 +4,20 @@ import { createTask } from "./createTask";
 
 export type CreateEvaluationTaskParams = WithClient<CreateEvaluationTaskInput>;
 
-const EVAL_TASK_TYPES = new Set(["template_evaluation", "code_evaluation"]);
+const EVAL_TASK_TYPES = new Set(["TEMPLATE_EVALUATION", "CODE_EVALUATION"]);
 
 /**
- * Create a new evaluation task (`template_evaluation` or `code_evaluation`).
+ * Create a new evaluation task (`TEMPLATE_EVALUATION` or `CODE_EVALUATION`).
  *
  * Exactly one of `project` (for online project monitoring) or `dataset`
  * (for offline batch evaluation) must be provided — they are mutually exclusive.
  * `isContinuous` and `samplingRate` are only valid for project-scoped tasks.
  *
- * For `run_experiment` tasks use {@link createRunExperimentTask} instead.
+ * For `RUN_EXPERIMENT` tasks use {@link createRunExperimentTask} instead.
  *
  * @param client - An optional ArizeClient instance to use for the request.
  * @param name - The display name of the task.
- * @param type - The task type (`"template_evaluation"` or `"code_evaluation"`).
+ * @param type - The task type (`"TEMPLATE_EVALUATION"` or `"CODE_EVALUATION"`).
  * @param evaluators - The evaluators to configure for this task.
  * @param space - The space name or ID. Required when `project` or `dataset` is a name.
  * @param project - The project name or ID to monitor (mutually exclusive with `dataset`).
@@ -34,7 +34,7 @@ const EVAL_TASK_TYPES = new Set(["template_evaluation", "code_evaluation"]);
  *
  * const task = await createEvaluationTask({
  *   name: "Weekly Quality Check",
- *   type: "template_evaluation",
+ *   type: "TEMPLATE_EVALUATION",
  *   space: "my-space",
  *   project: "my-project",
  *   evaluators: [
@@ -47,7 +47,7 @@ const EVAL_TASK_TYPES = new Set(["template_evaluation", "code_evaluation"]);
  *
  * const run = await triggerTaskRun({ task: task.id });
  * const finalRun = await waitForTaskRun({ runId: run.id });
- * console.log(finalRun.status); // "completed" | "failed" | "cancelled"
+ * console.log(finalRun.status); // "COMPLETED" | "FAILED" | "CANCELLED"
  * ```
  */
 export async function createEvaluationTask({
@@ -55,12 +55,12 @@ export async function createEvaluationTask({
   type,
   ...rest
 }: CreateEvaluationTaskParams): Promise<Task> {
-  warnPreRelease({ functionName: "createEvaluationTask", stage: "alpha" });
+  warnPreRelease({ functionName: "createEvaluationTask", stage: "beta" });
 
   if (!EVAL_TASK_TYPES.has(type)) {
     throw new Error(
-      `createEvaluationTask only supports evaluation task types ("template_evaluation", "code_evaluation"). ` +
-        `Got "${type}". Use createRunExperimentTask for run_experiment tasks.`,
+      `createEvaluationTask only supports evaluation task types ("TEMPLATE_EVALUATION", "CODE_EVALUATION"). ` +
+        `Got "${type}". Use createRunExperimentTask for RUN_EXPERIMENT tasks.`,
     );
   }
 

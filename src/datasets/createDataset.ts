@@ -1,6 +1,6 @@
 import { createClient } from "../client";
 import { WithClient } from "../types/client";
-import { Dataset, DatasetExampleInput } from "../types/datasets";
+import { Dataset, CreateDatasetExampleInput } from "../types/datasets";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { transformDataset } from "./utils";
@@ -8,7 +8,7 @@ import { findSpaceId } from "../utils/resolve";
 
 export type CreateDatasetParams = WithClient<{
   space: string;
-  examples: DatasetExampleInput[];
+  examples: CreateDatasetExampleInput[];
   name: string;
 }>;
 

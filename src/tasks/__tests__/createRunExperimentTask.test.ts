@@ -12,7 +12,7 @@ function makeTaskResponse() {
   return {
     id: TASK_ID,
     name: "Run Exp Task",
-    type: "run_experiment",
+    type: "RUN_EXPERIMENT",
     dataset_id: DATASET_ID,
     project_id: null,
     sampling_rate: null,
@@ -44,7 +44,7 @@ describe("createRunExperimentTask", () => {
     vi.restoreAllMocks();
   });
 
-  it("creates a run_experiment task with llm_generation config", async () => {
+  it("creates a RUN_EXPERIMENT task with LLM_GENERATION config", async () => {
     vi.spyOn(resolveModule, "findDatasetId").mockResolvedValue(DATASET_ID);
     const client = makeClient();
 
@@ -53,20 +53,20 @@ describe("createRunExperimentTask", () => {
       name: "Run Exp Task",
       dataset: DATASET_ID,
       runConfiguration: {
-        experiment_type: "llm_generation",
+        experiment_type: "LLM_GENERATION",
         ai_integration_id: INTEGRATION_ID,
         model_name: "gpt-4o",
-        input_variable_format: "f_string",
-        messages: [{ role: "user", content: "{q}" }],
+        input_variable_format: "F_STRING",
+        messages: [{ role: "USER", content: "{q}" }],
       },
     });
 
     expect(client.POST).toHaveBeenCalledWith("/v2/tasks", {
       body: expect.objectContaining({
-        type: "run_experiment",
+        type: "RUN_EXPERIMENT",
         dataset_id: DATASET_ID,
         run_configuration: expect.objectContaining({
-          experiment_type: "llm_generation",
+          experiment_type: "LLM_GENERATION",
           ai_integration_id: INTEGRATION_ID,
         }),
       }),
@@ -74,7 +74,7 @@ describe("createRunExperimentTask", () => {
     expect(task.id).toBe(TASK_ID);
   });
 
-  it("creates a run_experiment task with template_evaluation config", async () => {
+  it("creates a RUN_EXPERIMENT task with TEMPLATE_EVALUATION config", async () => {
     vi.spyOn(resolveModule, "findDatasetId").mockResolvedValue(DATASET_ID);
     const client = makeClient();
 
@@ -83,7 +83,7 @@ describe("createRunExperimentTask", () => {
       name: "Template Eval Task",
       dataset: DATASET_ID,
       runConfiguration: {
-        experiment_type: "template_evaluation",
+        experiment_type: "TEMPLATE_EVALUATION",
         ai_integration_id: INTEGRATION_ID,
         template: "Rate the answer: {{answer}}",
         provide_explanation: false,
@@ -93,7 +93,7 @@ describe("createRunExperimentTask", () => {
     expect(client.POST).toHaveBeenCalledWith("/v2/tasks", {
       body: expect.objectContaining({
         run_configuration: expect.objectContaining({
-          experiment_type: "template_evaluation",
+          experiment_type: "TEMPLATE_EVALUATION",
         }),
       }),
     });
@@ -112,11 +112,11 @@ describe("createRunExperimentTask", () => {
       dataset: DATASET_ID,
       space: "my-space",
       runConfiguration: {
-        experiment_type: "llm_generation",
+        experiment_type: "LLM_GENERATION",
         aiIntegration: "my-integration",
         ai_integration_id: "",
-        input_variable_format: "f_string",
-        messages: [{ role: "user", content: "{q}" }],
+        input_variable_format: "F_STRING",
+        messages: [{ role: "USER", content: "{q}" }],
       },
     });
 
@@ -145,10 +145,10 @@ describe("createRunExperimentTask", () => {
         name: "Dup Task",
         dataset: DATASET_ID,
         runConfiguration: {
-          experiment_type: "llm_generation",
+          experiment_type: "LLM_GENERATION",
           ai_integration_id: INTEGRATION_ID,
-          input_variable_format: "f_string",
-          messages: [{ role: "user", content: "{q}" }],
+          input_variable_format: "F_STRING",
+          messages: [{ role: "USER", content: "{q}" }],
         },
       }),
     ).rejects.toThrow("name conflict");

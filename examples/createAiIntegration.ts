@@ -4,7 +4,7 @@ import { createAiIntegration } from "../src/ai_integrations";
   try {
     const integration = await createAiIntegration({
       name: "Production OpenAI",
-      provider: "openAI",
+      provider: "OPEN_AI",
       apiKey: "sk-...",
       modelNames: ["gpt-4o", "gpt-4o-mini"],
       enableDefaultModels: true,

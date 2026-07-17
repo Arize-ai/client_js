@@ -3,14 +3,14 @@ import {
   serializeRecordInput,
   transformAnnotationQueue,
   transformAnnotationQueueRecord,
-  transformAnnotationQueueRecordAnnotateResult,
-  transformAnnotationQueueRecordAssignResult,
+  transformAnnotateAnnotationQueueRecordResponse,
+  transformAssignAnnotationQueueRecordResponse,
 } from "../utils";
 import {
   mockRawAnnotationQueue,
   mockRawAnnotationQueueRecord,
-  mockRawAnnotationQueueRecordAnnotateResult,
-  mockRawAnnotationQueueRecordAssignResult,
+  mockRawAnnotateAnnotationQueueRecordResponse,
+  mockRawAssignAnnotationQueueRecordResponse,
 } from "./fixtures";
 
 describe("transformAnnotationQueue", () => {
@@ -50,37 +50,37 @@ describe("transformAnnotationQueueRecord", () => {
   });
 });
 
-describe("transformAnnotationQueueRecordAnnotateResult", () => {
+describe("transformAnnotateAnnotationQueueRecordResponse", () => {
   it("should transform snake_case fields to camelCase", () => {
-    const result = transformAnnotationQueueRecordAnnotateResult(
-      mockRawAnnotationQueueRecordAnnotateResult,
+    const result = transformAnnotateAnnotationQueueRecordResponse(
+      mockRawAnnotateAnnotationQueueRecordResponse,
     );
     expect(result).toEqual({
-      id: mockRawAnnotationQueueRecordAnnotateResult.id,
+      id: mockRawAnnotateAnnotationQueueRecordResponse.id,
       annotationQueueId:
-        mockRawAnnotationQueueRecordAnnotateResult.annotation_queue_id,
-      sourceType: mockRawAnnotationQueueRecordAnnotateResult.source_type,
-      annotations: mockRawAnnotationQueueRecordAnnotateResult.annotations,
+        mockRawAnnotateAnnotationQueueRecordResponse.annotation_queue_id,
+      sourceType: mockRawAnnotateAnnotationQueueRecordResponse.source_type,
+      annotations: mockRawAnnotateAnnotationQueueRecordResponse.annotations,
     });
   });
 });
 
-describe("transformAnnotationQueueRecordAssignResult", () => {
+describe("transformAssignAnnotationQueueRecordResponse", () => {
   it("should transform snake_case fields and map assigned_users to camelCase", () => {
-    const result = transformAnnotationQueueRecordAssignResult(
-      mockRawAnnotationQueueRecordAssignResult,
+    const result = transformAssignAnnotationQueueRecordResponse(
+      mockRawAssignAnnotationQueueRecordResponse,
     );
     expect(result).toEqual({
-      id: mockRawAnnotationQueueRecordAssignResult.id,
+      id: mockRawAssignAnnotationQueueRecordResponse.id,
       annotationQueueId:
-        mockRawAnnotationQueueRecordAssignResult.annotation_queue_id,
-      sourceType: mockRawAnnotationQueueRecordAssignResult.source_type,
+        mockRawAssignAnnotationQueueRecordResponse.annotation_queue_id,
+      sourceType: mockRawAssignAnnotationQueueRecordResponse.source_type,
       assignedUsers: [
         {
-          user: mockRawAnnotationQueueRecordAssignResult.assigned_users[0]!
+          user: mockRawAssignAnnotationQueueRecordResponse.assigned_users[0]!
             .user,
           completionStatus:
-            mockRawAnnotationQueueRecordAssignResult.assigned_users[0]!
+            mockRawAssignAnnotationQueueRecordResponse.assigned_users[0]!
               .completion_status,
         },
       ],
@@ -91,13 +91,13 @@ describe("transformAnnotationQueueRecordAssignResult", () => {
 describe("serializeRecordInput", () => {
   it("should serialize an example record input to snake_case", () => {
     const result = serializeRecordInput({
-      recordType: "example",
+      recordType: "EXAMPLE",
       datasetId: "ds_001",
       datasetVersionId: "dv_002",
       exampleIds: ["ex_003"],
     });
     expect(result).toEqual({
-      record_type: "example",
+      record_type: "EXAMPLE",
       dataset_id: "ds_001",
       dataset_version_id: "dv_002",
       example_ids: ["ex_003"],
@@ -106,14 +106,14 @@ describe("serializeRecordInput", () => {
 
   it("should serialize a span record input to snake_case", () => {
     const result = serializeRecordInput({
-      recordType: "span",
+      recordType: "SPAN",
       projectId: "proj_001",
       startTime: "2024-01-01T00:00:00Z",
       endTime: "2024-01-02T00:00:00Z",
       spanIds: ["span_abc"],
     });
     expect(result).toEqual({
-      record_type: "span",
+      record_type: "SPAN",
       project_id: "proj_001",
       start_time: "2024-01-01T00:00:00Z",
       end_time: "2024-01-02T00:00:00Z",

@@ -1,5 +1,5 @@
 import { User, UserCreated } from "../types";
-import { RawUser, RawUserCreatedResponse } from "../types/internal";
+import { RawUser, RawCreateUserResponse } from "../types/internal";
 
 export function transformUser(user: RawUser): User {
   const { created_at, is_developer, ...rest } = user;
@@ -10,9 +10,7 @@ export function transformUser(user: RawUser): User {
   };
 }
 
-export function transformUserCreated(
-  user: RawUserCreatedResponse,
-): UserCreated {
+export function transformUserCreated(user: RawCreateUserResponse): UserCreated {
   const { created_at, is_developer, invite_mode, temporary_password, ...rest } =
     user;
   const base = {
@@ -20,7 +18,7 @@ export function transformUserCreated(
     createdAt: new Date(created_at),
     isDeveloper: is_developer,
   };
-  if (invite_mode === "temporary_password") {
+  if (invite_mode === "TEMPORARY_PASSWORD") {
     return {
       ...base,
       inviteMode: invite_mode,

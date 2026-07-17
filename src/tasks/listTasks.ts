@@ -45,7 +45,7 @@ export type ListTasksParams = WithClient<
  * @param name - An optional case-insensitive substring filter on the task name.
  * @param project - An optional project ID or name to filter tasks.
  * @param dataset - An optional dataset ID or name to filter tasks.
- * @param type - An optional task type filter ("template_evaluation" | "code_evaluation").
+ * @param type - An optional task type filter ("TEMPLATE_EVALUATION" | "CODE_EVALUATION").
  * @param limit - An optional limit on the number of tasks to return.
  * @param cursor - An optional cursor for pagination.
  * @returns A paginated list of {@link Task} objects.
@@ -61,7 +61,7 @@ export type ListTasksParams = WithClient<
 export async function listTasks(
   params: ListTasksParams = {},
 ): Promise<PaginatedResponse<Task>> {
-  warnPreRelease({ functionName: "listTasks", stage: "alpha" });
+  warnPreRelease({ functionName: "listTasks", stage: "beta" });
   const {
     client: clientInstance,
     space,

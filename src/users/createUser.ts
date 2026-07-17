@@ -19,16 +19,16 @@ export type CreateUserParams = WithClient<{
   role: UserRoleAssignment;
   /**
    * Controls whether and how an invitation is sent.
-   * - `"none"` — pre-provision an SSO user directly; no invitation is sent and
+   * - `"NONE"` — pre-provision an SSO user directly; no invitation is sent and
    *   the user is immediately active via the configured identity provider.
-   * - `"email_link"` — send an email with a verification link to complete registration.
-   * - `"temporary_password"` — issue a temporary password (returned in the response);
+   * - `"EMAIL_LINK"` — send an email with a verification link to complete registration.
+   * - `"TEMPORARY_PASSWORD"` — issue a temporary password (returned in the response);
    *   the user must reset it on first login.
    */
   inviteMode: InviteMode;
   /**
    * Whether the user should have developer permissions (can create GraphQL API keys).
-   * Defaults to `true` for `admin` and `member` roles, and `false` for `annotator`.
+   * Defaults to `true` for `ADMIN` and `MEMBER` roles, and `false` for `ANNOTATOR`.
    */
   isDeveloper?: boolean;
 }>;
@@ -36,7 +36,7 @@ export type CreateUserParams = WithClient<{
 /**
  * Create a new user with explicit invite control.
  *
- * **Idempotency on email** (when `inviteMode !== "none"`):
+ * **Idempotency on email** (when `inviteMode !== "NONE"`):
  * | Existing state | Result |
  * | --- | --- |
  * | No prior invitation | {@link UserCreated} (201) |
@@ -52,9 +52,9 @@ export type CreateUserParams = WithClient<{
  * @param email - The email address of the user to invite.
  * @param role - The account-level role assignment. See {@link UserRoleAssignment}.
  * @param inviteMode - How to invite:
- *   - `"none"` — pre-provision an SSO user directly (no invitation email sent).
- *   - `"email_link"` — send a verification link via email.
- *   - `"temporary_password"` — issue a one-time password returned in the response.
+ *   - `"NONE"` — pre-provision an SSO user directly (no invitation email sent).
+ *   - `"EMAIL_LINK"` — send a verification link via email.
+ *   - `"TEMPORARY_PASSWORD"` — issue a one-time password returned in the response.
  * @returns A {@link UserCreated} for a new user, or a {@link User} for an existing invitation.
  * @throws Error if the user cannot be created or the response is invalid.
  * @example
@@ -64,8 +64,8 @@ export type CreateUserParams = WithClient<{
  * const user = await createUser({
  *   name: "Jane Smith",
  *   email: "jane.smith@example.com",
- *   role: { type: "predefined", name: "member" },
- *   inviteMode: "email_link",
+ *   role: { type: "PREDEFINED", name: "MEMBER" },
+ *   inviteMode: "EMAIL_LINK",
  * });
  * console.log(user);
  * ```

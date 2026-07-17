@@ -1,8 +1,8 @@
 import { createClient } from "../client";
-import { ApiKeyCreated, WithClient } from "../types";
+import { ApiKey, WithClient } from "../types";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
-import { transformApiKeyCreated } from "./utils";
+import { transformApiKey } from "./utils";
 
 export type RefreshApiKeyParams = WithClient<{
   apiKeyId: string;
@@ -25,7 +25,7 @@ export type RefreshApiKeyParams = WithClient<{
  * @param apiKeyId - The ID of the API key to refresh.
  * @param expiresAt - Optional expiration date for the replacement key. If omitted, the key never expires.
  * @param gracePeriodSeconds - Optional number of seconds the old key remains valid after the refresh. If omitted, the old key is invalidated immediately.
- * @returns A {@link ApiKeyCreated} containing the full new key value. **Store the `key` field securely — it is only returned once.**
+ * @returns A {@link ApiKey} containing the full new key value. **Store the `key` field securely — it is only returned once.**
  * @throws Error if the API key cannot be refreshed or the response is invalid.
  * @example
  * ```typescript
@@ -44,8 +44,8 @@ export async function refreshApiKey({
   apiKeyId,
   expiresAt,
   gracePeriodSeconds,
-}: RefreshApiKeyParams): Promise<ApiKeyCreated> {
-  warnPreRelease({ functionName: "refreshApiKey", stage: "alpha" });
+}: RefreshApiKeyParams): Promise<ApiKey> {
+  warnPreRelease({ functionName: "refreshApiKey", stage: "beta" });
   const client = clientInstance ?? createClient();
   const response = await client.POST("/v2/api-keys/{api_key_id}/refresh", {
     params: { path: { api_key_id: apiKeyId } },
@@ -60,5 +60,5 @@ export async function refreshApiKey({
   if (response.error) {
     return handleApiError(response);
   }
-  return transformApiKeyCreated(response.data);
+  return transformApiKey(response.data);
 }

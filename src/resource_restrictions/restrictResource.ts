@@ -33,7 +33,7 @@ export async function restrictResource({
   client: clientInstance,
   resourceId,
 }: RestrictResourceParams): Promise<ResourceRestriction> {
-  warnPreRelease({ functionName: "restrictResource", stage: "alpha" });
+  warnPreRelease({ functionName: "restrictResource", stage: "beta" });
   const client = clientInstance ?? createClient();
   const response = await client.POST("/v2/resource-restrictions", {
     body: {
@@ -43,5 +43,5 @@ export async function restrictResource({
   if (response.error) {
     return handleApiError(response);
   }
-  return transformResourceRestriction(response.data.resource_restriction);
+  return transformResourceRestriction(response.data);
 }

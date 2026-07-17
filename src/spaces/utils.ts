@@ -13,10 +13,10 @@ export function transformSpace(space: RawSpace): Space {
 function transformSpaceRoleAssignment(
   raw: components["schemas"]["SpaceRoleAssignment"],
 ): SpaceRoleAssignment {
-  if (raw.type === "predefined") {
-    return { type: "predefined", name: raw.name };
+  if (raw.type === "PREDEFINED") {
+    return { type: "PREDEFINED", name: raw.name };
   }
-  return { type: "custom", id: raw.id, name: raw.name };
+  return { type: "CUSTOM", id: raw.id, name: raw.name };
 }
 
 export function transformSpaceMembership(

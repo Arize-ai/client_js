@@ -5,12 +5,12 @@ export const mockRawCategoricalAnnotationConfig: RawAnnotationConfig = {
   name: "Accuracy",
   created_at: "2024-01-15T00:00:00Z",
   space_id: "spc_xyz789",
-  type: "categorical",
+  type: "CATEGORICAL",
   values: [
     { label: "accurate", score: 1 },
     { label: "inaccurate", score: 0 },
   ],
-  optimization_direction: "maximize",
+  optimization_direction: "MAXIMIZE",
 };
 
 export const mockRawContinuousAnnotationConfig: RawAnnotationConfig = {
@@ -18,10 +18,10 @@ export const mockRawContinuousAnnotationConfig: RawAnnotationConfig = {
   name: "Accuracy",
   created_at: "2024-01-15T00:00:00Z",
   space_id: "spc_xyz789",
-  type: "continuous",
+  type: "CONTINUOUS",
   minimum_score: 0,
   maximum_score: 10,
-  optimization_direction: "maximize",
+  optimization_direction: "MAXIMIZE",
 };
 
 export const mockRawFreeformAnnotationConfig: RawAnnotationConfig = {
@@ -29,5 +29,5 @@ export const mockRawFreeformAnnotationConfig: RawAnnotationConfig = {
   name: "Notes",
   created_at: "2024-01-15T00:00:00Z",
   space_id: "spc_xyz789",
-  type: "freeform",
+  type: "FREEFORM",
 };

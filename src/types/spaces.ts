@@ -1,3 +1,5 @@
+import { components } from "../__generated__/api/v2";
+
 export type Space = {
   id: string;
   name: string;
@@ -5,15 +7,15 @@ export type Space = {
   createdAt: Date;
 };
 
-export type UserSpaceRole = "admin" | "member" | "read-only" | "annotator";
+export type UserSpaceRole = components["schemas"]["UserSpaceRole"];
 
 export type PredefinedSpaceRole = {
-  type: "predefined";
+  type: "PREDEFINED";
   name: UserSpaceRole;
 };
 
 export type CustomSpaceRole = {
-  type: "custom";
+  type: "CUSTOM";
   id: string;
   name?: string;
 };

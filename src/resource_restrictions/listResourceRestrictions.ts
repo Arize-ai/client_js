@@ -44,7 +44,7 @@ export type ListResourceRestrictionsParams = WithClient<
 export async function listResourceRestrictions(
   params: ListResourceRestrictionsParams = {},
 ): Promise<PaginatedResponse<ResourceRestriction>> {
-  warnPreRelease({ functionName: "listResourceRestrictions", stage: "alpha" });
+  warnPreRelease({ functionName: "listResourceRestrictions", stage: "beta" });
   const {
     client: clientInstance,
     resourceType,

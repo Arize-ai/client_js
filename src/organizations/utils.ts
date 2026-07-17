@@ -17,10 +17,10 @@ export function transformOrganization(org: RawOrganization): Organization {
 function transformOrganizationRoleAssignment(
   raw: components["schemas"]["OrganizationRoleAssignment"],
 ): OrganizationRoleAssignment {
-  if (raw.type === "predefined") {
-    return { type: "predefined", name: raw.name };
+  if (raw.type === "PREDEFINED") {
+    return { type: "PREDEFINED", name: raw.name };
   }
-  return { type: "custom", id: raw.id, name: raw.name };
+  return { type: "CUSTOM", id: raw.id, name: raw.name };
 }
 
 export function transformOrganizationMembership(

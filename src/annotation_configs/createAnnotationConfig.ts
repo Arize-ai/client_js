@@ -38,7 +38,7 @@ export type CreateContinuousAnnotationConfigParams = WithClient<
  *   space: "your_space",
  *   minimumScore: 0,
  *   maximumScore: 1,
- *   optimizationDirection: "maximize",
+ *   optimizationDirection: "MAXIMIZE",
  * });
  * console.log(annotationConfig);
  * ```
@@ -57,7 +57,7 @@ export async function createContinuousAnnotationConfig({
     body: {
       name: params.name,
       space_id: spaceId,
-      annotation_config_type: "continuous" as const,
+      annotation_config_type: "CONTINUOUS" as const,
       minimum_score: params.minimumScore,
       maximum_score: params.maximumScore,
       optimization_direction: params.optimizationDirection,
@@ -95,7 +95,7 @@ export type CreateCategoricalAnnotationConfigParams = WithClient<
  *     { label: "correct", score: 1 },
  *     { label: "incorrect", score: 0 },
  *   ],
- *   optimizationDirection: "maximize",
+ *   optimizationDirection: "MAXIMIZE",
  * });
  * console.log(annotationConfig);
  * ```
@@ -114,7 +114,7 @@ export async function createCategoricalAnnotationConfig({
     body: {
       name: params.name,
       space_id: spaceId,
-      annotation_config_type: "categorical" as const,
+      annotation_config_type: "CATEGORICAL" as const,
       values: params.values,
       optimization_direction: params.optimizationDirection,
     },
@@ -165,7 +165,7 @@ export async function createFreeformAnnotationConfig({
     body: {
       name: params.name,
       space_id: spaceId,
-      annotation_config_type: "freeform" as const,
+      annotation_config_type: "FREEFORM" as const,
     },
   });
   if (response.error) {

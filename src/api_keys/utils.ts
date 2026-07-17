@@ -1,7 +1,9 @@
-import { ApiKey, ApiKeyCreated } from "../types";
-import { RawApiKey, RawApiKeyCreated } from "../types/internal";
+import { ApiKey, ApiKeyRedacted } from "../types";
+import { RawApiKey, RawApiKeyRedacted } from "../types/internal";
 
-export function transformApiKey(apiKey: RawApiKey): ApiKey {
+export function transformApiKeyRedacted(
+  apiKey: RawApiKeyRedacted,
+): ApiKeyRedacted {
   const {
     key_type,
     redacted_key,
@@ -20,12 +22,14 @@ export function transformApiKey(apiKey: RawApiKey): ApiKey {
   };
 }
 
-export function transformApiKeyCreated(
-  apiKey: RawApiKeyCreated,
-): ApiKeyCreated {
-  const { key, ...rest } = apiKey;
+export function transformApiKey(apiKey: RawApiKey): ApiKey {
+  const { key_type, created_at, expires_at, created_by_user_id, ...rest } =
+    apiKey;
   return {
-    ...transformApiKey(rest),
-    key,
+    ...rest,
+    keyType: key_type,
+    createdAt: new Date(created_at),
+    expiresAt: expires_at ? new Date(expires_at) : undefined,
+    createdByUserId: created_by_user_id,
   };
 }

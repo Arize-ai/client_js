@@ -38,8 +38,8 @@ describe("transformPromptVersion", () => {
       commitHash: "abc123def456",
       commitMessage: "Initial version",
       messages: mockPromptVersion.messages,
-      inputVariableFormat: "f_string",
-      provider: "open_ai",
+      inputVariableFormat: "F_STRING",
+      provider: "OPEN_AI",
       model: "gpt-4",
       invocationParams: { temperature: 0.7, max_tokens: 1000 },
       providerParams: undefined,
@@ -68,8 +68,8 @@ describe("transformPromptWithVersion", () => {
         commitHash: "abc123def456",
         commitMessage: "Initial version",
         messages: mockPromptVersion.messages,
-        inputVariableFormat: "f_string",
-        provider: "open_ai",
+        inputVariableFormat: "F_STRING",
+        provider: "OPEN_AI",
         model: "gpt-4",
         // invocation_params fields (e.g., max_tokens) retain snake_case — nested objects
         // are passed through without further transformation.

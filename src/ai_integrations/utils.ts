@@ -1,4 +1,8 @@
-import { AiIntegration, AiIntegrationScoping } from "../types";
+import {
+  AiIntegration,
+  AiIntegrationScoping,
+  ProviderMetadata,
+} from "../types";
 import { RawAiIntegration } from "../types/internal";
 
 function transformScoping(
@@ -33,7 +37,13 @@ export function transformAiIntegration(
     enableDefaultModels: integration.enable_default_models,
     functionCallingEnabled: integration.function_calling_enabled,
     authType: integration.auth_type,
-    providerMetadata: integration.provider_metadata,
+    // openapi-typescript strips the `kind` discriminator from the nullable
+    // allOf-wrapped provider_metadata field; the API always returns it, so
+    // cast back to the full discriminated union.
+    providerMetadata: integration.provider_metadata as
+      | ProviderMetadata
+      | null
+      | undefined,
     scopings: integration.scopings.map(transformScoping),
     createdAt: new Date(integration.created_at),
     updatedAt: new Date(integration.updated_at),

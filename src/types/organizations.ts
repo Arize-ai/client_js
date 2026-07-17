@@ -1,3 +1,5 @@
+import { components } from "../__generated__/api/v2";
+
 export type Organization = {
   id: string;
   name: string;
@@ -5,15 +7,15 @@ export type Organization = {
   createdAt: Date;
 };
 
-export type OrganizationRole = "admin" | "member" | "read-only" | "annotator";
+export type OrganizationRole = components["schemas"]["OrganizationRole"];
 
 export type PredefinedOrganizationRole = {
-  type: "predefined";
+  type: "PREDEFINED";
   name: OrganizationRole;
 };
 
 export type CustomOrganizationRole = {
-  type: "custom";
+  type: "CUSTOM";
   id: string;
   name?: string;
 };

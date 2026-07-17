@@ -34,9 +34,9 @@ export type CreateCodeEvaluatorVersionParams =
  *   space: "my-space",
  *   commitMessage: "Updated code",
  *   codeConfig: {
- *     type: "managed",
+ *     type: "MANAGED",
  *     name: "json_parseable",
- *     managedEvaluator: "JSONParseable",
+ *     managedEvaluator: "JSON_PARSEABLE",
  *     variables: ["output"],
  *   },
  * });

@@ -20,8 +20,8 @@ export type AddSpaceUserParams = WithClient<{
  * The user must already be a member of the space's parent organization.
  *
  * Role constraints:
- * - An `annotator` account role may only be assigned the `annotator` space role.
- * - A non-annotator account role may not be assigned the `annotator` space role.
+ * - An `ANNOTATOR` account role may only be assigned the `ANNOTATOR` space role.
+ * - A non-annotator account role may not be assigned the `ANNOTATOR` space role.
  *
  * Requires space admin role (predefined role) or `ROLE_BINDING_CREATE` permission (custom role).
  *
@@ -38,7 +38,7 @@ export type AddSpaceUserParams = WithClient<{
  * const membership = await addSpaceUser({
  *   spaceId: "U3BhY2U6YWJjMTIz",
  *   userId: "VXNlcjoxMjM0NQ==",
- *   role: { type: "predefined", name: "member" },
+ *   role: { type: "PREDEFINED", name: "MEMBER" },
  * });
  * console.log(membership);
  * ```
@@ -49,7 +49,7 @@ export async function addSpaceUser({
   userId,
   role,
 }: AddSpaceUserParams): Promise<SpaceMembership> {
-  warnPreRelease({ functionName: "addSpaceUser", stage: "alpha" });
+  warnPreRelease({ functionName: "addSpaceUser", stage: "beta" });
   const client = clientInstance ?? createClient();
   const response = await client.POST("/v2/spaces/{space_id}/users", {
     params: {

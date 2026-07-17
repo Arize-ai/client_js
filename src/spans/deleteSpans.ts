@@ -39,7 +39,7 @@ export type SpanDeleteResult = {
 };
 
 function transformDeleteResponse(
-  raw: components["schemas"]["SpanDeleteResponse"],
+  raw: components["schemas"]["DeleteSpansResponse"],
 ): SpanDeleteResult {
   return {
     completed: raw.completed,

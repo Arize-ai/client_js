@@ -23,7 +23,7 @@ const mockResponseData = {
   evaluator_id: mockEvaluatorGlobalId,
   commit_hash: "abc123",
   commit_message: "v2 update",
-  type: "template" as const,
+  type: "TEMPLATE" as const,
   template_config: {
     name: "Relevance",
     template: "Is {{output}} relevant?",
@@ -80,7 +80,7 @@ describe("createTemplateEvaluatorVersion", () => {
     });
 
     expect(result.id).toBe(mockVersionId);
-    expect(result.type).toBe("template");
+    expect(result.type).toBe("TEMPLATE");
     expect(result.createdAt).toBeInstanceOf(Date);
   });
 });

@@ -32,10 +32,10 @@ describe("createContinuousAnnotationConfig", () => {
         name: "quality-score",
         created_at: "2026-01-01T00:00:00Z",
         space_id: "space_123",
-        type: "continuous",
+        type: "CONTINUOUS",
         minimum_score: 0,
         maximum_score: 1,
-        optimization_direction: "maximize",
+        optimization_direction: "MAXIMIZE",
       },
     });
   });
@@ -47,17 +47,17 @@ describe("createContinuousAnnotationConfig", () => {
       space: "your_space",
       minimumScore: 0,
       maximumScore: 1,
-      optimizationDirection: "maximize",
+      optimizationDirection: "MAXIMIZE",
     });
 
     expect(postFn).toHaveBeenCalledWith("/v2/annotation-configs", {
       body: {
         name: "quality-score",
         space_id: "space_123",
-        annotation_config_type: "continuous",
+        annotation_config_type: "CONTINUOUS",
         minimum_score: 0,
         maximum_score: 1,
-        optimization_direction: "maximize",
+        optimization_direction: "MAXIMIZE",
       },
     });
   });
@@ -76,10 +76,10 @@ describe("createContinuousAnnotationConfig", () => {
       name: "quality-score",
       createdAt: new Date("2026-01-01T00:00:00Z"),
       spaceId: "space_123",
-      type: "continuous",
+      type: "CONTINUOUS",
       minimumScore: 0,
       maximumScore: 1,
-      optimizationDirection: "maximize",
+      optimizationDirection: "MAXIMIZE",
     });
   });
 
@@ -127,12 +127,12 @@ describe("createCategoricalAnnotationConfig", () => {
         name: "correctness",
         created_at: "2026-01-01T00:00:00Z",
         space_id: "space_123",
-        type: "categorical",
+        type: "CATEGORICAL",
         values: [
           { label: "correct", score: 1 },
           { label: "incorrect", score: 0 },
         ],
-        optimization_direction: "maximize",
+        optimization_direction: "MAXIMIZE",
       },
     });
   });
@@ -146,19 +146,19 @@ describe("createCategoricalAnnotationConfig", () => {
         { label: "correct", score: 1 },
         { label: "incorrect", score: 0 },
       ],
-      optimizationDirection: "maximize",
+      optimizationDirection: "MAXIMIZE",
     });
 
     expect(postFn).toHaveBeenCalledWith("/v2/annotation-configs", {
       body: {
         name: "correctness",
         space_id: "space_123",
-        annotation_config_type: "categorical",
+        annotation_config_type: "CATEGORICAL",
         values: [
           { label: "correct", score: 1 },
           { label: "incorrect", score: 0 },
         ],
-        optimization_direction: "maximize",
+        optimization_direction: "MAXIMIZE",
       },
     });
   });
@@ -179,12 +179,12 @@ describe("createCategoricalAnnotationConfig", () => {
       name: "correctness",
       createdAt: new Date("2026-01-01T00:00:00Z"),
       spaceId: "space_123",
-      type: "categorical",
+      type: "CATEGORICAL",
       values: [
         { label: "correct", score: 1 },
         { label: "incorrect", score: 0 },
       ],
-      optimizationDirection: "maximize",
+      optimizationDirection: "MAXIMIZE",
     });
   });
 
@@ -231,7 +231,7 @@ describe("createFreeformAnnotationConfig", () => {
         name: "reviewer-notes",
         created_at: "2026-01-01T00:00:00Z",
         space_id: "space_123",
-        type: "freeform",
+        type: "FREEFORM",
       },
     });
   });
@@ -247,7 +247,7 @@ describe("createFreeformAnnotationConfig", () => {
       body: {
         name: "reviewer-notes",
         space_id: "space_123",
-        annotation_config_type: "freeform",
+        annotation_config_type: "FREEFORM",
       },
     });
   });
@@ -264,7 +264,7 @@ describe("createFreeformAnnotationConfig", () => {
       name: "reviewer-notes",
       createdAt: new Date("2026-01-01T00:00:00Z"),
       spaceId: "space_123",
-      type: "freeform",
+      type: "FREEFORM",
     });
   });
 

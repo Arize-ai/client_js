@@ -40,6 +40,6 @@ export type DatasetVersionWithExampleIds = {
   exampleIds: string[];
 };
 
-export type DatasetExampleInput = RawCreateDatasetRequestBodyExample;
+export type CreateDatasetExampleInput = RawCreateDatasetRequestBodyExample;
 
-export type DatasetExampleUpdate = RawUpdateDatasetRequestBodyExample;
+export type UpdateDatasetExampleInput = RawUpdateDatasetRequestBodyExample;

@@ -15,7 +15,7 @@ export const mockTaskEvaluator: RawTaskEvaluator = {
 export const mockTask: RawTask = {
   id: "task-abc",
   name: "Weekly Quality Check",
-  type: "template_evaluation",
+  type: "TEMPLATE_EVALUATION",
   project_id: "proj-1",
   dataset_id: null,
   is_continuous: false,
@@ -32,7 +32,7 @@ export const mockTask: RawTask = {
 export const mockTaskRun: RawTaskRun = {
   id: "run-xyz",
   task_id: "task-abc",
-  status: "completed",
+  status: "COMPLETED",
   run_started_at: mockDateString,
   run_finished_at: mockUpdatedDateString,
   data_start_time: "2026-02-28T00:00:00.000Z",
@@ -47,7 +47,7 @@ export const mockTaskRun: RawTaskRun = {
 const mockTaskRunBase: TaskRun = {
   id: "run-1",
   taskId: "task-1",
-  status: "pending",
+  status: "PENDING",
   experimentId: null,
   runStartedAt: null,
   runFinishedAt: null,

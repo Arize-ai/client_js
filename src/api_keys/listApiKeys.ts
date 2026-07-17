@@ -1,6 +1,6 @@
 import { createClient } from "../client";
 import {
-  ApiKey,
+  ApiKeyRedacted,
   ApiKeyStatus,
   KeyType,
   PaginatedResponse,
@@ -13,7 +13,7 @@ import {
 } from "../utils/pagination";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
-import { transformApiKey } from "./utils";
+import { transformApiKeyRedacted } from "./utils";
 
 export type ListApiKeysParams = WithClient<
   PaginationParams & {
@@ -33,8 +33,8 @@ export type ListApiKeysParams = WithClient<
  * List API keys accessible to the client.
  *
  * @param client - An optional ArizeClient instance to use for the request.
- * @param keyType - Optional filter by key type: "user" or "service".
- * @param status - Optional filter by key status. Defaults to "active".
+ * @param keyType - Optional filter by key type: "USER" or "SERVICE".
+ * @param status - Optional filter by key status. Defaults to "ACTIVE".
  * @param spaceId - Optional space ID. When provided, returns service keys for
  *   that space. Combine with `userId` to filter by creator.
  * @param userId - Optional base64 global ID of the user whose keys to return.
@@ -42,7 +42,7 @@ export type ListApiKeysParams = WithClient<
  *   access. For user keys (without `spaceId`), requires account admin role.
  * @param limit - Maximum number of results to return (1-100).
  * @param cursor - Pagination cursor from a previous response.
- * @returns A paginated list of {@link ApiKey} objects.
+ * @returns A paginated list of {@link ApiKeyRedacted} objects.
  * @throws Error if the API keys cannot be listed or the response is invalid.
  * @example
  * ```typescript
@@ -54,8 +54,8 @@ export type ListApiKeysParams = WithClient<
  */
 export async function listApiKeys(
   params: ListApiKeysParams = {},
-): Promise<PaginatedResponse<ApiKey>> {
-  warnPreRelease({ functionName: "listApiKeys", stage: "alpha" });
+): Promise<PaginatedResponse<ApiKeyRedacted>> {
+  warnPreRelease({ functionName: "listApiKeys", stage: "beta" });
   const {
     client: clientInstance,
     keyType,
@@ -82,7 +82,7 @@ export async function listApiKeys(
     return handleApiError(response);
   }
   return {
-    data: response.data.api_keys.map(transformApiKey),
+    data: response.data.api_keys.map(transformApiKeyRedacted),
     pagination: transformPaginationMetadata(response.data.pagination),
   };
 }

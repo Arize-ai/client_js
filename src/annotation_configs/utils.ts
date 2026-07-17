@@ -15,25 +15,25 @@ export function transformAnnotationConfig(
   const annotationConfigType = annotationConfig.type;
 
   switch (annotationConfigType) {
-    case "continuous":
+    case "CONTINUOUS":
       return {
         ...baseConfig,
-        type: "continuous",
+        type: "CONTINUOUS",
         minimumScore: annotationConfig.minimum_score,
         maximumScore: annotationConfig.maximum_score,
         optimizationDirection: annotationConfig.optimization_direction,
       };
-    case "categorical":
+    case "CATEGORICAL":
       return {
         ...baseConfig,
-        type: "categorical",
+        type: "CATEGORICAL",
         values: annotationConfig.values,
         optimizationDirection: annotationConfig.optimization_direction,
       };
-    case "freeform":
+    case "FREEFORM":
       return {
         ...baseConfig,
-        type: "freeform",
+        type: "FREEFORM",
       };
     default:
       assertUnreachable(annotationConfigType);

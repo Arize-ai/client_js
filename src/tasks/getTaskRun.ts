@@ -25,7 +25,7 @@ export type GetTaskRunParams = WithClient<{
  * import { getTaskRun } from "@arizeai/ax-client"
  *
  * const run = await getTaskRun({ runId: "your_run_id" });
- * console.log(run.status);        // e.g. "running"
+ * console.log(run.status);        // e.g. "RUNNING"
  * console.log(run.numSuccesses);  // spans evaluated so far
  * ```
  */
@@ -33,7 +33,7 @@ export async function getTaskRun({
   client: clientInstance,
   runId,
 }: GetTaskRunParams): Promise<TaskRun> {
-  warnPreRelease({ functionName: "getTaskRun", stage: "alpha" });
+  warnPreRelease({ functionName: "getTaskRun", stage: "beta" });
   const client = clientInstance ?? createClient();
   return fetchTaskRun(client, runId);
 }

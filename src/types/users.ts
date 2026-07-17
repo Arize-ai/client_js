@@ -1,14 +1,16 @@
-export type UserAccountRole = "admin" | "member" | "annotator";
-export type UserStatus = "active" | "invited" | "expired";
-export type InviteMode = "none" | "email_link" | "temporary_password";
+import { components } from "../__generated__/api/v2";
+
+export type UserAccountRole = components["schemas"]["UserRole"];
+export type UserStatus = components["schemas"]["UserStatus"];
+export type InviteMode = components["schemas"]["InviteMode"];
 
 export type PredefinedUserRole = {
-  type: "predefined";
+  type: "PREDEFINED";
   name: UserAccountRole;
 };
 
 export type CustomUserRole = {
-  type: "custom";
+  type: "CUSTOM";
   id: string;
   name?: string;
 };
@@ -27,11 +29,11 @@ export type User = {
 };
 
 export type UserInviteBasic = {
-  inviteMode: "none" | "email_link";
+  inviteMode: "NONE" | "EMAIL_LINK";
 };
 
 export type UserInviteTemporaryPassword = {
-  inviteMode: "temporary_password";
+  inviteMode: "TEMPORARY_PASSWORD";
   temporaryPassword: string;
 };
 

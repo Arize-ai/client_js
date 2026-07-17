@@ -1,8 +1,9 @@
 import { createClient } from "../client";
 import { WithClient } from "../types";
 import { handleApiError } from "../errors";
-import { PromptVersionLabels } from "../types/prompts";
+import { PromptVersion } from "../types/prompts";
 import { warnPreRelease } from "../utils/warning";
+import { transformPromptVersion } from "./utils";
 
 export type SetPromptVersionLabelsParams = WithClient<{
   versionId: string;
@@ -20,24 +21,24 @@ export type SetPromptVersionLabelsParams = WithClient<{
  * @param client - An optional ArizeClient instance to use for the request.
  * @param versionId - The ID of the prompt version.
  * @param labels - Array of label names to set (replaces all existing labels).
- * @returns The updated list of label names on the version.
+ * @returns The updated {@link PromptVersion}.
  * @throws Error if the labels cannot be set or the response is invalid.
  * @example
  * ```typescript
  * import { setPromptVersionLabels } from "@arizeai/ax-client"
  *
- * const { labels } = await setPromptVersionLabels({
+ * const version = await setPromptVersionLabels({
  *   versionId: "UHJvbXB0VmVyc2lvbjoxMjM0NQ==",
  *   labels: ["production", "staging"],
  * });
- * console.log(labels);
+ * console.log(version.labels);
  * ```
  */
 export async function setPromptVersionLabels({
   client: clientInstance,
   versionId,
   labels,
-}: SetPromptVersionLabelsParams): Promise<PromptVersionLabels> {
+}: SetPromptVersionLabelsParams): Promise<PromptVersion> {
   warnPreRelease({ functionName: "setPromptVersionLabels", stage: "beta" });
   const client = clientInstance ?? createClient();
   const response = await client.PUT("/v2/prompt-versions/{version_id}/labels", {
@@ -47,5 +48,5 @@ export async function setPromptVersionLabels({
   if (response.error) {
     return handleApiError(response);
   }
-  return { labels: response.data.labels };
+  return transformPromptVersion(response.data);
 }

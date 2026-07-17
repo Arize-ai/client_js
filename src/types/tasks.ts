@@ -45,8 +45,8 @@ export type CreateTaskEvaluatorInput = {
 };
 
 /**
- * Input for creating a new evaluation task (`template_evaluation` or
- * `code_evaluation`).
+ * Input for creating a new evaluation task (`TEMPLATE_EVALUATION` or
+ * `CODE_EVALUATION`).
  *
  * Exactly one of `project` (for online project monitoring) or `dataset`
  * (for offline batch evaluation) must be provided.
@@ -54,7 +54,7 @@ export type CreateTaskEvaluatorInput = {
  */
 export type CreateEvaluationTaskInput = {
   name: string;
-  type: "template_evaluation" | "code_evaluation";
+  type: "TEMPLATE_EVALUATION" | "CODE_EVALUATION";
   /** The space name or ID. Required when `project` or `dataset` is a name. */
   space?: string;
   /** The project name or ID to monitor. Mutually exclusive with `dataset`. */
@@ -72,14 +72,14 @@ export type CreateEvaluationTaskInput = {
 };
 
 /**
- * Input for creating a new `run_experiment` task (server-side LLM experiment).
+ * Input for creating a new `RUN_EXPERIMENT` task (server-side LLM experiment).
  *
  * Use {@link createRunExperimentTask} for name-based AI integration resolution,
  * or pass `ai_integration_id` directly in `runConfiguration`.
  */
 export type CreateRunExperimentTaskInput = {
   name: string;
-  type: "run_experiment";
+  type: "RUN_EXPERIMENT";
   /** The space name or ID. Required when `dataset` is a name. */
   space?: string;
   /** The dataset name or ID to run the experiment against. */
@@ -90,8 +90,8 @@ export type CreateRunExperimentTaskInput = {
 
 /**
  * Generic create-task input. Discriminated by `type`:
- * - `"template_evaluation"` | `"code_evaluation"` → {@link CreateEvaluationTaskInput}
- * - `"run_experiment"` → {@link CreateRunExperimentTaskInput}
+ * - `"TEMPLATE_EVALUATION"` | `"CODE_EVALUATION"` → {@link CreateEvaluationTaskInput}
+ * - `"RUN_EXPERIMENT"` → {@link CreateRunExperimentTaskInput}
  *
  * Prefer the narrow helpers {@link createEvaluationTask} and
  * {@link createRunExperimentTask} for clearer signatures.
@@ -121,7 +121,7 @@ export interface Task {
   evaluators: TaskEvaluator[];
   experimentIds: string[];
   /**
-   * Run configuration for `run_experiment` tasks. `null` for all other task
+   * Run configuration for `RUN_EXPERIMENT` tasks. `null` for all other task
    * types.
    */
   runConfiguration: RawTask["run_configuration"] | null;
@@ -136,7 +136,7 @@ export interface TaskRun {
   taskId: string;
   status: TaskRunStatus;
   /**
-   * Created experiment global ID (base64). Populated only for `run_experiment`
+   * Created experiment global ID (base64). Populated only for `RUN_EXPERIMENT`
    * task runs after the experiment has been provisioned. `null` for all other
    * task types and while provisioning is in progress.
    */

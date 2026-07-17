@@ -6,9 +6,9 @@ import { mockCodeEvaluatorId, mockCodeVersionId } from "./fixtures";
 const mockSpaceGlobalId = "U3BhY2U6MQ==";
 
 const mockManagedCodeConfig = {
-  type: "managed" as const,
+  type: "MANAGED" as const,
   name: "json_parseable",
-  managedEvaluator: "JSONParseable" as const,
+  managedEvaluator: "JSON_PARSEABLE" as const,
   variables: ["output"],
 };
 
@@ -16,7 +16,7 @@ const mockResponseData = {
   id: mockCodeEvaluatorId,
   name: "JSON Parseable",
   description: null,
-  type: "code" as const,
+  type: "CODE" as const,
   space_id: mockSpaceGlobalId,
   created_at: "2024-01-01T00:00:00.000Z",
   updated_at: "2024-01-01T00:00:00.000Z",
@@ -26,11 +26,11 @@ const mockResponseData = {
     evaluator_id: mockCodeEvaluatorId,
     commit_hash: "ghi789",
     commit_message: "Initial code version",
-    type: "code" as const,
+    type: "CODE" as const,
     code_config: {
-      type: "managed" as const,
+      type: "MANAGED" as const,
       name: "json_parseable",
-      managed_evaluator: "JSONParseable",
+      managed_evaluator: "JSON_PARSEABLE",
       variables: ["output"],
       static_params: undefined,
       data_granularity: null,
@@ -62,7 +62,7 @@ describe("createCodeEvaluator", () => {
     expect(mockClient.POST).toHaveBeenCalledOnce();
     const [path, opts] = mockClient.POST.mock.lastCall!;
     expect(path).toBe("/v2/evaluators");
-    expect(opts.body.type).toBe("code");
+    expect(opts.body.type).toBe("CODE");
     expect(opts.body.version.commit_message).toBe("Initial code version");
     expect(opts.body.version.code_config).toBeDefined();
     expect(opts.body.version.template_config).toBeUndefined();
@@ -80,8 +80,8 @@ describe("createCodeEvaluator", () => {
     });
 
     expect(result.id).toBe(mockCodeEvaluatorId);
-    expect(result.type).toBe("code");
-    expect(result.version.type).toBe("code");
+    expect(result.type).toBe("CODE");
+    expect(result.version.type).toBe("CODE");
     expect(result.createdAt).toBeInstanceOf(Date);
   });
 

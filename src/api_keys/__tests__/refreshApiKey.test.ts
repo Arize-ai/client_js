@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { refreshApiKey } from "../refreshApiKey";
-import { mockRawApiKeyCreated } from "./fixtures";
+import { mockRawApiKey } from "./fixtures";
 
 describe("refreshApiKey", () => {
   const post = vi.fn();
@@ -14,7 +14,7 @@ describe("refreshApiKey", () => {
     post.mockReset();
     post.mockResolvedValue({
       error: undefined,
-      data: mockRawApiKeyCreated,
+      data: mockRawApiKey,
     });
   });
 
@@ -119,7 +119,7 @@ describe("refreshApiKey", () => {
     expect(body).not.toHaveProperty("grace_period_seconds");
   });
 
-  it("returns transformed ApiKeyCreated with camelCase fields", async () => {
+  it("returns transformed ApiKey with camelCase fields", async () => {
     const result = await refreshApiKey({
       client: mockClient,
       apiKeyId: "key-id-123",
@@ -128,9 +128,8 @@ describe("refreshApiKey", () => {
     expect(result).toMatchObject({
       id: "key-id-123",
       name: "ci-key",
-      keyType: "user",
-      status: "active",
-      redactedKey: "ak-abc...xyz",
+      keyType: "USER",
+      status: "ACTIVE",
       createdByUserId: "user-123",
       key: "ak-full-secret-value",
     });

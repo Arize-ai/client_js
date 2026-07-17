@@ -1,5 +1,66 @@
 # @arizeai/ax-client
 
+## [1.24.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.23.0...arize-js-sdk/v1.24.0) (2026-07-17)
+
+> **Minor release.** The v2 REST API standardization ([#78907](https://github.com/Arize-ai/arize/pull/78907)) is technically breaking, but **only affects endpoints/methods in `alpha` or `beta`** — all gated behind the pre-release opt-in and documented with a warning. **No stable surface changes.**
+
+### ⚠ BREAKING CHANGES (pre-release only)
+
+* **enums:** standardize all enum values to `SCREAMING_SNAKE_CASE` — AI integrations, prompts, evaluators, tasks, orgs, spaces, users, API keys, and roles ([#78718](https://github.com/Arize-ai/arize/issues/78718), [#78720](https://github.com/Arize-ai/arize/issues/78720), [#78721](https://github.com/Arize-ai/arize/issues/78721), [#78722](https://github.com/Arize-ai/arize/issues/78722)) ([b17b78d](https://github.com/Arize-ai/arize/commit/b17b78d6a68bf8a6e0736df251a73a9dc0c33cab))
+* **types:** apply type-naming convention across dataset, org/space/user, access-control, and API-key/audit-log schemas ([#78740](https://github.com/Arize-ai/arize/issues/78740), [#79098](https://github.com/Arize-ai/arize/issues/79098), [#79101](https://github.com/Arize-ai/arize/issues/79101), [#79099](https://github.com/Arize-ai/arize/issues/79099)) ([b17b78d](https://github.com/Arize-ai/arize/commit/b17b78d6a68bf8a6e0736df251a73a9dc0c33cab))
+* **openapi:** enforce verb-first `operationId` naming (`*ListResponse` → `List*Response`), incl. annotation-config & evaluator-version request schemas ([#79270](https://github.com/Arize-ai/arize/issues/79270), [#79433](https://github.com/Arize-ai/arize/issues/79433)) ([b17b78d](https://github.com/Arize-ai/arize/commit/b17b78d6a68bf8a6e0736df251a73a9dc0c33cab))
+* **prompts:** `setPromptVersionLabels` now returns the full `PromptVersion` ([#79278](https://github.com/Arize-ai/arize/issues/79278)) ([b17b78d](https://github.com/Arize-ai/arize/commit/b17b78d6a68bf8a6e0736df251a73a9dc0c33cab))
+
+### 🎁 New Features
+
+* **api:** return `404` for list endpoints when the scoped resource is missing or inaccessible ([#79279](https://github.com/Arize-ai/arize/issues/79279)) ([b17b78d](https://github.com/Arize-ai/arize/commit/b17b78d6a68bf8a6e0736df251a73a9dc0c33cab))
+* **openapi:** enforce naming conventions and extract shared nested schemas ([#79103](https://github.com/Arize-ai/arize/issues/79103)) ([b17b78d](https://github.com/Arize-ai/arize/commit/b17b78d6a68bf8a6e0736df251a73a9dc0c33cab))
+* **spectral:** enforce lockstep naming and strict nested-schema lint rules ([#79280](https://github.com/Arize-ai/arize/issues/79280)) ([b17b78d](https://github.com/Arize-ai/arize/commit/b17b78d6a68bf8a6e0736df251a73a9dc0c33cab))
+
+### 🐛 Bug Fixes
+
+* **ci:** fix the OpenAPI lint check ([#78913](https://github.com/Arize-ai/arize/issues/78913)) ([b17b78d](https://github.com/Arize-ai/arize/commit/b17b78d6a68bf8a6e0736df251a73a9dc0c33cab))
+* **openapi:** resolve follow-up gaps from the REST API audit ([#79440](https://github.com/Arize-ai/arize/issues/79440)) ([b17b78d](https://github.com/Arize-ai/arize/commit/b17b78d6a68bf8a6e0736df251a73a9dc0c33cab))
+
+### ❔ Miscellaneous Chores
+
+* promote pre-release stage from `alpha` to `beta` ([#78707](https://github.com/Arize-ai/arize/issues/78707)) ([b17b78d](https://github.com/Arize-ai/arize/commit/b17b78d6a68bf8a6e0736df251a73a9dc0c33cab))
+
+---
+
+## Migration notes — pre-release (`alpha`/`beta`) consumers only
+
+These renames flow from the OpenAPI spec into the generated v2 client. **Public function names are unchanged** (e.g. `listApiKeys()`, `createUser()`, `updateTask()`) — what changed are the string-literal enum values you pass/receive and the exported types you import.
+
+**Enum values → `SCREAMING_SNAKE_CASE`:**
+
+| Context | Before | After |
+|---|---|---|
+| Role name / type | `"member"`, `{ type: "predefined" }` | `"MEMBER"`, `{ type: "PREDEFINED" }` |
+| User status | `"active"`, `"invited"`, `"expired"` | `"ACTIVE"`, `"INVITED"`, `"EXPIRED"` |
+| Invite mode | `"email_link"`, `"temporary_password"`, `"none"` | `"EMAIL_LINK"`, `"TEMPORARY_PASSWORD"`, `"NONE"` |
+| API key type (`keyType`) | `"user"`, `"service"` | `"USER"`, `"SERVICE"` |
+| Message role | `"system"`, `"user"` | `"SYSTEM"`, `"USER"` |
+| Task / experiment type | `"template_evaluation"`, `"llm_generation"` | `"TEMPLATE_EVALUATION"`, `"LLM_GENERATION"` |
+| Input variable format | `"f_string"`, `"mustache"` | `"F_STRING"`, `"MUSTACHE"` |
+| Provider | `"open_ai"` / `"openAI"` | `"OPEN_AI"` |
+| Optimization direction | `"maximize"` | `"MAXIMIZE"` |
+| Evaluator type / managed evaluator | `"managed"`, `"JSONParseable"` | `"MANAGED"`, `"JSON_PARSEABLE"` |
+| Task run status | `"completed"`, `"failed"`, `"cancelled"` | `"COMPLETED"`, `"FAILED"`, `"CANCELLED"` |
+| Assignment method / record type | `"all"`, `"span"` | `"ALL"`, `"SPAN"` |
+
+⚠️ **Value change, not just casing** — API key `status`: `"deleted"` → **`"REVOKED"`**.
+
+**Exported types renamed** (if you import them from `@arizeai/ax-client`):
+
+* List responses: `<Noun>ListResponse` → `List<Nouns>Response` (e.g. `ExperimentRunsListResponse` → `ListExperimentRunsResponse`).
+* `ApiKeyCreated` split into `ApiKey` (full key, returned on create/refresh) and `ApiKeyRedacted` (masked key, returned in list results).
+* `UserCreatedResponse` → `CreateUserResponse`.
+* `DatasetExampleInput` → `CreateDatasetExampleInput`; `DatasetExampleUpdate` → `UpdateDatasetExampleInput`.
+
+**Behavior change:** `setPromptVersionLabels` now resolves to the updated `PromptVersion` (previously `{ labels }`).
+
+
 ## [1.23.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.22.0...arize-js-sdk/v1.23.0) (2026-07-10)
 
 

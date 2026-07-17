@@ -441,12 +441,12 @@ const prompt = await createPrompt({
   description: "A prompt for customer support interactions",
   version: {
     commitMessage: "Initial version",
-    inputVariableFormat: "f_string",
-    provider: "open_ai",
+    inputVariableFormat: "F_STRING",
+    provider: "OPEN_AI",
     model: "gpt-4",
     messages: [
-      { role: "system", content: "You are a helpful assistant." },
-      { role: "user", content: "Hello, {name}!" },
+      { role: "SYSTEM", content: "You are a helpful assistant." },
+      { role: "USER", content: "Hello, {name}!" },
     ],
   },
 });
@@ -527,12 +527,12 @@ const newVersion = await createPromptVersion({
   prompt: "customer-support",
   space: "my-space",
   commitMessage: "Updated system prompt",
-  inputVariableFormat: "f_string",
-  provider: "open_ai",
+  inputVariableFormat: "F_STRING",
+  provider: "OPEN_AI",
   model: "gpt-4",
   messages: [
-    { role: "system", content: "You are a helpful assistant." },
-    { role: "user", content: "Hello, {name}!" },
+    { role: "SYSTEM", content: "You are a helpful assistant." },
+    { role: "USER", content: "Hello, {name}!" },
   ],
 });
 ```
@@ -556,7 +556,8 @@ const version = await getPromptVersionByLabel({
 });
 
 // Set labels on a version (replaces all existing labels)
-const { labels } = await setPromptVersionLabels({
+// Returns the updated PromptVersion
+const updatedVersion = await setPromptVersionLabels({
   versionId: "your-version-id",
   labels: ["production", "staging"],
 });
@@ -597,7 +598,7 @@ const evaluator = await createTemplateEvaluator({
     includeExplanations: true,
     useFunctionCallingIfAvailable: true,
     classificationChoices: { relevant: 1, irrelevant: 0 },
-    direction: "maximize",
+    direction: "MAXIMIZE",
     llmConfig: {
       aiIntegrationId: "QUlJbnRlZ3JhdGlvbjphYmMxMjM=",
       modelName: "gpt-4o",
@@ -618,9 +619,9 @@ const evaluator = await createCodeEvaluator({
   space: "my-space",
   commitMessage: "Initial version",
   codeConfig: {
-    type: "managed",
+    type: "MANAGED",
     name: "json_parseable",
-    managedEvaluator: "JSONParseable",
+    managedEvaluator: "JSON_PARSEABLE",
     variables: ["output"],
   },
 });
@@ -689,7 +690,7 @@ const newVersion = await createTemplateEvaluatorVersion({
     includeExplanations: true,
     useFunctionCallingIfAvailable: true,
     classificationChoices: { relevant: 1, irrelevant: 0 },
-    direction: "maximize",
+    direction: "MAXIMIZE",
     llmConfig: {
       aiIntegrationId: "QUlJbnRlZ3JhdGlvbjphYmMxMjM=",
       modelName: "gpt-4o",
@@ -722,7 +723,7 @@ import { createEvaluationTask } from "@arizeai/ax-client";
 
 const task = await createEvaluationTask({
   name: "Weekly Quality Check",
-  type: "template_evaluation",
+  type: "TEMPLATE_EVALUATION",
   space: "my-space",
   project: "my-project",
   evaluators: [
@@ -744,13 +745,13 @@ const task = await createRunExperimentTask({
   dataset: "my-dataset",
   space: "my-space",
   runConfiguration: {
-    experiment_type: "llm_generation",
+    experiment_type: "LLM_GENERATION",
     aiIntegration: "my-openai-integration",
     model_name: "gpt-4o",
-    input_variable_format: "f_string",
+    input_variable_format: "F_STRING",
     messages: [
-      { role: "system", content: "You are a helpful assistant." },
-      { role: "user", content: "Answer: {question}" },
+      { role: "SYSTEM", content: "You are a helpful assistant." },
+      { role: "USER", content: "Answer: {question}" },
     ],
   },
 });
@@ -795,7 +796,7 @@ const finalRun = await waitForTaskRun({
   pollInterval: 3_000, // poll every 3 seconds
   timeout: 5 * 60_000, // give up after 5 minutes
 });
-console.log(finalRun.status); // "completed" | "failed" | "cancelled"
+console.log(finalRun.status); // "COMPLETED" | "FAILED" | "CANCELLED"
 
 // List, inspect, or cancel runs
 const { data: runs } = await listTaskRuns({
@@ -885,7 +886,7 @@ const scoreConfig = await createContinuousAnnotationConfig({
   space: "my-space",
   minimumScore: 0,
   maximumScore: 1,
-  optimizationDirection: "maximize",
+  optimizationDirection: "MAXIMIZE",
 });
 
 // Categorical annotation config
@@ -896,7 +897,7 @@ const annotationConfig = await createCategoricalAnnotationConfig({
     { label: "accurate", score: 1 },
     { label: "inaccurate", score: 0 },
   ],
-  optimizationDirection: "maximize",
+  optimizationDirection: "MAXIMIZE",
 });
 
 // Freeform (open-ended text) annotation config
@@ -934,7 +935,7 @@ const annotationConfig = await updateCategoricalAnnotationConfig({
     { label: "accurate", score: 1 },
     { label: "inaccurate", score: 0 },
   ],
-  optimizationDirection: "maximize",
+  optimizationDirection: "MAXIMIZE",
 });
 ```
 
@@ -947,7 +948,7 @@ const annotationConfig = await updateContinuousAnnotationConfig({
   name: "Accuracy v2",
   minimumScore: 0,
   maximumScore: 10,
-  optimizationDirection: "maximize",
+  optimizationDirection: "MAXIMIZE",
 });
 ```
 
@@ -994,7 +995,7 @@ const queue = await createAnnotationQueue({
   name: "Quality Review Queue",
   spaceId: "your_space_id",
   annotationConfigIds: ["ac_abc123"],
-  assignmentMethod: "all",
+  assignmentMethod: "ALL",
 });
 ```
 
@@ -1036,7 +1037,7 @@ await addAnnotationQueueRecords({
   space: "my-space",
   recordSources: [
     {
-      recordType: "span",
+      recordType: "SPAN",
       projectId: "proj_abc123",
       startTime: "2024-01-15T00:00:00Z",
       endTime: "2024-01-15T23:59:59Z",
@@ -1097,7 +1098,7 @@ import { createAiIntegration } from "@arizeai/ax-client";
 
 const integration = await createAiIntegration({
   name: "Production OpenAI",
-  provider: "openAI",
+  provider: "OPEN_AI",
   apiKey: "sk-...",
   modelNames: ["gpt-4o", "gpt-4o-mini"],
   enableDefaultModels: true,
@@ -1222,9 +1223,9 @@ Service keys can be scoped to a specific space with optional role assignments:
 ```typescript
 const apiKey = await createApiKey({
   name: "service-key",
-  keyType: "service",
+  keyType: "SERVICE",
   spaceId: "your-space-id",
-  roles: { spaceRole: "member" },
+  roles: { spaceRole: "MEMBER" },
   expiresAt: new Date("2027-01-01"),
 });
 ```
@@ -1238,11 +1239,11 @@ const { data } = await listApiKeys();
 console.log(data.map((k) => k.name));
 
 // Filter by key type or status
-const { data: userKeys } = await listApiKeys({ keyType: "user" });
+const { data: userKeys } = await listApiKeys({ keyType: "USER" });
 
 // List service keys for a specific space
 const { data: serviceKeys } = await listApiKeys({
-  keyType: "service",
+  keyType: "SERVICE",
   spaceId: "U3BhY2U6MTIzNDU=",
 });
 
@@ -1502,7 +1503,7 @@ import { addOrganizationUser } from "@arizeai/ax-client";
 const membership = await addOrganizationUser({
   organizationId: "org_abc123",
   userId: "VXNlcjoxMjM0NQ==",
-  role: { type: "predefined", name: "member" },
+  role: { type: "PREDEFINED", name: "MEMBER" },
 });
 console.log(membership);
 ```
@@ -1548,9 +1549,9 @@ console.log(user);
 
 The `inviteMode` parameter controls how the user is invited:
 
-- `"email_link"` — sends the user an email with a verification link.
-- `"temporary_password"` — issues a one-time password returned in the response.
-- `"none"` — pre-provisions an SSO user directly; no invitation is sent and the
+- `"EMAIL_LINK"` — sends the user an email with a verification link.
+- `"TEMPORARY_PASSWORD"` — issues a one-time password returned in the response.
+- `"NONE"` — pre-provisions an SSO user directly; no invitation is sent and the
   user is immediately active via the configured identity provider.
 
 Returns a `UserCreated` object (HTTP 201) for a new user, or a `User` object
@@ -1563,8 +1564,8 @@ import { createUser } from "@arizeai/ax-client";
 const user = await createUser({
   name: "Jane Smith",
   email: "jane.smith@example.com",
-  role: { type: "predefined", name: "member" },
-  inviteMode: "email_link",
+  role: { type: "PREDEFINED", name: "MEMBER" },
+  inviteMode: "EMAIL_LINK",
 });
 console.log(user);
 ```
@@ -1689,7 +1690,7 @@ import { addSpaceUser } from "@arizeai/ax-client";
 const membership = await addSpaceUser({
   spaceId: "spc_abc123",
   userId: "VXNlcjoxMjM0NQ==",
-  role: { type: "predefined", name: "member" },
+  role: { type: "PREDEFINED", name: "MEMBER" },
 });
 console.log(membership);
 ```

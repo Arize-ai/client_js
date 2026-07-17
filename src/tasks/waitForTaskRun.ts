@@ -3,7 +3,7 @@ import { TaskRun, TaskRunStatus, WithClient } from "../types";
 import { warnPreRelease } from "../utils/warning";
 import { fetchTaskRun } from "./internal";
 
-const TERMINAL_STATUSES: TaskRunStatus[] = ["completed", "failed", "cancelled"];
+const TERMINAL_STATUSES: TaskRunStatus[] = ["COMPLETED", "FAILED", "CANCELLED"];
 
 const DEFAULT_POLL_INTERVAL_MS = 5_000; // 5 seconds
 const DEFAULT_TIMEOUT_MS = 10 * 60 * 1_000; // 10 minutes
@@ -25,8 +25,8 @@ export type WaitForTaskRunParams = WithClient<{
 }>;
 
 /**
- * Poll a task run until it reaches a terminal status (`completed`, `failed`,
- * or `cancelled`), then return the final {@link TaskRun}.
+ * Poll a task run until it reaches a terminal status (`COMPLETED`, `FAILED`,
+ * or `CANCELLED`), then return the final {@link TaskRun}.
  *
  * @param client - An optional ArizeClient instance to use for the request.
  * @param runId - The ID of the task run to wait for.
@@ -46,7 +46,7 @@ export type WaitForTaskRunParams = WithClient<{
  *   timeout: 5 * 60_000,  // give up after 5 minutes
  * });
  *
- * if (finalRun.status === "completed") {
+ * if (finalRun.status === "COMPLETED") {
  *   console.log(`${finalRun.numSuccesses} spans evaluated successfully`);
  * } else {
  *   console.error(`Run ended with status: ${finalRun.status}`);
@@ -59,7 +59,7 @@ export async function waitForTaskRun({
   pollInterval = DEFAULT_POLL_INTERVAL_MS,
   timeout = DEFAULT_TIMEOUT_MS,
 }: WaitForTaskRunParams): Promise<TaskRun> {
-  warnPreRelease({ functionName: "waitForTaskRun", stage: "alpha" });
+  warnPreRelease({ functionName: "waitForTaskRun", stage: "beta" });
   if (timeout <= 0) {
     throw new Error(`timeout must be positive, got ${timeout}`);
   }

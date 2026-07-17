@@ -9,7 +9,7 @@ const INTEGRATION_ID = "TGxtSW50ZWdyYXRpb246MTphQmNE";
 const TASK_ID = "T25saW5lVGFzazo0NTphQmNE";
 const CREATED_AT = "2026-04-01T10:00:00.000Z";
 
-function makeTaskResponse(type = "template_evaluation") {
+function makeTaskResponse(type = "TEMPLATE_EVALUATION") {
   return {
     id: TASK_ID,
     name: "My Task",
@@ -41,14 +41,14 @@ function makeClient(postResult?: object, postError?: object): ArizeClient {
 }
 
 describe("createTask", () => {
-  it("creates a template_evaluation task with a project", async () => {
+  it("creates a TEMPLATE_EVALUATION task with a project", async () => {
     vi.spyOn(resolveModule, "findProjectId").mockResolvedValue(PROJECT_ID);
     const client = makeClient();
 
     const task = await createTask({
       client,
       name: "Eval Task",
-      type: "template_evaluation",
+      type: "TEMPLATE_EVALUATION",
       project: PROJECT_ID,
       evaluators: [{ evaluatorId: "ev-1" }],
     });
@@ -56,21 +56,21 @@ describe("createTask", () => {
     expect(client.POST).toHaveBeenCalledWith("/v2/tasks", {
       body: expect.objectContaining({
         name: "Eval Task",
-        type: "template_evaluation",
+        type: "TEMPLATE_EVALUATION",
         project_id: PROJECT_ID,
       }),
     });
     expect(task.id).toBe(TASK_ID);
   });
 
-  it("creates a code_evaluation task with a dataset and experiment_ids", async () => {
+  it("creates a CODE_EVALUATION task with a dataset and experiment_ids", async () => {
     vi.spyOn(resolveModule, "findDatasetId").mockResolvedValue(DATASET_ID);
-    const client = makeClient(makeTaskResponse("code_evaluation"));
+    const client = makeClient(makeTaskResponse("CODE_EVALUATION"));
 
     await createTask({
       client,
       name: "Code Eval",
-      type: "code_evaluation",
+      type: "CODE_EVALUATION",
       dataset: DATASET_ID,
       experimentIds: ["exp-1"],
       evaluators: [{ evaluatorId: "ev-2" }],
@@ -78,36 +78,36 @@ describe("createTask", () => {
 
     expect(client.POST).toHaveBeenCalledWith("/v2/tasks", {
       body: expect.objectContaining({
-        type: "code_evaluation",
+        type: "CODE_EVALUATION",
         dataset_id: DATASET_ID,
         experiment_ids: ["exp-1"],
       }),
     });
   });
 
-  it("creates a run_experiment task with a dataset and runConfiguration", async () => {
+  it("creates a RUN_EXPERIMENT task with a dataset and runConfiguration", async () => {
     vi.spyOn(resolveModule, "findDatasetId").mockResolvedValue(DATASET_ID);
-    const client = makeClient(makeTaskResponse("run_experiment"));
+    const client = makeClient(makeTaskResponse("RUN_EXPERIMENT"));
 
     await createTask({
       client,
       name: "Run Exp Task",
-      type: "run_experiment",
+      type: "RUN_EXPERIMENT",
       dataset: DATASET_ID,
       runConfiguration: {
-        experiment_type: "llm_generation",
+        experiment_type: "LLM_GENERATION",
         ai_integration_id: INTEGRATION_ID,
-        input_variable_format: "f_string",
-        messages: [{ role: "user", content: "{q}" }],
+        input_variable_format: "F_STRING",
+        messages: [{ role: "USER", content: "{q}" }],
       },
     });
 
     expect(client.POST).toHaveBeenCalledWith("/v2/tasks", {
       body: expect.objectContaining({
-        type: "run_experiment",
+        type: "RUN_EXPERIMENT",
         dataset_id: DATASET_ID,
         run_configuration: expect.objectContaining({
-          experiment_type: "llm_generation",
+          experiment_type: "LLM_GENERATION",
           ai_integration_id: INTEGRATION_ID,
         }),
       }),
@@ -125,7 +125,7 @@ describe("createTask", () => {
       createTask({
         client,
         name: "Bad Task",
-        type: "template_evaluation",
+        type: "TEMPLATE_EVALUATION",
         project: PROJECT_ID,
         evaluators: [],
       }),

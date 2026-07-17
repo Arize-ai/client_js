@@ -57,8 +57,8 @@ describe("transformTemplateConfig", () => {
       includeExplanations: true,
       useFunctionCallingIfAvailable: true,
       classificationChoices: { relevant: 1, irrelevant: 0 },
-      direction: "maximize",
-      dataGranularity: "span",
+      direction: "MAXIMIZE",
+      dataGranularity: "SPAN",
       llmConfig: {
         aiIntegrationId: mockAiIntegrationId,
         modelName: "gpt-4o",
@@ -84,7 +84,7 @@ describe("transformEvaluatorVersion — template branch", () => {
       evaluatorId: mockEvaluatorId,
       commitHash: "abc123",
       commitMessage: "Initial version",
-      type: "template",
+      type: "TEMPLATE",
       templateConfig: transformTemplateConfig(mockRawTemplateConfig),
       createdAt: new Date("2024-01-01T00:00:00.000Z"),
       createdByUserId: mockUserId,
@@ -105,18 +105,18 @@ describe("transformEvaluatorVersion — managed code branch", () => {
     const result = transformEvaluatorVersion(
       mockRawEvaluatorVersionManagedCode,
     );
-    expect(result.type).toBe("code");
-    if (result.type !== "code") return;
+    expect(result.type).toBe("CODE");
+    if (result.type !== "CODE") return;
     expect(result.id).toBe(mockCodeVersionId);
     expect(result.evaluatorId).toBe(mockCodeEvaluatorId);
-    expect(result.codeConfig.type).toBe("managed");
-    if (result.codeConfig.type !== "managed") return;
-    expect(result.codeConfig.managedEvaluator).toBe("ContainsAllKeywords");
+    expect(result.codeConfig.type).toBe("MANAGED");
+    if (result.codeConfig.type !== "MANAGED") return;
+    expect(result.codeConfig.managedEvaluator).toBe("CONTAINS_ALL_KEYWORDS");
     expect(result.codeConfig.variables).toEqual(["output"]);
     expect(result.codeConfig.staticParams).toEqual([
       { name: "keywords", type: "STRING_ARRAY", defaultValue: ["one", "two"] },
     ]);
-    expect(result.codeConfig.dataGranularity).toBe("span");
+    expect(result.codeConfig.dataGranularity).toBe("SPAN");
     expect(result.codeConfig.queryFilter).toBeNull();
   });
 });
@@ -124,10 +124,10 @@ describe("transformEvaluatorVersion — managed code branch", () => {
 describe("transformEvaluatorVersion — custom code branch", () => {
   it("returns a code version with transformed custom code_config", () => {
     const result = transformEvaluatorVersion(mockRawEvaluatorVersionCustomCode);
-    expect(result.type).toBe("code");
-    if (result.type !== "code") return;
-    expect(result.codeConfig.type).toBe("custom");
-    if (result.codeConfig.type !== "custom") return;
+    expect(result.type).toBe("CODE");
+    if (result.type !== "CODE") return;
+    expect(result.codeConfig.type).toBe("CUSTOM");
+    if (result.codeConfig.type !== "CUSTOM") return;
     expect(result.codeConfig.code).toContain("MyEvaluator");
     expect(result.codeConfig.imports).toBe("from typing import Any");
     expect(result.codeConfig.variables).toEqual(["output"]);
@@ -143,7 +143,7 @@ describe("transformEvaluatorVersion — harness branch", () => {
       evaluatorId: mockEvaluatorId,
       commitHash: "harness123",
       commitMessage: "Initial harness version",
-      type: "harness",
+      type: "HARNESS",
       createdAt: new Date("2024-01-01T00:00:00.000Z"),
       createdByUserId: mockUserId,
     });
@@ -158,7 +158,7 @@ describe("transformEvaluatorVersion — remote branch", () => {
       evaluatorId: mockEvaluatorId,
       commitHash: "remote123",
       commitMessage: "Initial remote version",
-      type: "remote",
+      type: "REMOTE",
       createdAt: new Date("2024-01-01T00:00:00.000Z"),
       createdByUserId: mockUserId,
     });
@@ -172,7 +172,7 @@ describe("transformEvaluator", () => {
       id: mockEvaluatorId,
       name: "Relevance Evaluator",
       description: "Evaluates response relevance",
-      type: "template",
+      type: "TEMPLATE",
       spaceId: mockSpaceId,
       createdAt: new Date("2024-01-01T00:00:00.000Z"),
       updatedAt: new Date("2024-01-01T00:00:00.000Z"),
@@ -188,7 +188,7 @@ describe("transformEvaluator", () => {
 
   it("handles code evaluator type", () => {
     const result = transformEvaluator(mockRawCodeEvaluator);
-    expect(result.type).toBe("code");
+    expect(result.type).toBe("CODE");
   });
 });
 
@@ -201,7 +201,7 @@ describe("transformEvaluatorWithVersion", () => {
     expect(result.version.id).toBe(mockVersionId);
     expect(result.version.evaluatorId).toBe(mockEvaluatorId);
     expect(result.version.commitHash).toBe("abc123");
-    expect(result.version.type).toBe("template");
+    expect(result.version.type).toBe("TEMPLATE");
     expect(result.version.createdAt).toBeInstanceOf(Date);
     expect(result.createdAt).toBeInstanceOf(Date);
   });
@@ -210,10 +210,10 @@ describe("transformEvaluatorWithVersion", () => {
     const result = transformEvaluatorWithVersion(
       mockRawCodeEvaluatorWithVersion,
     );
-    expect(result.type).toBe("code");
-    expect(result.version.type).toBe("code");
-    if (result.version.type !== "code") return;
-    expect(result.version.codeConfig.type).toBe("managed");
+    expect(result.type).toBe("CODE");
+    expect(result.version.type).toBe("CODE");
+    if (result.version.type !== "CODE") return;
+    expect(result.version.codeConfig.type).toBe("MANAGED");
   });
 });
 
@@ -225,8 +225,8 @@ describe("templateConfigToRaw", () => {
       includeExplanations: true,
       useFunctionCallingIfAvailable: false,
       classificationChoices: { yes: 1, no: 0 },
-      direction: "maximize",
-      dataGranularity: "span",
+      direction: "MAXIMIZE",
+      dataGranularity: "SPAN",
       llmConfig: {
         aiIntegrationId: mockAiIntegrationId,
         modelName: "gpt-4o",
@@ -246,8 +246,8 @@ describe("templateConfigToRaw", () => {
       (raw as Record<string, unknown>).useFunctionCallingIfAvailable,
     ).toBeUndefined();
     expect(raw.classification_choices).toEqual({ yes: 1, no: 0 });
-    expect(raw.data_granularity).toBe("span");
-    expect(raw.direction).toBe("maximize");
+    expect(raw.data_granularity).toBe("SPAN");
+    expect(raw.direction).toBe("MAXIMIZE");
     expect(
       (raw as Record<string, unknown>).classificationChoices,
     ).toBeUndefined();
@@ -270,9 +270,9 @@ describe("templateConfigToRaw", () => {
 describe("codeConfigToRaw — managed", () => {
   it("serializes managed CodeConfig to raw API shape", () => {
     const input: CodeConfig = {
-      type: "managed",
+      type: "MANAGED",
       name: "contains_all_keywords_eval",
-      managedEvaluator: "ContainsAllKeywords",
+      managedEvaluator: "CONTAINS_ALL_KEYWORDS",
       variables: ["output"],
       staticParams: [
         {
@@ -281,16 +281,16 @@ describe("codeConfigToRaw — managed", () => {
           defaultValue: ["one", "two"],
         },
       ],
-      dataGranularity: "span",
+      dataGranularity: "SPAN",
       queryFilter: null,
     };
     const raw = codeConfigToRaw(input);
-    expect(raw.type).toBe("managed");
-    if (raw.type !== "managed") return;
-    expect(raw.managed_evaluator).toBe("ContainsAllKeywords");
+    expect(raw.type).toBe("MANAGED");
+    if (raw.type !== "MANAGED") return;
+    expect(raw.managed_evaluator).toBe("CONTAINS_ALL_KEYWORDS");
     expect(raw.variables).toEqual(["output"]);
     expect(raw.name).toBe("contains_all_keywords_eval");
-    expect(raw.data_granularity).toBe("span");
+    expect(raw.data_granularity).toBe("SPAN");
   });
 
   it("round-trips managed config through transform → raw without data loss", () => {
@@ -298,15 +298,15 @@ describe("codeConfigToRaw — managed", () => {
       mockRawEvaluatorVersionManagedCode,
     );
     if (
-      transformed.type !== "code" ||
-      transformed.codeConfig.type !== "managed"
+      transformed.type !== "CODE" ||
+      transformed.codeConfig.type !== "MANAGED"
     )
       return;
     const raw = codeConfigToRaw(transformed.codeConfig);
-    expect(raw.type).toBe("managed");
-    if (raw.type !== "managed") return;
+    expect(raw.type).toBe("MANAGED");
+    if (raw.type !== "MANAGED") return;
     expect(raw.managed_evaluator).toBe(
-      mockRawManagedCodeConfig.type === "managed"
+      mockRawManagedCodeConfig.type === "MANAGED"
         ? mockRawManagedCodeConfig.managed_evaluator
         : undefined,
     );
@@ -316,7 +316,7 @@ describe("codeConfigToRaw — managed", () => {
 describe("codeConfigToRaw — custom", () => {
   it("serializes custom CodeConfig to raw API shape", () => {
     const input: CodeConfig = {
-      type: "custom",
+      type: "CUSTOM",
       name: "custom_eval",
       code: "class X(CodeEvaluator): pass",
       imports: "from typing import Any",
@@ -325,8 +325,8 @@ describe("codeConfigToRaw — custom", () => {
       queryFilter: null,
     };
     const raw = codeConfigToRaw(input);
-    expect(raw.type).toBe("custom");
-    if (raw.type !== "custom") return;
+    expect(raw.type).toBe("CUSTOM");
+    if (raw.type !== "CUSTOM") return;
     expect(raw.code).toBe("class X(CodeEvaluator): pass");
     expect(raw.imports).toBe("from typing import Any");
   });
@@ -335,13 +335,13 @@ describe("codeConfigToRaw — custom", () => {
     const transformed = transformEvaluatorVersion(
       mockRawEvaluatorVersionCustomCode,
     );
-    if (transformed.type !== "code" || transformed.codeConfig.type !== "custom")
+    if (transformed.type !== "CODE" || transformed.codeConfig.type !== "CUSTOM")
       return;
     const raw = codeConfigToRaw(transformed.codeConfig);
-    expect(raw.type).toBe("custom");
-    if (raw.type !== "custom") return;
+    expect(raw.type).toBe("CUSTOM");
+    if (raw.type !== "CUSTOM") return;
     expect(raw.code).toBe(
-      mockRawCustomCodeConfig.type === "custom"
+      mockRawCustomCodeConfig.type === "CUSTOM"
         ? mockRawCustomCodeConfig.code
         : undefined,
     );

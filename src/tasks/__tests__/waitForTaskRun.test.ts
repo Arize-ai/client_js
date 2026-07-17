@@ -14,7 +14,7 @@ describe("waitForTaskRun", () => {
 
   it("returns immediately when the run is already completed", async () => {
     vi.spyOn(internalModule, "fetchTaskRun").mockResolvedValue(
-      makeRun({ status: "completed" }),
+      makeRun({ status: "COMPLETED" }),
     );
 
     const result = await waitForTaskRun({
@@ -23,7 +23,7 @@ describe("waitForTaskRun", () => {
       pollInterval: 1,
     });
 
-    expect(result.status).toBe("completed");
+    expect(result.status).toBe("COMPLETED");
     expect(internalModule.fetchTaskRun).toHaveBeenCalledTimes(1);
     expect(internalModule.fetchTaskRun).toHaveBeenCalledWith(
       fakeClient,
@@ -33,7 +33,7 @@ describe("waitForTaskRun", () => {
 
   it("returns when the run is failed", async () => {
     vi.spyOn(internalModule, "fetchTaskRun").mockResolvedValue(
-      makeRun({ status: "failed" }),
+      makeRun({ status: "FAILED" }),
     );
 
     const result = await waitForTaskRun({
@@ -41,12 +41,12 @@ describe("waitForTaskRun", () => {
       runId: "run-1",
       pollInterval: 1,
     });
-    expect(result.status).toBe("failed");
+    expect(result.status).toBe("FAILED");
   });
 
   it("returns when the run is cancelled", async () => {
     vi.spyOn(internalModule, "fetchTaskRun").mockResolvedValue(
-      makeRun({ status: "cancelled" }),
+      makeRun({ status: "CANCELLED" }),
     );
 
     const result = await waitForTaskRun({
@@ -54,16 +54,16 @@ describe("waitForTaskRun", () => {
       runId: "run-1",
       pollInterval: 1,
     });
-    expect(result.status).toBe("cancelled");
+    expect(result.status).toBe("CANCELLED");
   });
 
   it("polls until the run reaches a terminal status", async () => {
     vi.useFakeTimers();
     const core = vi
       .spyOn(internalModule, "fetchTaskRun")
-      .mockResolvedValueOnce(makeRun({ status: "pending" }))
-      .mockResolvedValueOnce(makeRun({ status: "running" }))
-      .mockResolvedValueOnce(makeRun({ status: "completed" }));
+      .mockResolvedValueOnce(makeRun({ status: "PENDING" }))
+      .mockResolvedValueOnce(makeRun({ status: "RUNNING" }))
+      .mockResolvedValueOnce(makeRun({ status: "COMPLETED" }));
 
     const promise = waitForTaskRun({
       client: fakeClient,
@@ -73,7 +73,7 @@ describe("waitForTaskRun", () => {
     await vi.runAllTimersAsync();
     const result = await promise;
 
-    expect(result.status).toBe("completed");
+    expect(result.status).toBe("COMPLETED");
     expect(core).toHaveBeenCalledTimes(3);
   });
 
@@ -100,7 +100,7 @@ describe("waitForTaskRun", () => {
   it("throws when the timeout is exceeded", async () => {
     vi.useFakeTimers();
     vi.spyOn(internalModule, "fetchTaskRun").mockResolvedValue(
-      makeRun({ status: "running" }),
+      makeRun({ status: "RUNNING" }),
     );
 
     // Attach the rejection handler before advancing timers to avoid an
@@ -120,7 +120,7 @@ describe("waitForTaskRun", () => {
   it("passes the client through to the HTTP layer", async () => {
     const core = vi
       .spyOn(internalModule, "fetchTaskRun")
-      .mockResolvedValue(makeRun({ status: "completed" }));
+      .mockResolvedValue(makeRun({ status: "COMPLETED" }));
 
     const client = {} as never;
     await waitForTaskRun({

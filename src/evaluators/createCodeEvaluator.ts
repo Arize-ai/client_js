@@ -35,9 +35,9 @@ export type CreateCodeEvaluatorParams = WithClient<CreateCodeEvaluatorInput>;
  *   space: "my-space",
  *   commitMessage: "Initial version",
  *   codeConfig: {
- *     type: "managed",
+ *     type: "MANAGED",
  *     name: "json_parseable",
- *     managedEvaluator: "JSONParseable",
+ *     managedEvaluator: "JSON_PARSEABLE",
  *     variables: ["output"],
  *   },
  * });
@@ -63,7 +63,7 @@ export async function createCodeEvaluator(
       name,
       description,
       space_id: spaceId,
-      type: "code",
+      type: "CODE",
       version: {
         commit_message: commitMessage,
         code_config: codeConfigToRaw(codeConfig),

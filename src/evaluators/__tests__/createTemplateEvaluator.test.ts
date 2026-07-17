@@ -26,7 +26,7 @@ const mockResponseData = {
   id: mockEvaluatorId,
   name: "Relevance",
   description: null,
-  type: "template" as const,
+  type: "TEMPLATE" as const,
   space_id: mockSpaceGlobalId,
   created_at: "2024-01-01T00:00:00.000Z",
   updated_at: "2024-01-01T00:00:00.000Z",
@@ -36,7 +36,7 @@ const mockResponseData = {
     evaluator_id: mockEvaluatorId,
     commit_hash: "abc123",
     commit_message: "Initial version",
-    type: "template" as const,
+    type: "TEMPLATE" as const,
     template_config: {
       name: "Relevance",
       template: "Is {{output}} relevant?",
@@ -78,7 +78,7 @@ describe("createTemplateEvaluator", () => {
     expect(mockClient.POST).toHaveBeenCalledOnce();
     const [path, opts] = mockClient.POST.mock.lastCall!;
     expect(path).toBe("/v2/evaluators");
-    expect(opts.body.type).toBe("template");
+    expect(opts.body.type).toBe("TEMPLATE");
     expect(opts.body.version.commit_message).toBe("Initial version");
     expect(opts.body.version.template_config).toBeDefined();
     expect(opts.body.version.code_config).toBeUndefined();
@@ -96,8 +96,8 @@ describe("createTemplateEvaluator", () => {
     });
 
     expect(result.id).toBe(mockEvaluatorId);
-    expect(result.type).toBe("template");
-    expect(result.version.type).toBe("template");
+    expect(result.type).toBe("TEMPLATE");
+    expect(result.version.type).toBe("TEMPLATE");
     expect(result.createdAt).toBeInstanceOf(Date);
   });
 

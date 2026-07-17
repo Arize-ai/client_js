@@ -35,7 +35,7 @@ export async function removeOrganizationUser({
   organizationId,
   userId,
 }: RemoveOrganizationUserParams): Promise<void> {
-  warnPreRelease({ functionName: "removeOrganizationUser", stage: "alpha" });
+  warnPreRelease({ functionName: "removeOrganizationUser", stage: "beta" });
   const client = clientInstance ?? createClient();
   const response = await client.DELETE(
     "/v2/organizations/{org_id}/users/{user_id}",
