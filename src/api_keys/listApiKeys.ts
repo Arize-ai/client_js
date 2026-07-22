@@ -1,6 +1,6 @@
 import { createClient } from "../client";
 import {
-  ApiKeyRedacted,
+  ApiKey,
   ApiKeyStatus,
   KeyType,
   PaginatedResponse,
@@ -13,7 +13,7 @@ import {
 } from "../utils/pagination";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
-import { transformApiKeyRedacted } from "./utils";
+import { transformApiKey } from "./utils";
 
 export type ListApiKeysParams = WithClient<
   PaginationParams & {
@@ -42,7 +42,7 @@ export type ListApiKeysParams = WithClient<
  *   access. For user keys (without `spaceId`), requires account admin role.
  * @param limit - Maximum number of results to return (1-100).
  * @param cursor - Pagination cursor from a previous response.
- * @returns A paginated list of {@link ApiKeyRedacted} objects.
+ * @returns A paginated list of {@link ApiKey} objects.
  * @throws Error if the API keys cannot be listed or the response is invalid.
  * @example
  * ```typescript
@@ -54,7 +54,7 @@ export type ListApiKeysParams = WithClient<
  */
 export async function listApiKeys(
   params: ListApiKeysParams = {},
-): Promise<PaginatedResponse<ApiKeyRedacted>> {
+): Promise<PaginatedResponse<ApiKey>> {
   warnPreRelease({ functionName: "listApiKeys", stage: "beta" });
   const {
     client: clientInstance,
@@ -82,7 +82,7 @@ export async function listApiKeys(
     return handleApiError(response);
   }
   return {
-    data: response.data.api_keys.map(transformApiKeyRedacted),
+    data: response.data.api_keys.map(transformApiKey),
     pagination: transformPaginationMetadata(response.data.pagination),
   };
 }

@@ -618,15 +618,16 @@ export interface paths {
          * Create an API key
          * @description Create a new API key for the authenticated user.
          *
-         *     - `key_type` defaults to `USER` when omitted.
-         *     - For `SERVICE` keys, `space_id` is required. The service key is
-         *       scoped to the given space, and a bot user will be created with the specified roles.
-         *     - For `USER` keys, `space_id` and `roles` must not be set — passing either returns `400`.
-         *       The key inherits the authenticated user's own permissions.
+         *     - Choose `key_type: "USER"` for a personal key that authenticates as you, or
+         *       `key_type: "SERVICE"` for an automated service account key. The field is required.
+         *     - For service keys, supply at least one space via the `organizations` array. The service
+         *       account is granted membership in each specified space. Multiple organizations and multiple
+         *       spaces per organization are supported.
+         *     - For `USER` keys, the key inherits the authenticated user's own permissions.
          *     - You may only assign roles at or below your own privilege level. Attempting to
-         *       assign a role higher than your own returns `400 Bad Request`.
-         *     - All roles default to the minimum privilege when omitted: `space_role` → `MEMBER`,
-         *       `org_role` → `READ_ONLY`, `account_role` → `MEMBER`.
+         *       assign a role higher than your own returns `422 Unprocessable Entity`.
+         *     - All roles default to minimum privilege when omitted: space roles default to `MEMBER`,
+         *       organization roles default to `READ_ONLY`, and `account_role` defaults to `MEMBER`.
          *
          *     **Authorization:**
          *     - **User keys:** Requires the `developer` user permission flag. Returns `403` when this flag is absent.
@@ -702,7 +703,11 @@ export interface paths {
          *     already-revoked key is a no-op and still returns `204`.
          *
          *     **Authorization:**
-         *     Requires the `developer` user permission flag and account admin role. Returns `403` when conditions are not met.
+         *     Requires the `developer` user permission flag **or** account admin role (either condition is sufficient).
+         *     Returns `403` when neither condition is met.
+         *
+         *     For service keys, only the key's creator or an account admin may revoke the key.
+         *     A developer who did not create the key receives `404` (prevents key-ID enumeration).
          *
          *       <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
@@ -1550,9 +1555,10 @@ export interface paths {
         };
         /**
          * List integrations
-         * @description List integrations the user has access to. The response is polymorphic:
-         *     each item carries a `type` (and, for `LLM`, `config.provider`) for
-         *     client-side discrimination. Use `?type=` to filter to a single type.
+         * @description List integrations the user has access to. `type` is required and the
+         *     response contains only integrations of that type. Each item still
+         *     carries its `type` (and, for `LLM`, `config.provider`) for client-side
+         *     discrimination. A missing or invalid `type` returns `400`.
          *
          *     Integrations are owned at the account level but carry visibility scopings
          *     (account-wide, organization, or space). `space_id` / `space_name` filter
@@ -1564,7 +1570,9 @@ export interface paths {
         put?: never;
         /**
          * Create an integration
-         * @description Create a new integration. The `type` field selects the config shape.
+         * @description Create a new integration. The `type` field selects the config shape;
+         *     for `LLM`, `config.provider` selects the per-provider config. v1
+         *     supports `type=LLM` (provider `OPEN_AI`) and `type=AGENT`.
          *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
@@ -1602,8 +1610,8 @@ export interface paths {
         head?: never;
         /**
          * Update an integration
-         * @description Partially update an integration. `type` and `provider` are immutable.
-         *     At least one field must be provided.
+         * @description Partially update an integration. `type` is immutable (and, for `LLM`,
+         *     `config.provider`). At least one field must be provided.
          *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
@@ -2954,6 +2962,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v2/monitors/{monitor_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a monitor
+         * @description Get a monitor by its ID.
+         *
+         *     The response shape varies by `type` (`data_quality`, `performance`,
+         *     `drift`, `custom_metric`, `tracing`)
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["get_monitors"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v2/traces": {
         parameters: {
             query?: never;
@@ -3434,8 +3467,10 @@ export interface components {
             data: {
                 [key: string]: unknown;
             };
-            /** @description Human annotations on this record */
+            /** @description Annotations on this record. */
             annotations: components["schemas"]["Annotation"][];
+            /** @description Trace annotations on this record. */
+            trace_annotations: components["schemas"]["Annotation"][];
             /** @description Evaluation results on this record */
             evaluations: components["schemas"]["Evaluation"][];
             /** @description Users assigned to this record */
@@ -3641,6 +3676,11 @@ export interface components {
              * @example 2024-01-08T00:00:00Z
              */
             end_time?: string;
+            /**
+             * @description Whether the record is a span or a trace, which affects whether annotations are written as span annotations or trace annotations. Attempts to write trace annotations on spans will be rejected. Optional; defaults to 'SPAN'.
+             * @default SPAN
+             */
+            granularity?: components["schemas"]["RecordGranularity"];
             /** @description Batch of span annotations to write. Up to 1000 spans per request. */
             annotations: components["schemas"]["AnnotateRecordInput"][];
         };
@@ -3696,53 +3736,6 @@ export interface components {
             description?: string;
             key_type: components["schemas"]["ApiKeyType"];
             status: components["schemas"]["ApiKeyStatus"];
-            /**
-             * @description The full API key value. **Only returned once** at creation or refresh time.
-             *     Store it securely — it cannot be retrieved again.
-             */
-            key: string;
-            /**
-             * Format: date-time
-             * @description Timestamp when the key was created.
-             */
-            created_at: string;
-            /**
-             * Format: date-time
-             * @description Optional timestamp when the key will expire.
-             */
-            expires_at?: string;
-            /** @description ID of the user who created the key. */
-            created_by_user_id: string;
-            /**
-             * Format: date-time
-             * @description Approximate timestamp when the key was last used for authentication. This value is periodically updated and may not reflect the most recent usage.
-             */
-            last_used_at?: string;
-        };
-        /**
-         * @description Account-level role for a service key's bot user.
-         *     - ADMIN - Full account administrative access.
-         *     - MEMBER - Standard account access.
-         * @enum {string}
-         */
-        ApiKeyAccountRole: "ADMIN" | "MEMBER";
-        /**
-         * @description Organization-level role for a service key's bot user.
-         *     - ADMIN - Full control within the organization.
-         *     - MEMBER - Standard organization access.
-         *     - READ_ONLY - View-only access.
-         * @enum {string}
-         */
-        ApiKeyOrganizationRole: "ADMIN" | "MEMBER" | "READ_ONLY";
-        ApiKeyRedacted: {
-            /** @description Unique identifier for the API key. */
-            id: string;
-            /** @description User-defined name for the API key. */
-            name: string;
-            /** @description Optional user-defined description for the API key. */
-            description?: string;
-            key_type: components["schemas"]["ApiKeyType"];
-            status: components["schemas"]["ApiKeyStatus"];
             /** @description Redacted version of the key suitable for display (e.g., "ak-abc...xyz"). */
             redacted_key: string;
             /**
@@ -3763,35 +3756,6 @@ export interface components {
              */
             last_used_at?: string;
         };
-        /** @description Role assignments for the bot user created with a service key. */
-        ApiKeyRoles: {
-            /**
-             * @description Role to assign the bot user within the space. Defaults to `MEMBER` when omitted.
-             *     Must be at or below the caller's own effective space role.
-             * @default MEMBER
-             */
-            space_role?: components["schemas"]["ApiKeySpaceRole"];
-            /**
-             * @description Role to assign the bot user within the organization. Defaults to `READ_ONLY` when
-             *     omitted. Must be at or below the caller's own organization role.
-             * @default READ_ONLY
-             */
-            org_role?: components["schemas"]["ApiKeyOrganizationRole"];
-            /**
-             * @description Account-level role to assign the bot user. Defaults to `MEMBER` when omitted.
-             *     Must be at or below the caller's own account role.
-             * @default MEMBER
-             */
-            account_role?: components["schemas"]["ApiKeyAccountRole"];
-        };
-        /**
-         * @description Space-level role for a service key's bot user.
-         *     - ADMIN - Full control within the space.
-         *     - MEMBER - Standard space access.
-         *     - READ_ONLY - View-only access.
-         * @enum {string}
-         */
-        ApiKeySpaceRole: "ADMIN" | "MEMBER" | "READ_ONLY";
         /**
          * @description Current status of the API key.
          *     - ACTIVE - The key is valid for use.
@@ -3801,12 +3765,40 @@ export interface components {
         ApiKeyStatus: "ACTIVE" | "REVOKED";
         /**
          * @description Type of the API key.
-         *     - USER - Key associated with a specific user.
-         *     - SERVICE - Key associated with a bot user for service authentication.
+         *     - USER - Personal key that authenticates as the creating user.
+         *     - SERVICE - Key that authenticates as a service account with explicitly granted access.
          * @enum {string}
          */
         ApiKeyType: "USER" | "SERVICE";
+        /**
+         * @description Request body for creating an API key. Set `key_type` to select the kind of key:
+         *     - `USER` — authenticates as the creating user, inheriting their current permissions.
+         *     - `SERVICE` — authenticates as a service account: a dedicated, automatically provisioned
+         *       identity with roles explicitly configured in the spaces you specify. Use this for
+         *       automation, CI/CD pipelines, or any workload that should run independently of a
+         *       specific user.
+         */
         CreateApiKeyRequest: {
+            /**
+             * @description The type of key to create. Use `"USER"` for a personal key that authenticates
+             *     as you with your current permissions. Use `"SERVICE"` for a key tied to a
+             *     dedicated service account with its own explicitly configured access across
+             *     one or more spaces.
+             */
+            key_type: components["schemas"]["ApiKeyType"];
+        } & (components["schemas"]["CreateUserApiKeyRequest"] | components["schemas"]["CreateServiceApiKeyRequest"]);
+        /**
+         * @description Response for a newly created or refreshed API key. The `key_type` field discriminates the variant:
+         *     - `USER` — standard user key; no bot user.
+         *     - `SERVICE` — service key tied to a service account; includes a `bot_user` with the service account's resolved role assignments.
+         */
+        CreateApiKeyResponse: components["schemas"]["UserApiKeyCreated"] | components["schemas"]["ServiceApiKeyCreated"];
+        CreateServiceApiKeyRequest: {
+            /**
+             * @description Must be `"SERVICE"`. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            key_type: "SERVICE";
             /**
              * @description User-defined name for the API key.
              * @example CI pipeline key
@@ -3818,37 +3810,57 @@ export interface components {
              */
             description?: string;
             /**
-             * @description Type of the API key to create. Defaults to `USER`.
-             *     - USER - Key that authenticates as the creating user with their full permissions.
-             *       `space_id` and `roles` must not be set (returns `400`).
-             *     - SERVICE - Key scoped to a specific space backed by a dedicated bot user.
-             *       Requires `space_id`. All roles default to minimum privilege when omitted.
-             * @default USER
-             * @example USER
-             */
-            key_type?: components["schemas"]["ApiKeyType"];
-            /**
              * Format: date-time
              * @description Optional expiration timestamp. If omitted the key never expires.
              * @example 2026-01-01T00:00:00Z
              */
             expires_at?: string;
             /**
-             * @description ID of the space this service key is scoped to. Required when `key_type` is `SERVICE`;
-             *     invalid for `USER` keys (returns `400`).
-             * @example U3BhY2UxMjM
+             * @description Account-level role for the bot user. Only predefined roles are supported at this level.
+             *     Custom account roles (`{ "type": "CUSTOM", "id": "..." }`) are not yet supported and return `422`.
+             *     Support will be added in a future release.
+             *     Defaults to `{ type: PREDEFINED, name: MEMBER }` when omitted.
+             *     Must be at or below the caller's own account role.
+             *     The `ANNOTATOR` role is not valid for service keys and returns `422`.
+             * @default {
+             *       "type": "PREDEFINED",
+             *       "name": "MEMBER"
+             *     }
              */
-            space_id?: string;
+            account_role?: Omit<components["schemas"]["UserRoleAssignment"], "type">;
             /**
-             * @description Role assignments for the service key's bot user. Only valid when `key_type` is `SERVICE`;
-             *     invalid for `USER` keys (returns `400`). When omitted, each role field defaults to
-             *     minimum privilege: `space_role` → `MEMBER`, `org_role` → `READ_ONLY`, `account_role` → `MEMBER`.
+             * @description Organizations the service account should have access to. Each entry specifies an organization
+             *     and the spaces within it. Must include at least one organization with at least one space.
+             *     All spaces must belong to the organization they are listed under.
              */
-            roles?: components["schemas"]["ApiKeyRoles"];
+            organizations: components["schemas"]["ServiceKeyOrgAssignment"][];
+        };
+        CreateUserApiKeyRequest: {
+            /**
+             * @description Must be `"USER"`. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            key_type: "USER";
+            /**
+             * @description User-defined name for the API key.
+             * @example My dev key
+             */
+            name: string;
+            /**
+             * @description Optional user-defined description for the API key.
+             * @example Used for local development.
+             */
+            description?: string;
+            /**
+             * Format: date-time
+             * @description Optional expiration timestamp. If omitted the key never expires.
+             * @example 2026-01-01T00:00:00Z
+             */
+            expires_at?: string;
         };
         ListApiKeysResponse: {
             /** @description API keys matching the request filters. */
-            api_keys: components["schemas"]["ApiKeyRedacted"][];
+            api_keys: components["schemas"]["ApiKey"][];
             /** @description Pagination metadata for cursor-based navigation. */
             pagination: components["schemas"]["PaginationMetadata"];
         };
@@ -3876,6 +3888,140 @@ export interface components {
              * @example 300
              */
             grace_period_seconds?: number;
+        };
+        /**
+         * @description The refreshed API key credential and its metadata. Refresh replaces the key secret
+         *     but preserves the key's identity (ID, name, type, bindings). Unlike key creation,
+         *     refresh does **not** return `bot_user` details — refresh never creates a new service
+         *     account and the existing bot user's bindings are unchanged.
+         */
+        RefreshApiKeyResponse: components["schemas"]["ApiKey"] & {
+            /**
+             * @description The full replacement API key value. **Only returned once** during
+             *     refresh. Store it securely — it cannot be retrieved again.
+             */
+            key: string;
+        };
+        ServiceApiKeyCreated: components["schemas"]["ApiKey"] & {
+            /**
+             * @description Discriminator value for service keys.
+             * @enum {string}
+             */
+            key_type?: "SERVICE";
+            /**
+             * @description The full API key value. **Only returned once** at creation or refresh time.
+             *     Store it securely — it cannot be retrieved again.
+             */
+            key: string;
+            /** @description The bot user created for this service key, including their resolved role assignments. */
+            bot_user: components["schemas"]["ServiceKeyBotUser"];
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            key_type: "SERVICE";
+        };
+        ServiceKeyBotUser: {
+            /** @description Global ID of the bot user. */
+            id: string;
+            /** @description Display name of the bot user. */
+            name: string;
+            /** @description Account-level role assigned to the bot user. Always present — defaults are resolved server-side. */
+            account_role: Omit<components["schemas"]["UserRoleAssignment"], "type">;
+            /** @description Organization access assignments for the service account, each containing nested space assignments. */
+            organizations: components["schemas"]["ServiceKeyBotUserOrgAssignment"][];
+        };
+        ServiceKeyBotUserOrgAssignment: {
+            /**
+             * @description ID of the organization the service account has access to.
+             * @example T3JnYW5pemF0aW9uOjEwMDE6eFl6Vw
+             */
+            org_id: string;
+            /** @description Role assigned to the bot user within this organization. Always present — defaults are resolved server-side. */
+            role: Omit<components["schemas"]["OrganizationRoleAssignment"], "type">;
+            /** @description Space assignments within this organization. Roles are always present in the response (defaults are resolved server-side). */
+            spaces: components["schemas"]["ServiceKeyBotUserSpaceAssignment"][];
+        };
+        ServiceKeyBotUserSpaceAssignment: {
+            /**
+             * @description ID of the space the service account has access to.
+             * @example U3BhY2U6MjAwMTphQmNE
+             */
+            space_id: string;
+            /** @description Role assigned to the bot user within this space. Always present — defaults are resolved server-side. */
+            role: Omit<components["schemas"]["SpaceRoleAssignment"], "type">;
+        };
+        ServiceKeyOrgAssignment: {
+            /**
+             * @description ID of the organization to grant the service account access to.
+             * @example T3JnYW5pemF0aW9uOjEwMDE6eFl6Vw
+             */
+            org_id: string;
+            /**
+             * @description Role for the bot user within this organization. Only predefined roles are supported at this level.
+             *     Custom org roles (`{ "type": "CUSTOM", "id": "..." }`) are not yet supported and return `422`.
+             *     Support will be added in a future release.
+             *     Defaults to `{ type: PREDEFINED, name: READ_ONLY }` when omitted.
+             *     Must be at or below the caller's own effective organization role.
+             *     The `ANNOTATOR` role is not valid for service keys and returns `422`.
+             * @default {
+             *       "type": "PREDEFINED",
+             *       "name": "READ_ONLY"
+             *     }
+             */
+            role?: Omit<components["schemas"]["OrganizationRoleAssignment"], "type">;
+            /**
+             * @description Spaces within this organization the service account should have access to. Each entry specifies
+             *     a space and optional role. All space IDs must belong to this organization.
+             */
+            spaces: components["schemas"]["ServiceKeySpaceAssignment"][];
+        };
+        /**
+         * @description Declares one space that the service key's service account should have access to.
+         *
+         *     The **space assignment** (`space_id`) identifies the target space. The **role assignment** (`role`)
+         *     specifies the level of access within that space — either a named predefined role or a
+         *     custom RBAC role identified by its ID.
+         */
+        ServiceKeySpaceAssignment: {
+            /**
+             * @description ID of the space to grant the service account access to.
+             * @example U3BhY2U6MjAwMTphQmNE
+             */
+            space_id: string;
+            /**
+             * @description Role to assign the bot user within this space. A role assignment is either:
+             *     - `{ "type": "PREDEFINED", "name": "ADMIN" | "MEMBER" | "READ_ONLY" }` — a built-in space role
+             *     - `{ "type": "CUSTOM", "id": "<encoded-role-id>" }` — a custom RBAC role
+             *
+             *     Defaults to `{ "type": "PREDEFINED", "name": "MEMBER" }` when omitted.
+             *     Must be at or below the caller's own effective space role.
+             *     The `ANNOTATOR` role is not valid for service keys and returns `422`.
+             * @default {
+             *       "type": "PREDEFINED",
+             *       "name": "MEMBER"
+             *     }
+             */
+            role?: Omit<components["schemas"]["SpaceRoleAssignment"], "type">;
+        };
+        UserApiKeyCreated: components["schemas"]["ApiKey"] & {
+            /**
+             * @description Discriminator value for user keys.
+             * @enum {string}
+             */
+            key_type?: "USER";
+            /**
+             * @description The full API key value. **Only returned once** at creation or refresh time.
+             *     Store it securely — it cannot be retrieved again.
+             */
+            key: string;
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            key_type: "USER";
         };
         /** @description A single audit log entry recording an authenticated user action. */
         AuditLog: {
@@ -4324,6 +4470,11 @@ export interface components {
             include_explanations: boolean;
             /** @description Whether to use function calling if the model supports it */
             use_function_calling_if_available: boolean;
+            /**
+             * @description Whether to use structured output if the model supports it
+             * @default true
+             */
+            use_structured_output?: boolean;
             /** @description Map of choice label to numeric score (e.g. {"relevant": 1, "irrelevant": 0}). When omitted, the evaluator produces freeform (non-classification) output. */
             classification_choices?: {
                 [key: string]: number;
@@ -4385,6 +4536,12 @@ export interface components {
             updated_at: string;
             /** @description Unique identifier for the experiment traces project this experiment belongs to (if it exists) */
             experiment_traces_project_id?: string;
+            /**
+             * @description Identifier (base64) of the agent integration that backs this
+             *     experiment, as returned by the integrations API. Null for non-agent
+             *     experiments (for example, SDK or Playground experiments).
+             */
+            integration_id?: string | null;
         };
         /** @description An experiment run with experiment data including outputs, evaluations, and trace metadata */
         ExperimentRun: {
@@ -4418,6 +4575,95 @@ export interface components {
             /** @description Array of experiment run data to append to the experiment. Between 1 and 1000 runs per request. */
             experiment_runs: components["schemas"]["ExperimentRunInput"][];
         };
+        /**
+         * @description Configuration for `type: AGENT` integrations: a customer-hosted HTTPS
+         *     endpoint plus a JSON Schema describing the request payload.
+         */
+        AgentConfig: {
+            /**
+             * Format: uri
+             * @description HTTPS endpoint URL Arize calls for replay. Validated server-side
+             *     for SSRF (must resolve to a public address).
+             */
+            endpoint: string;
+            /**
+             * @description Whether any headers are configured. Read-only — derived from
+             *     `headers` on write. Header values are never returned.
+             */
+            readonly has_headers: boolean;
+            /** @description JSON Schema (Draft-07) the endpoint's request body conforms to. */
+            input_schema: {
+                [key: string]: unknown;
+            };
+            /**
+             * @description Named, reusable request payloads. Replace-on-provide on PATCH.
+             *     Always present; an integration with no presets returns `[]`.
+             */
+            request_presets: components["schemas"]["AgentRequestPreset"][];
+        };
+        /**
+         * @description An agent integration (type=AGENT): a customer-hosted HTTPS endpoint plus
+         *     a JSON Schema describing the request payload.
+         */
+        AgentIntegration: {
+            /** @description The unique identifier for the integration. */
+            id: string;
+            /**
+             * @description Discriminator identifying an agent integration. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "AGENT";
+            /** @description The integration name. Unique per (account, type). */
+            name: string;
+            /** @description Optional human-readable description of the integration. */
+            description?: string | null;
+            /** @description Visibility scoping rules. Account-wide when empty. */
+            scopings: components["schemas"]["IntegrationScoping"][];
+            /**
+             * Format: date-time
+             * @description When the integration was created.
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description When the integration was last updated.
+             */
+            updated_at: string;
+            /** @description Unique identifier of the user who created the integration. Null if that user has since been deleted. */
+            created_by_user_id: string | null;
+            config: components["schemas"]["AgentConfig"];
+        };
+        /**
+         * @description A named, reusable request payload bound to an agent integration. Embedded
+         *     in `agent.config.request_presets[]`. There is no standalone preset
+         *     endpoint; presets are managed exclusively via the nested collection on
+         *     the parent integration.
+         *
+         *     Validation rules:
+         *     - `name` is unique within the integration (case-sensitive). Length 1-255.
+         *     - `description` length 0-1024 (nullable).
+         *     - `config` must conform to the integration's `input_schema` *with
+         *       `required` dropped* (present fields validated; missing fields ignored).
+         */
+        AgentRequestPreset: {
+            /** @description Server-generated, opaque preset identifier. Read-only. */
+            readonly id?: string;
+            /** @description Preset name (unique within the integration). Length 1-255. */
+            name: string;
+            /** @description Optional preset description (length 0-1024). */
+            description?: string | null;
+            /**
+             * @description Partial request body. Validated against the parent integration's
+             *     `input_schema` with `required` dropped.
+             */
+            config: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            readonly created_at?: string;
+            /** Format: date-time */
+            readonly updated_at?: string;
+        };
         /** @description Config for an Anthropic LLM integration. */
         AnthropicConfig: {
             /** @description Whether function/tool calling is enabled. */
@@ -4429,6 +4675,110 @@ export interface components {
             provider: "ANTHROPIC";
             /** @description Whether an API key is configured (the key itself is never returned). */
             has_api_key: boolean;
+        };
+        /** @description AWS Bedrock auth settings, discriminated by `auth_type`. */
+        AwsBedrockAuth: components["schemas"]["AwsBedrockDefaultAuth"] | components["schemas"]["AwsBedrockBearerTokenAuth"] | components["schemas"]["AwsBedrockProxyWithHeadersAuth"];
+        /** @description Bearer-token auth for AWS Bedrock. The token surfaces as `has_api_key` on read; the token itself is never returned. */
+        AwsBedrockBearerTokenAuth: {
+            /**
+             * @description Discriminator identifying bearer-token auth. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            auth_type: "BEARER_TOKEN";
+            /** @description Whether a bearer token is configured (the token itself is never returned). Always true for integrations created through this API; may be false for integrations created through the Arize UI without a token. */
+            has_api_key: boolean;
+            /** @description Custom Bedrock endpoint URL. Null when not set. */
+            base_url: string | null;
+        };
+        /** @description Config for an AWS Bedrock LLM integration. The model catalog is caller-controlled via `is_default_models_enabled` and `model_names`. Function/tool-calling settings do not apply to Bedrock and are omitted. */
+        AwsBedrockConfig: {
+            /**
+             * @description Discriminator identifying the AWS Bedrock provider. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            provider: "AWS_BEDROCK";
+            /** @description Whether Arize's default Bedrock model catalog is enabled. */
+            is_default_models_enabled: boolean;
+            /** @description Custom model names configured on this integration. Empty when none. */
+            model_names: string[];
+            auth: components["schemas"]["AwsBedrockAuth"];
+        };
+        /** @description Role-assumption auth for AWS Bedrock: Arize assumes the provided IAM role to call Bedrock. The role ARN and external ID are not secrets and are returned on read. */
+        AwsBedrockDefaultAuth: {
+            /**
+             * @description Discriminator identifying role-assumption auth. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            auth_type: "DEFAULT";
+            /** @description AWS IAM role ARN Arize assumes for cross-account access. */
+            role_arn: string;
+            /** @description External ID on the assume-role policy. Null when not set. */
+            external_id: string | null;
+            /** @description Custom Bedrock endpoint URL. Null when not set. */
+            base_url: string | null;
+        };
+        /** @description Proxy auth for AWS Bedrock: requests are forwarded to a proxy URL with custom headers. Header values are write-only; configured names are returned as `header_names`. */
+        AwsBedrockProxyWithHeadersAuth: {
+            /**
+             * @description Discriminator identifying proxy auth. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            auth_type: "PROXY_WITH_HEADERS";
+            /** @description Proxy URL requests are forwarded to. */
+            base_url: string;
+            /** @description Names of the custom request headers configured on this integration. Empty when none are configured. Header values are write-only and never returned. */
+            header_names: string[];
+        };
+        CreateAgentConfig: {
+            /**
+             * Format: uri
+             * @description HTTPS endpoint requests are sent to. Validated server-side and must resolve to a public address.
+             */
+            endpoint: string;
+            /** @description Cleartext header map. Encrypted at rest; never returned in responses. */
+            headers?: {
+                [key: string]: string;
+            };
+            /** @description JSON Schema (Draft-07) the endpoint's request body conforms to. */
+            input_schema: {
+                [key: string]: unknown;
+            };
+            /** @description Optional initial presets for the integration. */
+            request_presets?: components["schemas"]["CreateAgentRequestPresetInput"][];
+        };
+        CreateAgentIntegrationRequest: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "AGENT";
+            /** @description Integration name (unique within the account). */
+            name: string;
+            description?: string | null;
+            /**
+             * @description Visibility scoping rules. Defaults to account-wide if omitted
+             *     or empty. A scoping with `space_id` set MUST also set
+             *     `organization_id`.
+             */
+            scopings?: components["schemas"]["IntegrationScoping"][];
+            config: components["schemas"]["CreateAgentConfig"];
+        };
+        /**
+         * @description Write shape for an agent request preset on create. Server-generated fields
+         *     (`id`, `created_at`, `updated_at`) are not accepted on input.
+         */
+        CreateAgentRequestPresetInput: {
+            /** @description Preset name (unique within the integration). Length 1-255. */
+            name: string;
+            /** @description Optional preset description (length 0-1024). */
+            description?: string | null;
+            /**
+             * @description Partial request body. Validated against the parent integration's
+             *     `input_schema` with `required` dropped.
+             */
+            config: {
+                [key: string]: unknown;
+            };
         };
         /** @description Create config for an Anthropic LLM integration. `api_key` is required and is write-only (never returned in responses). */
         CreateAnthropicConfig: {
@@ -4442,8 +4792,97 @@ export interface components {
             /** @description API key for the provider (write-only, never returned). */
             api_key: string;
         };
-        CreateIntegrationRequest: components["schemas"]["CreateLlmIntegrationRequest"];
-        CreateLlmConfig: components["schemas"]["CreateOpenAiConfig"] | components["schemas"]["CreateAnthropicConfig"];
+        /** @description AWS Bedrock auth settings for create and update, discriminated by `auth_type`. On PATCH this object replaces the stored auth settings wholesale (auth_type may change); omitted fields of the previous auth mode are cleared. */
+        CreateAwsBedrockAuth: components["schemas"]["CreateAwsBedrockDefaultAuth"] | components["schemas"]["CreateAwsBedrockBearerTokenAuth"] | components["schemas"]["CreateAwsBedrockProxyWithHeadersAuth"];
+        /** @description Create bearer-token auth. `api_key` is required and write-only (never returned; surfaces as `has_api_key` on read). */
+        CreateAwsBedrockBearerTokenAuth: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            auth_type: "BEARER_TOKEN";
+            /** @description Bearer token for Bedrock (write-only, never returned). */
+            api_key: string;
+            /** @description Custom Bedrock endpoint URL. Defaults to the provider default endpoint. */
+            base_url?: string;
+        };
+        /** @description Create config for an AWS Bedrock LLM integration. `auth` selects one of three auth modes via `auth_type`. The integration must have at least one model available: enable `is_default_models_enabled` or provide at least one entry in `model_names`, otherwise the request is rejected with 422. */
+        CreateAwsBedrockConfig: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            provider: "AWS_BEDROCK";
+            auth: components["schemas"]["CreateAwsBedrockAuth"];
+            /** @description Enable Arize's default Bedrock model catalog. Defaults to false. */
+            is_default_models_enabled?: boolean;
+            /** @description Custom model names to make available. Defaults to none. */
+            model_names?: string[];
+        };
+        /** @description Create role-assumption auth. `role_arn` is required. */
+        CreateAwsBedrockDefaultAuth: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            auth_type: "DEFAULT";
+            /** @description AWS IAM role ARN Arize assumes for cross-account access. */
+            role_arn: string;
+            /** @description External ID on the assume-role policy. Defaults to not set. */
+            external_id?: string;
+            /** @description Custom Bedrock endpoint URL. Defaults to the provider default endpoint. */
+            base_url?: string;
+        };
+        /** @description Create proxy auth. `base_url` is required. `headers` is write-only; names are returned as `header_names` on read. */
+        CreateAwsBedrockProxyWithHeadersAuth: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            auth_type: "PROXY_WITH_HEADERS";
+            /** @description Proxy URL requests are forwarded to (HTTPS). */
+            base_url: string;
+            /** @description Custom request headers sent to the proxy, as a name-to-value map. Write-only: values are never returned; names are exposed as `header_names` on read. Defaults to no headers. */
+            headers?: {
+                [key: string]: string;
+            };
+        };
+        /** @description Create config for a custom OpenAI-compatible endpoint integration. `base_url` is required and must implement the OpenAI API shape (it is validated server-side and must resolve to a public address). `api_key` and `headers` are write-only (never returned; headers surface as `header_names` on read). The integration must have at least one model source: enable `is_default_models_enabled` or provide at least one entry in `model_names`, otherwise the request is rejected with 422. */
+        CreateCustomConfig: {
+            /** @description Enable function/tool calling. Defaults to true. */
+            is_function_calling_enabled?: boolean;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            provider: "CUSTOM";
+            /** @description Endpoint URL requests are sent to (HTTPS). */
+            base_url: string;
+            /** @description API key for the endpoint (write-only, never returned). */
+            api_key?: string;
+            /** @description Custom request headers sent to the endpoint, as a name-to-value map. Write-only: values are never returned; names are exposed as `header_names` on read. Defaults to no headers. */
+            headers?: {
+                [key: string]: string;
+            };
+            /** @description Enable Arize's default model catalog. Defaults to false. */
+            is_default_models_enabled?: boolean;
+            /** @description Custom model names to make available. Defaults to none. */
+            model_names?: string[];
+        };
+        /** @description Create config for a Google Gemini LLM integration. `api_key` is required and is write-only (never returned in responses). */
+        CreateGeminiConfig: {
+            /** @description Enable function/tool calling. Defaults to true. */
+            is_function_calling_enabled?: boolean;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            provider: "GEMINI";
+            /** @description API key for the provider (write-only, never returned). */
+            api_key: string;
+        };
+        CreateIntegrationRequest: components["schemas"]["CreateLlmIntegrationRequest"] | components["schemas"]["CreateAgentIntegrationRequest"];
+        CreateLlmConfig: components["schemas"]["CreateOpenAiConfig"] | components["schemas"]["CreateAnthropicConfig"] | components["schemas"]["CreateGeminiConfig"] | components["schemas"]["CreateAwsBedrockConfig"] | components["schemas"]["CreateCustomConfig"] | components["schemas"]["CreateVertexAiConfig"] | components["schemas"]["CreateNvidiaNimConfig"];
         CreateLlmIntegrationRequest: {
             /**
              * @description discriminator enum property added by openapi-typescript
@@ -4455,6 +4894,28 @@ export interface components {
             /** @description Visibility scoping rules. Defaults to account-wide. */
             scopings?: components["schemas"]["IntegrationScoping"][];
             config: components["schemas"]["CreateLlmConfig"];
+        };
+        /** @description Create config for an NVIDIA NIM integration. Every connection field is optional: omit `base_url` to use the provider default endpoint, or set it to a self-hosted NIM endpoint (validated server-side). `api_key` and `headers` are write-only (never returned; headers surface as `header_names` on read). The integration must have at least one model source: enable `is_default_models_enabled` or provide at least one entry in `model_names`, otherwise the request is rejected with 422. */
+        CreateNvidiaNimConfig: {
+            /** @description Enable function/tool calling. Defaults to true. */
+            is_function_calling_enabled?: boolean;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            provider: "NVIDIA_NIM";
+            /** @description Self-hosted NIM endpoint URL (HTTPS). Defaults to the provider default endpoint. */
+            base_url?: string;
+            /** @description API key for the endpoint (write-only, never returned). */
+            api_key?: string;
+            /** @description Custom request headers sent to the endpoint, as a name-to-value map. Write-only: values are never returned; names are exposed as `header_names` on read. Defaults to no headers. */
+            headers?: {
+                [key: string]: string;
+            };
+            /** @description Enable Arize's default model catalog. Defaults to false. */
+            is_default_models_enabled?: boolean;
+            /** @description Custom model names to make available. Defaults to none. */
+            model_names?: string[];
         };
         /** @description Create config for an OpenAI LLM integration. `api_key` is required and is write-only (never returned in responses). */
         CreateOpenAiConfig: {
@@ -4468,8 +4929,54 @@ export interface components {
             /** @description API key for the provider (write-only, never returned). */
             api_key: string;
         };
+        /** @description Create config for a Google Vertex AI integration. No credentials are stored: Arize accesses Vertex through the configured GCP project. `project_id`, `location`, and `project_access_label` are all required. */
+        CreateVertexAiConfig: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            provider: "VERTEX_AI";
+            /** @description GCP project ID Arize accesses Vertex through. */
+            project_id: string;
+            /** @description GCP region (e.g. us-central1). */
+            location: string;
+            /** @description Label used to verify Arize's access to the GCP project. */
+            project_access_label: string;
+        };
+        /** @description Config for a custom OpenAI-compatible endpoint integration. `base_url` is the endpoint Arize sends requests to; it must implement the OpenAI API shape. Secrets are write-only: the API key surfaces as `has_api_key` and custom request headers surface as `header_names` (names only). */
+        CustomConfig: {
+            /** @description Whether function/tool calling is enabled. */
+            is_function_calling_enabled: boolean;
+            /**
+             * @description Discriminator identifying a custom OpenAI-compatible endpoint. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            provider: "CUSTOM";
+            /** @description Whether an API key is configured (the key itself is never returned). */
+            has_api_key: boolean;
+            /** @description Endpoint URL requests are sent to. */
+            base_url: string;
+            /** @description Names of the custom request headers configured on this integration. Empty when none are configured. Header values are write-only and never returned. */
+            header_names: string[];
+            /** @description Whether Arize's default model catalog is enabled. */
+            is_default_models_enabled: boolean;
+            /** @description Custom model names configured on this integration. Empty when none. */
+            model_names: string[];
+        };
+        /** @description Config for a Google Gemini LLM integration. */
+        GeminiConfig: {
+            /** @description Whether function/tool calling is enabled. */
+            is_function_calling_enabled: boolean;
+            /**
+             * @description Discriminator identifying the Gemini provider. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            provider: "GEMINI";
+            /** @description Whether an API key is configured (the key itself is never returned). */
+            has_api_key: boolean;
+        };
         /** @description A polymorphic integration resource. The `type` field selects the `config` shape; for `LLM`, `config.provider` selects the per-provider config. */
-        Integration: components["schemas"]["LlmIntegration"];
+        Integration: components["schemas"]["LlmIntegration"] | components["schemas"]["AgentIntegration"];
         /** @description Visibility scoping for the integration. */
         IntegrationScoping: {
             /** @description Organization identifier (base64). Null means account-wide. */
@@ -4478,10 +4985,14 @@ export interface components {
             space_id?: string | null;
         };
         /**
-         * @description The integration category. Selects the shape of `config`. Currently only `LLM` is implemented; additional types (agent, alerting, webhook) are added non-breakingly.
+         * @description The integration category. Selects the shape of `config`. Additive — new
+         *     types (alerting, webhook, ...) are added non-breakingly.
+         *
+         *     - `LLM`   — a model-provider integration (e.g. OpenAI).
+         *     - `AGENT` — connects your own agent, exposed at an HTTP endpoint.
          * @enum {string}
          */
-        IntegrationType: "LLM";
+        IntegrationType: "LLM" | "AGENT";
         ListIntegrationsResponse: {
             /** @description A polymorphic, type-tagged list of integrations. */
             integrations: components["schemas"]["Integration"][];
@@ -4489,10 +5000,10 @@ export interface components {
             pagination: components["schemas"]["PaginationMetadata"];
         };
         /** @description Per-provider LLM config, discriminated by `provider`. */
-        LlmConfig: components["schemas"]["OpenAiConfig"] | components["schemas"]["AnthropicConfig"];
+        LlmConfig: components["schemas"]["OpenAiConfig"] | components["schemas"]["AnthropicConfig"] | components["schemas"]["GeminiConfig"] | components["schemas"]["AwsBedrockConfig"] | components["schemas"]["CustomConfig"] | components["schemas"]["VertexAiConfig"] | components["schemas"]["NvidiaNimConfig"];
         /** @description An LLM integration (type=LLM). */
         LlmIntegration: {
-            /** @description The integration ID (base64 global ID). */
+            /** @description The unique identifier for the integration. */
             id: string;
             /**
              * @description Discriminator identifying an LLM integration. (enum property replaced by openapi-typescript)
@@ -4513,15 +5024,35 @@ export interface components {
              * @description When the integration was last updated.
              */
             updated_at: string;
-            /** @description Global ID of the user who created the integration. */
+            /** @description Unique identifier of the user who created the integration. */
             created_by_user_id: string;
             config: components["schemas"]["LlmConfig"];
         };
         /**
-         * @description The LLM vendor for an `LLM` integration. Selects the per-provider `config` member. `OPEN_AI` and `ANTHROPIC` are implemented; additional providers are added non-breakingly.
+         * @description The LLM vendor for an `LLM` integration. Selects the per-provider `config` member. `OPEN_AI`, `ANTHROPIC`, `GEMINI`, `AWS_BEDROCK`, `CUSTOM`, `VERTEX_AI`, and `NVIDIA_NIM` are implemented; additional providers are added non-breakingly.
          * @enum {string}
          */
-        LlmIntegrationProvider: "OPEN_AI" | "ANTHROPIC";
+        LlmIntegrationProvider: "OPEN_AI" | "ANTHROPIC" | "GEMINI" | "AWS_BEDROCK" | "CUSTOM" | "VERTEX_AI" | "NVIDIA_NIM";
+        /** @description Config for an NVIDIA NIM integration. Every connection field is optional: `base_url` targets a self-hosted NIM endpoint (null when using the provider default). Secrets are write-only: the API key surfaces as `has_api_key` and custom request headers surface as `header_names` (names only). */
+        NvidiaNimConfig: {
+            /** @description Whether function/tool calling is enabled. */
+            is_function_calling_enabled: boolean;
+            /**
+             * @description Discriminator identifying the NVIDIA NIM provider. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            provider: "NVIDIA_NIM";
+            /** @description Whether an API key is configured (the key itself is never returned). */
+            has_api_key: boolean;
+            /** @description Self-hosted NIM endpoint URL. Null when not set. */
+            base_url: string | null;
+            /** @description Names of the custom request headers configured on this integration. Empty when none are configured. Header values are write-only and never returned. */
+            header_names: string[];
+            /** @description Whether Arize's default model catalog is enabled. */
+            is_default_models_enabled: boolean;
+            /** @description Custom model names configured on this integration. Empty when none. */
+            model_names: string[];
+        };
         /** @description Config for an OpenAI LLM integration. */
         OpenAiConfig: {
             /** @description Whether function/tool calling is enabled. */
@@ -4534,14 +5065,92 @@ export interface components {
             /** @description Whether an API key is configured (the key itself is never returned). */
             has_api_key: boolean;
         };
+        /**
+         * @description Partial agent config for PATCH. All collection fields are
+         *     replace-on-provide.
+         */
+        UpdateAgentConfig: {
+            /** Format: uri */
+            endpoint?: string;
+            /**
+             * @description Replace-on-provide. Pass `null` (or `{}`) to clear all headers.
+             *     Encrypted at rest; never returned in responses.
+             */
+            headers?: {
+                [key: string]: string;
+            } | null;
+            /** @description New JSON Schema for the request payload shape. */
+            input_schema?: {
+                [key: string]: unknown;
+            };
+            /**
+             * @description Replace-on-provide preset list, matched by `name`: existing names
+             *     update in place (preserving id/timestamps), new names insert,
+             *     removed names delete.
+             */
+            request_presets?: components["schemas"]["UpdateAgentRequestPresetInput"][];
+        };
+        /**
+         * @description Partial update body for `type=AGENT`. `type` is immutable; if present
+         *     it must equal `AGENT` (422 otherwise).
+         */
+        UpdateAgentIntegrationRequest: {
+            /**
+             * @description Discriminator. Immutable; must match the integration's type. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "AGENT";
+            name?: string;
+            description?: string | null;
+            /** @description Replace-on-provide. Empty array reverts to account-wide. */
+            scopings?: components["schemas"]["IntegrationScoping"][];
+            config?: components["schemas"]["UpdateAgentConfig"];
+        };
+        /**
+         * @description Write shape for an agent request preset on update. Matched by `name`:
+         *     existing names update in place (preserving id/timestamps), new names insert,
+         *     removed names delete. Server-generated fields (`id`, `created_at`,
+         *     `updated_at`) are not accepted on input.
+         */
+        UpdateAgentRequestPresetInput: {
+            /** @description Preset name (unique within the integration). Length 1-255. */
+            name: string;
+            /** @description Optional preset description (length 0-1024). */
+            description?: string | null;
+            /**
+             * @description Partial request body. Validated against the parent integration's
+             *     `input_schema` with `required` dropped.
+             */
+            config: {
+                [key: string]: unknown;
+            };
+        };
         /** @description Partial update of an integration, discriminated by `type` (immutable). The `type` field selects the per-type PATCH shape. Provide at least one updatable field in addition to `type`. */
-        UpdateIntegrationRequest: components["schemas"]["UpdateLlmIntegrationRequest"];
-        /** @description Partial LLM config for PATCH. `provider` is immutable; if present it must match the stored value. */
+        UpdateIntegrationRequest: components["schemas"]["UpdateLlmIntegrationRequest"] | components["schemas"]["UpdateAgentIntegrationRequest"];
+        /** @description Partial LLM config for PATCH. `provider` is immutable; if present it must match the stored value. Field applicability is provider-specific and enforced by the handler with 422: `api_key` and `is_function_calling_enabled` do not apply to `AWS_BEDROCK` or `VERTEX_AI`; `auth` applies to `AWS_BEDROCK` only; `base_url` and `headers` apply to `CUSTOM` and `NVIDIA_NIM` only; `is_default_models_enabled` and `model_names` apply to `AWS_BEDROCK`, `CUSTOM`, and `NVIDIA_NIM` only; `project_id`, `location`, and `project_access_label` apply to `VERTEX_AI` only. */
         UpdateLlmConfig: {
             provider?: components["schemas"]["LlmIntegrationProvider"];
-            /** @description Rotate the API key. Pass null to clear it. Omit to keep unchanged. */
+            /** @description Rotate the API key. Pass null to clear it. Omit to keep unchanged. Not valid for `AWS_BEDROCK` (bearer tokens are rotated via `auth`). */
             api_key?: string | null;
+            /** @description Enable or disable function/tool calling. Omit to keep unchanged. Not valid for `AWS_BEDROCK`. */
             is_function_calling_enabled?: boolean;
+            auth?: components["schemas"]["CreateAwsBedrockAuth"];
+            /** @description (`CUSTOM` and `NVIDIA_NIM` only) New endpoint URL. For `NVIDIA_NIM` the field is optional on the resource, so null clears it (falling back to the provider default endpoint). For `CUSTOM` it is required on the resource — null is rejected with 422. Omit to keep unchanged. */
+            base_url?: string | null;
+            /** @description (`CUSTOM` and `NVIDIA_NIM` only) Replaces the configured custom request headers: the provided map becomes the full header set. Pass null to clear all headers. Omit to keep unchanged. Write-only; names are exposed as `header_names` on read. */
+            headers?: {
+                [key: string]: string;
+            } | null;
+            /** @description (`AWS_BEDROCK`, `CUSTOM`, and `NVIDIA_NIM` only) Enable or disable Arize's default model catalog. The effective config must keep at least one model source or the request is rejected with 422. Omit to keep unchanged. */
+            is_default_models_enabled?: boolean;
+            /** @description (`AWS_BEDROCK`, `CUSTOM`, and `NVIDIA_NIM` only) Replaces the custom model list. The effective config must keep at least one model source or the request is rejected with 422. Omit to keep unchanged. */
+            model_names?: string[];
+            /** @description (`VERTEX_AI` only) New GCP project ID. Required on the resource, so it may be changed but never cleared; omitted fields keep their stored values (per-scalar deep-merge). */
+            project_id?: string;
+            /** @description (`VERTEX_AI` only) New GCP region. Required on the resource, so it may be changed but never cleared; omitted fields keep their stored values (per-scalar deep-merge). */
+            location?: string;
+            /** @description (`VERTEX_AI` only) New project-access label. Required on the resource, so it may be changed but never cleared; omitted fields keep their stored values (per-scalar deep-merge). */
+            project_access_label?: string;
         };
         /** @description PATCH body for an `LLM` integration. `type` is required (it selects the union member) and immutable. Provide at least one updatable field (`name`, `scopings`, or `config`) in addition to `type`. `scopings` replaces on provide. */
         UpdateLlmIntegrationRequest: {
@@ -4555,6 +5164,20 @@ export interface components {
             /** @description Replaces the existing scoping rules. */
             scopings?: components["schemas"]["IntegrationScoping"][];
             config?: components["schemas"]["UpdateLlmConfig"];
+        };
+        /** @description Config for a Google Vertex AI integration. Vertex stores no credentials: Arize accesses Vertex through the configured GCP project. All fields are returned on read. */
+        VertexAiConfig: {
+            /**
+             * @description Discriminator identifying the Vertex AI provider. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            provider: "VERTEX_AI";
+            /** @description GCP project ID Arize accesses Vertex through. */
+            project_id: string;
+            /** @description GCP region (e.g. us-central1). */
+            location: string;
+            /** @description Label used to verify Arize's access to the GCP project. */
+            project_access_label: string;
         };
         AddOrganizationUserRequest: {
             /** @description The unique identifier of the user to add */
@@ -4602,7 +5225,7 @@ export interface components {
          *     Auto-generated from proto/auth/protocol/permissions.proto.
          * @enum {string}
          */
-        Permission: "AI_PROVIDER_READ" | "ALYX_RUN" | "ANNOTATION_CONFIG_CREATE" | "ANNOTATION_CONFIG_DELETE" | "ANNOTATION_CONFIG_READ" | "ANNOTATION_CONFIG_UPDATE" | "CUSTOM_METRIC_CREATE" | "CUSTOM_METRIC_DELETE" | "CUSTOM_METRIC_READ" | "CUSTOM_METRIC_UPDATE" | "DASHBOARD_CREATE" | "DASHBOARD_DELETE" | "DASHBOARD_READ" | "DASHBOARD_UPDATE" | "DATASET_CREATE" | "DATASET_DELETE" | "DATASET_EXAMPLE_ANNOTATE" | "DATASET_EXAMPLE_CREATE" | "DATASET_EXAMPLE_DELETE" | "DATASET_EXAMPLE_READ" | "DATASET_EXAMPLE_UPDATE" | "DATASET_READ" | "DATASET_UPDATE" | "DATASET_VIEW_CREATE" | "DATASET_VIEW_DELETE" | "DATASET_VIEW_READ" | "DATASET_VIEW_UPDATE" | "DATA_FABRIC_CONNECTOR_CREATE" | "DATA_FABRIC_CONNECTOR_DELETE" | "DATA_FABRIC_CONNECTOR_READ" | "DATA_FABRIC_CONNECTOR_UPDATE" | "EVALUATOR_CREATE" | "EVALUATOR_DELETE" | "EVALUATOR_READ" | "EVALUATOR_UPDATE" | "EXPERIMENT_CREATE" | "EXPERIMENT_DELETE" | "EXPERIMENT_EVAL_TASK_CREATE" | "EXPERIMENT_EVAL_TASK_DELETE" | "EXPERIMENT_EVAL_TASK_READ" | "EXPERIMENT_EVAL_TASK_UPDATE" | "EXPERIMENT_READ" | "EXPERIMENT_RUN_ANNOTATE" | "EXPERIMENT_RUN_READ" | "EXPERIMENT_UPDATE" | "FILE_IMPORT_CREATE" | "FILE_IMPORT_DELETE" | "FILE_IMPORT_READ" | "FILE_IMPORT_UPDATE" | "ML_MODEL_CREATE" | "ML_MODEL_DELETE" | "ML_MODEL_READ" | "ML_MODEL_UPDATE" | "MONITOR_CREATE" | "MONITOR_DELETE" | "MONITOR_READ" | "MONITOR_TRIGGER" | "MONITOR_UPDATE" | "ORGANIZATION_CREATE" | "ORGANIZATION_DELETE" | "ORGANIZATION_READ" | "ORGANIZATION_UPDATE" | "PLAYGROUND_RUN" | "PLAYGROUND_VIEW_CREATE" | "PLAYGROUND_VIEW_DELETE" | "PLAYGROUND_VIEW_READ" | "PLAYGROUND_VIEW_UPDATE" | "PROJECT_CREATE" | "PROJECT_DELETE" | "PROJECT_EVAL_TASK_CREATE" | "PROJECT_EVAL_TASK_DELETE" | "PROJECT_EVAL_TASK_READ" | "PROJECT_EVAL_TASK_UPDATE" | "PROJECT_READ" | "PROJECT_RESTRICT" | "PROJECT_SPAN_ANNOTATE" | "PROJECT_SPAN_CREATE" | "PROJECT_SPAN_DELETE" | "PROJECT_SPAN_READ" | "PROJECT_SPAN_UPDATE" | "PROJECT_UPDATE" | "PROMPT_CREATE" | "PROMPT_DELETE" | "PROMPT_OPTIMIZE_TASK_CREATE" | "PROMPT_OPTIMIZE_TASK_DELETE" | "PROMPT_OPTIMIZE_TASK_READ" | "PROMPT_OPTIMIZE_TASK_UPDATE" | "PROMPT_READ" | "PROMPT_UPDATE" | "QUEUE_CREATE" | "QUEUE_DELETE" | "QUEUE_READ" | "QUEUE_RECORD_ANNOTATE" | "QUEUE_RECORD_CREATE" | "QUEUE_RECORD_DELETE" | "QUEUE_RECORD_READ" | "QUEUE_RECORD_UPDATE" | "QUEUE_UPDATE" | "REMOTE_ENDPOINT_INTEGRATION_CREATE" | "REMOTE_ENDPOINT_INTEGRATION_DELETE" | "REMOTE_ENDPOINT_INTEGRATION_READ" | "REMOTE_ENDPOINT_INTEGRATION_UPDATE" | "ROLE_BINDING_CREATE" | "ROLE_BINDING_DELETE" | "ROLE_BINDING_READ" | "SERVICE_KEY_CREATE" | "SERVICE_KEY_DELETE" | "SERVICE_KEY_READ" | "SPACE_CREATE" | "SPACE_DELETE" | "SPACE_READ" | "SPACE_UPDATE" | "TAG_CREATE" | "TAG_DELETE" | "TAG_READ" | "TAG_UPDATE" | "TRACE_VIEW_CREATE" | "TRACE_VIEW_DELETE" | "TRACE_VIEW_READ" | "TRACE_VIEW_UPDATE" | "USER_CREATE" | "USER_DELETE" | "USER_PERMISSION_UPDATE" | "USER_READ" | "USER_UPDATE";
+        Permission: "AI_PROVIDER_READ" | "ALYX_RUN" | "ANNOTATION_CONFIG_CREATE" | "ANNOTATION_CONFIG_DELETE" | "ANNOTATION_CONFIG_READ" | "ANNOTATION_CONFIG_UPDATE" | "CUSTOM_METRIC_CREATE" | "CUSTOM_METRIC_DELETE" | "CUSTOM_METRIC_READ" | "CUSTOM_METRIC_UPDATE" | "DASHBOARD_CREATE" | "DASHBOARD_DELETE" | "DASHBOARD_READ" | "DASHBOARD_UPDATE" | "DATASET_CREATE" | "DATASET_DELETE" | "DATASET_EXAMPLE_ANNOTATE" | "DATASET_EXAMPLE_CREATE" | "DATASET_EXAMPLE_DELETE" | "DATASET_EXAMPLE_READ" | "DATASET_EXAMPLE_UPDATE" | "DATASET_READ" | "DATASET_UPDATE" | "DATASET_VIEW_CREATE" | "DATASET_VIEW_DELETE" | "DATASET_VIEW_READ" | "DATASET_VIEW_UPDATE" | "DATA_FABRIC_CONNECTOR_CREATE" | "DATA_FABRIC_CONNECTOR_DELETE" | "DATA_FABRIC_CONNECTOR_READ" | "DATA_FABRIC_CONNECTOR_UPDATE" | "EVALUATOR_CREATE" | "EVALUATOR_DELETE" | "EVALUATOR_READ" | "EVALUATOR_UPDATE" | "EXPERIMENT_CREATE" | "EXPERIMENT_DELETE" | "EXPERIMENT_EVAL_TASK_CREATE" | "EXPERIMENT_EVAL_TASK_DELETE" | "EXPERIMENT_EVAL_TASK_READ" | "EXPERIMENT_EVAL_TASK_UPDATE" | "EXPERIMENT_READ" | "EXPERIMENT_RUN_ANNOTATE" | "EXPERIMENT_RUN_READ" | "EXPERIMENT_UPDATE" | "FILE_IMPORT_CREATE" | "FILE_IMPORT_DELETE" | "FILE_IMPORT_READ" | "FILE_IMPORT_UPDATE" | "LLM_INTEGRATION_CREATE" | "LLM_INTEGRATION_DELETE" | "LLM_INTEGRATION_UPDATE" | "MANAGED_AGENT_CREATE" | "MANAGED_AGENT_DELETE" | "MANAGED_AGENT_READ" | "MANAGED_AGENT_UPDATE" | "ML_MODEL_CREATE" | "ML_MODEL_DELETE" | "ML_MODEL_READ" | "ML_MODEL_UPDATE" | "MONITOR_CREATE" | "MONITOR_DELETE" | "MONITOR_READ" | "MONITOR_TRIGGER" | "MONITOR_UPDATE" | "ORGANIZATION_CREATE" | "ORGANIZATION_DELETE" | "ORGANIZATION_READ" | "ORGANIZATION_UPDATE" | "PLAYGROUND_RUN" | "PLAYGROUND_VIEW_CREATE" | "PLAYGROUND_VIEW_DELETE" | "PLAYGROUND_VIEW_READ" | "PLAYGROUND_VIEW_UPDATE" | "PROJECT_CREATE" | "PROJECT_DELETE" | "PROJECT_EVAL_TASK_CREATE" | "PROJECT_EVAL_TASK_DELETE" | "PROJECT_EVAL_TASK_READ" | "PROJECT_EVAL_TASK_UPDATE" | "PROJECT_READ" | "PROJECT_RESTRICT" | "PROJECT_SPAN_ANNOTATE" | "PROJECT_SPAN_CREATE" | "PROJECT_SPAN_DELETE" | "PROJECT_SPAN_READ" | "PROJECT_SPAN_UPDATE" | "PROJECT_UPDATE" | "PROMPT_CREATE" | "PROMPT_DELETE" | "PROMPT_OPTIMIZE_TASK_CREATE" | "PROMPT_OPTIMIZE_TASK_DELETE" | "PROMPT_OPTIMIZE_TASK_READ" | "PROMPT_OPTIMIZE_TASK_UPDATE" | "PROMPT_READ" | "PROMPT_UPDATE" | "QUEUE_CREATE" | "QUEUE_DELETE" | "QUEUE_READ" | "QUEUE_RECORD_ANNOTATE" | "QUEUE_RECORD_CREATE" | "QUEUE_RECORD_DELETE" | "QUEUE_RECORD_READ" | "QUEUE_RECORD_UPDATE" | "QUEUE_UPDATE" | "REMOTE_ENDPOINT_INTEGRATION_CREATE" | "REMOTE_ENDPOINT_INTEGRATION_DELETE" | "REMOTE_ENDPOINT_INTEGRATION_READ" | "REMOTE_ENDPOINT_INTEGRATION_UPDATE" | "ROLE_BINDING_CREATE" | "ROLE_BINDING_DELETE" | "ROLE_BINDING_READ" | "SERVICE_KEY_CREATE" | "SERVICE_KEY_READ" | "SERVICE_KEY_REVOKE" | "SPACE_CREATE" | "SPACE_DELETE" | "SPACE_READ" | "SPACE_UPDATE" | "TAG_CREATE" | "TAG_DELETE" | "TAG_READ" | "TAG_UPDATE" | "TRACE_VIEW_CREATE" | "TRACE_VIEW_DELETE" | "TRACE_VIEW_READ" | "TRACE_VIEW_UPDATE" | "USER_CREATE" | "USER_DELETE" | "USER_PERMISSION_UPDATE" | "USER_READ" | "USER_UPDATE";
         /**
          * @description A project represents an LLM application and serves as the primary container for observability data. Each project collects traces and spans that capture the execution flow of your application, enabling you to debug issues, monitor latency, and analyze token usage.
          *     Projects belong to a space and provide a centralized view of your application's performance. Use projects to organize related traces, run experiments against datasets, and track improvements over time.
@@ -5030,11 +5653,11 @@ export interface components {
             role: components["schemas"]["SpaceRoleAssignment"];
         };
         CreateSpaceRequest: {
-            /** @description Name of the space (must be unique within the organization) */
+            /** @description Name of the space */
             name: string;
-            /** @description ID of the organization to create the space in */
-            organization_id: string;
-            /** @description A brief description of the space's purpose. Defaults to an empty string if omitted. */
+            /** @description The unique identifier of the organization to create the space in */
+            organization_id: components["schemas"]["Id"];
+            /** @description A brief description of the space's purpose */
             description?: string;
         };
         ListSpacesResponse: {
@@ -5072,9 +5695,9 @@ export interface components {
             role: components["schemas"]["SpaceRoleAssignment"];
         };
         UpdateSpaceRequest: {
-            /** @description Updated name for the space (must be unique within the organization) */
+            /** @description Updated name of the space */
             name?: string;
-            /** @description Updated description for the space. Set to an empty string to clear it. */
+            /** @description Updated description of the space */
             description?: string;
         };
         DeleteSpansRequest: {
@@ -5138,8 +5761,10 @@ export interface components {
             attributes?: {
                 [key: string]: unknown;
             };
-            /** @description List of human annotations on this span */
+            /** @description List of span-level human annotations on this span */
             annotations?: components["schemas"]["Annotation"][];
+            /** @description List of trace-level human annotations on this span */
+            trace_annotations?: components["schemas"]["Annotation"][];
             /** @description List of evaluation results on this span */
             evaluations?: components["schemas"]["Evaluation"][];
             /** @description List of events that occurred during the span */
@@ -5421,6 +6046,8 @@ export interface components {
          *     evaluation task).
          */
         UpdateTaskRequest: components["schemas"]["UpdateEvaluationTaskRequest"] | components["schemas"]["UpdateRunExperimentTaskRequest"];
+        /** @description A monitor. The `type` field discriminates which variant (and therefore which type-specific fields) applies. */
+        Monitor: components["schemas"]["DataQualityMonitor"] | components["schemas"]["PerformanceMonitor"] | components["schemas"]["DriftMonitor"] | components["schemas"]["CustomMetricMonitor"] | components["schemas"]["TracingMonitor"];
         ListTracesRequest: {
             /** @description The project ID to list traces for */
             project_id: string;
@@ -5888,6 +6515,124 @@ export interface components {
             /** @description The created annotation queue records */
             record_sources: components["schemas"]["AnnotationQueueRecord"][];
         };
+        /** @enum {string} */
+        UserRoleAssignmentType: "PREDEFINED" | "CUSTOM";
+        /** @description A predefined account-level role assignment. */
+        PredefinedUserRoleAssignment: {
+            /**
+             * @description Discriminator identifying this as a predefined role assignment. Must be `PREDEFINED`. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "PREDEFINED";
+            name: components["schemas"]["UserRole"];
+        };
+        /** @description A custom RBAC role assignment. */
+        CustomUserRoleAssignment: {
+            /**
+             * @description Discriminator identifying this as a custom role assignment. Must be `CUSTOM`. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "CUSTOM";
+            /** @description The unique identifier of the custom RBAC role. */
+            id: components["schemas"]["Id"];
+            /**
+             * @description Human-readable name of the custom role.
+             *     Returned in responses only; ignored on input.
+             */
+            readonly name?: string;
+        };
+        /**
+         * @description An account-level role assignment. Discriminated by `type`:
+         *     - `PREDEFINED`: one of the predefined roles (`admin`, `member`, `annotator`)
+         *     - `CUSTOM`: a custom RBAC role identified by its ID
+         *
+         *     Note: `CUSTOM` role assignments are not yet supported and are reserved for future use.
+         */
+        UserRoleAssignment: components["schemas"]["PredefinedUserRoleAssignment"] | components["schemas"]["CustomUserRoleAssignment"];
+        /** @enum {string} */
+        OrganizationRoleAssignmentType: "PREDEFINED" | "CUSTOM";
+        /**
+         * @description Organization-level role for the user.
+         *     - `ADMIN`: Full access to the organization and its resources.
+         *     - `MEMBER`: Standard access to the organization.
+         *     - `READ_ONLY`: Read-only access to the organization.
+         *     - `ANNOTATOR`: Limited access for annotation tasks only.
+         * @enum {string}
+         */
+        OrganizationRole: "ADMIN" | "MEMBER" | "READ_ONLY" | "ANNOTATOR";
+        /** @description A predefined organization role assignment. */
+        OrganizationPredefinedRoleAssignment: {
+            /**
+             * @description Discriminator identifying this as a predefined role assignment. Always `PREDEFINED` for this variant. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "PREDEFINED";
+            name: components["schemas"]["OrganizationRole"];
+        };
+        /** @description A custom RBAC role assignment. */
+        OrganizationCustomRoleAssignment: {
+            /**
+             * @description Discriminator identifying this as a custom RBAC role assignment. Always `CUSTOM` for this variant. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "CUSTOM";
+            /** @description The unique identifier of the custom RBAC role. */
+            id: components["schemas"]["Id"];
+            /**
+             * @description Human-readable name of the custom role.
+             *     Returned in responses only; ignored on input.
+             */
+            readonly name?: string;
+        };
+        /**
+         * @description A role assignment for an organization membership. Discriminated by `type`:
+         *     - `PREDEFINED`: one of the predefined roles (`ADMIN`, `MEMBER`, `READ_ONLY`, `ANNOTATOR`)
+         *     - `CUSTOM`: a custom RBAC role identified by its ID
+         */
+        OrganizationRoleAssignment: components["schemas"]["OrganizationPredefinedRoleAssignment"] | components["schemas"]["OrganizationCustomRoleAssignment"];
+        /** @enum {string} */
+        SpaceRoleAssignmentType: "PREDEFINED" | "CUSTOM";
+        /**
+         * @description Space-level role for the user.
+         *     - `ADMIN`: Full access to the space and its resources.
+         *     - `MEMBER`: Standard access to the space.
+         *     - `READ_ONLY`: Read-only access to the space.
+         *     - `ANNOTATOR`: Limited access for annotation tasks only.
+         * @enum {string}
+         */
+        UserSpaceRole: "ADMIN" | "MEMBER" | "READ_ONLY" | "ANNOTATOR";
+        /** @description A predefined space role assignment. */
+        PredefinedRoleAssignment: {
+            /**
+             * @description Discriminator identifying this as a predefined role assignment. Must be `PREDEFINED`. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "PREDEFINED";
+            name: components["schemas"]["UserSpaceRole"];
+        };
+        /** @description A custom RBAC role assignment. */
+        CustomRoleAssignment: {
+            /**
+             * @description Discriminator identifying this as a custom RBAC role assignment. Must be `CUSTOM`. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "CUSTOM";
+            /** @description The unique identifier of the custom RBAC role. */
+            id: components["schemas"]["Id"];
+            /**
+             * @description Human-readable name of the custom role.
+             *     Returned in responses only; ignored on input.
+             */
+            readonly name?: string;
+        };
+        /**
+         * @description Specifies which role to assign within a space. Discriminated by `type`:
+         *     - `PREDEFINED`: a built-in platform role — `{ "type": "PREDEFINED", "name": "ADMIN" | "MEMBER" | "READ_ONLY" | "ANNOTATOR" }`
+         *     - `CUSTOM`: a custom RBAC role identified by its ID — `{ "type": "CUSTOM", "id": "<encoded-role-id>" }`
+         *
+         *     Used wherever a space-level role assignment is required (memberships, service key bindings, etc.).
+         */
+        SpaceRoleAssignment: components["schemas"]["PredefinedRoleAssignment"] | components["schemas"]["CustomRoleAssignment"];
         ListDatasetsResponse: {
             /** @description A list of datasets */
             datasets: components["schemas"]["Dataset"][];
@@ -6036,47 +6781,6 @@ export interface components {
             /** @description Pagination metadata for cursor-based navigation */
             pagination: components["schemas"]["PaginationMetadata"];
         };
-        /** @enum {string} */
-        OrganizationRoleAssignmentType: "PREDEFINED" | "CUSTOM";
-        /**
-         * @description Organization-level role for the user.
-         *     - `ADMIN`: Full access to the organization and its resources.
-         *     - `MEMBER`: Standard access to the organization.
-         *     - `READ_ONLY`: Read-only access to the organization.
-         *     - `ANNOTATOR`: Limited access for annotation tasks only.
-         * @enum {string}
-         */
-        OrganizationRole: "ADMIN" | "MEMBER" | "READ_ONLY" | "ANNOTATOR";
-        /** @description A predefined organization role assignment. */
-        OrganizationPredefinedRoleAssignment: {
-            /**
-             * @description Discriminator identifying this as a predefined role assignment. Always `PREDEFINED` for this variant. (enum property replaced by openapi-typescript)
-             * @enum {string}
-             */
-            type: "PREDEFINED";
-            name: components["schemas"]["OrganizationRole"];
-        };
-        /** @description A custom RBAC role assignment. */
-        OrganizationCustomRoleAssignment: {
-            /**
-             * @description Discriminator identifying this as a custom RBAC role assignment. Always `CUSTOM` for this variant. (enum property replaced by openapi-typescript)
-             * @enum {string}
-             */
-            type: "CUSTOM";
-            /** @description The unique identifier of the custom RBAC role. */
-            id: components["schemas"]["Id"];
-            /**
-             * @description Human-readable name of the custom role.
-             *     Returned in responses only; ignored on input.
-             */
-            readonly name?: string;
-        };
-        /**
-         * @description A role assignment for an organization membership. Discriminated by `type`:
-         *     - `PREDEFINED`: one of the predefined roles (`ADMIN`, `MEMBER`, `READ_ONLY`, `ANNOTATOR`)
-         *     - `CUSTOM`: a custom RBAC role identified by its ID
-         */
-        OrganizationRoleAssignment: components["schemas"]["OrganizationPredefinedRoleAssignment"] | components["schemas"]["OrganizationCustomRoleAssignment"];
         OrganizationMembership: {
             /** @description Unique identifier for the membership record */
             id: components["schemas"]["Id"];
@@ -6126,47 +6830,6 @@ export interface components {
             /** @description Pagination metadata for cursor-based navigation. */
             pagination: components["schemas"]["PaginationMetadata"];
         };
-        /** @enum {string} */
-        SpaceRoleAssignmentType: "PREDEFINED" | "CUSTOM";
-        /**
-         * @description Space-level role for the user.
-         *     - `ADMIN`: Full access to the space and its resources.
-         *     - `MEMBER`: Standard access to the space.
-         *     - `READ_ONLY`: Read-only access to the space.
-         *     - `ANNOTATOR`: Limited access for annotation tasks only.
-         * @enum {string}
-         */
-        UserSpaceRole: "ADMIN" | "MEMBER" | "READ_ONLY" | "ANNOTATOR";
-        /** @description A predefined space role assignment. */
-        PredefinedRoleAssignment: {
-            /**
-             * @description Discriminator identifying this as a predefined role assignment. Always `PREDEFINED` for this variant. (enum property replaced by openapi-typescript)
-             * @enum {string}
-             */
-            type: "PREDEFINED";
-            name: components["schemas"]["UserSpaceRole"];
-        };
-        /** @description A custom RBAC role assignment. */
-        CustomRoleAssignment: {
-            /**
-             * @description Discriminator identifying this as a custom RBAC role assignment. Always `CUSTOM` for this variant. (enum property replaced by openapi-typescript)
-             * @enum {string}
-             */
-            type: "CUSTOM";
-            /** @description The unique identifier of the custom RBAC role. */
-            id: components["schemas"]["Id"];
-            /**
-             * @description Human-readable name of the custom role.
-             *     Returned in responses only; ignored on input.
-             */
-            readonly name?: string;
-        };
-        /**
-         * @description A role assignment for a space membership. Discriminated by `type`:
-         *     - `PREDEFINED`: one of the predefined roles (`ADMIN`, `MEMBER`, `READ_ONLY`, `ANNOTATOR`)
-         *     - `CUSTOM`: a custom RBAC role identified by its ID
-         */
-        SpaceRoleAssignment: components["schemas"]["PredefinedRoleAssignment"] | components["schemas"]["CustomRoleAssignment"];
         /**
          * @description The kind of span (OpenInference span kind).
          * @enum {string}
@@ -6441,40 +7104,382 @@ export interface components {
              */
             evaluation_task_ids?: string[];
         };
-        /** @enum {string} */
-        UserRoleAssignmentType: "PREDEFINED" | "CUSTOM";
-        /** @description A predefined account-level role assignment. */
-        PredefinedUserRoleAssignment: {
+        /**
+         * @description The kind of monitor. Determines which type-specific fields apply.
+         *     - `DATA_QUALITY` - Monitors a data quality metric (e.g. percent empty, CARDINALITY).
+         *     - `PERFORMANCE` - Monitors a model performance metric (e.g. ACCURACY, RMSE).
+         *     - `DRIFT` - Monitors distributional drift of a feature/output.
+         *     - `CUSTOM_METRIC` - Monitors a user-defined custom metric.
+         *     - `TRACING` - Monitors a span/trace-derived metric (e.g. span attributes, evals).
+         * @enum {string}
+         */
+        MonitorType: "DATA_QUALITY" | "PERFORMANCE" | "DRIFT" | "CUSTOM_METRIC" | "TRACING";
+        /**
+         * @description The monitor's current state from its most recent evaluation.
+         *     - `TRIGGERED` - The metric breached the threshold.
+         *     - `CLEARED` - The metric is within healthy bounds.
+         *     - `NO_DATA` - No data was available to evaluate.
+         * @enum {string}
+         */
+        MonitorStatus: "TRIGGERED" | "CLEARED" | "NO_DATA";
+        /**
+         * @description Numeric comparison operators used when evaluating a computed metric value against a threshold.
+         * @enum {string}
+         */
+        ThresholdOperator: "GREATER_THAN" | "GREATER_THAN_OR_EQUAL" | "LESS_THAN" | "LESS_THAN_OR_EQUAL" | "EQUALS" | "NOT_EQUALS";
+        ManualSingleThreshold: {
             /**
-             * @description Discriminator identifying this as a predefined role assignment. Must be `PREDEFINED`. (enum property replaced by openapi-typescript)
+             * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            type: "PREDEFINED";
-            name: components["schemas"]["UserRole"];
-        };
-        /** @description A custom RBAC role assignment. */
-        CustomUserRoleAssignment: {
-            /**
-             * @description Discriminator identifying this as a custom role assignment. Must be `CUSTOM`. (enum property replaced by openapi-typescript)
-             * @enum {string}
-             */
-            type: "CUSTOM";
-            /** @description The unique identifier of the custom RBAC role. */
-            id: components["schemas"]["Id"];
-            /**
-             * @description Human-readable name of the custom role.
-             *     Returned in responses only; ignored on input.
-             */
-            readonly name?: string;
+            type: "MANUAL_SINGLE";
+            operator: components["schemas"]["ThresholdOperator"];
+            /** @description The threshold value the computed metric is compared against. */
+            value: number;
         };
         /**
-         * @description An account-level role assignment. Discriminated by `type`:
-         *     - `PREDEFINED`: one of the predefined roles (`admin`, `member`, `annotator`)
-         *     - `CUSTOM`: a custom RBAC role identified by its ID
-         *
-         *     Note: `CUSTOM` role assignments are not yet supported and are reserved for future use.
+         * @description The statistical calculation used to derive a dynamic threshold.
+         *     - `STDEV` - standard deviation of the metric over the baseline.
+         *     - `MAD` - median absolute deviation of the metric over the baseline.
+         * @enum {string}
          */
-        UserRoleAssignment: components["schemas"]["PredefinedUserRoleAssignment"] | components["schemas"]["CustomUserRoleAssignment"];
+        ThresholdCalculation: "STDEV" | "MAD";
+        DynamicSingleThreshold: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "DYNAMIC_SINGLE";
+            calculation: components["schemas"]["ThresholdCalculation"];
+            operator: components["schemas"]["ThresholdOperator"];
+            /**
+             * @description The multiplier applied to the calculation (e.g. number of standard
+             *     deviations) to derive the threshold.
+             */
+            multiplier: number;
+        };
+        ManualThresholdBound: {
+            operator: components["schemas"]["ThresholdOperator"];
+            /** @description The bound value the computed metric is compared against. */
+            value: number;
+        };
+        ManualRangeThreshold: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "MANUAL_RANGE";
+            /** @description The lower bound of the range. Its operator must be `GREATER_THAN` or `GREATER_THAN_OR_EQUAL`. */
+            lower: components["schemas"]["ManualThresholdBound"];
+            /** @description The upper bound of the range. Its `operator` must be `LESS_THAN` or `LESS_THAN_OR_EQUAL`. */
+            upper: components["schemas"]["ManualThresholdBound"];
+        };
+        DynamicThresholdBound: {
+            operator: components["schemas"]["ThresholdOperator"];
+            /** @description The multiplier applied to the calculation (e.g. number of standard deviations) to derive this bound. */
+            multiplier: number;
+        };
+        DynamicRangeThreshold: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "DYNAMIC_RANGE";
+            calculation: components["schemas"]["ThresholdCalculation"];
+            /** @description The lower bound of the range. Its `operator` must be `GREATER_THAN` or `GREATER_THAN_OR_EQUAL`. */
+            lower: components["schemas"]["DynamicThresholdBound"];
+            /** @description The upper bound of the range. Its `operator` must be `LESS_THAN` or `LESS_THAN_OR_EQUAL`. */
+            upper: components["schemas"]["DynamicThresholdBound"];
+        };
+        /** @description The monitor's threshold. The `type` field discriminates whether the threshold is manual or dynamic, and single or a bounded range. */
+        ThresholdConfig: components["schemas"]["ManualSingleThreshold"] | components["schemas"]["DynamicSingleThreshold"] | components["schemas"]["ManualRangeThreshold"] | components["schemas"]["DynamicRangeThreshold"];
+        /**
+         * @description The category of dimension the metric is evaluated over.
+         * @enum {string}
+         */
+        DimensionCategory: "FEATURE_LABEL" | "TAG" | "MODEL_VERSION" | "BATCH_ID" | "SPAN_ATTRIBUTE" | "LLM_EVAL" | "USER_ANNOTATION" | "ACTUALS" | "ACTUALS_SCORE" | "ACTUALS_CLASS" | "PREDICTIONS" | "PREDICTIONS_SCORE" | "PREDICTIONS_CLASS";
+        Dimension: {
+            /** @description The category of the monitored dimension. */
+            category: components["schemas"]["DimensionCategory"];
+            /** @description Name of the monitored field. Omitted when the category has no concrete field name. */
+            name?: string;
+        };
+        /**
+         * @description Operators used by a monitor's data filters. Includes string operators as well as numeric ones.
+         * @enum {string}
+         */
+        FilterOperator: "GREATER_THAN" | "GREATER_THAN_OR_EQUAL" | "LESS_THAN" | "LESS_THAN_OR_EQUAL" | "EQUALS" | "NOT_EQUALS" | "TOP_N" | "CONTAINS" | "CONTAINS_STRING" | "SIMILAR_TO";
+        MonitorFilter: {
+            dimension: components["schemas"]["Dimension"];
+            operator: components["schemas"]["FilterOperator"];
+            /** @description The values compared against by the operator. */
+            values: string[];
+        };
+        EmailNotificationConfig: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "EMAIL";
+            /**
+             * Format: email
+             * @description Email address notified on a triggered transition.
+             */
+            email_address: string;
+        };
+        IntegrationNotificationConfig: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "INTEGRATION";
+            /** @description The integration to notify (base64 global ID). */
+            integration_id: string;
+        };
+        WebhookNotificationConfig: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "WEBHOOK";
+            /** @description The webhook to notify (base64 global ID). */
+            id: string;
+            /** @description The webhook endpoint URL. */
+            url?: string | null;
+        };
+        NotificationConfig: components["schemas"]["EmailNotificationConfig"] | components["schemas"]["IntegrationNotificationConfig"] | components["schemas"]["WebhookNotificationConfig"];
+        DowntimeConfig: {
+            /**
+             * Format: date-time
+             * @description When the downtime window begins.
+             */
+            start: string;
+            /** @description How long each downtime window lasts, in seconds. */
+            duration_seconds: number;
+            /** @description How often the downtime window repeats, in days. */
+            frequency_days: number;
+        };
+        ScheduledRuntimeConfig: {
+            /** @description Whether the monitor runs on a schedule. `false` means automatic scheduled evaluation is disabled. */
+            enabled: boolean;
+            /** @description How often the monitor evaluates, in seconds. */
+            cadence_seconds?: number;
+            /** @description Days of the week the monitor runs on (`0` = Sunday … `6` = Saturday). */
+            days_of_week?: number[];
+        };
+        MonitorBase: {
+            /** @description Unique identifier for the monitor (base64 global ID). */
+            id: string;
+            /** @description Human-readable name of the monitor. */
+            name: string;
+            /** @description Required on create. Immutable after creation. */
+            type: components["schemas"]["MonitorType"];
+            /** @description The project that the monitor belongs to (base64 global ID). */
+            project_id: string;
+            /** @description The UI deep link to the monitor. */
+            readonly uri: string;
+            /** @description Current evaluation state. Read-only. */
+            status: components["schemas"]["MonitorStatus"];
+            threshold: components["schemas"]["ThresholdConfig"];
+            /**
+             * @description Whether notifications fire on a triggered transition.
+             * @default true
+             */
+            notifications_enabled: boolean;
+            /**
+             * @description Whether the monitor is evaluated manually rather than on the automatic cadence.
+             * @default false
+             */
+            manual_evaluation_enabled: boolean;
+            /** @description The user who created the monitor (base64 global ID). */
+            created_by_user_id: string;
+            /** @description Data filters applied to the monitor's metric. Omitted when the metric is computed over all data. */
+            filters?: components["schemas"]["MonitorFilter"][];
+            /** @description Notification channels (email / integration / webhook) notified on a triggered transition. Omitted when no channels are configured. */
+            notification_configs?: components["schemas"]["NotificationConfig"][];
+            /**
+             * Format: date-time
+             * @description When the monitor was created.
+             */
+            readonly created_at: string;
+            /**
+             * Format: date-time
+             * @description When the monitor was last updated.
+             */
+            readonly updated_at: string;
+            downtime?: components["schemas"]["DowntimeConfig"];
+            /** @description Returned when schedule configuration exists. */
+            scheduled_runtime?: components["schemas"]["ScheduledRuntimeConfig"];
+            /** @description The length of the evaluation window in seconds. Omitted when unset. */
+            evaluation_window_length_seconds?: number;
+            /** @description The delay applied before evaluating a window, in seconds. Omitted when unset. */
+            delay_seconds?: number;
+            /**
+             * Format: date-time
+             * @description The last time the metric was computed. Omitted if it has never been evaluated.
+             */
+            readonly evaluated_at?: string;
+            /** @description The most recently computed metric value. Omitted if it has never been evaluated. */
+            readonly latest_computed_value?: number;
+            /** @description Free-form notes attached to the monitor. Omitted when unset. */
+            notes?: string;
+        };
+        /**
+         * @description The data quality metric computed over the selected dimension.
+         * @enum {string}
+         */
+        DataQualityMetric: "COUNT" | "PERCENT_EMPTY" | "CARDINALITY" | "NEW_VALUES" | "MISSING_VALUES" | "AVG" | "SUM" | "STANDARD_DEVIATION" | "P50" | "P95" | "P99" | "P99_9" | "AVERAGE_STRING_LIST_LENGTH";
+        /** @description Uses the model's primary baseline as the comparison dataset. */
+        ModelBaselineConfig: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "MODEL_BASELINE";
+            /** @description Filters applied to the comparison dataset. An empty array means no comparison dataset filters are configured. */
+            filters: components["schemas"]["MonitorFilter"][];
+        };
+        /** @description A custom comparison dataset using data between a fixed start and end date. */
+        FixedCustomBaselineWindow: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "FIXED";
+            /**
+             * Format: date-time
+             * @description The start of the fixed comparison window.
+             */
+            fixed_start_date: string;
+            /**
+             * Format: date-time
+             * @description The end of the fixed comparison window.
+             */
+            fixed_end_date: string;
+        };
+        /** @description A custom comparison dataset using a moving window defined in seconds. */
+        MovingCustomBaselineWindow: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "MOVING";
+            /** @description The length of the moving comparison window, in seconds. */
+            moving_window_seconds: number;
+            /** @description The delay before the moving comparison window, in seconds. */
+            moving_window_delay_seconds: number;
+        };
+        /** @description The custom comparison window. The `type` field determines whether the window is fixed or moving. */
+        CustomBaselineWindow: components["schemas"]["FixedCustomBaselineWindow"] | components["schemas"]["MovingCustomBaselineWindow"];
+        /** @description Uses a custom fixed or moving window as the comparison dataset. */
+        CustomBaselineConfig: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "CUSTOM_BASELINE";
+            /** @description Filters applied to the comparison dataset. An empty array means no comparison dataset filters are configured. */
+            filters: components["schemas"]["MonitorFilter"][];
+            /** @description Model versions included in the comparison dataset. An empty array means all model versions. */
+            model_versions: string[];
+            window: components["schemas"]["CustomBaselineWindow"];
+        };
+        /** @description The comparison dataset configuration used by drift and comparison-based data quality monitors. The `type` field determines whether the comparison dataset uses the model's primary baseline or a custom fixed or moving window. */
+        BaselineConfig: components["schemas"]["ModelBaselineConfig"] | components["schemas"]["CustomBaselineConfig"];
+        DataQualityMonitor: components["schemas"]["MonitorBase"] & {
+            /** @enum {string} */
+            type?: "DATA_QUALITY";
+            metric: components["schemas"]["DataQualityMetric"];
+            dimension: components["schemas"]["Dimension"];
+            /** @description The model versions the metric is scoped to. An empty array means all model versions. */
+            model_versions: string[];
+            baseline_config?: components["schemas"]["BaselineConfig"];
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "DATA_QUALITY";
+        };
+        /**
+         * @description The model performance metric.
+         * @enum {string}
+         */
+        PerformanceMetric: "ACCURACY" | "CALIBRATION" | "F_1" | "FALSE_NEGATIVE_DENSITY" | "FALSE_NEGATIVE_RATE" | "FALSE_POSITIVE_RATE" | "PRECISION" | "RECALL" | "SENSITIVITY" | "SPECIFICITY" | "MICRO_AVERAGED_PRECISION" | "MACRO_AVERAGED_PRECISION" | "MULTI_CLASS_PRECISION" | "MICRO_AVERAGED_RECALL" | "MACRO_AVERAGED_RECALL" | "MULTI_CLASS_RECALL" | "ACTUALS_AVERAGE" | "MAE" | "MAPE" | "MEAN_ERROR" | "MSE" | "PREDICTION_AVERAGE" | "RMSE" | "R_SQUARED" | "SMAPE" | "WAPE" | "MASE" | "AUC" | "LOG_LOSS" | "NDCG" | "PR_AUC" | "GROUP_AUC" | "MRR" | "RANKING_MAP" | "RANKING_RECALL" | "RANKING_PRECISION" | "DISPARATE_IMPACT" | "FALSE_POSITIVE_RATE_PARITY" | "RECALL_PARITY";
+        PerformanceMonitor: components["schemas"]["MonitorBase"] & {
+            /** @enum {string} */
+            type?: "PERFORMANCE";
+            metric: components["schemas"]["PerformanceMetric"];
+            /** @description The model versions the metric is scoped to. An empty array means all model versions. */
+            model_versions: string[];
+            /** @description The positive class used for classification metrics. Omitted when unset. */
+            positive_class_value?: string;
+            /** @description The `k` cutoff for ranking metrics (e.g. NDCG@k). Omitted when unset. */
+            metric_at_ranking_k_value?: number;
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "PERFORMANCE";
+        };
+        /**
+         * @description The statistical drift metric. `PSI`/`KL`/`JS`/`KS` apply to structured data;
+         *     `EUCLIDEAN_DISTANCE`/`COSINE_SIMILARITY` apply to unstructured (embedding) data.
+         * @enum {string}
+         */
+        DriftMetric: "PSI" | "KL" | "JS" | "KS" | "EUCLIDEAN_DISTANCE" | "COSINE_SIMILARITY";
+        DriftMonitor: components["schemas"]["MonitorBase"] & {
+            /** @enum {string} */
+            type?: "DRIFT";
+            metric: components["schemas"]["DriftMetric"];
+            dimension: components["schemas"]["Dimension"];
+            baseline_config: components["schemas"]["BaselineConfig"];
+            /** @description The model versions the metric is scoped to. An empty array means all model versions. */
+            model_versions: string[];
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "DRIFT";
+        };
+        CustomMetricMonitor: components["schemas"]["MonitorBase"] & {
+            /** @enum {string} */
+            type?: "CUSTOM_METRIC";
+            /** @description The custom metric this monitor evaluates (base64 global ID). */
+            custom_metric_id: string;
+            /** @description The model versions the metric is scoped to. An empty array means all model versions. */
+            model_versions: string[];
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "CUSTOM_METRIC";
+        };
+        /**
+         * @description The data quality metrics computed by a tracing monitor.
+         *     Numeric span attributes support aggregations such as `SUM` and `AVG`;
+         *     categorical attributes support `COUNT`, `PERCENT_EMPTY`, and `CARDINALITY`.
+         *     Comparison metrics (`NEW_VALUES`, `MISSING_VALUES`) are not supported.
+         * @enum {string}
+         */
+        TracingDataQualityMetric: "COUNT" | "PERCENT_EMPTY" | "CARDINALITY" | "AVG" | "SUM" | "STANDARD_DEVIATION" | "P50" | "P95" | "P99" | "P99_9";
+        TracingMonitor: components["schemas"]["MonitorBase"] & {
+            /** @enum {string} */
+            type?: "TRACING";
+            /** @description Tracing monitors support only these data quality metrics. */
+            metric: components["schemas"]["TracingDataQualityMetric"];
+            /** @description The span/trace-derived field the metric is computed over. **Restricted to span_attribute, llm_eval, and user_annotation only.** */
+            dimension: components["schemas"]["Dimension"];
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "TRACING";
+        };
     };
     responses: {
         /** @description An AI integration object */
@@ -6729,6 +7734,7 @@ export interface components {
                  *             "output": "Paris"
                  *           },
                  *           "annotations": [],
+                 *           "trace_annotations": [],
                  *           "evaluations": [],
                  *           "assigned_users": [
                  *             {
@@ -6749,6 +7755,7 @@ export interface components {
                  *             "output": "The article discusses climate change impacts."
                  *           },
                  *           "annotations": [],
+                 *           "trace_annotations": [],
                  *           "evaluations": [],
                  *           "assigned_users": [
                  *             {
@@ -6811,6 +7818,16 @@ export interface components {
                  *               "name": "quality",
                  *               "label": "good",
                  *               "score": 0.95,
+                 *               "annotator": {
+                 *                 "id": "usr_123",
+                 *                 "email": "reviewer@example.com"
+                 *               }
+                 *             }
+                 *           ],
+                 *           "trace_annotations": [
+                 *             {
+                 *               "name": "helpfulness",
+                 *               "label": "helpful",
                  *               "annotator": {
                  *                 "id": "usr_123",
                  *                 "email": "reviewer@example.com"
@@ -6900,26 +7917,13 @@ export interface components {
                 "application/json": components["schemas"]["ListAnnotationQueuesResponse"];
             };
         };
-        /** @description API key successfully created. The raw key value is only returned once — store it securely. */
+        /** @description API key successfully created or refreshed. The raw key is only returned once. */
         CreateApiKeyResponse: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                /**
-                 * @example {
-                 *       "id": "QXBp1001",
-                 *       "name": "CI pipeline key",
-                 *       "key_type": "USER",
-                 *       "status": "ACTIVE",
-                 *       "key": "ak-abc123def456ghi789jkl012mno345pqr678stu901vwx234yz",
-                 *       "redacted_key": "ak-abc...xyz",
-                 *       "created_by_user_id": "Usr1001",
-                 *       "created_at": "2024-01-15T10:30:00Z",
-                 *       "expires_at": "2025-01-15T10:30:00Z"
-                 *     }
-                 */
-                "application/json": components["schemas"]["ApiKey"];
+                "application/json": components["schemas"]["CreateApiKeyResponse"];
             };
         };
         /** @description Returns a list of API keys matching the request filters. The raw key secret is never returned. */
@@ -6932,24 +7936,24 @@ export interface components {
                  * @example {
                  *       "api_keys": [
                  *         {
-                 *           "id": "QXBp1001",
+                 *           "id": "QXBpS2V5OjEwMDE6YUJjRA==",
                  *           "name": "My API Key",
                  *           "description": "My API Key description",
                  *           "key_type": "USER",
                  *           "status": "ACTIVE",
                  *           "redacted_key": "ak-xxx...yyy",
-                 *           "created_by_user_id": "Usr1001",
+                 *           "created_by_user_id": "VXNlcjoxMDAxOm5OYkM=",
                  *           "created_at": "2024-01-15T10:30:00Z",
                  *           "expires_at": "2025-01-15T10:30:00Z"
                  *         },
                  *         {
-                 *           "id": "QXBp1002",
+                 *           "id": "QXBpS2V5OjEwMDI6YUJjRA==",
                  *           "name": "My API Key 2",
                  *           "description": "My API Key 2 description",
                  *           "key_type": "SERVICE",
                  *           "status": "ACTIVE",
                  *           "redacted_key": "ak-aaa...bbb",
-                 *           "created_by_user_id": "Usr1001",
+                 *           "created_by_user_id": "VXNlcjoxMDAxOm5OYkM=",
                  *           "created_at": "2024-01-10T08:00:00Z",
                  *           "expires_at": "2025-01-10T08:00:00Z"
                  *         }
@@ -6963,26 +7967,13 @@ export interface components {
                 "application/json": components["schemas"]["ListApiKeysResponse"];
             };
         };
-        /** @description API key successfully refreshed. The raw value of the new key is only returned once — store it securely. */
+        /** @description Refreshed API key. The raw replacement key is only returned once. */
         RefreshApiKeyResponse: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                /**
-                 * @example {
-                 *       "id": "QXBp1003",
-                 *       "name": "CI pipeline key",
-                 *       "key_type": "USER",
-                 *       "status": "ACTIVE",
-                 *       "key": "ak-def456ghi789jkl012mno345pqr678stu901vwx234yzabc123",
-                 *       "redacted_key": "ak-def...123",
-                 *       "created_by_user_id": "Usr1001",
-                 *       "created_at": "2024-06-15T10:30:00Z",
-                 *       "expires_at": "2025-01-15T10:30:00Z"
-                 *     }
-                 */
-                "application/json": components["schemas"]["ApiKey"];
+                "application/json": components["schemas"]["RefreshApiKeyResponse"];
             };
         };
         /** @description API key successfully revoked */
@@ -7312,7 +8303,8 @@ export interface components {
                  *       "dataset_id": "RGF0YXNldDoxOmFCY0Q=",
                  *       "dataset_version_id": "RGF0YXNldFZlcnNpb246MTphQmNE",
                  *       "created_at": "2024-01-01T12:00:00Z",
-                 *       "updated_at": "2024-01-02T12:00:00Z"
+                 *       "updated_at": "2024-01-02T12:00:00Z",
+                 *       "integration_id": null
                  *     }
                  */
                 "application/json": components["schemas"]["Experiment"];
@@ -7332,6 +8324,7 @@ export interface components {
                  *       "dataset_version_id": "RGF0YXNldFZlcnNpb246MTphQmNE",
                  *       "created_at": "2024-01-01T12:00:00Z",
                  *       "updated_at": "2024-01-02T12:00:00Z",
+                 *       "integration_id": null,
                  *       "run_ids": [
                  *         "run_001",
                  *         "run_002"
@@ -7396,7 +8389,8 @@ export interface components {
                  *           "dataset_id": "RGF0YXNldDoxOmFCY0Q=",
                  *           "dataset_version_id": "RGF0YXNldFZlcnNpb246MTphQmNE",
                  *           "created_at": "2024-01-01T12:00:00Z",
-                 *           "updated_at": "2024-01-02T12:00:00Z"
+                 *           "updated_at": "2024-01-02T12:00:00Z",
+                 *           "integration_id": null
                  *         },
                  *         {
                  *           "id": "RXhwZXJpbWVudDoyOmFCY0Q=",
@@ -7404,7 +8398,8 @@ export interface components {
                  *           "dataset_id": "RGF0YXNldDoyOmFCY0Q=",
                  *           "dataset_version_id": "RGF0YXNldFZlcnNpb246MjphQmNE",
                  *           "created_at": "2024-01-02T12:00:00Z",
-                 *           "updated_at": "2024-01-03T12:00:00Z"
+                 *           "updated_at": "2024-01-03T12:00:00Z",
+                 *           "integration_id": "UmVtb3RlRW5kcG9pbnRJbnRlZ3JhdGlvbjoxOmFCY0Q="
                  *         }
                  *       ],
                  *       "pagination": {
@@ -7479,6 +8474,29 @@ export interface components {
                  *             "provider": "OPEN_AI",
                  *             "has_api_key": true,
                  *             "is_function_calling_enabled": true
+                 *           }
+                 *         },
+                 *         {
+                 *           "id": "UmVtb3RlRW5kcG9pbnRJbnRlZ3JhdGlvbjoxMjM=",
+                 *           "type": "AGENT",
+                 *           "name": "My agent endpoint",
+                 *           "description": null,
+                 *           "scopings": [
+                 *             {
+                 *               "organization_id": null,
+                 *               "space_id": null
+                 *             }
+                 *           ],
+                 *           "created_at": "2026-06-10T12:00:00.000Z",
+                 *           "updated_at": "2026-06-10T12:00:00.000Z",
+                 *           "created_by_user_id": "VXNlcjoxOmFCY0Q=",
+                 *           "config": {
+                 *             "endpoint": "https://agent.example.com/v1/run",
+                 *             "has_headers": false,
+                 *             "input_schema": {
+                 *               "type": "object"
+                 *             },
+                 *             "request_presets": []
                  *           }
                  *         }
                  *       ],
@@ -8315,6 +9333,111 @@ export interface components {
                 "application/json": components["schemas"]["TaskRun"];
             };
         };
+        /** @description Returns a single monitor object */
+        Monitor: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "TW9uaXRvcjo4NzEwMToxMlo5Wg==",
+                 *       "name": "Test Monitor",
+                 *       "project_id": "TW9kZWw6ODU0MjAxODQ6RFNxUg==",
+                 *       "uri": "https://app.arize.com/organizations/ZXhhbXBsZU9yZ2FuaXphdGlvbjo1Njg6V2RnREk=/spaces/U3BhY2U6NzU1OnBsR1c=/monitors/TW9uaXRvcjo4NzEwMToxMlo5Wg==",
+                 *       "status": "TRIGGERED",
+                 *       "created_at": "2026-07-09T22:07:34.010Z",
+                 *       "updated_at": "2026-07-09T23:22:14.638Z",
+                 *       "threshold": {
+                 *         "type": "DYNAMIC_RANGE",
+                 *         "calculation": "STDEV",
+                 *         "lower": {
+                 *           "operator": "GREATER_THAN",
+                 *           "multiplier": 0.00001
+                 *         },
+                 *         "upper": {
+                 *           "operator": "LESS_THAN_OR_EQUAL",
+                 *           "multiplier": 0.00001
+                 *         }
+                 *       },
+                 *       "notifications_enabled": true,
+                 *       "manual_evaluation_enabled": false,
+                 *       "created_by_user_id": "VXNlcjoxMTIzOlRlc3Rlcg==",
+                 *       "filters": [
+                 *         {
+                 *           "dimension": {
+                 *             "category": "LLM_EVAL",
+                 *             "name": "eval.Test Eval.label"
+                 *           },
+                 *           "operator": "CONTAINS_STRING",
+                 *           "values": [
+                 *             "No Value",
+                 *             "NULL"
+                 *           ]
+                 *         },
+                 *         {
+                 *           "dimension": {
+                 *             "category": "USER_ANNOTATION",
+                 *             "name": "annotation.Accuracy.score"
+                 *           },
+                 *           "operator": "EQUALS",
+                 *           "values": [
+                 *             "NULL"
+                 *           ]
+                 *         }
+                 *       ],
+                 *       "notification_configs": [
+                 *         {
+                 *           "type": "EMAIL",
+                 *           "email_address": "test.user1@example.com"
+                 *         },
+                 *         {
+                 *           "type": "EMAIL",
+                 *           "email_address": "test.user2@example.com"
+                 *         },
+                 *         {
+                 *           "type": "EMAIL",
+                 *           "email_address": "test.admin@example.com"
+                 *         },
+                 *         {
+                 *           "type": "WEBHOOK",
+                 *           "id": "V2ViaG9vazoyMzpBczpH",
+                 *           "url": "https://webhook.site/test-webhook-1"
+                 *         },
+                 *         {
+                 *           "type": "WEBHOOK",
+                 *           "id": "V2ViaG9vazoyNDpTdW5x",
+                 *           "url": "https://testsite.com/test5"
+                 *         }
+                 *       ],
+                 *       "downtime": {
+                 *         "start": "2026-07-09T22:47:02.155Z",
+                 *         "duration_seconds": 3600,
+                 *         "frequency_days": 1
+                 *       },
+                 *       "scheduled_runtime": {
+                 *         "enabled": true,
+                 *         "cadence_seconds": 10800,
+                 *         "days_of_week": [
+                 *           0
+                 *         ]
+                 *       },
+                 *       "evaluation_window_length_seconds": 86400,
+                 *       "delay_seconds": 0,
+                 *       "evaluated_at": "2026-07-09T23:00:00.000Z",
+                 *       "latest_computed_value": 251,
+                 *       "notes": "This monitor should trigger when the metric moves slightly above the baseline.",
+                 *       "type": "TRACING",
+                 *       "metric": "COUNT",
+                 *       "dimension": {
+                 *         "category": "SPAN_ATTRIBUTE",
+                 *         "name": "attributes.output.value"
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["Monitor"];
+            };
+        };
         /** @description Returns a list of traces */
         ListTracesResponse: {
             headers: {
@@ -8792,11 +9915,11 @@ export interface components {
          */
         ExperimentIdPathParam: components["schemas"]["Id"];
         /**
-         * @description The unique integration identifier (base64 global ID).
+         * @description The unique integration identifier.
          * @example TGxtSW50ZWdyYXRpb246MTI6YUJjRA==
          */
         IntegrationIdPathParam: components["schemas"]["Id"];
-        /** @description Filter the list to a single integration type. Omit to list all types. */
+        /** @description The integration type to list. Required - the list returns only integrations of this type. */
         IntegrationTypeQueryParam: components["schemas"]["IntegrationType"];
         /**
          * @description The unique organization identifier (base64). When provided, only spaces belonging to this organization are returned.
@@ -8947,6 +10070,11 @@ export interface components {
          * @example UHJvbXB0VmVyc2lvbjoxMjM0NQ==
          */
         VersionIdQueryParam: components["schemas"]["Id"];
+        /**
+         * @description The unique monitor identifier (base64)
+         * @example TW9uaXRvcjoxMjM=
+         */
+        MonitorIdPathParam: components["schemas"]["Id"];
         /**
          * @description The unique organization identifier (base64)
          * @example T3JnYW5pemF0aW9uOjEyMzQ1
@@ -9389,10 +10517,11 @@ export interface components {
          *     **Payload Requirements**
          *     - `type`, `name`, and `config` are required.
          *     - `name` must be unique within the account for the given `type`.
-         *     - For `type: LLM`, `config.provider` is required. Each provider's config
-         *       defines its own required fields — see the per-provider `config` schema.
-         *     - `config.is_function_calling_enabled` defaults to `true` when omitted.
          *     - `scopings` defaults to account-wide visibility when omitted.
+         *     - Type- and provider-specific rules (required fields, defaults, write-only
+         *       secrets) are documented on each config schema: see the per-provider
+         *       members of `CreateLlmConfig` for `type: LLM`, and `CreateAgentConfig`
+         *       for `type: AGENT`.
          *
          *     **Valid example**
          *     ```json
@@ -9422,15 +10551,6 @@ export interface components {
          *       "config": {}
          *     }
          *     ```
-         *
-         *     **Invalid example** (missing required `config.api_key` for `OPEN_AI`)
-         *     ```json
-         *     {
-         *       "type": "LLM",
-         *       "name": "Bad OpenAI",
-         *       "config": { "provider": "OPEN_AI" }
-         *     }
-         *     ```
          */
         CreateIntegrationRequestBody: {
             content: {
@@ -9445,14 +10565,16 @@ export interface components {
          *     - `type` is **required** (it selects the per-type PATCH shape) and is
          *       immutable: it must match the stored integration's type, otherwise the
          *       request is rejected with 422 (change category by delete + recreate).
-         *     - At least one updatable field (`name`, `scopings`, or `config`) must be
-         *       provided in addition to `type`.
-         *     - `provider` is immutable. Supplying a value that differs from the stored
-         *       integration is rejected with 422.
+         *     - At least one updatable field (`name`, `scopings`, `config`, or — for
+         *       `AGENT` only — `description`) must be provided in addition to `type`.
+         *       `description` is not a valid field for `type: LLM` and is rejected.
+         *     - For `LLM`, `config.provider` is immutable, and config-field
+         *       applicability is provider-specific (enforced with 422) — see the
+         *       per-field docs on `UpdateLlmConfig`.
          *     - Envelope and `config` scalar fields deep-merge: omit = keep, explicit
          *       `null` = clear (for nullable fields).
-         *     - `scopings`, if provided, replaces the existing values.
-         *     - `config.api_key` may be sent to rotate the key; it is never returned.
+         *     - Collections (`scopings`, `config.model_names`, `config.headers`,
+         *       `config.request_presets`) replace the existing values when provided.
          *
          *     **Valid example**
          *     ```json
@@ -11296,9 +12418,9 @@ export interface operations {
     };
     list_integrations: {
         parameters: {
-            query?: {
-                /** @description Filter the list to a single integration type. Omit to list all types. */
-                type?: components["parameters"]["IntegrationTypeQueryParam"];
+            query: {
+                /** @description The integration type to list. Required - the list returns only integrations of this type. */
+                type: components["parameters"]["IntegrationTypeQueryParam"];
                 /**
                  * @description Filter search results to a particular space ID
                  * @example U3BhY2U6MTIzNDU=
@@ -11367,7 +12489,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique integration identifier (base64 global ID).
+                 * @description The unique integration identifier.
                  * @example TGxtSW50ZWdyYXRpb246MTI6YUJjRA==
                  */
                 integration_id: components["parameters"]["IntegrationIdPathParam"];
@@ -11389,7 +12511,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique integration identifier (base64 global ID).
+                 * @description The unique integration identifier.
                  * @example TGxtSW50ZWdyYXRpb246MTI6YUJjRA==
                  */
                 integration_id: components["parameters"]["IntegrationIdPathParam"];
@@ -11412,7 +12534,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description The unique integration identifier (base64 global ID).
+                 * @description The unique integration identifier.
                  * @example TGxtSW50ZWdyYXRpb246MTI6YUJjRA==
                  */
                 integration_id: components["parameters"]["IntegrationIdPathParam"];
@@ -12850,6 +13972,28 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    get_monitors: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique monitor identifier (base64)
+                 * @example TW9uaXRvcjoxMjM=
+                 */
+                monitor_id: components["parameters"]["MonitorIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Monitor"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };

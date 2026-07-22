@@ -2,6 +2,7 @@ import {
   RawDataset,
   RawDatasetExample,
   RawDatasetVersion,
+  RawDatasetVersionWithExampleIds,
 } from "../../types/internal";
 
 const mockDateString = "2021-01-01T00:00:00.000Z";
@@ -28,6 +29,17 @@ export const mockDataset: RawDataset = {
   updated_at: mockDateString,
   versions: [mockDatasetVersion],
 };
+
+export const mockDatasetVersionWithExampleIds: RawDatasetVersionWithExampleIds =
+  {
+    id: mockDatasetId,
+    name: mockDatasetName,
+    space_id: mockSpaceId,
+    created_at: mockDateString,
+    updated_at: mockDateString,
+    dataset_version_id: mockDatasetVersionId,
+    example_ids: [mockExampleId],
+  };
 
 export const mockListExamplesResponseExample: RawDatasetExample = {
   id: mockExampleId,

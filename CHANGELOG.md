@@ -1,5 +1,18 @@
 # @arizeai/ax-client
 
+## [1.25.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.24.0...arize-js-sdk/v1.25.0) (2026-07-22)
+
+
+### 🎁 New Features
+
+* **datasets:** add update_examples to Go and JS SDKs ([#78586](https://github.com/Arize-ai/arize/issues/78586)) ([103c8b1](https://github.com/Arize-ai/arize/commit/103c8b1f2ca97bf7ba8c44f2de283f83ff1373d3))
+* **service-keys:** multi-space/multi-org support — OpenAPI + Go backend ([#76038](https://github.com/Arize-ai/arize/issues/76038)) ([d6dbeb5](https://github.com/Arize-ai/arize/commit/d6dbeb5db7f0d9f1316f8b7bca5989d0570de332))
+
+
+### 📚 Documentation
+
+* fix and modernize doc links in SDK READMEs ([#79991](https://github.com/Arize-ai/arize/issues/79991)) ([f8a893e](https://github.com/Arize-ai/arize/commit/f8a893efcc8062b0b31ab9672830c17989f3ab22))
+
 ## [1.24.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.23.0...arize-js-sdk/v1.24.0) (2026-07-17)
 
 > **Minor release.** The v2 REST API standardization ([#78907](https://github.com/Arize-ai/arize/pull/78907)) is technically breaking, but **only affects endpoints/methods in `alpha` or `beta`** — all gated behind the pre-release opt-in and documented with a warning. **No stable surface changes.**

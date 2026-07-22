@@ -30,12 +30,12 @@ Arize has both Enterprise and OSS products to support this goal:
 
 # Key Features
 
-- [**_Tracing_**](https://docs.arize.com/arize/observe/tracing) - Trace your LLM application's runtime using OpenTelemetry-based instrumentation.
-- [**_Evaluation_**](https://docs.arize.com/arize/evaluate/online-evals) - Leverage LLMs to benchmark your application's performance using response and retrieval evals.
-- [**_Datasets_**](https://docs.arize.com/arize/develop/datasets) - Create versioned datasets of examples for experimentation, evaluation, and fine-tuning.
-- [**_Experiments_**](https://docs.arize.com/arize/develop/datasets-and-experiments) - Track and evaluate changes to prompts, LLMs, and retrieval.
-- [**_Playground_**](https://docs.arize.com/arize/develop/prompt-playground)- Optimize prompts, compare models, adjust parameters, and replay traced LLM calls.
-- [**_Prompt Management_**](https://docs.arize.com/arize/develop/prompt-hub)- Manage and test prompt changes systematically using version control, tagging, and experimentation.
+- [**_Tracing_**](https://arize.com/docs/ax/instrument/what-are-traces) - Trace your LLM application's runtime using OpenTelemetry-based instrumentation.
+- [**_Evaluation_**](https://arize.com/docs/ax/get-started/get-started-evaluations) - Leverage LLMs to benchmark your application's performance using response and retrieval evals.
+- [**_Datasets_**](https://arize.com/docs/ax/improve/build-a-dataset) - Create versioned datasets of examples for experimentation, evaluation, and fine-tuning.
+- [**_Experiments_**](https://arize.com/docs/ax/improve/set-up-an-experiment) - Track and evaluate changes to prompts, LLMs, and retrieval.
+- [**_Playground_**](https://arize.com/docs/ax/concepts/prompts/prompt-playground)- Optimize prompts, compare models, adjust parameters, and replay traced LLM calls.
+- [**_Prompt Management_**](https://arize.com/docs/ax/concepts/prompts/prompt-hub)- Manage and test prompt changes systematically using version control, tagging, and experimentation.
 
 # Table of Contents <!-- omit in toc -->
 
@@ -130,7 +130,6 @@ Arize has both Enterprise and OSS products to support this goal:
   - [Updating a role binding](#updating-a-role-binding)
   - [Deleting a role binding](#deleting-a-role-binding)
 - [Resource restrictions](#resource-restrictions)
-  - [Listing resource restrictions](#listing-resource-restrictions)
 - [Organizations](#organizations)
   - [Listing organizations](#listing-organizations)
   - [Getting an organization](#getting-an-organization)
@@ -556,8 +555,7 @@ const version = await getPromptVersionByLabel({
 });
 
 // Set labels on a version (replaces all existing labels)
-// Returns the updated PromptVersion
-const updatedVersion = await setPromptVersionLabels({
+const { labels } = await setPromptVersionLabels({
   versionId: "your-version-id",
   labels: ["production", "staging"],
 });
@@ -871,39 +869,18 @@ console.log(annotationConfigs);
 
 ## Creating an annotation config
 
-Three config types are supported: continuous (a numeric score in a range), categorical (a fixed set of labeled values), and freeform (open-ended text with no scale). Use whichever type-specific function matches the config type you want.
-
 ```typescript
-import {
-  createContinuousAnnotationConfig,
-  createCategoricalAnnotationConfig,
-  createFreeformAnnotationConfig,
-} from "@arizeai/ax-client";
+import { createAnnotationConfig } from "@arizeai/ax-client";
 
-// Continuous (numeric) annotation config
-const scoreConfig = await createContinuousAnnotationConfig({
-  name: "quality-score",
-  space: "my-space",
-  minimumScore: 0,
-  maximumScore: 1,
-  optimizationDirection: "MAXIMIZE",
-});
-
-// Categorical annotation config
-const annotationConfig = await createCategoricalAnnotationConfig({
+const annotationConfig = await createAnnotationConfig({
   name: "Accuracy",
   space: "my-space",
+  type: "CATEGORICAL",
   values: [
     { label: "accurate", score: 1 },
     { label: "inaccurate", score: 0 },
   ],
   optimizationDirection: "MAXIMIZE",
-});
-
-// Freeform (open-ended text) annotation config
-const notesConfig = await createFreeformAnnotationConfig({
-  name: "reviewer-notes",
-  space: "my-space",
 });
 ```
 
@@ -1213,21 +1190,26 @@ The `@arizeai/ax-client` package allows you to create, list, delete, revoke, and
 ```typescript
 import { createApiKey } from "@arizeai/ax-client";
 
-const apiKey = await createApiKey({ name: "CI pipeline key" });
+const apiKey = await createApiKey({ keyType: "USER", name: "CI pipeline key" });
 // Store apiKey.key securely — the full key value is only returned once
 console.log(apiKey.key);
 ```
 
-Service keys can be scoped to a specific space with optional role assignments:
+Service keys are backed by a dedicated bot user scoped to one or more organizations and spaces:
 
 ```typescript
 const apiKey = await createApiKey({
-  name: "service-key",
   keyType: "SERVICE",
-  spaceId: "your-space-id",
-  roles: { spaceRole: "MEMBER" },
+  name: "service-key",
+  organizations: [
+    {
+      orgId: "T3JnMTIz",
+      spaces: [{ spaceId: "U3BhY2UxMjM", role: { name: "MEMBER" } }],
+    },
+  ],
   expiresAt: new Date("2027-01-01"),
 });
+// apiKey.botUser — the bot user created for this key, with resolved role assignments
 ```
 
 ## Listing API keys
@@ -1418,22 +1400,6 @@ console.log(restriction);
 
 // Lift the restriction
 await unrestrictResource({ resourceId: "your_project_id" });
-```
-
-## Listing resource restrictions
-
-List the active resource restrictions the authenticated user is permitted to manage.
-
-```typescript
-import { listResourceRestrictions } from "@arizeai/ax-client";
-
-const { data } = await listResourceRestrictions();
-console.log(data.map((r) => r.resourceId));
-
-// Filter to a single resource type
-const { data: projects } = await listResourceRestrictions({
-  resourceType: "PROJECT",
-});
 ```
 
 # Organizations

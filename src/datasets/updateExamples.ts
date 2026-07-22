@@ -31,7 +31,7 @@ export type UpdateExamplesParams = WithClient<{
    * An optional new version name for the dataset. If provided, a new version of the dataset will be created with the update.
    * If not the version will be updated in place.
    */
-  newVersionName?: string;
+  newVersion?: string;
 }>;
 /**
  * Update examples in a dataset with a patch to each example updating existing fields and adding new fields. Does not remove fields that are omitted.
@@ -49,7 +49,7 @@ export type UpdateExamplesParams = WithClient<{
  * Note:
  * - Only examples with IDs that already exist will be updated.
  * - You can update examples with new and existing fields, but you cannot remove existing fields.
- * @param newVersionName An optional new version name for the dataset. If provided, a new version of the dataset will be created with the update.
+ * @param newVersion An optional new version name for the dataset. If provided, a new version of the dataset will be created with the update.
  * If not the version will be updated in place.
  * @returns A {@link DatasetVersionWithExampleIds} containing the dataset attributes, the version the examples were written to, and the IDs of the updated examples.
  * @throws Error if the examples cannot be updated or the response is invalid.
@@ -68,7 +68,7 @@ export type UpdateExamplesParams = WithClient<{
  *       topic: "math",
  *     },
  *   ],
- *   newVersionName: "your_new_version_name",
+ *   newVersion: "your_new_version_name",
  * });
  * console.log(dataset);
  * ```
@@ -79,7 +79,7 @@ export async function updateExamples({
   space,
   datasetVersionId,
   examples,
-  newVersionName,
+  newVersion,
 }: UpdateExamplesParams): Promise<DatasetVersionWithExampleIds> {
   warnPreRelease({ functionName: "updateExamples", stage: "beta" });
   const client = clientInstance ?? createClient();
@@ -94,7 +94,7 @@ export async function updateExamples({
     },
     body: {
       examples,
-      new_version: newVersionName,
+      new_version: newVersion,
     },
   });
   if (response.error) {
