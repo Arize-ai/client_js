@@ -3308,7 +3308,7 @@ export interface components {
             base_url?: string;
             /** @description Supported model names */
             model_names?: string[];
-            /** @description Custom headers to include in requests */
+            /** @description Custom headers to include in requests. The serialized header map must not exceed 8,175 bytes. */
             headers?: {
                 [key: string]: string;
             };
@@ -3347,7 +3347,7 @@ export interface components {
             base_url?: string | null;
             /** @description Supported model names (replaces all) */
             model_names?: string[];
-            /** @description Custom headers. Pass null to remove. */
+            /** @description Custom headers. Pass null to remove. The serialized header map must not exceed 8,175 bytes. */
             headers?: {
                 [key: string]: string;
             } | null;
@@ -4520,10 +4520,10 @@ export interface components {
             id: string;
             /** @description Name of the experiment */
             name: string;
-            /** @description Unique identifier for the dataset this experiment belongs to */
-            dataset_id: string;
-            /** @description Unique identifier for the dataset version this experiment belongs to */
-            dataset_version_id: string;
+            /** @description Unique identifier for the dataset associated with this experiment. Null if the experiment isn't associated with a dataset. */
+            dataset_id?: string | null;
+            /** @description Unique identifier for the dataset version associated with this experiment. Null if the experiment isn't associated with a dataset. */
+            dataset_version_id?: string | null;
             /**
              * Format: date-time
              * @description Timestamp for when the experiment was created
@@ -4842,7 +4842,7 @@ export interface components {
             auth_type: "PROXY_WITH_HEADERS";
             /** @description Proxy URL requests are forwarded to (HTTPS). */
             base_url: string;
-            /** @description Custom request headers sent to the proxy, as a name-to-value map. Write-only: values are never returned; names are exposed as `header_names` on read. Defaults to no headers. */
+            /** @description Custom request headers sent to the proxy, as a name-to-value map. Write-only: values are never returned; names are exposed as `header_names` on read. Defaults to no headers. The serialized header map must not exceed 8,175 bytes. */
             headers?: {
                 [key: string]: string;
             };
@@ -4860,7 +4860,7 @@ export interface components {
             base_url: string;
             /** @description API key for the endpoint (write-only, never returned). */
             api_key?: string;
-            /** @description Custom request headers sent to the endpoint, as a name-to-value map. Write-only: values are never returned; names are exposed as `header_names` on read. Defaults to no headers. */
+            /** @description Custom request headers sent to the endpoint, as a name-to-value map. Write-only: values are never returned; names are exposed as `header_names` on read. Defaults to no headers. The serialized header map must not exceed 8,175 bytes. */
             headers?: {
                 [key: string]: string;
             };
@@ -4908,7 +4908,7 @@ export interface components {
             base_url?: string;
             /** @description API key for the endpoint (write-only, never returned). */
             api_key?: string;
-            /** @description Custom request headers sent to the endpoint, as a name-to-value map. Write-only: values are never returned; names are exposed as `header_names` on read. Defaults to no headers. */
+            /** @description Custom request headers sent to the endpoint, as a name-to-value map. Write-only: values are never returned; names are exposed as `header_names` on read. Defaults to no headers. The serialized header map must not exceed 8,175 bytes. */
             headers?: {
                 [key: string]: string;
             };
@@ -5137,7 +5137,7 @@ export interface components {
             auth?: components["schemas"]["CreateAwsBedrockAuth"];
             /** @description (`CUSTOM` and `NVIDIA_NIM` only) New endpoint URL. For `NVIDIA_NIM` the field is optional on the resource, so null clears it (falling back to the provider default endpoint). For `CUSTOM` it is required on the resource — null is rejected with 422. Omit to keep unchanged. */
             base_url?: string | null;
-            /** @description (`CUSTOM` and `NVIDIA_NIM` only) Replaces the configured custom request headers: the provided map becomes the full header set. Pass null to clear all headers. Omit to keep unchanged. Write-only; names are exposed as `header_names` on read. */
+            /** @description (`CUSTOM` and `NVIDIA_NIM` only) Replaces the configured custom request headers: the provided map becomes the full header set. Pass null to clear all headers. Omit to keep unchanged. Write-only; names are exposed as `header_names` on read. The serialized header map must not exceed 8,175 bytes. */
             headers?: {
                 [key: string]: string;
             } | null;
@@ -5798,6 +5798,36 @@ export interface components {
          */
         SpanStatusCode: "OK" | "ERROR" | "UNSET";
         /**
+         * @description Configuration for running an agent integration against each dataset
+         *     example. The `input_template` is sent to the agent after Mustache
+         *     substitution.
+         */
+        AgentCallRunConfig: {
+            /**
+             * @description Discriminator. Must be `"AGENT_CALL"`. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            experiment_type: "AGENT_CALL";
+            /**
+             * @description Agent integration identifier (base64). The agent invoked for each
+             *     dataset example. Must reference an integration of `type` `AGENT`;
+             *     other integration types are rejected.
+             */
+            integration_id: string;
+            /**
+             * @description JSON request body sent to the agent for each dataset example. Must be a
+             *     JSON object whose values conform to the agent integration's input
+             *     schema. Mustache placeholders (`{{column}}`) are substituted with each
+             *     dataset row's values before the request is sent. The `dataset.` prefix
+             *     is optional — `{{column}}` and `{{dataset.column}}` are equivalent, and
+             *     responses (create, update, and read) always echo the normalized
+             *     `{{column}}` form.
+             */
+            input_template: {
+                [key: string]: unknown;
+            };
+        };
+        /**
          * @description Request body for creating a task. The `type` field is the discriminator.
          *
          *     | `type` | Schema |
@@ -5836,12 +5866,12 @@ export interface components {
          *     variant must be supplied, identified by `experiment_type`. All fields sit at
          *     the top level alongside `experiment_type` (flat — no wrapper sub-object).
          */
-        RunConfiguration: components["schemas"]["LlmGenerationRunConfig"] | components["schemas"]["TemplateEvaluationRunConfig"];
+        RunConfiguration: components["schemas"]["LlmGenerationRunConfig"] | components["schemas"]["TemplateEvaluationRunConfig"] | components["schemas"]["AgentCallRunConfig"];
         /**
          * @description A task is a typed, configurable unit of work that ties one or more evaluators
          *     to a data source (project or dataset). `RUN_EXPERIMENT` tasks additionally
-         *     carry a `run_configuration` that defines the LLM or evaluator settings for
-         *     each triggered run.
+         *     carry a `run_configuration` that defines the LLM, evaluator, or agent
+         *     settings for each triggered run.
          */
         Task: {
             /** @description The unique identifier for the task */
@@ -5963,6 +5993,15 @@ export interface components {
             created_at: string;
             /** @description The unique identifier for the user who triggered the run. */
             created_by_user_id: string | null;
+            /**
+             * @description Human-readable explanation of why the run failed or was cancelled;
+             *     null for successful runs. For example, when all matching data already
+             *     has evaluation labels from a previous run, the task cancels with zero
+             *     successes, errors, and skipped items, and this field explains that the
+             *     task must be re-triggered with `override_evaluations` enabled to
+             *     re-evaluate it.
+             */
+            failure_reason?: string | null;
         };
         /**
          * @description Status of a task run.
@@ -9216,7 +9255,8 @@ export interface components {
                  *           "num_errors": 12,
                  *           "num_skipped": 138,
                  *           "created_at": "2026-03-07T10:30:00.000Z",
-                 *           "created_by_user_id": "VXNlcjoxOm5OYkM="
+                 *           "created_by_user_id": "VXNlcjoxOm5OYkM=",
+                 *           "failure_reason": null
                  *         }
                  *       ],
                  *       "pagination": {
@@ -9318,16 +9358,17 @@ export interface components {
                  * @example {
                  *       "id": "VGFza1J1bjo5OTpxUndY",
                  *       "task_id": "T25saW5lVGFzazo0NTpxUndY",
-                 *       "status": "COMPLETED",
+                 *       "status": "CANCELLED",
                  *       "run_started_at": "2026-03-07T10:30:01.000Z",
-                 *       "run_finished_at": "2026-03-07T10:35:22.000Z",
+                 *       "run_finished_at": "2026-03-07T10:30:01.000Z",
                  *       "data_start_time": "2026-03-01T00:00:00.000Z",
                  *       "data_end_time": "2026-03-07T00:00:00.000Z",
-                 *       "num_successes": 4850,
-                 *       "num_errors": 12,
-                 *       "num_skipped": 138,
+                 *       "num_successes": 0,
+                 *       "num_errors": 0,
+                 *       "num_skipped": 0,
                  *       "created_at": "2026-03-07T10:30:00.000Z",
-                 *       "created_by_user_id": "VXNlcjoxOm5OYkM="
+                 *       "created_by_user_id": "VXNlcjoxOm5OYkM=",
+                 *       "failure_reason": "Skipping task run: all data matching the filters already has evaluation labels from a previous run. No new evaluations were processed, and no errors occurred. To re-evaluate this data, run the task again with the option to override existing evaluation labels enabled."
                  *     }
                  */
                 "application/json": components["schemas"]["TaskRun"];

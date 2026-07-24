@@ -3,8 +3,8 @@ import { Annotation } from "./spans";
 export type Experiment = {
   id: string;
   name: string;
-  datasetId: string;
-  datasetVersionId: string;
+  datasetId?: string | null;
+  datasetVersionId?: string | null;
   createdAt: Date;
   updatedAt: Date;
   experimentTracesProjectId?: string;

@@ -108,4 +108,23 @@ describe("updateTask", () => {
       }),
     ).rejects.toThrow("not found");
   });
+
+  it("propagates the custom code evaluator limit", async () => {
+    patch.mockResolvedValue({
+      error: {
+        detail:
+          "Only one custom code evaluator runs per task. Create one task per custom evaluator.",
+        title: "Unprocessable Entity",
+      },
+      data: undefined,
+    });
+
+    await expect(
+      updateTask({
+        client: mockClient,
+        task: "tid",
+        evaluators: [{ evaluatorId: "custom-1" }, { evaluatorId: "custom-2" }],
+      }),
+    ).rejects.toThrow("Only one custom code evaluator");
+  });
 });

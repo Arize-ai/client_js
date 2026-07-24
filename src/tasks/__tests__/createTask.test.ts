@@ -131,4 +131,23 @@ describe("createTask", () => {
       }),
     ).rejects.toThrow("bad request");
   });
+
+  it("propagates the custom code evaluator limit", async () => {
+    vi.spyOn(resolveModule, "findProjectId").mockResolvedValue(PROJECT_ID);
+    const client = makeClient(undefined, {
+      detail:
+        "Only one custom code evaluator runs per task. Create one task per custom evaluator.",
+      title: "Unprocessable Entity",
+    });
+
+    await expect(
+      createTask({
+        client,
+        name: "Two custom evaluators",
+        type: "CODE_EVALUATION",
+        project: PROJECT_ID,
+        evaluators: [{ evaluatorId: "custom-1" }, { evaluatorId: "custom-2" }],
+      }),
+    ).rejects.toThrow("Only one custom code evaluator");
+  });
 });

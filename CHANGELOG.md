@@ -1,5 +1,18 @@
 # @arizeai/ax-client
 
+## [1.26.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.25.0...arize-js-sdk/v1.26.0) (2026-07-24)
+
+
+### 🎁 New Features
+
+* Make dataset id and dataset version id nullable in the REST API experiment response schema ([#80200](https://github.com/Arize-ai/arize/issues/80200)) ([2cd9eaf](https://github.com/Arize-ai/arize/commit/2cd9eaf5c9a15fa9db3ef2c6cd2d462b077efa32))
+
+
+### 🐛 Bug Fixes
+
+* **cli:** reject CODE_EVALUATION tasks with multiple custom code evaluators ([#79880](https://github.com/Arize-ai/arize/issues/79880)) ([b10d1dd](https://github.com/Arize-ai/arize/commit/b10d1dda6549449d04b8f48681f374bd9fb9a747)), closes [#79853](https://github.com/Arize-ai/arize/issues/79853)
+* **onlinetasks:** reject CODE_EVALUATION tasks with multiple custom code ([b10d1dd](https://github.com/Arize-ai/arize/commit/b10d1dda6549449d04b8f48681f374bd9fb9a747))
+
 ## [1.25.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.24.0...arize-js-sdk/v1.25.0) (2026-07-22)
 
 

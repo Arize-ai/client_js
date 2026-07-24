@@ -23,6 +23,16 @@ describe("transformExperiment", () => {
     const experiment = transformExperiment(mockExperiment);
     expect(experiment).toEqual(expectedResult);
   });
+
+  it("should pass through null datasetId and datasetVersionId for experiments without a dataset", () => {
+    const experiment = transformExperiment({
+      ...mockExperiment,
+      dataset_id: null,
+      dataset_version_id: null,
+    });
+    expect(experiment.datasetId).toBeNull();
+    expect(experiment.datasetVersionId).toBeNull();
+  });
 });
 
 describe("normalizeExperimentRun", () => {
