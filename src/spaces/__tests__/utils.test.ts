@@ -8,6 +8,7 @@ describe("transformSpace", () => {
       id: mockSpace.id,
       name: mockSpace.name,
       description: mockSpace.description,
+      isPrivate: mockSpace.is_private,
       createdAt: new Date(mockSpace.created_at),
     };
     const space = transformSpace(mockSpace);

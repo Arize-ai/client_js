@@ -3,6 +3,7 @@ import { Annotation } from "./spans";
 export type Experiment = {
   id: string;
   name: string;
+  spaceId: string;
   datasetId?: string | null;
   datasetVersionId?: string | null;
   createdAt: Date;
@@ -12,26 +13,14 @@ export type Experiment = {
 
 export type ExperimentRunInput = {
   output: string;
-} & (
-  | {
-      exampleId: string;
-      /** @deprecated Use `exampleId` instead. */
-      example_id?: string;
-    }
-  | {
-      /** @deprecated Use `exampleId` instead. */
-      example_id: string;
-      exampleId?: string;
-    }
-) & {
-    [key: string]: unknown;
-  };
+  exampleId?: string;
+} & {
+  [key: string]: unknown;
+};
 
 export type ExperimentRun = {
   id: string;
-  /** @deprecated Use `exampleId` instead. */
-  example_id: string;
-  exampleId?: string;
+  exampleId?: string | null;
   output?: string | null;
   error?: string | null;
   annotations?: Annotation[];

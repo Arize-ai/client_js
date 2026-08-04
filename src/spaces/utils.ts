@@ -3,9 +3,10 @@ import { RawSpace, RawSpaceMembership } from "../types/internal";
 import { components } from "../__generated__/api/v2";
 
 export function transformSpace(space: RawSpace): Space {
-  const { created_at, ...rest } = space;
+  const { created_at, is_private, ...rest } = space;
   return {
     ...rest,
+    isPrivate: is_private,
     createdAt: new Date(created_at),
   };
 }

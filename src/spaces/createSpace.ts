@@ -1,6 +1,6 @@
 import { createClient } from "../client";
 import { Space, WithClient } from "../types";
-import { warnPreRelease } from "../utils/warning";
+import { warnPreRelease, warnPrivateSpace } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { transformSpace } from "./utils";
 
@@ -8,6 +8,8 @@ export type CreateSpaceParams = WithClient<{
   name: string;
   organizationId: string;
   description?: string;
+  /** Whether to create the space as private. Defaults to `false` (public). */
+  isPrivate?: boolean;
 }>;
 
 /**
@@ -17,6 +19,9 @@ export type CreateSpaceParams = WithClient<{
  * @param name - The name of the space to create.
  * @param organizationId - The organization ID to create the space in.
  * @param description - An optional description for the space.
+ * @param isPrivate - Whether to create the space as private. Defaults to
+ *   `false` (public). Private spaces are only visible to their members and
+ *   account/org/space admins.
  * @returns A {@link Space}.
  * @throws Error if the space cannot be created or the response is invalid.
  * @example
@@ -26,6 +31,7 @@ export type CreateSpaceParams = WithClient<{
  * const space = await createSpace({
  *   organizationId: "T3JnYW5pemF0aW9uOmFiYzEyMw==",
  *   name: "your_space_name",
+ *   isPrivate: true,
  * });
  * console.log(space);
  * ```
@@ -35,14 +41,19 @@ export async function createSpace({
   name,
   organizationId,
   description,
+  isPrivate,
 }: CreateSpaceParams): Promise<Space> {
   warnPreRelease({ functionName: "createSpace", stage: "beta" });
+  if (isPrivate) {
+    warnPrivateSpace("createSpace");
+  }
   const client = clientInstance ?? createClient();
   const response = await client.POST("/v2/spaces", {
     body: {
       name,
       organization_id: organizationId,
       description,
+      is_private: isPrivate,
     },
   });
   if (response.error) {

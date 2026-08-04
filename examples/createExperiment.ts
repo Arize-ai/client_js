@@ -8,7 +8,7 @@ import { createExperiment } from "../src/experiments";
       dataset: "your_dataset_name",
       experimentRuns: [
         {
-          example_id: "your_example_id",
+          exampleId: "your_example_id",
           output: "output",
         },
       ],

@@ -15,6 +15,7 @@ describe("transformExperiment", () => {
     const expectedResult = {
       id: mockExperiment.id,
       name: mockExperiment.name,
+      spaceId: mockExperiment.space_id,
       datasetId: mockExperiment.dataset_id,
       datasetVersionId: mockExperiment.dataset_version_id,
       createdAt: new Date(mockExperiment.created_at),
@@ -36,18 +37,7 @@ describe("transformExperiment", () => {
 });
 
 describe("normalizeExperimentRun", () => {
-  it("supports legacy snake_case example_id input", () => {
-    const normalizedRun = normalizeExperimentRun({
-      example_id: mockExperimentRun.example_id,
-      output: "run_output",
-    });
-    expect(normalizedRun).toEqual({
-      example_id: mockExperimentRun.example_id,
-      output: "run_output",
-    });
-  });
-
-  it("supports camelCase exampleId input", () => {
+  it("maps camelCase exampleId onto the wire example_id", () => {
     const normalizedRun = normalizeExperimentRun({
       exampleId: mockExperimentRun.example_id,
       output: "run_output",
@@ -57,15 +47,22 @@ describe("normalizeExperimentRun", () => {
       output: "run_output",
     });
   });
+
+  it("omits example_id for a standalone run with no example ID", () => {
+    const normalizedRun = normalizeExperimentRun({
+      output: "run_output",
+    });
+    expect(normalizedRun).toEqual({ output: "run_output" });
+    expect(normalizedRun).not.toHaveProperty("example_id");
+  });
 });
 
 describe("transformExperimentRun", () => {
-  it("returns legacy example_id and camelCase exampleId", () => {
+  it("maps the wire example_id onto camelCase exampleId", () => {
     const transformedRun = transformExperimentRun(mockExperimentRun);
     expect(transformedRun).toEqual({
       id: mockExperimentRun.id,
       output: mockExperimentRun.output,
-      example_id: mockExperimentRun.example_id,
       exampleId: mockExperimentRun.example_id,
     });
   });

@@ -607,9 +607,6 @@ export interface paths {
          *     **User keys (`key_type=USER`):** Returned by default (no `space_id`). Provide `user_id` to
          *     view keys belonging to a specific user — account admins only; non-admins receive `403`.
          *
-         *     **Authorization:** Requires the `developer` user permission flag or account admin role.
-         *     Returns `403` when neither condition is met.
-         *
          *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["list_api_keys"];
@@ -630,7 +627,7 @@ export interface paths {
          *       organization roles default to `READ_ONLY`, and `account_role` defaults to `MEMBER`.
          *
          *     **Authorization:**
-         *     - **User keys:** Requires the `developer` user permission flag. Returns `403` when this flag is absent.
+         *     - **User keys:** The authenticated user may create personal keys for themselves.
          *     - **Service keys:** Requires the `SERVICE_KEY_CREATE` permission in the target space (space
          *       member or above).
          *
@@ -666,8 +663,7 @@ export interface paths {
          *     **only returned once** in the response. Store it securely.
          *
          *     **Authorization:**
-         *     - **User keys:** the creator or an account admin may refresh the key. Requires the
-         *       `developer` user permission flag. Returns `403` when this flag is absent.
+         *     - **User keys:** The creator or an account admin may refresh the key.
          *     - **Service keys:** space admins (and higher) may refresh any service key in their space.
          *       Non-admins require the `SERVICE_KEY_CREATE` permission and must be the creator of the key.
          *
@@ -703,11 +699,11 @@ export interface paths {
          *     already-revoked key is a no-op and still returns `204`.
          *
          *     **Authorization:**
-         *     Requires the `developer` user permission flag **or** account admin role (either condition is sufficient).
-         *     Returns `403` when neither condition is met.
-         *
-         *     For service keys, only the key's creator or an account admin may revoke the key.
-         *     A developer who did not create the key receives `404` (prevents key-ID enumeration).
+         *     - **User keys:** The key's creator or an account admin may revoke the key.
+         *     - **Service keys:** Account admins and space admins in all of the key's bound spaces may
+         *       revoke the key regardless of who created it. All other callers must have the
+         *       `SERVICE_KEY_REVOKE` permission in every bound space and must be the key's creator.
+         *       Callers without read access to the key receive `404` to prevent key-ID enumeration.
          *
          *       <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
@@ -1353,10 +1349,16 @@ export interface paths {
         };
         /**
          * List experiments
-         * @description List all experiments a user has access to.
+         * @description List experiments a user has access to.
          *
-         *     To filter experiments by the dataset they were run on, provide the
-         *     `dataset_id` query parameter.
+         *     By default, lists every accessible experiment across all spaces the caller
+         *     can read, including experiments that are not associated with a dataset.
+         *
+         *     To narrow the results, provide at most one of:
+         *     - `dataset_id` — only experiments run on that dataset.
+         *     - `space_id` — only experiments in that space (with or without a dataset).
+         *
+         *     Providing both `dataset_id` and `space_id` is a validation error.
          *
          *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
@@ -1366,19 +1368,25 @@ export interface paths {
          * Create an experiment
          * @description Create a new experiment. Empty experiments are not allowed.
          *
+         *     An experiment belongs to a space and may optionally be associated with a
+         *     dataset.
+         *
          *     Experiments are composed of "runs". Each experiment run (JSON object)
-         *     must include an `example_id` field that corresponds to an example in
-         *     the dataset, and a `output` field that contains the task's output for
-         *     the example (the input).
+         *     must include an `output` field containing the task's output. When the
+         *     experiment is associated with a dataset, each run must also include an
+         *     `example_id` referencing an example in that dataset.
          *
          *     Payload Requirements
-         *     - The `name` must be unique within the target dataset
+         *     - Provide exactly one of `dataset_id` or `space_id`.
+         *     - The `name` must be unique within the dataset it's associated with, or
+         *       within the space when it isn't associated with a dataset.
          *     - Provide at least one run in `experiment_runs`.
          *     - Each run must include:
-         *       - `example_id` -- the ID of an existing example in the dataset/version
-         *       - `output` -- model/task output for that example
+         *       - `output` -- model/task output for the run
+         *       - `example_id` -- the ID of an existing example in the dataset,
+         *       required only when the experiment is associated with a dataset
          *       - You may include any additional fields per run that can be used for
-         *       analysis or filtering. For exampple: `model`, `latency_ms`,
+         *       analysis or filtering. For example: `model`, `latency_ms`,
          *       `temperature`, `prompt`, `tool_calls`, etc.
          *
          *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
@@ -1455,8 +1463,9 @@ export interface paths {
          *     **Payload Requirements**
          *     - Provide between 1 and 1000 runs in `experiment_runs`.
          *     - Each run must include:
-         *       - `example_id` -- the ID of an existing example in the dataset version
-         *       - `output` -- model/task output for that example
+         *       - `output` -- model/task output for the run
+         *       - `example_id` -- the ID of an existing example in the dataset,
+         *       required only when the experiment is associated with a dataset
          *       - You may include any additional fields per run that can be used for
          *       analysis or filtering. For example: `model`, `latency_ms`,
          *       `temperature`, `prompt`, `tool_calls`, etc.
@@ -1555,14 +1564,19 @@ export interface paths {
         };
         /**
          * List integrations
-         * @description List integrations the user has access to. `type` is required and the
-         *     response contains only integrations of that type. Each item still
-         *     carries its `type` (and, for `LLM`, `config.provider`) for client-side
-         *     discrimination. A missing or invalid `type` returns `400`.
+         * @description List integrations the user has access to, ordered by creation time
+         *     (newest first). By default the list includes every integration type;
+         *     pass `type` to list a single type. Each item carries its `type` (and,
+         *     for `LLM`, `config.provider`) for client-side discrimination. An
+         *     invalid `type` or pagination `cursor` returns `400`; a cursor is only
+         *     valid for the query parameters it was issued with.
          *
          *     Integrations are owned at the account level but carry visibility scopings
          *     (account-wide, organization, or space). `space_id` / `space_name` filter
-         *     the list to integrations visible in a given space.
+         *     the list to integrations visible in a given space. The list contains
+         *     only the types the caller has permission to read. When no type is
+         *     readable the request fails with `403` — or `404` when a `space_id`
+         *     filter references a space outside the caller's visibility.
          *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
@@ -2492,11 +2506,10 @@ export interface paths {
         head?: never;
         /**
          * Update a space
-         * @description Update a space's metadata by its ID. Currently supports updating the
-         *     name and description. At least one field must be provided.
+         * @description Update a space's metadata by its ID. At least one field must be provided.
          *
          *     **Payload Requirements**
-         *     - At least one of `name` or `description` must be provided.
+         *     - At least one of `name`, `description`, or `is_private` must be provided.
          *     - If `name` is provided, it must be unique within the organization.
          *     - System-managed fields (`id`, `created_at`) cannot be modified.
          *
@@ -3608,10 +3621,10 @@ export interface components {
             name?: string;
             /**
              * @description The instructions for annotators working on this queue.
-             *     Send an empty string to clear the instructions.
+             *     Set to `null` to clear the instructions.
              * @example Review each response for accuracy and helpfulness
              */
-            instructions?: string;
+            instructions?: string | null;
             /**
              * @description The full list of annotation config IDs to associate with this queue.
              *     This replaces all existing annotation config associations.
@@ -4496,12 +4509,26 @@ export interface components {
             /** @description New description */
             description?: string | null;
         };
-        /** @description Experiment creation parameters with an initial set of runs. */
+        /**
+         * @description Experiment creation parameters with an initial set of runs.
+         *
+         *     An experiment belongs to a space and may optionally be associated with a
+         *     dataset. Provide exactly one of:
+         *     - `dataset_id` — associate the experiment with a dataset; it's created in
+         *       that dataset's space, and its runs may reference the dataset's examples
+         *       via `example_id`.
+         *     - `space_id` — the space to create the experiment in, when it isn't
+         *       associated with a dataset.
+         *
+         *     Providing both, or neither, is a validation error.
+         */
         CreateExperimentRequest: {
             /** @description Name of the experiment */
             name: string;
-            /** @description ID of the dataset to create the experiment for */
-            dataset_id: string;
+            /** @description ID of the dataset to associate the experiment with. Provide `space_id` instead when the experiment isn't associated with a dataset. */
+            dataset_id?: string | null;
+            /** @description ID of the space to create the experiment in. Provide instead of `dataset_id`. */
+            space_id?: string | null;
             /** @description Array of experiment run data */
             experiment_runs: components["schemas"]["ExperimentRunInput"][];
         };
@@ -4520,6 +4547,8 @@ export interface components {
             id: string;
             /** @description Name of the experiment */
             name: string;
+            /** @description Unique identifier for the space this experiment belongs to */
+            space_id: string;
             /** @description Unique identifier for the dataset associated with this experiment. Null if the experiment isn't associated with a dataset. */
             dataset_id?: string | null;
             /** @description Unique identifier for the dataset version associated with this experiment. Null if the experiment isn't associated with a dataset. */
@@ -4547,8 +4576,8 @@ export interface components {
         ExperimentRun: {
             /** @description System-assigned unique ID for the example */
             readonly id: string;
-            /** @description ID of the dataset example associated with this experiment run */
-            readonly example_id: string;
+            /** @description ID of the dataset example associated with this experiment run. Null when the experiment isn't associated with a dataset. */
+            readonly example_id?: string | null;
             /** @description Output of the task for the matching example. Null when the task errored. */
             output?: string | null;
             /** @description Error message when the task failed. Null on success. */
@@ -4560,8 +4589,8 @@ export interface components {
         };
         /** @description An experiment run with experiment data including outputs, evaluations, and trace metadata */
         ExperimentRunInput: {
-            /** @description ID of the dataset example associated with this experiment run */
-            example_id: string;
+            /** @description ID of the dataset example associated with this experiment run. Provided when the experiment is associated with a dataset; omitted otherwise. */
+            example_id?: string | null;
             /** @description output of the task for the matching example */
             output: string;
         } & {
@@ -5130,9 +5159,9 @@ export interface components {
         /** @description Partial LLM config for PATCH. `provider` is immutable; if present it must match the stored value. Field applicability is provider-specific and enforced by the handler with 422: `api_key` and `is_function_calling_enabled` do not apply to `AWS_BEDROCK` or `VERTEX_AI`; `auth` applies to `AWS_BEDROCK` only; `base_url` and `headers` apply to `CUSTOM` and `NVIDIA_NIM` only; `is_default_models_enabled` and `model_names` apply to `AWS_BEDROCK`, `CUSTOM`, and `NVIDIA_NIM` only; `project_id`, `location`, and `project_access_label` apply to `VERTEX_AI` only. */
         UpdateLlmConfig: {
             provider?: components["schemas"]["LlmIntegrationProvider"];
-            /** @description Rotate the API key. Pass null to clear it. Omit to keep unchanged. Not valid for `AWS_BEDROCK` (bearer tokens are rotated via `auth`). */
+            /** @description Rotate the API key. Pass null to clear it. Omit to keep unchanged. Not valid for `AWS_BEDROCK` (bearer tokens are rotated via `auth`) or `VERTEX_AI`. */
             api_key?: string | null;
-            /** @description Enable or disable function/tool calling. Omit to keep unchanged. Not valid for `AWS_BEDROCK`. */
+            /** @description Enable or disable function/tool calling. Omit to keep unchanged. Not valid for `AWS_BEDROCK` or `VERTEX_AI`. */
             is_function_calling_enabled?: boolean;
             auth?: components["schemas"]["CreateAwsBedrockAuth"];
             /** @description (`CUSTOM` and `NVIDIA_NIM` only) New endpoint URL. For `NVIDIA_NIM` the field is optional on the resource, so null clears it (falling back to the provider default endpoint). For `CUSTOM` it is required on the resource — null is rejected with 422. Omit to keep unchanged. */
@@ -5217,8 +5246,8 @@ export interface components {
         UpdateOrganizationRequest: {
             /** @description Updated name for the organization (must be unique within the account) */
             name?: string;
-            /** @description Updated description for the organization. Set to an empty string to clear it. */
-            description?: string;
+            /** @description Updated description for the organization. Set to `null` to clear it. */
+            description?: string | null;
         };
         /**
          * @description A permission identifier following the pattern {RESOURCE}_{ACTION}.
@@ -5639,8 +5668,8 @@ export interface components {
         UpdateRoleRequest: {
             /** @description Updated name for the role. Must be unique within the account. */
             name?: string;
-            /** @description Updated description of the role. */
-            description?: string;
+            /** @description Updated description of the role. Set to `null` to clear it. */
+            description?: string | null;
             /**
              * @description Replacement set of permissions. When provided, the existing permissions are
              *     fully replaced. Each value must be a valid permission identifier.
@@ -5653,12 +5682,18 @@ export interface components {
             role: components["schemas"]["SpaceRoleAssignment"];
         };
         CreateSpaceRequest: {
-            /** @description Name of the space */
+            /** @description Name of the space (must be unique within the organization) */
             name: string;
             /** @description The unique identifier of the organization to create the space in */
             organization_id: components["schemas"]["Id"];
-            /** @description A brief description of the space's purpose */
+            /** @description A brief description of the space's purpose. Defaults to an empty string if omitted. */
             description?: string;
+            /**
+             * @description Whether to create the space as private. Private spaces are only visible
+             *     to their members and account/org/space admins. Defaults to `false`
+             *     (public) if omitted.
+             */
+            is_private?: boolean;
         };
         ListSpacesResponse: {
             /** @description A list of spaces */
@@ -5683,6 +5718,11 @@ export interface components {
              * @description Timestamp for when the space was created
              */
             created_at: string;
+            /**
+             * @description Whether the space is private. Private spaces are only visible to their
+             *     members and account/org/space admins.
+             */
+            is_private: boolean;
         };
         /** @description A space membership record. */
         SpaceMembership: {
@@ -5697,8 +5737,14 @@ export interface components {
         UpdateSpaceRequest: {
             /** @description Updated name of the space */
             name?: string;
-            /** @description Updated description of the space */
-            description?: string;
+            /** @description Updated description of the space. Set to `null` to clear it. */
+            description?: string | null;
+            /**
+             * @description Updated visibility for the space. Set to `true` to make the space
+             *     private (visible only to members and admins), or `false` to make it
+             *     public. When omitted, the existing visibility is preserved.
+             */
+            is_private?: boolean;
         };
         DeleteSpansRequest: {
             /** @description The project ID containing the spans to delete */
@@ -9960,7 +10006,7 @@ export interface components {
          * @example TGxtSW50ZWdyYXRpb246MTI6YUJjRA==
          */
         IntegrationIdPathParam: components["schemas"]["Id"];
-        /** @description The integration type to list. Required - the list returns only integrations of this type. */
+        /** @description Filter the list to a single integration type. When omitted, integrations of every type are returned; each item carries its `type` for client-side discrimination. */
         IntegrationTypeQueryParam: components["schemas"]["IntegrationType"];
         /**
          * @description The unique organization identifier (base64). When provided, only spaces belonging to this organization are returned.
@@ -12283,6 +12329,11 @@ export interface operations {
                  */
                 dataset_id?: components["parameters"]["DatasetIdQueryParam"];
                 /**
+                 * @description Filter search results to a particular space ID
+                 * @example U3BhY2U6MTIzNDU=
+                 */
+                space_id?: components["parameters"]["SpaceIdQueryParam"];
+                /**
                  * @description Case-insensitive substring filter on the resource name. Returns only
                  *     resources whose name contains the given string. For example,
                  *     `name=prod` matches "production", "my-prod-dataset", etc. If omitted,
@@ -12459,9 +12510,9 @@ export interface operations {
     };
     list_integrations: {
         parameters: {
-            query: {
-                /** @description The integration type to list. Required - the list returns only integrations of this type. */
-                type: components["parameters"]["IntegrationTypeQueryParam"];
+            query?: {
+                /** @description Filter the list to a single integration type. When omitted, integrations of every type are returned; each item carries its `type` for client-side discrimination. */
+                type?: components["parameters"]["IntegrationTypeQueryParam"];
                 /**
                  * @description Filter search results to a particular space ID
                  * @example U3BhY2U6MTIzNDU=

@@ -126,8 +126,8 @@ export type CreateCodeEvaluatorInput = {
 };
 
 export type UpdateEvaluatorInput =
-  | { name: string; description?: string }
-  | { name?: string; description: string };
+  | { name: string; description?: string | null }
+  | { name?: string; description: string | null };
 
 export type CreateTemplateEvaluatorVersionInput = {
   evaluator: string;

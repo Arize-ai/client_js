@@ -19,7 +19,8 @@ export type UpdateEvaluatorParams = WithClient<
  * @param evaluator - The evaluator name or ID.
  * @param space - An optional space name or ID (required when resolving by evaluator name).
  * @param name - An optional new name for the evaluator.
- * @param description - An optional new description for the evaluator.
+ * @param description - An optional new description. Pass `null` to clear it;
+ *   omit it to preserve the current description.
  * @returns The updated {@link Evaluator}.
  * @throws Error if the evaluator cannot be updated or the response is invalid.
  * @example

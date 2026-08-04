@@ -1,6 +1,6 @@
 import { createClient } from "../client";
 import { Space, WithClient } from "../types";
-import { warnPreRelease } from "../utils/warning";
+import { warnPreRelease, warnPrivateSpace } from "../utils/warning";
 import { findSpaceId } from "../utils/resolve";
 import { handleApiError } from "../errors";
 import { transformSpace } from "./utils";
@@ -9,7 +9,13 @@ export type UpdateSpaceParams = WithClient<{
   /** Space ID (e.g. `"U3BhY2U6YWJjMTIz"`) or space name. */
   space: string;
   name?: string;
-  description?: string;
+  description?: string | null;
+  /**
+   * Updated visibility. `true` makes the space private (visible only to
+   * members and admins); `false` makes it public. When omitted, the existing
+   * visibility is preserved.
+   */
+  isPrivate?: boolean;
 }>;
 
 /**
@@ -18,7 +24,10 @@ export type UpdateSpaceParams = WithClient<{
  * @param client - An optional ArizeClient instance to use for the request.
  * @param space - The space ID or name.
  * @param name - An optional updated name for the space.
- * @param description - An optional updated description for the space.
+ * @param description - An optional updated description. Pass `null` to clear it;
+ *   omit it to preserve the current description.
+ * @param isPrivate - Updated visibility. `true` makes the space private;
+ *   `false` makes it public. Omit to preserve existing visibility.
  * @returns A {@link Space}.
  * @throws Error if the space cannot be updated or the response is invalid.
  * @example
@@ -27,7 +36,7 @@ export type UpdateSpaceParams = WithClient<{
  *
  * const space = await updateSpace({
  *   space: "my-space",
- *   name: "updated_space_name",
+ *   isPrivate: true,
  * });
  * console.log(space);
  * ```
@@ -37,8 +46,12 @@ export async function updateSpace({
   space,
   name,
   description,
+  isPrivate,
 }: UpdateSpaceParams): Promise<Space> {
   warnPreRelease({ functionName: "updateSpace", stage: "beta" });
+  if (isPrivate) {
+    warnPrivateSpace("updateSpace");
+  }
   const client = clientInstance ?? createClient();
   const spaceId = await findSpaceId(client, space);
   const response = await client.PATCH("/v2/spaces/{space_id}", {
@@ -50,6 +63,7 @@ export async function updateSpace({
     body: {
       name,
       description,
+      is_private: isPrivate,
     },
   });
   if (response.error) {

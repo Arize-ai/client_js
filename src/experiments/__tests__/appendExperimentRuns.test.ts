@@ -75,20 +75,6 @@ describe("appendExperimentRuns", () => {
     expect(result.name).toBe(mockExperiment.name);
   });
 
-  it("accepts legacy snake_case example_id in run input", async () => {
-    const experimentId = btoa("Experiment:1:exp-abc");
-
-    await appendExperimentRuns({
-      client: mockClient,
-      experiment: experimentId,
-      experimentRuns: [{ example_id: "ex-1", output: "answer" } as never],
-    });
-
-    const body = post.mock.calls[0]?.[1]?.body as Record<string, unknown>;
-    const runs = body["experiment_runs"] as Array<Record<string, unknown>>;
-    expect(runs[0]).toMatchObject({ example_id: "ex-1", output: "answer" });
-  });
-
   it("throws when the API returns an error", async () => {
     post.mockResolvedValue({
       error: { detail: "experiment not found", title: "Not Found" },

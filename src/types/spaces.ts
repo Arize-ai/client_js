@@ -4,6 +4,7 @@ export type Space = {
   id: string;
   name: string;
   description: string;
+  isPrivate: boolean;
   createdAt: Date;
 };
 

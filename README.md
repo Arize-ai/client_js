@@ -1624,8 +1624,13 @@ import { createSpace } from "@arizeai/ax-client";
 const space = await createSpace({
   organizationId: "T3JnYW5pemF0aW9uOmFiYzEyMw==",
   name: "your_space_name",
+  isPrivate: true, // omit or set false for a public space (default)
 });
 ```
+
+Private spaces are visible only to their members and account/org/space admins.
+A warning is logged when `isPrivate: true` to remind you to add members before
+the space becomes inaccessible to other users.
 
 ## Updating a space
 
@@ -1635,6 +1640,7 @@ import { updateSpace } from "@arizeai/ax-client";
 const space = await updateSpace({
   space: "my-space",
   name: "updated_space_name",
+  isPrivate: false, // omit to preserve the current visibility
 });
 ```
 

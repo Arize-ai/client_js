@@ -1,5 +1,18 @@
 # @arizeai/ax-client
 
+## [1.27.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.26.0...arize-js-sdk/v1.27.0) (2026-08-04)
+
+
+### 🎁 New Features
+
+* Enable standalone experiments in the REST write and read paths ([#80940](https://github.com/Arize-ai/arize/issues/80940)) ([c017acd](https://github.com/Arize-ai/arize/commit/c017acd7a227a48d597f805ad45e8a0d9b9a0b51))
+* **js-sdk:** Enable standalone experiment creation ([#81103](https://github.com/Arize-ai/arize/issues/81103)) ([1f95a9c](https://github.com/Arize-ai/arize/commit/1f95a9cf02cecb502089529f1f420482fd788ae8))
+
+
+### 🐛 Bug Fixes
+
+* **ts-sdk:** add null support for clearable fields in update functions ([#80981](https://github.com/Arize-ai/arize/issues/80981)) ([0c95f01](https://github.com/Arize-ai/arize/commit/0c95f010b89f1fd19188f6fcd4c282e247371c31))
+
 ## [1.26.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.25.0...arize-js-sdk/v1.26.0) (2026-07-24)
 
 

@@ -10,6 +10,7 @@ export const mockSpace: RawSpace = {
   name: mockSpaceName,
   description: mockDescription,
   created_at: mockDateString,
+  is_private: false,
 };
 
 export const mockRawSpaceMembership: RawSpaceMembership = {

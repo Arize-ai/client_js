@@ -15,7 +15,8 @@ export type AnnotateExperimentRunsParams = WithClient<{
    */
   dataset?: string;
   /**
-   * An optional space name or ID used to resolve `dataset` by name.
+   * An optional space name or ID. Resolves `experiment` by name when `dataset`
+   * is omitted, and resolves `dataset` itself when it is a name.
    */
   space?: string;
   /**
@@ -38,10 +39,14 @@ export type AnnotateExperimentRunsParams = WithClient<{
  * @param client - An optional ArizeClient instance to use for the request. @default createClient()
  * @param experiment - The name or base64-encoded ID of the experiment.
  * @param dataset - An optional dataset name or ID used to resolve `experiment` by name.
- * @param space - An optional space name or ID used to resolve `dataset` by name.
+ * @param space - An optional space name or ID. Resolves `experiment` by name when
+ *   `dataset` is omitted — the only option for an experiment with no dataset — and
+ *   resolves `dataset` itself when it is a name.
  * @param annotations - Batch of {@link AnnotateRecordInput} items. Each item specifies
  *   a `recordId` (experiment run ID) and `values` (list of annotation values to set).
  * @returns void
+ * @throws {AmbiguousNameError} If resolving by `space` alone and the name matches
+ *   more than one experiment in that space. Pass `dataset` or an ID to disambiguate.
  * @throws Error if the annotations cannot be written.
  * @example
  * ```typescript
@@ -76,7 +81,12 @@ export async function annotateExperimentRuns({
   const datasetId = dataset
     ? await findDatasetId(client, dataset, spaceRef)
     : undefined;
-  const experimentId = await findExperimentId(client, experiment, datasetId);
+  const experimentId = await findExperimentId(
+    client,
+    experiment,
+    datasetId,
+    spaceRef,
+  );
   const response = await client.POST(
     "/v2/experiments/{experiment_id}/runs/annotate",
     {

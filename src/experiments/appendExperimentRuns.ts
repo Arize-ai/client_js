@@ -16,7 +16,8 @@ export type AppendExperimentRunsParams = WithClient<{
    */
   dataset?: string;
   /**
-   * An optional space name or ID used to resolve `dataset` by name.
+   * An optional space name or ID. Resolves `experiment` by name when `dataset`
+   * is omitted, and resolves `dataset` itself when it is a name.
    */
   space?: string;
   /**
@@ -38,13 +39,19 @@ export type ExperimentWithRunIds = Experiment & {
  * @param client - An optional ArizeClient instance to use for the request. @default createClient()
  * @param experiment - The name or base64-encoded ID of the experiment.
  * @param dataset - An optional dataset name or ID used to resolve `experiment` by name.
- * @param space - An optional space name or ID used to resolve `dataset` by name.
+ * @param space - An optional space name or ID. Resolves `experiment` by name when
+ *   `dataset` is omitted — the only option for an experiment with no dataset — and
+ *   resolves `dataset` itself when it is a name.
  * @param experimentRuns - Runs to append (1–1000). Each run must contain at least:
- *   - `exampleId`: The ID of an existing example in the dataset.
  *   - `output`: The model or task output for that example.
+ *   - `exampleId`: The ID of an existing example in the dataset. Required only when
+ *     the target experiment is associated with a dataset; omit it otherwise.
  * @returns An {@link ExperimentWithRunIds} containing the updated experiment attributes
  *   and the IDs of the inserted runs, in input order.
- * @throws Error if the runs cannot be appended or the response is invalid.
+ * @throws {AmbiguousNameError} If resolving by `space` alone and the name matches
+ *   more than one experiment in that space. Pass `dataset` or an ID to disambiguate.
+ * @throws Error if the runs cannot be appended or the response is invalid. Omitting
+ *   `exampleId` for a dataset-associated experiment is rejected by the server (422).
  * @example
  * ```typescript
  * import { appendExperimentRuns } from "@arizeai/ax-client"
@@ -73,7 +80,12 @@ export async function appendExperimentRuns({
   const datasetId = dataset
     ? await findDatasetId(client, dataset, spaceRef)
     : undefined;
-  const experimentId = await findExperimentId(client, experiment, datasetId);
+  const experimentId = await findExperimentId(
+    client,
+    experiment,
+    datasetId,
+    spaceRef,
+  );
   const response = await client.POST("/v2/experiments/{experiment_id}/runs", {
     params: {
       path: { experiment_id: experimentId },

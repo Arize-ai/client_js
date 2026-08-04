@@ -7,7 +7,7 @@ import { transformRole } from "./utils";
 export type UpdateRoleParams = WithClient<{
   roleId: string;
   name?: string;
-  description?: string;
+  description?: string | null;
   permissions?: Permission[];
 }>;
 
@@ -21,7 +21,8 @@ export type UpdateRoleParams = WithClient<{
  * @param client - An optional ArizeClient instance to use for the request.
  * @param roleId - The ID of the role to update.
  * @param name - An optional updated name for the role.
- * @param description - An optional updated description for the role.
+ * @param description - An optional updated description. Pass `null` to clear it;
+ *   omit it to preserve the current description.
  * @param permissions - An optional replacement set of permissions.
  * @returns The updated {@link Role}.
  * @throws Error if the role cannot be updated or the response is invalid.

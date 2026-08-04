@@ -51,3 +51,15 @@ export function warnPreRelease({
     `[${stage.toUpperCase()}] ${functionName} is ${article} ${stage} API in Arize AX SDK v${version} and may change without notice. If you experience unexpected failures, please upgrade to the most recent version of the package. Set ${DISABLE_PRERELEASE_WARNING}=true to disable this warning.`,
   );
 }
+
+/**
+ * Emits a per-call advisory when a space is being made private. Fires on
+ * every call where `isPrivate` is `true` — intentionally not deduplicated,
+ * since the warning is about the specific operation, not the SDK version.
+ */
+export function warnPrivateSpace(operation: string): void {
+  // eslint-disable-next-line no-console
+  console.warn(
+    `[${operation}] Private spaces restrict visibility to space members and admins. Ensure members are added before the space becomes inaccessible to other users.`,
+  );
+}

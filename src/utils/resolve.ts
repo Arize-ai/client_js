@@ -209,34 +209,78 @@ export async function findDatasetId(
 /**
  * Resolve an experiment ID or name to an experiment ID.
  *
- * If the value is a base64 ID, it is returned as-is.
- * Otherwise, requires `datasetId` to search by name.
+ * If the value is a base64 ID, it is returned as-is. Otherwise requires
+ * `datasetId` or `space` to search by name.
+ *
+ * When resolving by `datasetId`, a name match is unambiguous — experiment
+ * names are unique within a dataset. When resolving by `space` alone, the
+ * search spans both standalone and dataset-associated experiments, which
+ * are only unique within their own separate scopes, so a name can
+ * legitimately collide across them.
+ *
+ * @throws {AmbiguousNameError} If `datasetId` is not given and multiple
+ *   experiments in the space share the same name. Pass `dataset` (or a
+ *   resource ID) to disambiguate.
  */
 export async function findExperimentId(
   client: Client,
   experiment: string,
   datasetId?: string,
+  space?: SpaceRef | string,
 ): Promise<string> {
   if (isResourceId(experiment)) {
     return experiment;
   }
 
-  if (!datasetId) {
+  if (datasetId) {
+    const available: string[] = [];
+    let cursor: string | undefined;
+
+    do {
+      const response = await client.GET("/v2/experiments", {
+        params: {
+          query: {
+            dataset_id: datasetId,
+            name: experiment,
+            limit: 100,
+            cursor,
+          },
+        },
+      });
+      if (response.error) {
+        return handleApiError(response);
+      }
+      for (const e of response.data.experiments) {
+        if (e.name === experiment) {
+          return e.id;
+        }
+        available.push(e.name);
+      }
+      cursor = response.data.pagination.next_cursor ?? undefined;
+    } while (cursor);
+
+    throw new ResolutionError("experiment", experiment, available);
+  }
+
+  const ref = typeof space === "string" ? toSpaceRef(space) : (space ?? {});
+  if (!ref.spaceId && !ref.spaceName) {
     throw new ResolutionError(
       "experiment",
       experiment,
       [],
-      "Provide 'dataset' so the experiment name can be resolved.",
+      "Provide 'dataset' or 'space' so the experiment name can be resolved.",
     );
   }
+  const spaceId = ref.spaceId ?? (await findSpaceId(client, ref.spaceName!));
 
   const available: string[] = [];
+  const matches: string[] = [];
   let cursor: string | undefined;
 
   do {
     const response = await client.GET("/v2/experiments", {
       params: {
-        query: { dataset_id: datasetId, name: experiment, limit: 100, cursor },
+        query: { space_id: spaceId, name: experiment, limit: 100, cursor },
       },
     });
     if (response.error) {
@@ -244,13 +288,20 @@ export async function findExperimentId(
     }
     for (const e of response.data.experiments) {
       if (e.name === experiment) {
-        return e.id;
+        matches.push(e.id);
+      } else {
+        available.push(e.name);
       }
-      available.push(e.name);
     }
     cursor = response.data.pagination.next_cursor ?? undefined;
   } while (cursor);
 
+  if (matches.length > 1) {
+    throw new AmbiguousNameError("experiment", experiment, matches);
+  }
+  if (matches.length === 1) {
+    return matches[0]!;
+  }
   throw new ResolutionError("experiment", experiment, available);
 }
 
