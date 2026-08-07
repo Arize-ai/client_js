@@ -7,6 +7,7 @@ import {
   ManagedCodeConfig,
   StaticParam,
   TemplateConfig,
+  TemplateConfigInput,
 } from "../types";
 import {
   RawCodeConfig,
@@ -18,9 +19,24 @@ import {
   RawManagedCodeConfig,
   RawStaticParam,
   RawTemplateConfig,
+  RawTemplateConfigInput,
 } from "../types/internal";
 
-export function templateConfigToRaw(config: TemplateConfig): RawTemplateConfig {
+export function templateConfigToRaw(
+  config: TemplateConfigInput,
+): RawTemplateConfigInput {
+  // The input type requires classificationChoices, but guard at runtime too:
+  // untyped JavaScript callers can still pass a read-back TemplateConfig (whose
+  // choices are nullable), and an empty map would serialize as `{}` and be
+  // rejected by the server.
+  if (
+    config.classificationChoices == null ||
+    Object.keys(config.classificationChoices).length === 0
+  ) {
+    throw new Error(
+      "classificationChoices is required for template evaluators and must be non-empty — provide a map of choice label to numeric score (e.g. { relevant: 1, irrelevant: 0 }).",
+    );
+  }
   return {
     name: config.name,
     template: config.template,
@@ -28,7 +44,7 @@ export function templateConfigToRaw(config: TemplateConfig): RawTemplateConfig {
     use_function_calling_if_available: config.useFunctionCallingIfAvailable,
     classification_choices: config.classificationChoices,
     direction: config.direction ?? undefined,
-    data_granularity: config.dataGranularity,
+    data_granularity: config.dataGranularity ?? undefined,
     llm_config: {
       ai_integration_id: config.llmConfig.aiIntegrationId,
       model_name: config.llmConfig.modelName,

@@ -8,7 +8,7 @@ import {
   transformEvaluatorWithVersion,
   transformTemplateConfig,
 } from "../utils";
-import { CodeConfig, TemplateConfig } from "../../types";
+import { CodeConfig, TemplateConfigInput } from "../../types";
 import {
   mockAiIntegrationId,
   mockCodeEvaluatorId,
@@ -219,7 +219,7 @@ describe("transformEvaluatorWithVersion", () => {
 
 describe("templateConfigToRaw", () => {
   it("converts camelCase fields to snake_case for the API", () => {
-    const input: TemplateConfig = {
+    const input: TemplateConfigInput = {
       name: "Relevance",
       template: "Rate: {{query}}",
       includeExplanations: true,
@@ -256,14 +256,46 @@ describe("templateConfigToRaw", () => {
 
   it("round-trips through transform → raw without data loss", () => {
     const transformed = transformTemplateConfig(mockRawTemplateConfig);
-    const raw = templateConfigToRaw(transformed);
+    // The read-back config's choices are nullable; narrow to the write-only
+    // input shape (the fixture supplies choices) before serializing.
+    if (transformed.classificationChoices == null) {
+      throw new Error("fixture must include classificationChoices");
+    }
+    const raw = templateConfigToRaw({
+      ...transformed,
+      classificationChoices: transformed.classificationChoices,
+    });
     expect(raw).toEqual(mockRawTemplateConfig);
   });
 
-  it("round-trips minimal config through transform → raw without data loss", () => {
+  it("throws when classificationChoices is missing (defensive guard for untyped callers)", () => {
+    // A legacy freeform evaluator reads back with null classification_choices.
+    // The input type forbids this, but an untyped JS caller could still pass a
+    // read-back config through, so the runtime guard must reject it.
     const transformed = transformTemplateConfig(mockRawTemplateConfigMinimal);
-    const raw = templateConfigToRaw(transformed);
-    expect(raw).toEqual(mockRawTemplateConfigMinimal);
+    expect(transformed.classificationChoices).toBeNull();
+    expect(() =>
+      templateConfigToRaw(transformed as unknown as TemplateConfigInput),
+    ).toThrow(/classificationChoices is required/);
+  });
+
+  it("throws when classificationChoices is an empty map", () => {
+    const input: TemplateConfigInput = {
+      name: "Relevance",
+      template: "Rate: {{query}}",
+      includeExplanations: true,
+      useFunctionCallingIfAvailable: false,
+      classificationChoices: {},
+      llmConfig: {
+        aiIntegrationId: mockAiIntegrationId,
+        modelName: "gpt-4o",
+        invocationParameters: {},
+        providerParameters: {},
+      },
+    };
+    expect(() => templateConfigToRaw(input)).toThrow(
+      /classificationChoices is required/,
+    );
   });
 });
 

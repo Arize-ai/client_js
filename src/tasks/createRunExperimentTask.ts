@@ -1,6 +1,15 @@
 import { createClient } from "../client";
-import { CreateRunExperimentTaskInput, Task, WithClient } from "../types";
-import { findAiIntegrationId, toSpaceRef } from "../utils/resolve";
+import {
+  CreateRunExperimentTaskInput,
+  RunExperimentConfigInput,
+  Task,
+  WithClient,
+} from "../types";
+import {
+  findAiIntegrationId,
+  findIntegrationId,
+  toSpaceRef,
+} from "../utils/resolve";
 import { warnPreRelease } from "../utils/warning";
 import { createTask } from "./createTask";
 
@@ -22,10 +31,13 @@ export type CreateRunExperimentTaskParams = WithClient<
  * @param runConfiguration - Discriminated experiment configuration:
  *   - `experiment_type: "LLM_GENERATION"` — runs an LLM prompt against each example.
  *   - `experiment_type: "TEMPLATE_EVALUATION"` — runs a template-based LLM evaluator.
- *   Either variant may include an optional `aiIntegration` name field to resolve
+ *   - `experiment_type: "AGENT_CALL"` — invokes an agent integration against each example.
+ *   The LLM variants may include an optional `aiIntegration` name field to resolve
  *   the AI integration by name instead of supplying `ai_integration_id` directly.
+ *   The AGENT_CALL variant may include an optional `integration` name field to
+ *   resolve the AGENT integration by name instead of supplying `integration_id`.
  * @returns A created {@link Task}.
- * @throws Error if the task cannot be created or the AI integration cannot be resolved.
+ * @throws Error if the task cannot be created or the integration cannot be resolved.
  * @example
  * ```typescript
  * import { createRunExperimentTask, triggerTaskRun, waitForTaskRun } from "@arizeai/ax-client"
@@ -62,20 +74,33 @@ export async function createRunExperimentTask({
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
 
-  // Resolve aiIntegration name → ID if the convenience field was used.
-  const { aiIntegration, ...rawConfig } =
-    runConfiguration as typeof runConfiguration & {
-      aiIntegration?: string;
-    };
-
-  let resolvedConfig = rawConfig;
-  if (aiIntegration) {
-    const aiIntegrationId = await findAiIntegrationId(
-      client,
-      aiIntegration,
-      spaceRef,
-    );
-    resolvedConfig = { ...rawConfig, ai_integration_id: aiIntegrationId };
+  // Resolve the SDK-only convenience integration field (if used) to a concrete
+  // ID before sending. AGENT_CALL uses `integration` → `integration_id` via an
+  // AGENT-typed lookup; the LLM variants use `aiIntegration` → `ai_integration_id`.
+  let resolvedConfig: RunExperimentConfigInput;
+  if (runConfiguration.experiment_type === "AGENT_CALL") {
+    const { integration, ...rawConfig } = runConfiguration;
+    resolvedConfig = rawConfig;
+    if (integration) {
+      const integrationId = await findIntegrationId(
+        client,
+        integration,
+        "AGENT",
+        spaceRef,
+      );
+      resolvedConfig = { ...rawConfig, integration_id: integrationId };
+    }
+  } else {
+    const { aiIntegration, ...rawConfig } = runConfiguration;
+    resolvedConfig = rawConfig;
+    if (aiIntegration) {
+      const aiIntegrationId = await findAiIntegrationId(
+        client,
+        aiIntegration,
+        spaceRef,
+      );
+      resolvedConfig = { ...rawConfig, ai_integration_id: aiIntegrationId };
+    }
   }
 
   return createTask({

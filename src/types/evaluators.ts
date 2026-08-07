@@ -32,6 +32,28 @@ export interface TemplateConfig {
   llmConfig: EvaluatorLlmConfig;
 }
 
+/**
+ * Write-only template configuration used when creating a template evaluator or
+ * a new template version.
+ *
+ * Unlike {@link TemplateConfig} — the response entity, whose
+ * `classificationChoices` is nullable to accommodate legacy freeform
+ * evaluators — `classificationChoices` is required here and must be a
+ * non-empty map of choice label to numeric score (e.g. `{ relevant: 1,
+ * irrelevant: 0 }`). Keeping this a distinct type stops callers from feeding a
+ * read-back config straight into a create call without supplying choices.
+ */
+export interface TemplateConfigInput {
+  name: string;
+  template: string;
+  includeExplanations: boolean;
+  useFunctionCallingIfAvailable: boolean;
+  classificationChoices: Record<string, number>;
+  direction?: EvaluatorDirection | null;
+  dataGranularity?: EvaluatorDataGranularity | null;
+  llmConfig: EvaluatorLlmConfig;
+}
+
 export interface ManagedCodeConfig {
   type: "MANAGED";
   name: string;
@@ -114,7 +136,7 @@ export type CreateTemplateEvaluatorInput = {
   description?: string;
   space: string;
   commitMessage: string;
-  templateConfig: TemplateConfig;
+  templateConfig: TemplateConfigInput;
 };
 
 export type CreateCodeEvaluatorInput = {
@@ -133,7 +155,7 @@ export type CreateTemplateEvaluatorVersionInput = {
   evaluator: string;
   space?: string;
   commitMessage: string;
-  templateConfig: TemplateConfig;
+  templateConfig: TemplateConfigInput;
 };
 
 export type CreateCodeEvaluatorVersionInput = {

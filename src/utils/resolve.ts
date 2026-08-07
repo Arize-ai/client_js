@@ -1,4 +1,5 @@
 import type { createClient } from "../client";
+import type { IntegrationType } from "../types";
 import { AmbiguousNameError, handleApiError, ResolutionError } from "../errors";
 
 /**
@@ -499,6 +500,74 @@ export async function findAiIntegrationId(
   } while (cursor);
 
   throw new ResolutionError("AI integration", integration, available);
+}
+
+/**
+ * Resolve an integration ID or name to an integration ID.
+ *
+ * If the value is a base64 ID, it is returned as-is. Otherwise, the list
+ * integrations endpoint is called filtered by `type` (required, since names
+ * are unique only per account and type) plus whichever of `space_id` /
+ * `space_name` is available.
+ *
+ * Unlike the other name resolvers, this one does NOT call `requireSpace`:
+ * integration names are unique per (account, type), so `type` alone is enough
+ * to resolve a name unambiguously. `space` is an optional additional filter
+ * (used only to narrow visibility), not a required disambiguator.
+ *
+ * @throws {ResolutionError} If `integration` is a name and `type` is omitted,
+ *   or if no integration of that type/name is found.
+ */
+export async function findIntegrationId(
+  client: Client,
+  integration: string,
+  type?: IntegrationType,
+  space?: SpaceRef | string,
+): Promise<string> {
+  if (isResourceId(integration)) {
+    return integration;
+  }
+
+  if (!type) {
+    throw new ResolutionError(
+      "integration",
+      integration,
+      [],
+      "Provide 'type' (LLM or AGENT) so the integration name can be resolved.",
+    );
+  }
+
+  const ref = typeof space === "string" ? toSpaceRef(space) : (space ?? {});
+
+  const available: string[] = [];
+  let cursor: string | undefined;
+
+  do {
+    const response = await client.GET("/v2/integrations", {
+      params: {
+        query: {
+          type,
+          space_id: ref.spaceId,
+          space_name: ref.spaceName,
+          name: integration,
+          limit: 100,
+          cursor,
+        },
+      },
+    });
+    if (response.error) {
+      return handleApiError(response);
+    }
+    for (const i of response.data.integrations) {
+      if (i.name === integration) {
+        return i.id;
+      }
+      available.push(i.name);
+    }
+    cursor = response.data.pagination.next_cursor ?? undefined;
+  } while (cursor);
+
+  throw new ResolutionError("integration", integration, available);
 }
 
 /**

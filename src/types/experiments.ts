@@ -9,6 +9,11 @@ export type Experiment = {
   createdAt: Date;
   updatedAt: Date;
   experimentTracesProjectId?: string;
+  /**
+   * Identifier (base64) of the agent integration that backs this experiment.
+   * Null/undefined for non-agent experiments (e.g. SDK or Playground experiments).
+   */
+  integrationId?: string | null;
 };
 
 export type ExperimentRunInput = {

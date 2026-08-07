@@ -14,6 +14,7 @@ const mockTemplateConfig = {
   template: "Is {{output}} relevant?",
   includeExplanations: true,
   useFunctionCallingIfAvailable: false,
+  classificationChoices: { relevant: 1, irrelevant: 0 },
   llmConfig: {
     aiIntegrationId: mockAiIntegrationId,
     modelName: "gpt-4o",

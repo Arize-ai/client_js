@@ -8,6 +8,7 @@ export const mockLastRunDateString = "2026-03-03T08:00:00.000Z";
 export const mockTaskEvaluator: RawTaskEvaluator = {
   evaluator_id: "eval-123",
   evaluator_name: "My Evaluator",
+  evaluator_version_id: null,
   query_filter: "span_kind == 'LLM'",
   column_mappings: { input: "question", output: "answer" },
 };

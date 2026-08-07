@@ -14,11 +14,13 @@ import { RawTask, RawTaskEvaluator, RawTaskRun } from "../types/internal";
  */
 export function toRawTaskEvaluator(evaluator: CreateTaskEvaluatorInput): {
   evaluator_id: string;
+  evaluator_version_id?: string | null;
   query_filter?: string;
   column_mappings?: Record<string, string>;
 } {
   return {
     evaluator_id: evaluator.evaluatorId,
+    evaluator_version_id: evaluator.evaluatorVersionId,
     query_filter: evaluator.queryFilter,
     column_mappings: evaluator.columnMappings,
   };
@@ -36,6 +38,7 @@ export function transformTaskEvaluator(
   return {
     evaluatorId: evaluator.evaluator_id,
     evaluatorName: evaluator.evaluator_name,
+    evaluatorVersionId: evaluator.evaluator_version_id,
     queryFilter: evaluator.query_filter,
     columnMappings: evaluator.column_mappings,
   };

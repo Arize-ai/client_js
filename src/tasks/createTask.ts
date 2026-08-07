@@ -22,18 +22,20 @@ type CreateTaskBody = CreateRunExpBody | CreateEvalBody;
  * (for eval types) or {@link createRunExperimentTask} (for RUN_EXPERIMENT tasks,
  * which also supports resolving AI integration by name).
  *
- * **Note for `RUN_EXPERIMENT` tasks**: `runConfiguration` must include
- * `ai_integration_id` directly. The convenience `aiIntegration` name field is
- * only resolved by {@link createRunExperimentTask} — passing it here without
- * a corresponding `ai_integration_id` will throw immediately.
+ * **Note for `RUN_EXPERIMENT` tasks**: `runConfiguration` must include the
+ * concrete integration ID directly (`ai_integration_id` for LLM variants,
+ * `integration_id` for AGENT_CALL). The convenience name fields (`aiIntegration`
+ * and `integration`) are only resolved by {@link createRunExperimentTask} —
+ * passing one here without a corresponding ID will throw immediately.
  *
  * @param client - An optional ArizeClient instance to use for the request.
  * @param name - The display name of the task.
  * @param type - The task type.
  * @returns A created {@link Task}.
  * @throws Error if the task cannot be created or the response is invalid.
- * @throws Error if `aiIntegration` is set in `runConfiguration` without
- *   `ai_integration_id` — use {@link createRunExperimentTask} for name
+ * @throws Error if `aiIntegration` (or `integration`) is set in
+ *   `runConfiguration` without a corresponding `ai_integration_id`
+ *   (or `integration_id`) — use {@link createRunExperimentTask} for name
  *   resolution.
  */
 export async function createTask({
@@ -49,13 +51,15 @@ export async function createTask({
     const spaceRef = toSpaceRef(input.space);
     const datasetId = await findDatasetId(client, input.dataset, spaceRef);
 
-    // Strip the SDK-only `aiIntegration` convenience field before POSTing.
-    // The server schema uses `additionalProperties: false` and would 400 if
-    // this field reached it. If the caller set `aiIntegration` without also
-    // providing `ai_integration_id`, fail fast with a helpful message.
-    const { aiIntegration, ...rawConfig } =
+    // Strip the SDK-only convenience name fields (`aiIntegration` for the LLM
+    // variants, `integration` for AGENT_CALL) before POSTing. The server schema
+    // uses `additionalProperties: false` and would 400 if either field reached
+    // it. If a caller set a name field without also providing the corresponding
+    // ID, fail fast with a helpful message.
+    const { aiIntegration, integration, ...rawConfig } =
       input.runConfiguration as typeof input.runConfiguration & {
         aiIntegration?: string;
+        integration?: string;
       };
     if (
       aiIntegration &&
@@ -64,6 +68,16 @@ export async function createTask({
       throw new Error(
         "`createTask` does not resolve `aiIntegration` by name. " +
           "Either supply `ai_integration_id` directly in `runConfiguration`, " +
+          "or use `createRunExperimentTask` which resolves the name for you.",
+      );
+    }
+    if (
+      integration &&
+      !("integration_id" in rawConfig && rawConfig.integration_id)
+    ) {
+      throw new Error(
+        "`createTask` does not resolve `integration` by name. " +
+          "Either supply `integration_id` directly in `runConfiguration`, " +
           "or use `createRunExperimentTask` which resolves the name for you.",
       );
     }

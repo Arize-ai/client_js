@@ -5,6 +5,7 @@ import {
   transformExperimentRun,
 } from "../utils";
 import {
+  mockAgentExperiment,
   mockExperiment,
   mockExperimentRun,
   mockExperimentRunWithAnnotations,
@@ -23,6 +24,24 @@ describe("transformExperiment", () => {
     };
     const experiment = transformExperiment(mockExperiment);
     expect(experiment).toEqual(expectedResult);
+  });
+
+  it("omits integrationId when the experiment is not agent-backed", () => {
+    const experiment = transformExperiment(mockExperiment);
+    expect(experiment).not.toHaveProperty("integrationId");
+  });
+
+  it("maps integration_id to integrationId for agent-backed experiments", () => {
+    const experiment = transformExperiment(mockAgentExperiment);
+    expect(experiment.integrationId).toBe(mockAgentExperiment.integration_id);
+  });
+
+  it("preserves an explicit null integration_id", () => {
+    const experiment = transformExperiment({
+      ...mockExperiment,
+      integration_id: null,
+    });
+    expect(experiment.integrationId).toBeNull();
   });
 
   it("should pass through null datasetId and datasetVersionId for experiments without a dataset", () => {

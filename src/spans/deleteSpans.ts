@@ -18,6 +18,16 @@ export type DeleteSpansParams = WithClient<{
    * List of span IDs to delete.
    */
   spanIds: string[];
+  /**
+   * Scope the delete to spans starting at or after this time (inclusive).
+   * When omitted, the server searches the full 2-year lookback window.
+   */
+  startTime?: Date;
+  /**
+   * Scope the delete to spans starting before this time (exclusive).
+   * When omitted, the server searches up to the current time.
+   */
+  endTime?: Date;
 }>;
 
 export type SpanDeleteResult = {
@@ -90,6 +100,8 @@ export async function deleteSpans({
   project,
   space,
   spanIds,
+  startTime,
+  endTime,
 }: DeleteSpansParams): Promise<SpanDeleteResult> {
   warnPreRelease({ functionName: "deleteSpans", stage: "beta" });
   if (spanIds.length === 0) {
@@ -103,6 +115,8 @@ export async function deleteSpans({
     body: {
       project_id: projectId,
       span_ids: spanIds,
+      ...(startTime !== undefined && { start_time: startTime.toISOString() }),
+      ...(endTime !== undefined && { end_time: endTime.toISOString() }),
     },
   });
   if (response.error) {

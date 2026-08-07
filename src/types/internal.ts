@@ -31,6 +31,19 @@ export type RawPrompt = components["schemas"]["Prompt"];
 export type RawPromptVersion = components["schemas"]["PromptVersion"];
 export type RawPromptWithVersion = components["schemas"]["PromptWithVersion"];
 export type RawAiIntegration = components["schemas"]["AiIntegration"];
+export type RawIntegration = components["schemas"]["Integration"];
+export type RawIntegrationScoping = components["schemas"]["IntegrationScoping"];
+export type RawAgentRequestPreset = components["schemas"]["AgentRequestPreset"];
+export type RawCreateIntegrationRequest =
+  components["schemas"]["CreateIntegrationRequest"];
+export type RawUpdateIntegrationRequest =
+  components["schemas"]["UpdateIntegrationRequest"];
+export type RawLlmConfig = components["schemas"]["LlmConfig"];
+export type RawAwsBedrockAuth = components["schemas"]["AwsBedrockAuth"];
+export type RawCreateLlmConfig = components["schemas"]["CreateLlmConfig"];
+export type RawCreateAwsBedrockAuth =
+  components["schemas"]["CreateAwsBedrockAuth"];
+export type RawUpdateLlmConfig = components["schemas"]["UpdateLlmConfig"];
 export type RawApiKey = components["schemas"]["ApiKey"];
 
 // openapi-typescript generates Omit<Union, "type"> (non-distributive) for role
@@ -73,6 +86,8 @@ export type RawEvaluatorWithVersion =
   components["schemas"]["EvaluatorWithVersion"];
 export type RawEvaluatorVersion = components["schemas"]["EvaluatorVersion"];
 export type RawTemplateConfig = components["schemas"]["TemplateConfig"];
+export type RawTemplateConfigInput =
+  components["schemas"]["TemplateConfigInput"];
 export type RawEvaluatorLlmConfig = components["schemas"]["EvaluatorLlmConfig"];
 export type RawCodeConfig = components["schemas"]["CodeConfig"];
 export type RawManagedCodeConfig = components["schemas"]["ManagedCodeConfig"];

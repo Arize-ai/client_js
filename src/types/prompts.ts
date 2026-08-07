@@ -4,8 +4,13 @@ export type InputVariableFormat = components["schemas"]["InputVariableFormat"];
 export type LlmProvider = components["schemas"]["LlmProvider"];
 export type MessageRole = components["schemas"]["MessageRole"];
 export type LLMMessage = components["schemas"]["LLMMessage"];
+export type LLMMessageRequest = components["schemas"]["LLMMessageRequest"];
 export type InvocationParams = components["schemas"]["InvocationParams"];
+export type InvocationParamsRequest =
+  components["schemas"]["InvocationParamsRequest"];
 export type ProviderParams = components["schemas"]["ProviderParams"];
+export type ProviderParamsRequest =
+  components["schemas"]["ProviderParamsRequest"];
 export type ToolConfig = components["schemas"]["ToolConfig"];
 
 export type Prompt = {

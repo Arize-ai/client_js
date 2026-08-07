@@ -5,6 +5,7 @@ import { createRunExperimentTask } from "../createRunExperimentTask";
 
 const DATASET_ID = "RGF0YXNldDoxOmFCY0Q=";
 const INTEGRATION_ID = "TGxtSW50ZWdyYXRpb246MTphQmNE";
+const AGENT_INTEGRATION_ID = "QWdlbnRJbnRlZ3JhdGlvbjoxMjphQmNE";
 const TASK_ID = "T25saW5lVGFzazo0NTphQmNE";
 const CREATED_AT = "2026-04-01T10:00:00.000Z";
 
@@ -133,6 +134,71 @@ describe("createRunExperimentTask", () => {
         }),
       }),
     });
+  });
+
+  it("creates a RUN_EXPERIMENT task with AGENT_CALL config", async () => {
+    vi.spyOn(resolveModule, "findDatasetId").mockResolvedValue(DATASET_ID);
+    const client = makeClient();
+
+    await createRunExperimentTask({
+      client,
+      name: "Agent Call Task",
+      dataset: DATASET_ID,
+      runConfiguration: {
+        experiment_type: "AGENT_CALL",
+        integration_id: AGENT_INTEGRATION_ID,
+        input_template: { question: "{{question}}" },
+      },
+    });
+
+    expect(client.POST).toHaveBeenCalledWith("/v2/tasks", {
+      body: expect.objectContaining({
+        type: "RUN_EXPERIMENT",
+        dataset_id: DATASET_ID,
+        run_configuration: expect.objectContaining({
+          experiment_type: "AGENT_CALL",
+          integration_id: AGENT_INTEGRATION_ID,
+          input_template: { question: "{{question}}" },
+        }),
+      }),
+    });
+  });
+
+  it("resolves the AGENT_CALL integration name to ID via findIntegrationId", async () => {
+    vi.spyOn(resolveModule, "findDatasetId").mockResolvedValue(DATASET_ID);
+    const findIntegrationIdSpy = vi
+      .spyOn(resolveModule, "findIntegrationId")
+      .mockResolvedValue(AGENT_INTEGRATION_ID);
+    const client = makeClient();
+
+    await createRunExperimentTask({
+      client,
+      name: "Agent Call Task",
+      dataset: DATASET_ID,
+      space: "my-space",
+      runConfiguration: {
+        experiment_type: "AGENT_CALL",
+        integration: "my-agent-integration",
+        integration_id: "",
+        input_template: { question: "{{question}}" },
+      },
+    });
+
+    // Resolved by name, with an AGENT type filter.
+    expect(findIntegrationIdSpy).toHaveBeenCalledWith(
+      client,
+      "my-agent-integration",
+      "AGENT",
+      expect.anything(),
+    );
+
+    const postBody = (client.POST as ReturnType<typeof vi.fn>).mock.calls[0][1]
+      .body;
+    expect(postBody.run_configuration.integration_id).toBe(
+      AGENT_INTEGRATION_ID,
+    );
+    // The SDK-only convenience field must be stripped before sending.
+    expect(postBody.run_configuration).not.toHaveProperty("integration");
   });
 
   it("throws when the API returns an error", async () => {

@@ -12,6 +12,16 @@ export const mockExperiment: RawExperiment = {
   dataset_version_id: "dataset_version_id",
 };
 
+export const mockAgentExperiment: RawExperiment = {
+  id: "agent_experiment_id",
+  name: "test-agent-experiment",
+  dataset_id: "dataset_id",
+  created_at: mockDateString,
+  updated_at: mockDateString,
+  dataset_version_id: "dataset_version_id",
+  integration_id: "QWdlbnRJbnRlZ3JhdGlvbjoxMjphQmNE",
+};
+
 export const mockExperimentRun: RawExperimentRun = {
   id: "run_id",
   example_id: "example_id",

@@ -105,6 +105,12 @@ Arize has both Enterprise and OSS products to support this goal:
   - [Getting an AI integration](#getting-an-ai-integration)
   - [Updating an AI integration](#updating-an-ai-integration)
   - [Deleting an AI integration](#deleting-an-ai-integration)
+- [Integrations](#integrations)
+  - [Listing integrations](#listing-integrations)
+  - [Creating an integration](#creating-an-integration)
+  - [Getting an integration](#getting-an-integration)
+  - [Updating an integration](#updating-an-integration)
+  - [Deleting an integration](#deleting-an-integration)
 - [Projects](#projects)
   - [Creating a project](#creating-a-project)
   - [Getting a project](#getting-a-project)
@@ -1120,6 +1126,92 @@ import { deleteAiIntegration } from "@arizeai/ax-client";
 await deleteAiIntegration({
   integration: "Production OpenAI",
   space: "my-space",
+});
+```
+
+# Integrations
+
+The `@arizeai/ax-client` package allows you to create and manage integrations on the polymorphic `/v2/integrations` surface, covering both LLM (model-provider) and AGENT (customer-hosted endpoint) integrations. Integration names are unique per account and type, so `type` is required when resolving a name; an ID always works on its own. These functions are in alpha and emit a one-time pre-release warning.
+
+## Listing integrations
+
+`type` is an optional filter. Omit it to list integrations of every type in one call; each item carries its `type` discriminator.
+
+```typescript
+import { listIntegrations } from "@arizeai/ax-client";
+
+// Only agent integrations
+const agents = await listIntegrations({ type: "AGENT", space: "my-space" });
+
+// Every type, discriminated by `integration.type`
+const all = await listIntegrations({});
+```
+
+## Creating an integration
+
+The `type` field selects the config shape.
+
+```typescript
+import { createIntegration } from "@arizeai/ax-client";
+
+// LLM integration
+const llm = await createIntegration({
+  type: "LLM",
+  name: "Production OpenAI",
+  config: { provider: "OPEN_AI", apiKey: "sk-..." },
+});
+
+// Agent integration
+const agent = await createIntegration({
+  type: "AGENT",
+  name: "My Support Agent",
+  config: {
+    endpoint: "https://agent.example.com/replay",
+    inputSchema: { type: "object", properties: { input: { type: "string" } } },
+    requestPresets: [{ name: "default", config: { input: "hello" } }],
+  },
+});
+```
+
+## Getting an integration
+
+```typescript
+import { getIntegration } from "@arizeai/ax-client";
+
+// By ID
+const integration = await getIntegration({
+  integration: "your_integration_id",
+});
+
+// By name (requires type)
+const byName = await getIntegration({
+  integration: "Production OpenAI",
+  type: "LLM",
+});
+```
+
+## Updating an integration
+
+`type` is required (it selects the update shape) and is immutable server-side. Provide at least one updatable field; omitted fields are preserved.
+
+```typescript
+import { updateIntegration } from "@arizeai/ax-client";
+
+const integration = await updateIntegration({
+  integration: "Production OpenAI",
+  type: "LLM",
+  config: { provider: "OPEN_AI", apiKey: "sk-new-key" },
+});
+```
+
+## Deleting an integration
+
+```typescript
+import { deleteIntegration } from "@arizeai/ax-client";
+
+await deleteIntegration({
+  integration: "My Support Agent",
+  type: "AGENT",
 });
 ```
 

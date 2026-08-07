@@ -6,6 +6,7 @@ import { createTask } from "../createTask";
 const DATASET_ID = "RGF0YXNldDoxOmFCY0Q=";
 const PROJECT_ID = "UHJvamVjdDoxOmFCY0Q=";
 const INTEGRATION_ID = "TGxtSW50ZWdyYXRpb246MTphQmNE";
+const AGENT_INTEGRATION_ID = "QWdlbnRJbnRlZ3JhdGlvbjoxMjphQmNE";
 const TASK_ID = "T25saW5lVGFzazo0NTphQmNE";
 const CREATED_AT = "2026-04-01T10:00:00.000Z";
 
@@ -112,6 +113,81 @@ describe("createTask", () => {
         }),
       }),
     });
+  });
+
+  it("creates a RUN_EXPERIMENT task with AGENT_CALL runConfiguration", async () => {
+    vi.spyOn(resolveModule, "findDatasetId").mockResolvedValue(DATASET_ID);
+    const client = makeClient(makeTaskResponse("RUN_EXPERIMENT"));
+
+    await createTask({
+      client,
+      name: "Agent Call Task",
+      type: "RUN_EXPERIMENT",
+      dataset: DATASET_ID,
+      runConfiguration: {
+        experiment_type: "AGENT_CALL",
+        integration_id: AGENT_INTEGRATION_ID,
+        input_template: { question: "{{question}}" },
+      },
+    });
+
+    expect(client.POST).toHaveBeenCalledWith("/v2/tasks", {
+      body: expect.objectContaining({
+        type: "RUN_EXPERIMENT",
+        dataset_id: DATASET_ID,
+        run_configuration: expect.objectContaining({
+          experiment_type: "AGENT_CALL",
+          integration_id: AGENT_INTEGRATION_ID,
+        }),
+      }),
+    });
+  });
+
+  it("throws fast when AGENT_CALL `integration` name is set without integration_id", async () => {
+    vi.spyOn(resolveModule, "findDatasetId").mockResolvedValue(DATASET_ID);
+    const client = makeClient(makeTaskResponse("RUN_EXPERIMENT"));
+
+    await expect(
+      createTask({
+        client,
+        name: "Agent Call Task",
+        type: "RUN_EXPERIMENT",
+        dataset: DATASET_ID,
+        runConfiguration: {
+          experiment_type: "AGENT_CALL",
+          integration: "my-agent-integration",
+          integration_id: "",
+          input_template: { question: "{{question}}" },
+        },
+      }),
+    ).rejects.toThrow("does not resolve `integration` by name");
+
+    expect(client.POST).not.toHaveBeenCalled();
+  });
+
+  it("strips the SDK-only `integration` field from an AGENT_CALL config before POSTing", async () => {
+    vi.spyOn(resolveModule, "findDatasetId").mockResolvedValue(DATASET_ID);
+    const client = makeClient(makeTaskResponse("RUN_EXPERIMENT"));
+
+    await createTask({
+      client,
+      name: "Agent Call Task",
+      type: "RUN_EXPERIMENT",
+      dataset: DATASET_ID,
+      runConfiguration: {
+        experiment_type: "AGENT_CALL",
+        integration: "my-agent-integration",
+        integration_id: AGENT_INTEGRATION_ID,
+        input_template: { question: "{{question}}" },
+      },
+    });
+
+    const postBody = (client.POST as ReturnType<typeof vi.fn>).mock.calls[0][1]
+      .body;
+    expect(postBody.run_configuration).not.toHaveProperty("integration");
+    expect(postBody.run_configuration.integration_id).toBe(
+      AGENT_INTEGRATION_ID,
+    );
   });
 
   it("throws when the API returns an error", async () => {

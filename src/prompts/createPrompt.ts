@@ -2,11 +2,11 @@ import { createClient } from "../client";
 import { WithClient } from "../types";
 import {
   InputVariableFormat,
-  InvocationParams,
-  LLMMessage,
+  InvocationParamsRequest,
+  LLMMessageRequest,
   LlmProvider,
   PromptWithVersion,
-  ProviderParams,
+  ProviderParamsRequest,
 } from "../types/prompts";
 import { handleApiError } from "../errors";
 import { warnPreRelease } from "../utils/warning";
@@ -18,9 +18,9 @@ export type CreatePromptVersionInput = {
   inputVariableFormat: InputVariableFormat;
   provider: LlmProvider;
   model?: string;
-  messages: LLMMessage[];
-  invocationParams?: InvocationParams;
-  providerParams?: ProviderParams;
+  messages: LLMMessageRequest[];
+  invocationParams?: InvocationParamsRequest;
+  providerParams?: ProviderParamsRequest;
 };
 
 export type CreatePromptParams = WithClient<{

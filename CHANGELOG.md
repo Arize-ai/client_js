@@ -1,5 +1,20 @@
 # @arizeai/ax-client
 
+## [1.28.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.27.0...arize-js-sdk/v1.28.0) (2026-08-07)
+
+
+### 🎁 New Features
+
+* **api/v2:** pin eval tasks to a specific evaluator version ([#82056](https://github.com/Arize-ai/arize/issues/82056)) ([e3778c1](https://github.com/Arize-ai/arize/commit/e3778c1bcb3e95a546972470825bd4a672311361))
+* **openapi:** [4/6] separate prompt and integration request schemas ([#82013](https://github.com/Arize-ai/arize/issues/82013)) ([494f3d7](https://github.com/Arize-ai/arize/commit/494f3d733bfc634b25347d0e0548e2577518c7d0))
+* **sdk-js:** add integrations module (llm+agent CRUD), agent_call tasks, experiments integrationId ([#79760](https://github.com/Arize-ai/arize/issues/79760)) ([dda7b42](https://github.com/Arize-ai/arize/commit/dda7b4257a68180ab76f44098f538f5f1c70e079))
+* **spans:** add start_time/end_time to DELETE /v2/spans ([#82009](https://github.com/Arize-ai/arize/issues/82009)) ([e8f963b](https://github.com/Arize-ai/arize/commit/e8f963baf1a5cf69417891af493c814e7dbffcc1))
+
+
+### 🐛 Bug Fixes
+
+* **api/v2:** require classification_choices & default data_granularity on REST eval, regen SDKs [4/4] ([#79714](https://github.com/Arize-ai/arize/issues/79714)) ([9bd254d](https://github.com/Arize-ai/arize/commit/9bd254d978fb5c8dd8e17fdaab23158426a694db))
+
 ## [1.27.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.26.0...arize-js-sdk/v1.27.0) (2026-08-04)
 
 

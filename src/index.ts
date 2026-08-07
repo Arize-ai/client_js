@@ -9,6 +9,7 @@ export * from "./spans";
 export * from "./spaces";
 export * from "./prompts";
 export * from "./ai_integrations";
+export * from "./integrations";
 export * from "./api_keys";
 export * from "./evaluators";
 export * from "./annotation_queues";

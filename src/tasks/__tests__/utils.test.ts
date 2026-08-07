@@ -23,6 +23,19 @@ describe("transformTaskEvaluator", () => {
     expect(result.columnMappings).toEqual(mockTaskEvaluator.column_mappings);
   });
 
+  it("should surface a pinned evaluator version", () => {
+    const result = transformTaskEvaluator({
+      ...mockTaskEvaluator,
+      evaluator_version_id: "evv-99",
+    });
+    expect(result.evaluatorVersionId).toBe("evv-99");
+  });
+
+  it("should map an unpinned evaluator to a null version", () => {
+    const result = transformTaskEvaluator(mockTaskEvaluator);
+    expect(result.evaluatorVersionId).toBeNull();
+  });
+
   it("should pass through null queryFilter and columnMappings", () => {
     const result = transformTaskEvaluator({
       ...mockTaskEvaluator,
@@ -125,6 +138,7 @@ describe("toRawTaskEvaluator", () => {
     };
     expect(toRawTaskEvaluator(input)).toEqual({
       evaluator_id: "eval-123",
+      evaluator_version_id: undefined,
       query_filter: "span_kind == 'LLM'",
       column_mappings: { input: "question", output: "answer" },
     });
@@ -133,7 +147,24 @@ describe("toRawTaskEvaluator", () => {
   it("should pass through undefined optional fields", () => {
     const result = toRawTaskEvaluator({ evaluatorId: "eval-456" });
     expect(result.evaluator_id).toBe("eval-456");
+    expect(result.evaluator_version_id).toBeUndefined();
     expect(result.query_filter).toBeUndefined();
     expect(result.column_mappings).toBeUndefined();
+  });
+
+  it("should map a pinned evaluator version", () => {
+    const result = toRawTaskEvaluator({
+      evaluatorId: "eval-123",
+      evaluatorVersionId: "evv-99",
+    });
+    expect(result.evaluator_version_id).toBe("evv-99");
+  });
+
+  it("should keep an explicit null so the caller can unpin", () => {
+    const result = toRawTaskEvaluator({
+      evaluatorId: "eval-123",
+      evaluatorVersionId: null,
+    });
+    expect(result.evaluator_version_id).toBeNull();
   });
 });

@@ -185,7 +185,9 @@ export interface paths {
         post?: never;
         /**
          * Delete an annotation config
-         * @description Delete an annotation config by its ID. This operation is irreversible.
+         * @description Delete an annotation config by its ID. The annotation config must not be associated
+         *     with an active annotation queue; remove it from those queues before deleting it.
+         *     This operation is irreversible.
          *
          *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
@@ -446,7 +448,7 @@ export interface paths {
          *     }
          *     ```
          *
-         *     <Note>If no example_ids are provided for a dataset record source, all examples in the dataset will be added to the queue.</Note>
+         *     <Note>If no example_ids are provided for a dataset record source, all examples in the dataset will be added to the queue only when the total records from all sources does not exceed 500.</Note>
          *
          *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
@@ -1135,7 +1137,7 @@ export interface paths {
          *       With `CODE`, provide `version.code_config` — where `code_config.type` is `MANAGED` or `CUSTOM` (a separate discriminator *within* `code_config`, independent of the top-level `type: CODE`).
          *     - For template evaluators: `version.template_config.name` is the eval column name; must match `^[a-zA-Z0-9_\s\-&()]+$`.
          *     - For template evaluators: `version.template_config.template` is the prompt template; use `{variable}` for placeholders (f-string format, e.g. `{input}`, `{output}`).
-         *     - For template evaluators: `version.template_config.classification_choices` maps choice labels to numeric scores (e.g. `{"relevant": 1, "irrelevant": 0}`). When omitted, the evaluator produces freeform output.
+         *     - For template evaluators: `version.template_config.classification_choices` is required and maps choice labels to numeric scores (e.g. `{"relevant": 1, "irrelevant": 0}`).
          *     - For code evaluators: see `CodeConfig` — managed evaluators (`code_config.type: MANAGED`) use `managed_evaluator` and `variables`; custom evaluators (`code_config.type: CUSTOM`) use `code`, optional `imports`, and `variables`.
          *     - System-managed fields (`id`, `created_at`, `updated_at`, `created_by_user_id`) are rejected on input.
          *
@@ -2607,7 +2609,14 @@ export interface paths {
          * @description Permanently deletes spans by their span IDs. This operation is irreversible.
          *
          *     Accepts between 1 and 5000 span IDs per request. Only spans within the
-         *     supported time range (2 years) are considered; older spans are not affected.
+         *     searched time window are considered; spans outside that window are not affected.
+         *
+         *     The optional `start_time` and `end_time` fields scope the search to a
+         *     specific time window. Each bound is independent: omitting `start_time`
+         *     defaults to two years ago; omitting `end_time` defaults to now. You may
+         *     provide either or both. Providing them when the approximate timestamp of
+         *     the target spans is known significantly reduces the amount of span data
+         *     the server must search.
          *
          *     A `200 OK` response always includes:
          *     - `completed` — `true` if the operation finished and no retry is needed;
@@ -2748,6 +2757,11 @@ export interface paths {
          *     - When `dataset_id` is provided, `experiment_ids` must contain at least one entry.
          *     - `sampling_rate` and `is_continuous` are only supported on project-based tasks.
          *     - System-managed fields (`id`, `created_at`, `updated_at`) are rejected on input.
+         *     - `evaluator_version_id` pins an evaluator to one version. Omit it (or send null)
+         *       to run that evaluator's latest version, which is the default. The version must
+         *       belong to the evaluator named by `evaluator_id`, and every evaluator on the task
+         *       must resolve to the same data scope — both return 422. List an evaluator's
+         *       versions with `GET /v2/evaluators/{evaluator_id}/versions`.
          *
          *     **Payload Requirements (run_experiment)**
          *     - `dataset_id` is required; `project_id` must be omitted.
@@ -2771,12 +2785,43 @@ export interface paths {
          *     }
          *     ```
          *
+         *     **Valid example** (pinned to a specific evaluator version)
+         *     ```json
+         *     {
+         *       "name": "Hallucination Check v3",
+         *       "type": "TEMPLATE_EVALUATION",
+         *       "project_id": "TW9kZWw6MTIzOmFCY0Q=",
+         *       "evaluators": [
+         *         {
+         *           "evaluator_id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
+         *           "evaluator_version_id": "RXZhbHVhdG9yVmVyc2lvbjo5OTphQmNE",
+         *           "column_mappings": {"input": "attributes.input.value"}
+         *         }
+         *       ]
+         *     }
+         *     ```
+         *
          *     **Invalid example** (run_experiment missing `run_configuration`)
          *     ```json
          *     {
          *       "name": "My Experiment",
          *       "type": "RUN_EXPERIMENT",
          *       "dataset_id": "RGF0YXNldDo1NjpxUndY"
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (422 — the version belongs to a different evaluator)
+         *     ```json
+         *     {
+         *       "name": "Mismatched Pin",
+         *       "type": "TEMPLATE_EVALUATION",
+         *       "project_id": "TW9kZWw6MTIzOmFCY0Q=",
+         *       "evaluators": [
+         *         {
+         *           "evaluator_id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
+         *           "evaluator_version_id": "RXZhbHVhdG9yVmVyc2lvbjo3OmFCY0Q="
+         *         }
+         *       ]
          *     }
          *     ```
          *
@@ -2826,6 +2871,12 @@ export interface paths {
          *     - `sampling_rate` and `is_continuous` are only applicable for project-based tasks.
          *     - Fields not valid for the task's type return 400 (e.g. `run_configuration` on an evaluation task).
          *     - System-managed fields (`id`, `type`, `created_at`, `updated_at`) cannot be modified.
+         *     - `evaluator_version_id` pins an evaluator to one version. Because `evaluators`
+         *       replaces the whole list, each entry states its own pin: send a version ID to pin,
+         *       and omit the field or send null to run the latest version. Omit `evaluators`
+         *       entirely to leave the existing attachments — and their pins — untouched.
+         *     - A pinned version must belong to the evaluator named by `evaluator_id`, and every
+         *       evaluator on the task must resolve to the same data scope. Both return 422.
          *
          *     **Valid example** (update evaluation task)
          *     ```json
@@ -2833,6 +2884,21 @@ export interface paths {
          *       "name": "Updated Hallucination Check",
          *       "sampling_rate": 0.5,
          *       "query_filter": "metadata.environment = 'staging'"
+         *     }
+         *     ```
+         *
+         *     **Valid example** (pin one evaluator, leave the other on latest)
+         *     ```json
+         *     {
+         *       "evaluators": [
+         *         {
+         *           "evaluator_id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
+         *           "evaluator_version_id": "RXZhbHVhdG9yVmVyc2lvbjo5OTphQmNE"
+         *         },
+         *         {
+         *           "evaluator_id": "RXZhbHVhdG9yOjEzOmFCY0Q="
+         *         }
+         *       ]
          *     }
          *     ```
          *
@@ -3299,8 +3365,27 @@ export interface components {
             /** @description Space identifier (base64). Null means organization-wide (or account-wide if organization_id is also null). */
             space_id?: string | null;
         };
+        /** @description Visibility scoping for the integration in a write request (strict form of AiIntegrationScoping). */
+        AiIntegrationScopingRequest: {
+            /** @description Organization identifier (base64). Null means account-wide. */
+            organization_id?: string | null;
+            /** @description Space identifier (base64). Null means organization-wide (or account-wide if organization_id is also null). */
+            space_id?: string | null;
+        };
         /** @description AWS Bedrock provider metadata */
         AwsProviderMetadata: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "AWS";
+            /** @description AWS IAM role ARN for cross-account access */
+            role_arn: string;
+            /** @description External ID for the assume-role policy */
+            external_id?: string | null;
+        };
+        /** @description AWS Bedrock provider metadata in a write request (strict form of AwsProviderMetadata). */
+        AwsProviderMetadataRequest: {
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
@@ -3330,9 +3415,9 @@ export interface components {
             /** @description Enable function/tool calling (default true) */
             function_calling_enabled?: boolean;
             auth_type?: components["schemas"]["AiIntegrationAuthType"];
-            provider_metadata?: components["schemas"]["ProviderMetadata"];
+            provider_metadata?: components["schemas"]["ProviderMetadataRequest"];
             /** @description Visibility scoping rules. Defaults to account-wide. */
-            scopings?: components["schemas"]["AiIntegrationScoping"][];
+            scopings?: components["schemas"]["AiIntegrationScopingRequest"][];
         };
         /** @description Vertex AI (GCP) provider metadata */
         GcpProviderMetadata: {
@@ -3348,8 +3433,24 @@ export interface components {
             /** @description Display label for the project */
             project_access_label: string;
         };
+        /** @description Vertex AI (GCP) provider metadata in a write request (strict form of GcpProviderMetadata). */
+        GcpProviderMetadataRequest: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "GCP";
+            /** @description GCP project ID */
+            project_id: string;
+            /** @description GCP region (e.g. us-central1) */
+            location: string;
+            /** @description Display label for the project */
+            project_access_label: string;
+        };
         /** @description Provider-specific configuration. For AWS_BEDROCK, must include role_arn. For VERTEX_AI, must include project_id, location, and project_access_label. */
         ProviderMetadata: components["schemas"]["AwsProviderMetadata"] | components["schemas"]["GcpProviderMetadata"];
+        /** @description Strict request form of ProviderMetadata. For AWS_BEDROCK, must include role_arn. For VERTEX_AI, must include project_id, location, and project_access_label. */
+        ProviderMetadataRequest: components["schemas"]["AwsProviderMetadataRequest"] | components["schemas"]["GcpProviderMetadataRequest"];
         UpdateAiIntegrationRequest: {
             /** @description New integration name */
             name?: string;
@@ -3370,9 +3471,9 @@ export interface components {
             function_calling_enabled?: boolean;
             auth_type?: components["schemas"]["AiIntegrationAuthType"];
             /** @description Provider-specific configuration. For AWS_BEDROCK, must include role_arn. For VERTEX_AI, must include project_id, location, and project_access_label. Pass null to remove. */
-            provider_metadata?: Omit<components["schemas"]["ProviderMetadata"], "kind"> | null;
+            provider_metadata?: Omit<components["schemas"]["ProviderMetadataRequest"], "kind"> | null;
             /** @description Visibility scoping rules (replaces all existing scopings) */
-            scopings?: components["schemas"]["AiIntegrationScoping"][];
+            scopings?: components["schemas"]["AiIntegrationScopingRequest"][];
         };
         AnnotationConfig: {
             [key: string]: unknown;
@@ -3384,7 +3485,7 @@ export interface components {
             annotation_config_type: components["schemas"]["AnnotationConfigType"];
         } & (components["schemas"]["UpdateContinuousAnnotationConfigRequest"] | components["schemas"]["UpdateCategoricalAnnotationConfigRequest"] | components["schemas"]["UpdateFreeformAnnotationConfigRequest"]);
         AddAnnotationQueueRecordsRequest: {
-            /** @description Record sources to add to the annotation queue. At most 2 record sources (projects or datasets) may be provided in a single request. */
+            /** @description Record sources to add to the annotation queue. At most 2 record sources (projects or datasets) may be provided in a single request. The total number of records resolved from all sources must not exceed 500. */
             record_sources: components["schemas"]["AnnotationQueueRecordInput"][];
         };
         /** @description Annotations to submit for an annotation queue record. Annotations are upserted by annotation config name; omitted configs are left unchanged. */
@@ -3464,7 +3565,7 @@ export interface components {
             dataset_id: string;
             /** @description Optional. The specific dataset version to use. If omitted, the latest version is used. */
             dataset_version_id?: string;
-            /** @description Optional. List of example IDs within the dataset to add to the queue. If omitted, all examples in the dataset (or dataset version) are added. */
+            /** @description Optional. List of example IDs within the dataset to add to the queue. If omitted, all examples in the dataset (or dataset version) are added, provided the total records from all sources does not exceed 500. */
             example_ids?: string[];
         };
         /** @description A record in an annotation queue with its data */
@@ -3599,7 +3700,7 @@ export interface components {
              * @default ALL
              */
             assignment_method?: components["schemas"]["AssignmentMethod"];
-            /** @description Record sources to add to the annotation queue on creation. At most 2 record sources (projects or datasets) may be provided in a single create request. Additional records from other sources can be added after creation. */
+            /** @description Record sources to add to the annotation queue on creation. At most 2 record sources (projects or datasets) may be provided in a single create request. The total number of records resolved from all sources must not exceed 500. Additional records from other sources can be added after creation. */
             record_sources?: components["schemas"]["AnnotationQueueRecordInput"][];
         };
         DeleteAnnotationQueueRecordsRequest: {
@@ -3840,7 +3941,7 @@ export interface components {
              *       "name": "MEMBER"
              *     }
              */
-            account_role?: Omit<components["schemas"]["UserRoleAssignment"], "type">;
+            account_role?: Omit<components["schemas"]["UserRoleAssignmentRequest"], "type">;
             /**
              * @description Organizations the service account should have access to. Each entry specifies an organization
              *     and the spaces within it. Must include at least one organization with at least one space.
@@ -3983,7 +4084,7 @@ export interface components {
              *       "name": "READ_ONLY"
              *     }
              */
-            role?: Omit<components["schemas"]["OrganizationRoleAssignment"], "type">;
+            role?: Omit<components["schemas"]["OrganizationRoleAssignmentRequest"], "type">;
             /**
              * @description Spaces within this organization the service account should have access to. Each entry specifies
              *     a space and optional role. All space IDs must belong to this organization.
@@ -4016,7 +4117,7 @@ export interface components {
              *       "name": "MEMBER"
              *     }
              */
-            role?: Omit<components["schemas"]["SpaceRoleAssignment"], "type">;
+            role?: Omit<components["schemas"]["SpaceRoleAssignmentRequest"], "type">;
         };
         UserApiKeyCreated: components["schemas"]["ApiKey"] & {
             /**
@@ -4238,11 +4339,16 @@ export interface components {
          *     This inner `type` is independent of the parent evaluator version's `type` (which is always `CODE` here).
          */
         CodeConfig: components["schemas"]["ManagedCodeConfig"] | components["schemas"]["CustomCodeConfig"];
+        /**
+         * @description Strict request form of CodeConfig. Discriminated union of ManagedCodeConfigRequest and
+         *     CustomCodeConfigRequest. Use in write request bodies.
+         */
+        CodeConfigRequest: components["schemas"]["ManagedCodeConfigRequest"] | components["schemas"]["CustomCodeConfigRequest"];
         CreateCodeEvaluatorVersionRequest: {
             /** @description Commit message describing the changes */
             commit_message: string;
             /** @description The code configuration for this version */
-            code_config: components["schemas"]["CodeConfig"];
+            code_config: components["schemas"]["CodeConfigRequest"];
         };
         /**
          * @description Body containing evaluator creation parameters with an initial version.
@@ -4268,7 +4374,7 @@ export interface components {
             /** @description Commit message describing the changes */
             commit_message: string;
             /** @description The template configuration for this version */
-            template_config: components["schemas"]["TemplateConfig"];
+            template_config: components["schemas"]["TemplateConfigInput"];
         };
         CustomCodeConfig: {
             /**
@@ -4299,6 +4405,37 @@ export interface components {
              *     empty array when the custom class does not read any static parameters.
              */
             static_params?: components["schemas"]["StaticParam"][];
+        };
+        /** @description Custom (user-supplied Python) code evaluator configuration in a write request (strict form of CustomCodeConfig) */
+        CustomCodeConfigRequest: {
+            /**
+             * @description Data granularity level for evaluation. When omitted or null, no granularity
+             *     filter is applied (span-level evaluation is used by default on the server).
+             */
+            data_granularity?: components["schemas"]["DataGranularity"] | null;
+            /**
+             * @description Optional filter query over the chosen data granularity. When omitted or null,
+             *     no filter is applied.
+             */
+            query_filter?: string | null;
+            /**
+             * @description Discriminator identifying this as a custom (user-supplied Python) code evaluator (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "CUSTOM";
+            /** @description Eval column name. Must match ^[a-zA-Z0-9_\s\-&()]+$ */
+            name: string;
+            /** @description Python source defining the evaluator class */
+            code: string;
+            /** @description Optional package import block prepended when running the evaluator */
+            imports?: string | null;
+            /** @description Dataset columns or span attributes mapped to evaluate() arguments */
+            variables: string[];
+            /**
+             * @description Optional typed defaults accessible on the evaluator instance. Omit or pass an
+             *     empty array when the custom class does not read any static parameters.
+             */
+            static_params?: components["schemas"]["StaticParamRequest"][];
         };
         /**
          * @description Data granularity level for evaluation.
@@ -4343,6 +4480,15 @@ export interface components {
             model_name: string;
             invocation_parameters: components["schemas"]["InvocationParams"];
             provider_parameters: components["schemas"]["ProviderParams"];
+        };
+        /** @description LLM configuration for an evaluator in a write request (strict form of EvaluatorLlmConfig) */
+        EvaluatorLlmConfigRequest: {
+            /** @description AI integration identifier (base64) */
+            ai_integration_id: string;
+            /** @description Model name (e.g. gpt-4o) */
+            model_name: string;
+            invocation_parameters: components["schemas"]["InvocationParamsRequest"];
+            provider_parameters: components["schemas"]["ProviderParamsRequest"];
         };
         /**
          * @description The evaluator type:
@@ -4451,12 +4597,57 @@ export interface components {
              */
             static_params?: components["schemas"]["StaticParam"][];
         };
+        /** @description Managed (built-in) code evaluator configuration in a write request (strict form of ManagedCodeConfig) */
+        ManagedCodeConfigRequest: {
+            /**
+             * @description Data granularity level for evaluation. When omitted or null, no granularity
+             *     filter is applied (span-level evaluation is used by default on the server).
+             */
+            data_granularity?: components["schemas"]["DataGranularity"] | null;
+            /**
+             * @description Optional filter query over the chosen data granularity. When omitted or null,
+             *     no filter is applied.
+             */
+            query_filter?: string | null;
+            /**
+             * @description Discriminator identifying this as a managed (built-in) code evaluator (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "MANAGED";
+            /** @description Eval column name. Must match ^[a-zA-Z0-9_\s\-&()]+$ */
+            name: string;
+            /** @description Which managed code evaluator implementation to use */
+            managed_evaluator: components["schemas"]["ManagedCodeEvaluator"];
+            /**
+             * @description Dataset columns or span attributes passed into the evaluator (order and count
+             *     must match the managed evaluator's requirements).
+             */
+            variables: string[];
+            /**
+             * @description Static parameters for the managed evaluator (see registry `args`). When omitted,
+             *     the registry's required arguments must be satisfied by defaults on the evaluator
+             *     class; otherwise validation fails with 400. If the registry has no args, omitting
+             *     this field is equivalent to an empty list.
+             */
+            static_params?: components["schemas"]["StaticParamRequest"][];
+        };
         /**
          * @description Built-in managed code evaluator name
          * @enum {string}
          */
         ManagedCodeEvaluator: "MATCHES_REGEX" | "JSON_PARSEABLE" | "CONTAINS_ANY_KEYWORD" | "CONTAINS_ALL_KEYWORDS" | "EXACT_MATCH";
         StaticParam: {
+            /** @description Parameter name (matches the managed evaluator's argument name) */
+            name: string;
+            type: components["schemas"]["StaticParamType"];
+            /**
+             * @description Default value. Must be a string when `type` is STRING or REGEX, and a string
+             *     array when `type` is STRING_ARRAY. Mismatches are rejected with 400 by the server.
+             */
+            default_value: string | string[];
+        };
+        /** @description Static evaluator parameter in a write request (strict form of StaticParam) */
+        StaticParamRequest: {
             /** @description Parameter name (matches the managed evaluator's argument name) */
             name: string;
             type: components["schemas"]["StaticParamType"];
@@ -4488,6 +4679,34 @@ export interface components {
              * @default true
              */
             use_structured_output?: boolean;
+            /** @description Map of choice label to numeric score (e.g. {"relevant": 1, "irrelevant": 0}). Null for legacy freeform evaluators that predate required choices. */
+            classification_choices?: {
+                [key: string]: number;
+            } | null;
+            /**
+             * @description Direction for optimization applied to this template's evaluation scores. Defaults to `MAXIMIZE` when omitted.
+             * @default MAXIMIZE
+             */
+            direction?: components["schemas"]["OptimizationDirection"];
+            /** @description Data granularity level. Null for legacy evaluators with no stored granularity. */
+            data_granularity?: components["schemas"]["DataGranularity"] | null;
+            /** @description The LLM configuration for executing the template */
+            llm_config: components["schemas"]["EvaluatorLlmConfig"];
+        };
+        TemplateConfigInput: {
+            /** @description Eval column name. Must match ^[a-zA-Z0-9_\s\-&()]+$ */
+            name: string;
+            /** @description The prompt template with variable placeholders */
+            template: string;
+            /** @description Whether to include explanations in the evaluation output */
+            include_explanations: boolean;
+            /** @description Whether to use function calling if the model supports it */
+            use_function_calling_if_available: boolean;
+            /**
+             * @description Whether to use structured output if the model supports it. When omitted the server defaults to true.
+             * @default true
+             */
+            use_structured_output?: boolean;
             /** @description Map of choice label to numeric score (e.g. {"relevant": 1, "irrelevant": 0}). When omitted, the evaluator produces freeform (non-classification) output. */
             classification_choices?: {
                 [key: string]: number;
@@ -4497,10 +4716,13 @@ export interface components {
              * @default MAXIMIZE
              */
             direction?: components["schemas"]["OptimizationDirection"];
-            /** @description Data granularity level. Defaults to null when omitted. */
-            data_granularity?: components["schemas"]["DataGranularity"] | null;
+            /**
+             * @description Data granularity level. Defaults to SPAN when omitted.
+             * @default SPAN
+             */
+            data_granularity?: components["schemas"]["DataGranularity"];
             /** @description The LLM configuration for executing the template */
-            llm_config: components["schemas"]["EvaluatorLlmConfig"];
+            llm_config: components["schemas"]["EvaluatorLlmConfigRequest"];
         };
         /** @description Body containing evaluator update parameters */
         UpdateEvaluatorRequest: {
@@ -4629,6 +4851,8 @@ export interface components {
              *     Always present; an integration with no presets returns `[]`.
              */
             request_presets: components["schemas"]["AgentRequestPreset"][];
+        } & {
+            [key: string]: unknown;
         };
         /**
          * @description An agent integration (type=AGENT): a customer-hosted HTTPS endpoint plus
@@ -4692,6 +4916,8 @@ export interface components {
             readonly created_at?: string;
             /** Format: date-time */
             readonly updated_at?: string;
+        } & {
+            [key: string]: unknown;
         };
         /** @description Config for an Anthropic LLM integration. */
         AnthropicConfig: {
@@ -4704,6 +4930,8 @@ export interface components {
             provider: "ANTHROPIC";
             /** @description Whether an API key is configured (the key itself is never returned). */
             has_api_key: boolean;
+        } & {
+            [key: string]: unknown;
         };
         /** @description AWS Bedrock auth settings, discriminated by `auth_type`. */
         AwsBedrockAuth: components["schemas"]["AwsBedrockDefaultAuth"] | components["schemas"]["AwsBedrockBearerTokenAuth"] | components["schemas"]["AwsBedrockProxyWithHeadersAuth"];
@@ -4731,6 +4959,8 @@ export interface components {
             /** @description Custom model names configured on this integration. Empty when none. */
             model_names: string[];
             auth: components["schemas"]["AwsBedrockAuth"];
+        } & {
+            [key: string]: unknown;
         };
         /** @description Role-assumption auth for AWS Bedrock: Arize assumes the provided IAM role to call Bedrock. The role ARN and external ID are not secrets and are returned on read. */
         AwsBedrockDefaultAuth: {
@@ -4789,7 +5019,7 @@ export interface components {
              *     or empty. A scoping with `space_id` set MUST also set
              *     `organization_id`.
              */
-            scopings?: components["schemas"]["IntegrationScoping"][];
+            scopings?: components["schemas"]["IntegrationScopingRequest"][];
             config: components["schemas"]["CreateAgentConfig"];
         };
         /**
@@ -4921,7 +5151,7 @@ export interface components {
             /** @description Integration name. Unique per (account, type). */
             name: string;
             /** @description Visibility scoping rules. Defaults to account-wide. */
-            scopings?: components["schemas"]["IntegrationScoping"][];
+            scopings?: components["schemas"]["IntegrationScopingRequest"][];
             config: components["schemas"]["CreateLlmConfig"];
         };
         /** @description Create config for an NVIDIA NIM integration. Every connection field is optional: omit `base_url` to use the provider default endpoint, or set it to a self-hosted NIM endpoint (validated server-side). `api_key` and `headers` are write-only (never returned; headers surface as `header_names` on read). The integration must have at least one model source: enable `is_default_models_enabled` or provide at least one entry in `model_names`, otherwise the request is rejected with 422. */
@@ -4991,6 +5221,8 @@ export interface components {
             is_default_models_enabled: boolean;
             /** @description Custom model names configured on this integration. Empty when none. */
             model_names: string[];
+        } & {
+            [key: string]: unknown;
         };
         /** @description Config for a Google Gemini LLM integration. */
         GeminiConfig: {
@@ -5003,11 +5235,20 @@ export interface components {
             provider: "GEMINI";
             /** @description Whether an API key is configured (the key itself is never returned). */
             has_api_key: boolean;
+        } & {
+            [key: string]: unknown;
         };
         /** @description A polymorphic integration resource. The `type` field selects the `config` shape; for `LLM`, `config.provider` selects the per-provider config. */
         Integration: components["schemas"]["LlmIntegration"] | components["schemas"]["AgentIntegration"];
         /** @description Visibility scoping for the integration. */
         IntegrationScoping: {
+            /** @description Organization identifier (base64). Null means account-wide. */
+            organization_id?: string | null;
+            /** @description Space identifier (base64). Null means organization-wide (or account-wide when organization_id is also null). */
+            space_id?: string | null;
+        };
+        /** @description Visibility scoping for the integration in a write request (strict form of IntegrationScoping). */
+        IntegrationScopingRequest: {
             /** @description Organization identifier (base64). Null means account-wide. */
             organization_id?: string | null;
             /** @description Space identifier (base64). Null means organization-wide (or account-wide when organization_id is also null). */
@@ -5081,6 +5322,8 @@ export interface components {
             is_default_models_enabled: boolean;
             /** @description Custom model names configured on this integration. Empty when none. */
             model_names: string[];
+        } & {
+            [key: string]: unknown;
         };
         /** @description Config for an OpenAI LLM integration. */
         OpenAiConfig: {
@@ -5093,6 +5336,8 @@ export interface components {
             provider: "OPEN_AI";
             /** @description Whether an API key is configured (the key itself is never returned). */
             has_api_key: boolean;
+        } & {
+            [key: string]: unknown;
         };
         /**
          * @description Partial agent config for PATCH. All collection fields are
@@ -5132,7 +5377,7 @@ export interface components {
             name?: string;
             description?: string | null;
             /** @description Replace-on-provide. Empty array reverts to account-wide. */
-            scopings?: components["schemas"]["IntegrationScoping"][];
+            scopings?: components["schemas"]["IntegrationScopingRequest"][];
             config?: components["schemas"]["UpdateAgentConfig"];
         };
         /**
@@ -5191,7 +5436,7 @@ export interface components {
             /** @description New integration name. */
             name?: string;
             /** @description Replaces the existing scoping rules. */
-            scopings?: components["schemas"]["IntegrationScoping"][];
+            scopings?: components["schemas"]["IntegrationScopingRequest"][];
             config?: components["schemas"]["UpdateLlmConfig"];
         };
         /** @description Config for a Google Vertex AI integration. Vertex stores no credentials: Arize accesses Vertex through the configured GCP project. All fields are returned on read. */
@@ -5207,11 +5452,13 @@ export interface components {
             location: string;
             /** @description Label used to verify Arize's access to the GCP project. */
             project_access_label: string;
+        } & {
+            [key: string]: unknown;
         };
         AddOrganizationUserRequest: {
             /** @description The unique identifier of the user to add */
             user_id: components["schemas"]["Id"];
-            role: components["schemas"]["OrganizationRoleAssignment"];
+            role: components["schemas"]["OrganizationRoleAssignmentRequest"];
         };
         CreateOrganizationRequest: {
             /** @description Name of the organization (must be unique within the account) */
@@ -5277,6 +5524,11 @@ export interface components {
             /** @description Anthropic beta feature flags */
             anthropic_beta?: (string | null)[] | null;
         };
+        /** @description Anthropic-specific headers in a write request (strict form of AnthropicHeaders) */
+        AnthropicHeadersRequest: {
+            /** @description Anthropic beta feature flags */
+            anthropic_beta?: (string | null)[] | null;
+        };
         /** @description Azure OpenAI specific parameters */
         AzureParams: {
             /** @description The Azure deployment name */
@@ -5286,8 +5538,25 @@ export interface components {
             /** @description The Azure OpenAI API version */
             azure_openai_version?: string;
         };
+        /** @description Azure OpenAI specific parameters in a write request (strict form of AzureParams) */
+        AzureParamsRequest: {
+            /** @description The Azure deployment name */
+            azure_deployment_name?: string;
+            /** @description The Azure OpenAI endpoint URL */
+            azure_openai_endpoint?: string;
+            /** @description The Azure OpenAI API version */
+            azure_openai_version?: string;
+        };
         /** @description AWS Bedrock options */
         BedrockOptions: {
+            /**
+             * @description Whether to use the AWS Bedrock Converse endpoint. Defaults to `false`.
+             * @default false
+             */
+            use_converse_endpoint?: boolean;
+        };
+        /** @description AWS Bedrock options in a write request (strict form of BedrockOptions) */
+        BedrockOptionsRequest: {
             /**
              * @description Whether to use the AWS Bedrock Converse endpoint. Defaults to `false`.
              * @default false
@@ -5313,11 +5582,11 @@ export interface components {
             /** @description The model to use for the call. Optional. If omitted, no default model is set on the version. */
             model?: string;
             /** @description The messages that make up the prompt template */
-            messages: components["schemas"]["LLMMessage"][];
+            messages: components["schemas"]["LLMMessageRequest"][];
             /** @description Parameters for the LLM invocation. Optional. Defaults to empty (no invocation parameters). */
-            invocation_params?: components["schemas"]["InvocationParams"];
+            invocation_params?: components["schemas"]["InvocationParamsRequest"];
             /** @description Provider-specific parameters. Optional. Defaults to empty (no provider-specific parameters). */
-            provider_params?: components["schemas"]["ProviderParams"];
+            provider_params?: components["schemas"]["ProviderParamsRequest"];
         };
         /**
          * @description The format for input variables in the prompt messages. Defaults to `F_STRING` if not provided.
@@ -5360,8 +5629,53 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        /** @description Parameters for the LLM invocation in a write request (strict form of InvocationParams; leaf schemas use *Request variants) */
+        InvocationParamsRequest: {
+            /** @description Sampling temperature (higher = more random) */
+            temperature?: number;
+            /** @description Maximum number of tokens to generate */
+            max_tokens?: number;
+            /** @description Maximum number of completion tokens to generate */
+            max_completion_tokens?: number;
+            /** @description Nucleus sampling parameter */
+            top_p?: number;
+            /** @description Frequency penalty (-2.0 to 2.0) */
+            frequency_penalty?: number;
+            /** @description Presence penalty (-2.0 to 2.0) */
+            presence_penalty?: number;
+            /** @description Stop sequences */
+            stop?: string[];
+            /** @description Response format configuration. Optional. When omitted, no structured output constraint is applied (the provider's default plain-text behavior is used). */
+            response_format?: components["schemas"]["ResponseFormatRequest"];
+            /** @description Tool configuration for the LLM invocation. Optional. When omitted, no tools are made available to the model. */
+            tool_config?: components["schemas"]["ToolConfig"];
+            /** @description Top-K sampling parameter. A top-K of 1 means the next selected token is the most probable (greedy decoding). */
+            top_k?: number;
+            /** @description Controls how much reasoning the model performs before responding. Supported by Gemini 3.x models. Accepted values: 'low', 'high'. */
+            thinking_level?: string;
+            /** @description Maximum tokens the model may use for internal reasoning. Supported by Gemini 2.5 models. Range: 0-24576 (Flash/Flash-Lite) or 128-32768 (Pro). Set 0 to disable thinking on Flash models. */
+            thinking_budget?: number;
+            /** @description Controls how much reasoning the model performs before responding. Supported by OpenAI o-series and GPT-5 models. o-series: 'low' | 'medium' | 'high'. GPT-5: 'none' | 'low' | 'medium' | 'high' | 'xhigh'. */
+            reasoning_effort?: string;
+            /** @description Controls the verbosity of model output. Supported by OpenAI GPT-5 series. Accepted values: 'low' | 'medium' | 'high'. */
+            verbosity?: string;
+        };
         /** @description JSON schema configuration (when type is JSON_SCHEMA) */
         JsonSchemaConfig: {
+            /** @description The name of the JSON schema */
+            name?: string;
+            /** @description A description of the JSON schema */
+            description?: string;
+            /** @description The JSON schema object */
+            schema?: Record<string, unknown>;
+            /**
+             * @description Whether to enforce strict schema validation. Defaults to `false`.
+             * @default false
+             */
+            strict?: boolean;
+        };
+        /** @description JSON schema configuration in a write request (strict form of JsonSchemaConfig) */
+        JsonSchemaConfigRequest: {
             /** @description The name of the JSON schema */
             name?: string;
             /** @description A description of the JSON schema */
@@ -5383,6 +5697,16 @@ export interface components {
             tool_call_id?: string;
             /** @description Tool calls generated by the model */
             tool_calls?: components["schemas"]["ToolCall"][];
+        };
+        /** @description A message in a prompt write request */
+        LLMMessageRequest: {
+            role: components["schemas"]["MessageRole"];
+            /** @description The content of the message */
+            content?: string | null;
+            /** @description The ID of the tool call this message is responding to */
+            tool_call_id?: string;
+            /** @description Tool calls generated by the model */
+            tool_calls?: components["schemas"]["ToolCallRequest"][];
         };
         /**
          * @description The LLM provider to use
@@ -5468,11 +5792,11 @@ export interface components {
             /** @description The model to use for the call. Optional. If omitted, no default model is set on the prompt version. */
             model?: string;
             /** @description The messages that make up the prompt template */
-            messages: components["schemas"]["LLMMessage"][];
+            messages: components["schemas"]["LLMMessageRequest"][];
             /** @description Parameters for the LLM invocation. Optional. Defaults to empty (no invocation parameters). */
-            invocation_params?: components["schemas"]["InvocationParams"];
+            invocation_params?: components["schemas"]["InvocationParamsRequest"];
             /** @description Provider-specific parameters. Optional. Defaults to empty (no provider-specific parameters). */
-            provider_params?: components["schemas"]["ProviderParams"];
+            provider_params?: components["schemas"]["ProviderParamsRequest"];
         };
         /**
          * @description A prompt with a resolved version. Returned by Create Prompt and Get Prompt.
@@ -5497,6 +5821,19 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        /** @description Provider-specific parameters in a write request (strict form of ProviderParams; leaf schemas use *Request variants) */
+        ProviderParamsRequest: {
+            /** @description Azure OpenAI specific parameters */
+            azure_params?: components["schemas"]["AzureParamsRequest"];
+            /** @description Anthropic-specific headers */
+            anthropic_headers?: components["schemas"]["AnthropicHeadersRequest"];
+            /** @description Anthropic API version */
+            anthropic_version?: string;
+            /** @description AWS Bedrock options */
+            bedrock_options?: components["schemas"]["BedrockOptionsRequest"];
+            /** @description Region for the model deployment */
+            region?: string;
+        };
         /** @description Response format configuration */
         ResponseFormat: {
             /**
@@ -5506,6 +5843,16 @@ export interface components {
             type?: components["schemas"]["ResponseFormatType"];
             /** @description JSON schema configuration (when type is JSON_SCHEMA) */
             json_schema?: components["schemas"]["JsonSchemaConfig"];
+        };
+        /** @description Response format configuration in a write request (strict form of ResponseFormat) */
+        ResponseFormatRequest: {
+            /**
+             * @description The response format type. Defaults to `TEXT` if not specified.
+             * @default TEXT
+             */
+            type?: components["schemas"]["ResponseFormatType"];
+            /** @description JSON schema configuration (when type is JSON_SCHEMA) */
+            json_schema?: components["schemas"]["JsonSchemaConfigRequest"];
         };
         /**
          * @description The response format type
@@ -5531,6 +5878,20 @@ export interface components {
             /** @description The arguments to the function as a JSON string */
             arguments: string;
         };
+        /** @description The function to call (strict request form of ToolCallFunction) */
+        ToolCallFunctionRequest: {
+            /** @description The name of the function */
+            name: string;
+            /** @description The arguments to the function as a JSON string */
+            arguments: string;
+        };
+        /** @description A tool call in a prompt write request (strict request form of ToolCall) */
+        ToolCallRequest: {
+            /** @description The ID of the tool call */
+            id?: string;
+            type: components["schemas"]["ToolCallType"];
+            function: components["schemas"]["ToolCallFunctionRequest"];
+        };
         /**
          * @description The type of tool call
          * @enum {string}
@@ -5542,9 +5903,13 @@ export interface components {
             tools?: components["schemas"]["ToolDefinition"][];
             /** @description Tool choice configuration */
             tool_choice?: unknown;
+        } & {
+            [key: string]: unknown;
         };
         /** @description A tool definition available to the model */
-        ToolDefinition: Record<string, unknown>;
+        ToolDefinition: {
+            [key: string]: unknown;
+        };
         /** @description Prompt update parameters. At least one field must be provided. */
         UpdatePromptRequest: {
             /** @description Updated description for the prompt */
@@ -5679,7 +6044,7 @@ export interface components {
         AddSpaceUserRequest: {
             /** @description The unique identifier of the user to add */
             user_id: components["schemas"]["Id"];
-            role: components["schemas"]["SpaceRoleAssignment"];
+            role: components["schemas"]["SpaceRoleAssignmentRequest"];
         };
         CreateSpaceRequest: {
             /** @description Name of the space (must be unique within the organization) */
@@ -5751,6 +6116,22 @@ export interface components {
             project_id: string;
             /** @description List of span IDs to delete (maximum 5000) */
             span_ids: string[];
+            /**
+             * Format: date-time
+             * @description Scope the delete to spans starting at or after this timestamp (inclusive).
+             *     ISO 8601 format (e.g., `2024-01-01T00:00:00Z`). Each bound is independent:
+             *     omitting `start_time` defaults to two years ago; omitting `end_time`
+             *     defaults to now. You may provide either or both.
+             */
+            start_time?: string;
+            /**
+             * Format: date-time
+             * @description Scope the delete to spans starting before this timestamp (exclusive).
+             *     ISO 8601 format (e.g., `2024-01-02T00:00:00Z`). Each bound is independent:
+             *     omitting `start_time` defaults to two years ago; omitting `end_time`
+             *     defaults to now. You may provide either or both.
+             */
+            end_time?: string;
         };
         ListSpansRequest: {
             /** @description The project ID to list spans for */
@@ -5967,6 +6348,12 @@ export interface components {
             evaluator_id: string;
             /** @description The name of the attached evaluator. */
             evaluator_name: string;
+            /**
+             * @description The evaluator version this attachment is pinned to (base64). Null is the
+             *     default and means the attachment is not pinned, so it runs the evaluator's
+             *     latest version.
+             */
+            evaluator_version_id: string | null;
             /** @description Per-evaluator query filter, combined with the task-level filter (AND). */
             query_filter: string | null;
             /** @description Maps evaluator template variable names to data source column names. */
@@ -5981,6 +6368,13 @@ export interface components {
         TaskEvaluatorInput: {
             /** @description Evaluator identifier (base64). Duplicates are not allowed. */
             evaluator_id: string;
+            /**
+             * @description Pin this evaluator to a specific version (base64). Defaults to null, which
+             *     always runs the evaluator's latest version; omitting the field and sending
+             *     null are equivalent. Must be a version of the evaluator named by
+             *     `evaluator_id`, otherwise the request returns 422.
+             */
+            evaluator_version_id?: string | null;
             /** @description Per-evaluator query filter. Combined with the task-level filter (AND). */
             query_filter?: string;
             /** @description Maps evaluator template variable names to data source column names. */
@@ -6048,6 +6442,8 @@ export interface components {
              *     re-evaluate it.
              */
             failure_reason?: string | null;
+        } & {
+            [key: string]: unknown;
         };
         /**
          * @description Status of a task run.
@@ -6214,7 +6610,7 @@ export interface components {
             name: string;
             /** @description Email address of the user to invite */
             email: components["schemas"]["Email"];
-            role: components["schemas"]["UserRoleAssignment"];
+            role: components["schemas"]["UserRoleAssignmentRequest"];
             /** @description Controls whether and how an invitation is sent */
             invite_mode: components["schemas"]["InviteMode"];
             /**
@@ -6478,6 +6874,16 @@ export interface components {
              */
             optimization_direction?: components["schemas"]["OptimizationDirection"];
         };
+        /** @description A categorical annotation value in a write request (strict form of CategoricalAnnotationValue). */
+        CategoricalAnnotationValueRequest: {
+            /** @description The label value */
+            label: string;
+            /**
+             * Format: double
+             * @description A score to associate with the label
+             */
+            score?: number;
+        };
         CreateCategoricalAnnotationConfigRequest: {
             /** @description Name of the new annotation config */
             name: string;
@@ -6489,7 +6895,7 @@ export interface components {
              */
             annotation_config_type: "CATEGORICAL";
             /** @description An array of categorical annotation values */
-            values: components["schemas"]["CategoricalAnnotationValue"][];
+            values: components["schemas"]["CategoricalAnnotationValueRequest"][];
             /**
              * @description Direction for optimization. Defaults to `NONE` when omitted.
              * @default NONE
@@ -6549,7 +6955,7 @@ export interface components {
              */
             annotation_config_type: "CATEGORICAL";
             /** @description The full replacement set of categorical annotation values (2–100 items). */
-            values?: components["schemas"]["CategoricalAnnotationValue"][];
+            values?: components["schemas"]["CategoricalAnnotationValueRequest"][];
             /** @description New optimization direction. */
             optimization_direction?: components["schemas"]["OptimizationDirection"];
         };
@@ -6602,6 +7008,103 @@ export interface components {
         };
         /** @enum {string} */
         UserRoleAssignmentType: "PREDEFINED" | "CUSTOM";
+        /** @description A predefined account-level role assignment in a write request (strict form of PredefinedUserRoleAssignment). */
+        PredefinedUserRoleAssignmentRequest: {
+            /**
+             * @description Discriminator identifying this as a predefined role assignment. Must be `PREDEFINED`. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "PREDEFINED";
+            name: components["schemas"]["UserRole"];
+        };
+        /** @description A custom RBAC role assignment in a write request (strict form of CustomUserRoleAssignment). */
+        CustomUserRoleAssignmentRequest: {
+            /**
+             * @description Discriminator identifying this as a custom role assignment. Must be `CUSTOM`. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "CUSTOM";
+            /** @description The unique identifier of the custom RBAC role. */
+            id: components["schemas"]["Id"];
+        };
+        /**
+         * @description Strict request form of UserRoleAssignment. Used in write request bodies.
+         *     - `PREDEFINED`: `{ "type": "PREDEFINED", "name": "ADMIN" | "MEMBER" | "ANNOTATOR" }`
+         *     - `CUSTOM`: `{ "type": "CUSTOM", "id": "<encoded-role-id>" }`
+         */
+        UserRoleAssignmentRequest: components["schemas"]["PredefinedUserRoleAssignmentRequest"] | components["schemas"]["CustomUserRoleAssignmentRequest"];
+        /** @enum {string} */
+        OrganizationRoleAssignmentType: "PREDEFINED" | "CUSTOM";
+        /**
+         * @description Organization-level role for the user.
+         *     - `ADMIN`: Full access to the organization and its resources.
+         *     - `MEMBER`: Standard access to the organization.
+         *     - `READ_ONLY`: Read-only access to the organization.
+         *     - `ANNOTATOR`: Limited access for annotation tasks only.
+         * @enum {string}
+         */
+        OrganizationRole: "ADMIN" | "MEMBER" | "READ_ONLY" | "ANNOTATOR";
+        /** @description A predefined organization role assignment in a write request (strict form of OrganizationPredefinedRoleAssignment). */
+        OrganizationPredefinedRoleAssignmentRequest: {
+            /**
+             * @description Discriminator identifying this as a predefined role assignment. Always `PREDEFINED` for this variant. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "PREDEFINED";
+            name: components["schemas"]["OrganizationRole"];
+        };
+        /** @description A custom RBAC role assignment in a write request (strict form of OrganizationCustomRoleAssignment). */
+        OrganizationCustomRoleAssignmentRequest: {
+            /**
+             * @description Discriminator identifying this as a custom RBAC role assignment. Always `CUSTOM` for this variant. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "CUSTOM";
+            /** @description The unique identifier of the custom RBAC role. */
+            id: components["schemas"]["Id"];
+        };
+        /**
+         * @description Strict request form of OrganizationRoleAssignment. Used in write request bodies.
+         *     - `PREDEFINED`: `{ "type": "PREDEFINED", "name": "ADMIN" | "MEMBER" | "READ_ONLY" | "ANNOTATOR" }`
+         *     - `CUSTOM`: `{ "type": "CUSTOM", "id": "<encoded-role-id>" }`
+         */
+        OrganizationRoleAssignmentRequest: components["schemas"]["OrganizationPredefinedRoleAssignmentRequest"] | components["schemas"]["OrganizationCustomRoleAssignmentRequest"];
+        /** @enum {string} */
+        SpaceRoleAssignmentType: "PREDEFINED" | "CUSTOM";
+        /**
+         * @description Space-level role for the user.
+         *     - `ADMIN`: Full access to the space and its resources.
+         *     - `MEMBER`: Standard access to the space.
+         *     - `READ_ONLY`: Read-only access to the space.
+         *     - `ANNOTATOR`: Limited access for annotation tasks only.
+         * @enum {string}
+         */
+        UserSpaceRole: "ADMIN" | "MEMBER" | "READ_ONLY" | "ANNOTATOR";
+        /** @description A predefined space role assignment in a write request (strict form of PredefinedRoleAssignment). */
+        PredefinedRoleAssignmentRequest: {
+            /**
+             * @description Discriminator identifying this as a predefined role assignment. Must be `PREDEFINED`. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "PREDEFINED";
+            name: components["schemas"]["UserSpaceRole"];
+        };
+        /** @description A custom RBAC role assignment in a write request (strict form of CustomRoleAssignment). */
+        CustomRoleAssignmentRequest: {
+            /**
+             * @description Discriminator identifying this as a custom RBAC role assignment. Must be `CUSTOM`. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "CUSTOM";
+            /** @description The unique identifier of the custom RBAC role. */
+            id: components["schemas"]["Id"];
+        };
+        /**
+         * @description Strict request form of SpaceRoleAssignment. Used in write request bodies.
+         *     - `PREDEFINED`: `{ "type": "PREDEFINED", "name": "ADMIN" | "MEMBER" | "READ_ONLY" | "ANNOTATOR" }`
+         *     - `CUSTOM`: `{ "type": "CUSTOM", "id": "<encoded-role-id>" }`
+         */
+        SpaceRoleAssignmentRequest: components["schemas"]["PredefinedRoleAssignmentRequest"] | components["schemas"]["CustomRoleAssignmentRequest"];
         /** @description A predefined account-level role assignment. */
         PredefinedUserRoleAssignment: {
             /**
@@ -6634,17 +7137,6 @@ export interface components {
          *     Note: `CUSTOM` role assignments are not yet supported and are reserved for future use.
          */
         UserRoleAssignment: components["schemas"]["PredefinedUserRoleAssignment"] | components["schemas"]["CustomUserRoleAssignment"];
-        /** @enum {string} */
-        OrganizationRoleAssignmentType: "PREDEFINED" | "CUSTOM";
-        /**
-         * @description Organization-level role for the user.
-         *     - `ADMIN`: Full access to the organization and its resources.
-         *     - `MEMBER`: Standard access to the organization.
-         *     - `READ_ONLY`: Read-only access to the organization.
-         *     - `ANNOTATOR`: Limited access for annotation tasks only.
-         * @enum {string}
-         */
-        OrganizationRole: "ADMIN" | "MEMBER" | "READ_ONLY" | "ANNOTATOR";
         /** @description A predefined organization role assignment. */
         OrganizationPredefinedRoleAssignment: {
             /**
@@ -6675,17 +7167,6 @@ export interface components {
          *     - `CUSTOM`: a custom RBAC role identified by its ID
          */
         OrganizationRoleAssignment: components["schemas"]["OrganizationPredefinedRoleAssignment"] | components["schemas"]["OrganizationCustomRoleAssignment"];
-        /** @enum {string} */
-        SpaceRoleAssignmentType: "PREDEFINED" | "CUSTOM";
-        /**
-         * @description Space-level role for the user.
-         *     - `ADMIN`: Full access to the space and its resources.
-         *     - `MEMBER`: Standard access to the space.
-         *     - `READ_ONLY`: Read-only access to the space.
-         *     - `ANNOTATOR`: Limited access for annotation tasks only.
-         * @enum {string}
-         */
-        UserSpaceRole: "ADMIN" | "MEMBER" | "READ_ONLY" | "ANNOTATOR";
         /** @description A predefined space role assignment. */
         PredefinedRoleAssignment: {
             /**
@@ -11350,6 +11831,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };

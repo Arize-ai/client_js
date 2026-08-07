@@ -31,15 +31,39 @@ export type TemplateEvaluationConfigInput =
     aiIntegration?: string;
   };
 
-/** Discriminated run configuration — either LLM generation or template evaluation. */
+/**
+ * Agent-call experiment configuration. Extends the generated schema with an
+ * optional `integration` name field: when set, the SDK resolves it to an AGENT
+ * integration ID before sending the request.
+ */
+export type AgentCallConfigInput =
+  components["schemas"]["AgentCallRunConfig"] & {
+    /**
+     * Optional: resolve the AGENT integration by name instead of by ID.
+     * When set, the SDK looks up the integration ID and overwrites
+     * `integration_id` before sending the request.
+     */
+    integration?: string;
+  };
+
+/**
+ * Discriminated run configuration — LLM generation, template evaluation, or
+ * agent call.
+ */
 export type RunExperimentConfigInput =
   | LlmGenerationConfigInput
-  | TemplateEvaluationConfigInput;
+  | TemplateEvaluationConfigInput
+  | AgentCallConfigInput;
 
 // ---- Create-task input types ----
 
 export type CreateTaskEvaluatorInput = {
   evaluatorId: string;
+  /**
+   * Pins this evaluator to one version. Omit it, or pass null, to run the
+   * evaluator's latest version. Must be a version of `evaluatorId`.
+   */
+  evaluatorVersionId?: string | null;
   queryFilter?: string;
   columnMappings?: Record<string, string>;
 };
@@ -105,6 +129,8 @@ export type CreateTaskInput =
 export interface TaskEvaluator {
   evaluatorId: string;
   evaluatorName: string;
+  /** The pinned version, or null when the evaluator runs its latest version. */
+  evaluatorVersionId: string | null;
   queryFilter: string | null;
   columnMappings: Record<string, string> | null;
 }
