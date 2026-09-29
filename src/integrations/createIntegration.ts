@@ -10,12 +10,13 @@ export type CreateIntegrationParams = WithClient<CreateIntegrationInput>;
  * Create a new integration. The `type` field selects the config shape:
  * - `"LLM"` — a model-provider integration (e.g. OpenAI, Anthropic).
  * - `"AGENT"` — a customer-hosted HTTPS endpoint plus a request JSON Schema.
+ * - `"EVALUATOR"` — a customer-hosted HTTPS endpoint used for remote evaluators.
  *
  * @param client - An optional ArizeClient instance to use for the request.
- * @param type - The integration type (`"LLM"` or `"AGENT"`).
- * @param name - The integration name (unique per account and type).
+ * @param type - The integration type (`"LLM"`, `"AGENT"`, or `"EVALUATOR"`).
+ * @param name - The integration name. AGENT and EVALUATOR names share one active namespace per account; LLM names are separate.
  * @param scopings - Optional visibility scoping rules. Defaults to account-wide.
- * @param description - Optional description (AGENT integrations only).
+ * @param description - Optional description (AGENT and EVALUATOR integrations only).
  * @param config - The type-specific configuration.
  * @returns A created {@link Integration}.
  * @throws Error if the integration cannot be created or the response is invalid.

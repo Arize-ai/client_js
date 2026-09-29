@@ -26,7 +26,7 @@ export interface paths {
          *     **Payload Requirements**
          *     - `name` and `provider` are required.
          *     - The integration name must be unique within the account.
-         *     - `provider` must be one of: `OPEN_AI`, `AZURE_OPEN_AI`, `AWS_BEDROCK`, `VERTEX_AI`, `ANTHROPIC`, `NVIDIA_NIM`, `GEMINI`, `CUSTOM`.
+         *     - `provider` must be one of: `OPEN_AI`, `AZURE_OPEN_AI`, `AWS_BEDROCK`, `VERTEX_AI`, `ANTHROPIC`, `NVIDIA_NIM`, `GEMINI`, `CUSTOM`, `LITELLM`, `FIREWORKS`, `TOGETHER_AI`.
          *     - If `scopings` is omitted, the integration defaults to account-wide visibility.
          *     - `enable_default_models` defaults to `false` if not provided.
          *     - `function_calling_enabled` defaults to `true` if not provided.
@@ -126,8 +126,6 @@ export interface paths {
         /**
          * List annotation configs
          * @description List annotation configs the user has access to.
-         *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["list_annotation_configs"];
         put?: never;
@@ -157,8 +155,6 @@ export interface paths {
          *       "optimization_direction": "MAXIMIZE"
          *     }
          *     ```
-         *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["create_annotation_config"];
         delete?: never;
@@ -177,8 +173,6 @@ export interface paths {
         /**
          * Get an annotation config
          * @description Get an annotation config object by its ID.
-         *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["get_annotation_config"];
         put?: never;
@@ -188,8 +182,6 @@ export interface paths {
          * @description Delete an annotation config by its ID. The annotation config must not be associated
          *     with an active annotation queue; remove it from those queues before deleting it.
          *     This operation is irreversible.
-         *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         delete: operations["delete_annotation_config"];
         options?: never;
@@ -208,7 +200,7 @@ export interface paths {
          *     - All fields other than `annotation_config_type` are optional; omitted fields are left
          *       unchanged.
          *     - `name`, if provided, must be unique within the space (409 Conflict if duplicate).
-         *     - `values` replaces the full label set (2-100 labels).
+         *     - `values` replaces the full label set (2-500 labels).
          *     - System-managed fields (`id`, `space_id`, `created_at`) cannot be modified.
          *
          *     **Valid example** (categorical config)
@@ -230,10 +222,77 @@ export interface paths {
          *       "name": "quality-v2"
          *     }
          *     ```
-         *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         patch: operations["update_annotation_config"];
+        trace?: never;
+    };
+    "/v2/annotation-configs/{annotation_config_id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List tags on an annotation config
+         * @description List the tags attached to an annotation config.
+         *
+         *     Tags are shared within the space, so the same tag may appear on many
+         *     resources. An annotation config with no tags returns an empty list rather than a
+         *     404.
+         *
+         *     Requires read access to the annotation config. A caller who cannot read it receives
+         *     `404`, identical to the response for an annotation config that does not exist.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["list_annotation_config_tags"];
+        put?: never;
+        /**
+         * Attach tags to a annotation config
+         * @description Attach one or more existing tags to a annotation config.
+         *
+         *     **Payload Requirements**
+         *     - `tag_ids` is required and must contain between 1 and 100 tag IDs.
+         *     - Every tag must already exist and belong to the same space as the
+         *       annotation config. A tag from another space returns `422`.
+         *     - Attaching a tag that is already attached is idempotent, so the same
+         *       request can be retried safely.
+         *     - Unrecognized fields are rejected with `422` rather than ignored.
+         *
+         *     Returns `200` with the annotation config's complete tag list, not `201`: attaching
+         *     an existing tag creates no new resource.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "tag_ids": ["VGFnOjEyMzQ1", "VGFnOjEyMzQ2"]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (empty list)
+         *     ```json
+         *     {
+         *       "tag_ids": []
+         *     }
+         *     ```
+         *     ```json
+         *     {
+         *       "type": "https://arize.com/docs/ax/rest-reference/errors#validation-error",
+         *       "title": "Unprocessable Entity",
+         *       "status": 422,
+         *       "detail": "tag_ids must contain at least 1 tag ID",
+         *       "request_id": "req_01HZY6X8E7"
+         *     }
+         *     ```
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["add_annotation_config_tags"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v2/annotation-queues": {
@@ -246,8 +305,6 @@ export interface paths {
         /**
          * List annotation queues
          * @description List annotation queues the user has access to.
-         *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["list_annotation_queues"];
         put?: never;
@@ -279,7 +336,7 @@ export interface paths {
          *       "space_id": "spc_xyz789",
          *       "annotation_config_ids": ["ac_abc123"],
          *       "annotator_emails": ["reviewer@example.com"],
-         *       "records": [
+         *       "record_sources": [
          *         {"record_type": "SPAN", "project_id": "prj_abc", "start_time": "2024-01-15T00:00:00Z", "end_time": "2024-01-16T00:00:00Z", "span_ids": ["span_001"]},
          *         {"record_type": "EXAMPLE", "dataset_id": "ds_xyz", "example_ids": ["ex_001", "ex_002"]}
          *       ]
@@ -293,8 +350,6 @@ export interface paths {
          *       "space_id": "spc_xyz789"
          *     }
          *     ```
-         *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["create_annotation_queue"];
         delete?: never;
@@ -319,8 +374,6 @@ export interface paths {
          *
          *     This endpoint does not include queue records or annotation progress. To
          *     manage records in a queue, use the Annotation Queue Items endpoints.
-         *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["get_annotation_queue"];
         put?: never;
@@ -328,8 +381,6 @@ export interface paths {
         /**
          * Delete an annotation queue
          * @description Delete an annotation queue by its ID. This operation is irreversible.
-         *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         delete: operations["delete_annotation_queue"];
         options?: never;
@@ -357,8 +408,6 @@ export interface paths {
          *     ```json
          *     {}
          *     ```
-         *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         patch: operations["update_annotation_queue"];
         trace?: never;
@@ -384,24 +433,24 @@ export interface paths {
          *     - Response includes `pagination` with `has_more` and `next_cursor`.
          *     - Use cursor-based pagination by passing the returned `next_cursor`
          *     value as the `cursor` query parameter in subsequent requests.
-         *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["list_annotation_queue_records"];
         put?: never;
         /**
          * Create annotation queue records
-         * @description Add new records from spans, traces, or dataset examples to an existing annotation queue.
+         * @description Add new records from spans, traces, sessions, or dataset examples to an existing annotation queue.
          *
          *     **Payload Requirements**
          *       - At least one record source is required.
          *       - At most 2 record sources are allowed per request
-         *       - For span record source: `start_time` must be before `end_time`, and the range must not exceed 7 days.
+         *       - For project record sources: `start_time` must be before `end_time`, and the range must not exceed 7 days.
          *       - For dataset record source: all `example_ids` must be non-empty strings.
          *       - For project record source:
          *         - span records: all `span_ids` must be non-empty strings.
          *         - trace records: all `trace_ids` must be non-empty strings.
-         *       - At most 500 records total may be added in one request
+         *         - session records: all `session_ids` must be non-empty strings.
+         *       - At most 500 records total may be added in one request.
+         *       - At most 100 session records total may be added in one request.
          *
          *     **Valid example (span record)**
          *     ```json
@@ -433,6 +482,21 @@ export interface paths {
          *     }
          *     ```
          *
+         *     **Valid example (session record)**
+         *     ```json
+         *     {
+         *       "record_sources": [
+         *         {
+         *           "record_type": "SESSION",
+         *           "project_id": "TW9kZWw6MTIzOmFCY0Q=",
+         *           "start_time": "2026-01-15T00:00:00Z",
+         *           "end_time": "2026-01-16T00:00:00Z",
+         *           "session_ids": ["session-123"]
+         *         }
+         *       ]
+         *     }
+         *     ```
+         *
          *     **Invalid example** (span record with `start_time` after `end_time`)
          *     ```json
          *     {
@@ -450,7 +514,11 @@ export interface paths {
          *
          *     <Note>If no example_ids are provided for a dataset record source, all examples in the dataset will be added to the queue only when the total records from all sources does not exceed 500.</Note>
          *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
+         *     **Response codes**
+         *     - `201 Created`: at least one new record was added to the queue.
+         *     - `200 OK`: the request was valid but all record sources were already present
+         *       in the queue — no new records were inserted. The `record_sources` array in
+         *       the response body will be empty.
          */
         post: operations["create_annotation_queue_record"];
         /**
@@ -463,8 +531,6 @@ export interface paths {
          *
          *     Returns 404 if the annotation queue specified by `annotation_queue_id` is not found.
          *     Individual missing record IDs do not trigger a 404.
-         *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         delete: operations["delete_annotation_queue_record"];
         options?: never;
@@ -583,6 +649,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v2/annotation-queues/{annotation_queue_id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List tags on an annotation queue
+         * @description List the tags attached to an annotation queue.
+         *
+         *     Tags are shared within the space, so the same tag may appear on many
+         *     resources. An annotation queue with no tags returns an empty list rather than a
+         *     404.
+         *
+         *     Requires read access to the annotation queue. A caller who cannot read it receives
+         *     `404`, identical to the response for an annotation queue that does not exist.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["list_annotation_queue_tags"];
+        put?: never;
+        /**
+         * Attach tags to a annotation queue
+         * @description Attach one or more existing tags to a annotation queue.
+         *
+         *     **Payload Requirements**
+         *     - `tag_ids` is required and must contain between 1 and 100 tag IDs.
+         *     - Every tag must already exist and belong to the same space as the
+         *       annotation queue. A tag from another space returns `422`.
+         *     - Attaching a tag that is already attached is idempotent, so the same
+         *       request can be retried safely.
+         *     - Unrecognized fields are rejected with `422` rather than ignored.
+         *
+         *     Returns `200` with the annotation queue's complete tag list, not `201`: attaching
+         *     an existing tag creates no new resource.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "tag_ids": ["VGFnOjEyMzQ1", "VGFnOjEyMzQ2"]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (empty list)
+         *     ```json
+         *     {
+         *       "tag_ids": []
+         *     }
+         *     ```
+         *     ```json
+         *     {
+         *       "type": "https://arize.com/docs/ax/rest-reference/errors#validation-error",
+         *       "title": "Unprocessable Entity",
+         *       "status": 422,
+         *       "detail": "tag_ids must contain at least 1 tag ID",
+         *       "request_id": "req_01HZY6X8E7"
+         *     }
+         *     ```
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["add_annotation_queue_tags"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v2/api-keys": {
         parameters: {
             query?: never;
@@ -633,6 +768,9 @@ export interface paths {
          *     - **Service keys:** Requires the `SERVICE_KEY_CREATE` permission in the target space (space
          *       member or above).
          *
+         *     When developer access is disabled for an account, users cannot create user keys or service
+         *     keys. Existing service keys remain active with their assigned roles.
+         *
          *     The full API key value (`key`) is **only returned once** in the creation response.
          *     Store it securely — it cannot be retrieved again. Use the `redacted_key` field on
          *     subsequent reads.
@@ -663,6 +801,9 @@ export interface paths {
          *     The old key is invalidated and the new key is activated in a single transaction —
          *     there is no window where neither key is valid. The full new key value (`key`) is
          *     **only returned once** in the response. Store it securely.
+         *
+         *     When developer access is disabled for an account, refreshing a user key or service key
+         *     returns `403`.
          *
          *     **Authorization:**
          *     - **User keys:** The creator or an account admin may refresh the key.
@@ -1108,6 +1249,276 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v2/datasets/{dataset_id}/examples/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search dataset examples
+         * @description Search examples for a given dataset with an optional SQL-like filter.
+         *
+         *     Examples are returned in ascending order of `created_at`, with `id` as a
+         *     tiebreaker. This order is stable across pages. Pagination uses the
+         *     cursor returned in `pagination.next_cursor`; keep the filter unchanged
+         *     when requesting subsequent pages.
+         *
+         *     The filter language supports unprefixed example columns, `id`, and
+         *     `annotation.<name>.*` when those columns are present in the example
+         *     schema.
+         *
+         *     **Payload Requirements**
+         *     - `filter` is optional. Omitting it returns all examples. A present empty
+         *       or whitespace-only value is invalid.
+         *     - `limit` is optional and defaults to 50; valid values are 1 through 500.
+         *     - `cursor` is optional; omitting it starts at the first page.
+         *     - `dataset_version_id` is optional; omitting it searches the latest
+         *       version.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "filter": "topic = 'arithmetic'",
+         *       "limit": 50,
+         *       "cursor": "opaque-cursor"
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (limit is outside the supported range)
+         *     ```json
+         *     {
+         *       "filter": "topic = 'arithmetic'",
+         *       "limit": 501
+         *     }
+         *     ```
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["search_dataset_examples"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/datasets/{dataset_id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List tags on a dataset
+         * @description List the tags attached to a dataset.
+         *
+         *     Tags are shared within the space, so the same tag may appear on many
+         *     resources. A dataset with no tags returns an empty list rather than a
+         *     404.
+         *
+         *     Requires read access to the dataset. A caller who cannot read it receives
+         *     `404`, identical to the response for a dataset that does not exist.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["list_dataset_tags"];
+        put?: never;
+        /**
+         * Attach tags to a dataset
+         * @description Attach one or more existing tags to a dataset.
+         *
+         *     **Payload Requirements**
+         *     - `tag_ids` is required and must contain between 1 and 100 tag IDs.
+         *     - Every tag must already exist and belong to the same space as the
+         *       dataset. A tag from another space returns `422`.
+         *     - Attaching a tag that is already attached is idempotent, so the same
+         *       request can be retried safely.
+         *     - Unrecognized fields are rejected with `422` rather than ignored.
+         *
+         *     Returns `200` with the dataset's complete tag list, not `201`: attaching
+         *     an existing tag creates no new resource.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "tag_ids": ["VGFnOjEyMzQ1", "VGFnOjEyMzQ2"]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (empty list)
+         *     ```json
+         *     {
+         *       "tag_ids": []
+         *     }
+         *     ```
+         *     ```json
+         *     {
+         *       "type": "https://arize.com/docs/ax/rest-reference/errors#validation-error",
+         *       "title": "Unprocessable Entity",
+         *       "status": 422,
+         *       "detail": "tag_ids must contain at least 1 tag ID",
+         *       "request_id": "req_01HZY6X8E7"
+         *     }
+         *     ```
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["add_dataset_tags"];
+        /**
+         * Detach tags from a dataset
+         * @description Detach one or more tags from a dataset.
+         *
+         *     **Payload Requirements**
+         *     - `tag_ids` is required and must contain between 1 and 100 tag IDs.
+         *     - A tag ID that is not currently attached is reported in `not_deleted`
+         *       rather than causing the whole request to fail.
+         *     - Unrecognized fields are rejected with `400`.
+         *
+         *     Returns a `200` with `completed`, `deleted`, and `not_deleted` for the
+         *     requested tag IDs.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "tag_ids": ["VGFnOjEyMzQ1", "VGFnOjEyMzQ2"]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (empty list)
+         *     ```json
+         *     {
+         *       "tag_ids": []
+         *     }
+         *     ```
+         *     ```json
+         *     {
+         *       "type": "https://arize.com/docs/ax/rest-reference/errors#validation-error",
+         *       "title": "Unprocessable Entity",
+         *       "status": 422,
+         *       "detail": "tag_ids must contain at least 1 tag ID",
+         *       "request_id": "req_01HZY6X8E7"
+         *     }
+         *     ```
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        delete: operations["remove_dataset_tags"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/evaluator-templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List evaluator templates
+         * @description Retrieve the built-in LLM-as-a-judge evaluator templates. This is the same
+         *     catalog the product offers when creating an evaluator, spanning response
+         *     quality, code quality, trajectory, RAG, security, and session evals.
+         *
+         *     Each template carries the judge prompt, the labels it returns, the score
+         *     for each label, its optimization direction, and the granularity it
+         *     evaluates at.
+         *
+         *     **Creating an evaluator from a template.** Pick a template, then call
+         *     `POST /v2/evaluators` with its fields mapped onto the request:
+         *
+         *     | Template field | Where it goes in `POST /v2/evaluators` |
+         *     | --- | --- |
+         *     | `column_name` | `version.template_config.name` |
+         *     | `template` | `version.template_config.template` |
+         *     | `classification_choices` | `version.template_config.classification_choices` |
+         *     | `direction` | `version.template_config.direction` |
+         *     | `data_granularity` | `version.template_config.data_granularity`. Send `SPAN`, or omit it, when the template's value is `null` |
+         *     | `display_name` | a label for your own use; reuse it for the evaluator's `name` or `description` |
+         *     | `rails` | no destination; `classification_choices` already carries the same labels |
+         *
+         *     Then add the fields a template doesn't carry: `space_id`, `name`, and
+         *     `type: TEMPLATE` on the evaluator; a `version.commit_message`; and the
+         *     execution settings `template_config.include_explanations`,
+         *     `use_function_calling_if_available`, and `llm_config`. Finally, create a
+         *     task to run the evaluator.
+         *
+         *     A complete request built from the `hallucination` template:
+         *
+         *     ```json
+         *     {
+         *       "space_id": "U3BhY2U6NDkzOkJaSkc=",
+         *       "name": "hallucination",
+         *       "description": "Built from the hallucination template",
+         *       "type": "TEMPLATE",
+         *       "version": {
+         *         "commit_message": "Initial version from built-in template",
+         *         "template_config": {
+         *           "name": "hallucination",
+         *           "template": "You are evaluating whether an answer is factual given reference text...\n{input}\n{output}",
+         *           "classification_choices": { "hallucinated": 1, "factual": 0 },
+         *           "direction": "MINIMIZE",
+         *           "data_granularity": "SPAN",
+         *           "include_explanations": true,
+         *           "use_function_calling_if_available": true,
+         *           "llm_config": {
+         *             "ai_integration_id": "TGxtSW50ZWdyYXRpb246MTI6YUJjRA==",
+         *             "model_name": "gpt-4o",
+         *             "invocation_parameters": { "temperature": 0 },
+         *             "provider_parameters": {}
+         *           }
+         *         }
+         *       }
+         *     }
+         *     ```
+         *
+         *     **Scope:** this returns only the built-in catalog, which is identical for
+         *     every caller and contains no space, account, or user data. It does not
+         *     include the evaluators that already exist in your space. List those with
+         *     `GET /v2/evaluators`.
+         *
+         *     **Pagination:** not paginated. The catalog is a small fixed list (28
+         *     templates, roughly 32 KB of JSON) and the full set is always returned, so
+         *     there is no `cursor` or `limit`.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["list_evaluator_templates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/evaluator-versions/{version_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get evaluator version
+         * @description Get a specific evaluator version by its unique identifier.
+         *
+         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
+         */
+        get: operations["get_evaluator_version"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v2/evaluators": {
         parameters: {
             query?: never;
@@ -1132,9 +1543,12 @@ export interface paths {
          *
          *     **Payload Requirements**
          *     - The evaluator `name` must be unique within the given space.
-         *     - `type` (top-level) selects the evaluator kind: `TEMPLATE` or `CODE`.
+         *     - `type` (top-level) selects the evaluator kind: `TEMPLATE`, `CODE`, or `REMOTE`.
          *       With `TEMPLATE`, provide `version.template_config`.
          *       With `CODE`, provide `version.code_config` — where `code_config.type` is `MANAGED` or `CUSTOM` (a separate discriminator *within* `code_config`, independent of the top-level `type: CODE`).
+         *       With `REMOTE`, provide `version.remote_config.integration_id` referencing an
+         *       accessible `EVALUATOR` integration. Remote evaluator creation requires the
+         *       remote evaluators feature to be enabled; otherwise the request returns `403`.
          *     - For template evaluators: `version.template_config.name` is the eval column name; must match `^[a-zA-Z0-9_\s\-&()]+$`.
          *     - For template evaluators: `version.template_config.template` is the prompt template; use `{variable}` for placeholders (f-string format, e.g. `{input}`, `{output}`).
          *     - For template evaluators: `version.template_config.classification_choices` is required and maps choice labels to numeric scores (e.g. `{"relevant": 1, "irrelevant": 0}`).
@@ -1153,7 +1567,7 @@ export interface paths {
          *           "name": "hallucination",
          *           "template": "Given the input: {input}\nand the output: {output}\nIs the output a hallucination?",
          *           "include_explanations": true,
-         *           "use_function_calling_if_available": true,
+         *           "use_function_calling": true,
          *           "classification_choices": {"hallucinated": 0, "factual": 1},
          *           "llm_config": {
          *             "ai_integration_id": "TGxtSW50ZWdyYXRpb246MTI6YUJjRA==",
@@ -1247,6 +1661,113 @@ export interface paths {
         patch: operations["update_evaluator"];
         trace?: never;
     };
+    "/v2/evaluators/{evaluator_id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List tags on an evaluator
+         * @description List the tags attached to an evaluator.
+         *
+         *     Tags are shared within the space, so the same tag may appear on many
+         *     resources. An evaluator with no tags returns an empty list rather than a
+         *     404.
+         *
+         *     Requires read access to the evaluator. A caller who cannot read it receives
+         *     `404`, identical to the response for an evaluator that does not exist.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["list_evaluator_tags"];
+        put?: never;
+        /**
+         * Attach tags to a evaluator
+         * @description Attach one or more existing tags to a evaluator.
+         *
+         *     **Payload Requirements**
+         *     - `tag_ids` is required and must contain between 1 and 100 tag IDs.
+         *     - Every tag must already exist and belong to the same space as the
+         *       evaluator. A tag from another space returns `422`.
+         *     - Attaching a tag that is already attached is idempotent, so the same
+         *       request can be retried safely.
+         *     - Unrecognized fields are rejected with `422` rather than ignored.
+         *
+         *     Returns `200` with the evaluator's complete tag list, not `201`: attaching
+         *     an existing tag creates no new resource.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "tag_ids": ["VGFnOjEyMzQ1", "VGFnOjEyMzQ2"]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (empty list)
+         *     ```json
+         *     {
+         *       "tag_ids": []
+         *     }
+         *     ```
+         *     ```json
+         *     {
+         *       "type": "https://arize.com/docs/ax/rest-reference/errors#validation-error",
+         *       "title": "Unprocessable Entity",
+         *       "status": 422,
+         *       "detail": "tag_ids must contain at least 1 tag ID",
+         *       "request_id": "req_01HZY6X8E7"
+         *     }
+         *     ```
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["add_evaluator_tags"];
+        /**
+         * Detach tags from a evaluator
+         * @description Detach one or more tags from a evaluator.
+         *
+         *     **Payload Requirements**
+         *     - `tag_ids` is required and must contain between 1 and 100 tag IDs.
+         *     - A tag ID that is not currently attached is reported in `not_deleted`
+         *       rather than causing the whole request to fail.
+         *     - Unrecognized fields are rejected with `400`.
+         *
+         *     Returns a `200` with `completed`, `deleted`, and `not_deleted` for the
+         *     requested tag IDs.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "tag_ids": ["VGFnOjEyMzQ1", "VGFnOjEyMzQ2"]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (empty list)
+         *     ```json
+         *     {
+         *       "tag_ids": []
+         *     }
+         *     ```
+         *     ```json
+         *     {
+         *       "type": "https://arize.com/docs/ax/rest-reference/errors#validation-error",
+         *       "title": "Unprocessable Entity",
+         *       "status": 422,
+         *       "detail": "tag_ids must contain at least 1 tag ID",
+         *       "request_id": "req_01HZY6X8E7"
+         *     }
+         *     ```
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        delete: operations["remove_evaluator_tags"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v2/evaluators/{evaluator_id}/versions": {
         parameters: {
             query?: never;
@@ -1264,14 +1785,40 @@ export interface paths {
         put?: never;
         /**
          * Create evaluator version
-         * @description Create a new version of an existing evaluator. The new version becomes the latest
+         * @description **Endpoint:** `POST /v2/evaluators/{evaluator_id}/versions`
+         *
+         *     Create a new version of an existing evaluator. The new version becomes the latest
          *     version immediately (versioning is append-only).
          *
          *     **Payload Requirements**
          *     - `commit_message` describes the changes in this version.
-         *     - Provide either `template_config` or `code_config` to match the evaluator's `type`.
+         *     - Provide exactly one of `template_config`, `code_config`, or `remote_config` to match the evaluator's `type`.
          *       `code_config.type` is a separate inner discriminator (`MANAGED` or `CUSTOM`) and is unrelated to the top-level `type`.
          *       Schema and constraints match Create Evaluator.
+         *     - For a template version, `template_config.llm_config.ai_integration_id` must
+         *       reference an AI integration that exists and is accessible to the evaluator's
+         *       space; otherwise the request fails with `404`.
+         *     - For `REMOTE` evaluators: `remote_config.integration_id` must reference an
+         *       `EVALUATOR` integration. Each version may reference a different integration;
+         *       editing an integration affects every version that references it. `type: REMOTE`
+         *       requires the remote evaluators feature to be enabled.
+         *     **Responses**
+         *     - `201` — version created; returns the new `EvaluatorVersion`.
+         *     - `400` — malformed request: `evaluator_id` fails ID-format validation,
+         *       the body is missing, or the JSON is malformed.
+         *     - `401` — missing or invalid credentials.
+         *     - `403` — the evaluator is readable but the caller lacks permission to
+         *       create a version on it.
+         *     - `404` — `evaluator_id` does not exist or is not readable by the caller
+         *       (`Evaluator not found`), or `template_config.llm_config.ai_integration_id`
+         *       does not exist or is not accessible to this space
+         *       (`LLM integration not found or not accessible to this space`), or
+         *       `remote_config.integration_id` does not exist or is not applicable to this
+         *       space (`Integration not found`).
+         *     - `422` — the body is well-formed JSON but fails validation, for example a
+         *       missing `commit_message`, a config mismatch, an invalid template column
+         *       name, or a remote integration with the wrong type.
+         *     - `429` — rate limit exceeded.
          *
          *     **Valid example** (template version)
          *     ```json
@@ -1281,7 +1828,7 @@ export interface paths {
          *         "name": "hallucination",
          *         "template": "Given the input: {input}\nand output: {output}\nIs the output a hallucination? Explain your reasoning.",
          *         "include_explanations": true,
-         *         "use_function_calling_if_available": true,
+         *         "use_function_calling": true,
          *         "classification_choices": {"hallucinated": 0, "factual": 1},
          *         "llm_config": {
          *           "ai_integration_id": "TGxtSW50ZWdyYXRpb246MTI6YUJjRA==",
@@ -1300,7 +1847,7 @@ export interface paths {
          *         "name": "hallucination",
          *         "template": "Is this a hallucination?",
          *         "include_explanations": false,
-         *         "use_function_calling_if_available": false,
+         *         "use_function_calling": false,
          *         "llm_config": {
          *           "ai_integration_id": "TGxtSW50ZWdyYXRpb246MTI6YUJjRA==",
          *           "model_name": "gpt-4o",
@@ -1310,33 +1857,121 @@ export interface paths {
          *       }
          *     }
          *     ```
+         *     Response `422`:
+         *     ```json
+         *     {
+         *       "status": 422,
+         *       "title": "Unprocessable Entity",
+         *       "type": "https://arize.com/docs/ax/rest-reference/errors#validation-error",
+         *       "detail": "Invalid input"
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (`ai_integration_id` does not exist or is not
+         *     accessible to this space)
+         *     ```json
+         *     {
+         *       "commit_message": "Try a nonexistent integration",
+         *       "template_config": {
+         *         "name": "hallucination",
+         *         "template": "Given {input} and {output}, is it a hallucination?",
+         *         "include_explanations": true,
+         *         "use_function_calling_if_available": true,
+         *         "classification_choices": {"hallucinated": 0, "factual": 1},
+         *         "llm_config": {
+         *           "ai_integration_id": "TGxtSW50ZWdyYXRpb246OTk5OTk6ZmFrZQ==",
+         *           "model_name": "gpt-4o",
+         *           "invocation_parameters": {},
+         *           "provider_parameters": {}
+         *         }
+         *       }
+         *     }
+         *     ```
+         *     Response `404`:
+         *     ```json
+         *     {
+         *       "status": 404,
+         *       "title": "Not Found",
+         *       "type": "https://arize.com/docs/ax/rest-reference/errors#resource-not-found",
+         *       "detail": "LLM integration not found or not accessible to this space"
+         *     }
+         *     ```
          *
          *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["create_evaluator_version"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v2/evaluator-versions/{version_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
         /**
-         * Get evaluator version
-         * @description Get a specific evaluator version by its unique identifier.
+         * Delete evaluator versions
+         * @description **Endpoint:** `DELETE /v2/evaluators/{evaluator_id}/versions`
+         *
+         *     Deletes a batch of versions belonging to the evaluator identified by the
+         *     `evaluator_id` path parameter. This operation is irreversible.
+         *
+         *     The delete is partial-tolerant: versions that exist and belong to
+         *     `evaluator_id` are deleted; every requested ID that was not deleted is
+         *     reported back in `not_deleted_version_ids` (for example, because a version
+         *     was not found or belongs to a different evaluator). This is not an error —
+         *     the response is still `200`.
+         *
+         *     Deleting a version currently pinned to a running online task un-pins that
+         *     task; it falls back to resolving the evaluator's latest version.
+         *
+         *     **Payload Requirements**
+         *     - `version_ids` must contain between 1 and 100 IDs. Duplicate IDs are accepted
+         *       and silently collapsed so each version is processed at most once.
+         *
+         *     **Responses**
+         *     - `200` — request processed. Check `deleted_version_ids` /
+         *       `not_deleted_version_ids` for the outcome of each requested ID.
+         *     - `400` — malformed request: `evaluator_id` fails ID-format validation
+         *       (`Invalid evaluator ID format`), or `version_ids` is missing/empty
+         *       (`version_ids must contain at least one evaluator version ID`), not an
+         *       array (`version_ids must be an array`), exceeds 100 entries
+         *       (`version_ids cannot contain more than 100 evaluator version IDs`), or
+         *       one entry fails ID-format validation
+         *       (`Invalid evaluator version ID format`).
+         *     - `401` — missing or invalid credentials.
+         *     - `403` — the evaluator is readable but the caller lacks permission to
+         *       delete its versions.
+         *     - `404` — `evaluator_id` does not exist or is not readable by the caller
+         *       (`Evaluator not found`).
+         *     - `429` — rate limit exceeded.
+         *
+         *     **Valid example** — evaluator `RXZhbHVhdG9yOjEyOkI3cmk=` with a single
+         *     version `RXZhbHVhdG9yVmVyc2lvbjozMjpBQ0Q2`:
+         *     ```json
+         *     {
+         *       "version_ids": ["RXZhbHVhdG9yVmVyc2lvbjozMjpBQ0Q2"]
+         *     }
+         *     ```
+         *     Response `200`:
+         *     ```json
+         *     {
+         *       "completed": true,
+         *       "deleted_version_ids": ["RXZhbHVhdG9yVmVyc2lvbjozMjpBQ0Q2"],
+         *       "not_deleted_version_ids": []
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (empty `version_ids`)
+         *     ```json
+         *     {
+         *       "version_ids": []
+         *     }
+         *     ```
+         *     Response `400`:
+         *     ```json
+         *     {
+         *       "status": 400,
+         *       "title": "Bad Request",
+         *       "type": "https://arize.com/docs/ax/rest-reference/errors#invalid-request",
+         *       "detail": "version_ids must contain at least one evaluator version ID"
+         *     }
+         *     ```
          *
          *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
-        get: operations["get_evaluator_version"];
-        put?: never;
-        post?: never;
-        delete?: never;
+        delete: operations["delete_evaluator_versions"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1361,8 +1996,6 @@ export interface paths {
          *     - `space_id` — only experiments in that space (with or without a dataset).
          *
          *     Providing both `dataset_id` and `space_id` is a validation error.
-         *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["list_experiments"];
         put?: never;
@@ -1381,17 +2014,17 @@ export interface paths {
          *     Payload Requirements
          *     - Provide exactly one of `dataset_id` or `space_id`.
          *     - The `name` must be unique within the dataset it's associated with, or
-         *       within the space when it isn't associated with a dataset.
+         *       within the space when it isn't associated with a dataset, and must not
+         *       contain double quotes (`"`) or backslashes (`\`).
          *     - Provide at least one run in `experiment_runs`.
          *     - Each run must include:
          *       - `output` -- model/task output for the run
-         *       - `example_id` -- the ID of an existing example in the dataset,
-         *       required only when the experiment is associated with a dataset
+         *       - `example_id` -- a correlation ID linking this run to a dataset example.
+         *       Required only when the experiment is associated with a dataset; its
+         *       existence in the dataset is never validated.
          *       - You may include any additional fields per run that can be used for
          *       analysis or filtering. For example: `model`, `latency_ms`,
          *       `temperature`, `prompt`, `tool_calls`, etc.
-         *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["create_experiment"];
         delete?: never;
@@ -1413,8 +2046,6 @@ export interface paths {
          *
          *     The response does not include the experiment's runs. To get the runs of
          *     a specific experiment, use the List Experiment Runs endpoint.
-         *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["get_experiment"];
         put?: never;
@@ -1422,8 +2053,6 @@ export interface paths {
         /**
          * Delete an experiment
          * @description Delete an experiment by its ID. This operation is irreversible.
-         *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         delete: operations["delete_experiment"];
         options?: never;
@@ -1453,8 +2082,6 @@ export interface paths {
          *     - Response includes `pagination` with `has_more` and `next_cursor`.
          *     - Use cursor-based pagination by passing the returned `next_cursor`
          *     value as the `cursor` query parameter in subsequent requests.
-         *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         get: operations["list_experiment_runs"];
         put?: never;
@@ -1466,8 +2093,9 @@ export interface paths {
          *     - Provide between 1 and 1000 runs in `experiment_runs`.
          *     - Each run must include:
          *       - `output` -- model/task output for the run
-         *       - `example_id` -- the ID of an existing example in the dataset,
-         *       required only when the experiment is associated with a dataset
+         *       - `example_id` -- a correlation ID linking this run to a dataset example.
+         *       Required only when the experiment is associated with a dataset; its
+         *       existence in the dataset is never validated.
          *       - You may include any additional fields per run that can be used for
          *       analysis or filtering. For example: `model`, `latency_ms`,
          *       `temperature`, `prompt`, `tool_calls`, etc.
@@ -1489,8 +2117,6 @@ export interface paths {
          *       ]
          *     }
          *     ```
-         *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["insert_experiment_runs"];
         delete?: never;
@@ -1547,10 +2173,133 @@ export interface paths {
          *       ]
          *     }
          *     ```
-         *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["annotate_experiment_runs"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/experiments/{experiment_id}/runs/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search experiment runs
+         * @description Search runs for a given experiment with an optional SQL-like filter.
+         *
+         *     Runs are returned in stable `id` ascending order. Pagination uses the
+         *     cursor returned in `pagination.next_cursor`; keep the filter unchanged
+         *     when requesting subsequent pages.
+         *
+         *     The filter language supports the unprefixed run columns `id`, `output`,
+         *     `example_id`, custom run columns, `eval.<name>.score`,
+         *     `eval.<name>.label`, `eval.<name>.explanation`,
+         *     `eval.<name>.metadata.*`, and `annotation.<name>.*` when those columns
+         *     are present in the run schema.
+         *
+         *     **Payload Requirements**
+         *     - `filter` is optional. Omitting it returns all runs. A present empty or
+         *       whitespace-only value is invalid.
+         *     - `limit` is optional and defaults to 50; valid values are 1 through 500.
+         *     - `cursor` is optional; omitting it starts at the first page.
+         *     - Unknown properties are rejected.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "filter": "eval.quality.score < 0.5",
+         *       "limit": 50,
+         *       "cursor": "opaque-cursor"
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (limit is outside the supported range)
+         *     ```json
+         *     {
+         *       "filter": "output = 'approved'",
+         *       "limit": 501
+         *     }
+         *     ```
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["search_experiment_runs"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/experiments/{experiment_id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List tags on an experiment
+         * @description List the tags attached to an experiment.
+         *
+         *     Tags are shared within the space, so the same tag may appear on many
+         *     resources. An experiment with no tags returns an empty list rather than a
+         *     404.
+         *
+         *     Requires read access to the experiment. A caller who cannot read it receives
+         *     `404`, identical to the response for an experiment that does not exist.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["list_experiment_tags"];
+        put?: never;
+        /**
+         * Attach tags to a experiment
+         * @description Attach one or more existing tags to a experiment.
+         *
+         *     **Payload Requirements**
+         *     - `tag_ids` is required and must contain between 1 and 100 tag IDs.
+         *     - Every tag must already exist and belong to the same space as the
+         *       experiment. A tag from another space returns `422`.
+         *     - Attaching a tag that is already attached is idempotent, so the same
+         *       request can be retried safely.
+         *     - Unrecognized fields are rejected with `422` rather than ignored.
+         *
+         *     Returns `200` with the experiment's complete tag list, not `201`: attaching
+         *     an existing tag creates no new resource.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "tag_ids": ["VGFnOjEyMzQ1", "VGFnOjEyMzQ2"]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (empty list)
+         *     ```json
+         *     {
+         *       "tag_ids": []
+         *     }
+         *     ```
+         *     ```json
+         *     {
+         *       "type": "https://arize.com/docs/ax/rest-reference/errors#validation-error",
+         *       "title": "Unprocessable Entity",
+         *       "status": 422,
+         *       "detail": "tag_ids must contain at least 1 tag ID",
+         *       "request_id": "req_01HZY6X8E7"
+         *     }
+         *     ```
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["add_experiment_tags"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1567,11 +2316,14 @@ export interface paths {
         /**
          * List integrations
          * @description List integrations the user has access to, ordered by creation time
-         *     (newest first). By default the list includes every integration type;
-         *     pass `type` to list a single type. Each item carries its `type` (and,
-         *     for `LLM`, `config.provider`) for client-side discrimination. An
-         *     invalid `type` or pagination `cursor` returns `400`; a cursor is only
-         *     valid for the query parameters it was issued with.
+         *     (newest first). The default list covers `LLM` and `AGENT` integrations
+         *     only; pass `?type=EVALUATOR` to retrieve evaluator integrations. `EVALUATOR`
+         *     is excluded from the default list to keep the cursor contract stable —
+         *     it is a distinct, feature-flagged surface whose inclusion would shift
+         *     existing type ranks and invalidate in-flight cursors. Each item carries
+         *     its `type` (and, for `LLM`, `config.provider`) for client-side
+         *     discrimination. An invalid `type` or pagination `cursor` returns `400`;
+         *     a cursor is only valid for the query parameters it was issued with.
          *
          *     Integrations are owned at the account level but carry visibility scopings
          *     (account-wide, organization, or space). `space_id` / `space_name` filter
@@ -1587,8 +2339,53 @@ export interface paths {
         /**
          * Create an integration
          * @description Create a new integration. The `type` field selects the config shape;
-         *     for `LLM`, `config.provider` selects the per-provider config. v1
-         *     supports `type=LLM` (provider `OPEN_AI`) and `type=AGENT`.
+         *     for `LLM`, `config.provider` selects the per-provider config.
+         *     Supported types: `LLM`, `AGENT`, `EVALUATOR`.
+         *
+         *     **Payload Requirements**
+         *     - `type`, `name`, and `config` are required.
+         *     - `name` must be unique within the account. `LLM` names are unique among
+         *       LLM integrations; `AGENT` and `EVALUATOR` names share the same remote
+         *       endpoint integration namespace.
+         *     - Server-set fields (`id`, `created_at`, `updated_at`) are not accepted on input.
+         *     - `scopings` defaults to account-wide visibility when omitted.
+         *     - For `type: EVALUATOR`, `config.endpoint` and `config.input_schema` are
+         *       required. `config.headers` is optional (omit means no headers; pass `null`
+         *       or `{}` on PATCH to clear them). `config.headers` is encrypted at rest and
+         *       never returned — reads surface `has_headers` instead.
+         *     - `type: EVALUATOR` requires the remote evaluators feature to be enabled for
+         *       the account. If not enabled the request returns `403`.
+         *
+         *     **Valid example** (`type: EVALUATOR`)
+         *     ```json
+         *     {
+         *       "type": "EVALUATOR",
+         *       "name": "My remote evaluator",
+         *       "config": {
+         *         "endpoint": "https://eval.example.com/evaluate",
+         *         "input_schema": { "type": "object" }
+         *       }
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (missing required `config.endpoint`)
+         *     ```json
+         *     {
+         *       "type": "EVALUATOR",
+         *       "name": "My remote evaluator",
+         *       "config": {
+         *         "input_schema": { "type": "object" }
+         *       }
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (missing required `config`)
+         *     ```json
+         *     {
+         *       "type": "EVALUATOR",
+         *       "name": "My remote evaluator"
+         *     }
+         *     ```
          *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
@@ -1619,6 +2416,10 @@ export interface paths {
          * Delete an integration
          * @description Delete an integration by its ID. This operation is irreversible.
          *
+         *     A `type: EVALUATOR` integration that is still referenced by one or more
+         *     active remote evaluators returns `409`. Delete or repoint those evaluators
+         *     first.
+         *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
         delete: operations["delete_integration"];
@@ -1629,9 +2430,223 @@ export interface paths {
          * @description Partially update an integration. `type` is immutable (and, for `LLM`,
          *     `config.provider`). At least one field must be provided.
          *
+         *     **Payload Requirements**
+         *     - `type` is **required** (it selects the per-type PATCH shape) and is
+         *       immutable: it must match the stored integration's type, otherwise the
+         *       request is rejected with 422 (change category by delete + recreate).
+         *     - At least one updatable field (`name`, `description`, `scopings`, `config`)
+         *       must be provided in addition to `type`.
+         *     - Scalar fields deep-merge: omit = keep, explicit `null` = clear (for
+         *       nullable fields).
+         *     - Collection fields (`scopings`, `config.headers`) replace the existing
+         *       values when provided.
+         *     - For `type: EVALUATOR`, `config.headers` accepts a string map (replace),
+         *       `null` (clear), or may be omitted (keep).
+         *     - `type: EVALUATOR` requires the remote evaluators feature to be enabled.
+         *
+         *     **Valid example** (`type: EVALUATOR`)
+         *     ```json
+         *     {
+         *       "type": "EVALUATOR",
+         *       "config": {
+         *         "endpoint": "https://eval.example.com/v2/evaluate"
+         *       }
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (type mismatch)
+         *     ```json
+         *     {
+         *       "type": "AGENT"
+         *     }
+         *     ```
+         *
          *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
          */
         patch: operations["update_integration"];
+        trace?: never;
+    };
+    "/v2/monitors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List monitors
+         * @description List monitors the caller can read, with filtering and cursor-based
+         *     pagination. Results are ordered by creation time, newest first.
+         *     Deleted and draft monitors are excluded.
+         *
+         *     The shape of each returned monitor varies by `type` (`DATA_QUALITY`,
+         *     `PERFORMANCE`, `DRIFT`, `CUSTOM_METRIC`, `TRACING`).
+         *
+         *     All filters are optional and compose with AND semantics (a monitor
+         *     must match every provided filter). When a filter is omitted, no
+         *     filtering is applied for that field. Filters that cannot be satisfied
+         *     together — a metric filter from one family combined with a `type` from
+         *     another, or two metric filters from different families — are valid
+         *     input and return a `200` with an empty `monitors` array, as does any
+         *     other combination that simply matches nothing.
+         *
+         *     The four name filters do not all match the same way. `name` and
+         *     `space_name` are case-insensitive substring searches, so `name=prod`
+         *     matches "production". `project_name` and `dimension_name` are exact,
+         *     case-sensitive matches, so they need the full name as stored — for
+         *     `dimension_name`, the value copied verbatim from a returned monitor's
+         *     `dimension.name`.
+         *
+         *     An identifier that is not a well-formed ID of the expected kind
+         *     returns a `400`. A well-formed `space_id`, `project_id`, or
+         *     `custom_metric_id` that either does not exist or is not readable by
+         *     the caller returns the same `404` in both cases, so the response never
+         *     reveals whether the referenced resource exists.
+         *
+         *     A caller whose credentials grant monitor read access in no space at
+         *     all receives a `403`.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["list_monitors"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/monitors/{monitor_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a monitor
+         * @description Get a monitor by its ID.
+         *
+         *     The response shape varies by `type` (`data_quality`, `performance`,
+         *     `drift`, `custom_metric`, `tracing`)
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["get_monitor"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/monitors/{monitor_id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List tags on a monitor
+         * @description List the tags attached to a monitor.
+         *
+         *     Tags are shared within the space, so the same tag may appear on many
+         *     resources. A monitor with no tags returns an empty list rather than a
+         *     404.
+         *
+         *     Requires read access to the monitor. A caller who cannot read it receives
+         *     `404`, identical to the response for a monitor that does not exist.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["list_monitor_tags"];
+        put?: never;
+        /**
+         * Attach tags to a monitor
+         * @description Attach one or more existing tags to a monitor.
+         *
+         *     **Payload Requirements**
+         *     - `tag_ids` is required and must contain between 1 and 100 tag IDs.
+         *     - Every tag must already exist and belong to the same space as the
+         *       monitor. A tag from another space returns `422`.
+         *     - Attaching a tag that is already attached is idempotent, so the same
+         *       request can be retried safely.
+         *     - Unrecognized fields are rejected with `422` rather than ignored.
+         *
+         *     Returns `200` with the monitor's complete tag list, not `201`: attaching
+         *     an existing tag creates no new resource.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "tag_ids": ["VGFnOjEyMzQ1", "VGFnOjEyMzQ2"]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (empty list)
+         *     ```json
+         *     {
+         *       "tag_ids": []
+         *     }
+         *     ```
+         *     ```json
+         *     {
+         *       "type": "https://arize.com/docs/ax/rest-reference/errors#validation-error",
+         *       "title": "Unprocessable Entity",
+         *       "status": 422,
+         *       "detail": "tag_ids must contain at least 1 tag ID",
+         *       "request_id": "req_01HZY6X8E7"
+         *     }
+         *     ```
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["add_monitor_tags"];
+        /**
+         * Detach tags from a monitor
+         * @description Detach one or more tags from a monitor.
+         *
+         *     **Payload Requirements**
+         *     - `tag_ids` is required and must contain between 1 and 100 tag IDs.
+         *     - A tag ID that is not currently attached is reported in `not_deleted`
+         *       rather than causing the whole request to fail.
+         *     - Unrecognized fields are rejected with `400`.
+         *
+         *     Returns a `200` with `completed`, `deleted`, and `not_deleted` for the
+         *     requested tag IDs.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "tag_ids": ["VGFnOjEyMzQ1", "VGFnOjEyMzQ2"]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (empty list)
+         *     ```json
+         *     {
+         *       "tag_ids": []
+         *     }
+         *     ```
+         *     ```json
+         *     {
+         *       "type": "https://arize.com/docs/ax/rest-reference/errors#validation-error",
+         *       "title": "Unprocessable Entity",
+         *       "status": 422,
+         *       "detail": "tag_ids must contain at least 1 tag ID",
+         *       "request_id": "req_01HZY6X8E7"
+         *     }
+         *     ```
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        delete: operations["remove_monitor_tags"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v2/organizations": {
@@ -1835,6 +2850,12 @@ export interface paths {
          *
          *     **Payload Requirements**
          *     - The project name must be unique within the given space.
+         *     - New projects start as `APPLICATION` projects.
+         *
+         *     If a space denies space-level permission to send trace data, projects
+         *     created here may not accept traces until that access is granted. Harness
+         *     sessions that rely on automatic project creation can lose spans in those
+         *     spaces.
          *
          *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
@@ -1893,6 +2914,113 @@ export interface paths {
          *       <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         patch: operations["update_project"];
+        trace?: never;
+    };
+    "/v2/projects/{project_id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List tags on a project
+         * @description List the tags attached to a project.
+         *
+         *     Tags are shared within the space, so the same tag may appear on many
+         *     resources. A project with no tags returns an empty list rather than a
+         *     404.
+         *
+         *     Requires read access to the project. A caller who cannot read it receives
+         *     `404`, identical to the response for a project that does not exist.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["list_project_tags"];
+        put?: never;
+        /**
+         * Attach tags to a project
+         * @description Attach one or more existing tags to a project.
+         *
+         *     **Payload Requirements**
+         *     - `tag_ids` is required and must contain between 1 and 100 tag IDs.
+         *     - Every tag must already exist and belong to the same space as the
+         *       project. A tag from another space returns `422`.
+         *     - Attaching a tag that is already attached is idempotent, so the same
+         *       request can be retried safely.
+         *     - Unrecognized fields are rejected with `422` rather than ignored.
+         *
+         *     Returns `200` with the project's complete tag list, not `201`: attaching
+         *     an existing tag creates no new resource.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "tag_ids": ["VGFnOjEyMzQ1", "VGFnOjEyMzQ2"]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (empty list)
+         *     ```json
+         *     {
+         *       "tag_ids": []
+         *     }
+         *     ```
+         *     ```json
+         *     {
+         *       "type": "https://arize.com/docs/ax/rest-reference/errors#validation-error",
+         *       "title": "Unprocessable Entity",
+         *       "status": 422,
+         *       "detail": "tag_ids must contain at least 1 tag ID",
+         *       "request_id": "req_01HZY6X8E7"
+         *     }
+         *     ```
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["add_project_tags"];
+        /**
+         * Detach tags from a project
+         * @description Detach one or more tags from a project.
+         *
+         *     **Payload Requirements**
+         *     - `tag_ids` is required and must contain between 1 and 100 tag IDs.
+         *     - A tag ID that is not currently attached is reported in `not_deleted`
+         *       rather than causing the whole request to fail.
+         *     - Unrecognized fields are rejected with `400`.
+         *
+         *     Returns a `200` with `completed`, `deleted`, and `not_deleted` for the
+         *     requested tag IDs.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "tag_ids": ["VGFnOjEyMzQ1", "VGFnOjEyMzQ2"]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (empty list)
+         *     ```json
+         *     {
+         *       "tag_ids": []
+         *     }
+         *     ```
+         *     ```json
+         *     {
+         *       "type": "https://arize.com/docs/ax/rest-reference/errors#validation-error",
+         *       "title": "Unprocessable Entity",
+         *       "status": 422,
+         *       "detail": "tag_ids must contain at least 1 tag ID",
+         *       "request_id": "req_01HZY6X8E7"
+         *     }
+         *     ```
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        delete: operations["remove_project_tags"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v2/prompts": {
@@ -1987,6 +3115,113 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/prompts/{prompt_id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List tags on a prompt
+         * @description List the tags attached to a prompt.
+         *
+         *     Tags are shared within the space, so the same tag may appear on many
+         *     resources. A prompt with no tags returns an empty list rather than a
+         *     404.
+         *
+         *     Requires read access to the prompt. A caller who cannot read it receives
+         *     `404`, identical to the response for a prompt that does not exist.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["list_prompt_tags"];
+        put?: never;
+        /**
+         * Attach tags to a prompt
+         * @description Attach one or more existing tags to a prompt.
+         *
+         *     **Payload Requirements**
+         *     - `tag_ids` is required and must contain between 1 and 100 tag IDs.
+         *     - Every tag must already exist and belong to the same space as the
+         *       prompt. A tag from another space returns `422`.
+         *     - Attaching a tag that is already attached is idempotent, so the same
+         *       request can be retried safely.
+         *     - Unrecognized fields are rejected with `422` rather than ignored.
+         *
+         *     Returns `200` with the prompt's complete tag list, not `201`: attaching
+         *     an existing tag creates no new resource.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "tag_ids": ["VGFnOjEyMzQ1", "VGFnOjEyMzQ2"]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (empty list)
+         *     ```json
+         *     {
+         *       "tag_ids": []
+         *     }
+         *     ```
+         *     ```json
+         *     {
+         *       "type": "https://arize.com/docs/ax/rest-reference/errors#validation-error",
+         *       "title": "Unprocessable Entity",
+         *       "status": 422,
+         *       "detail": "tag_ids must contain at least 1 tag ID",
+         *       "request_id": "req_01HZY6X8E7"
+         *     }
+         *     ```
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["add_prompt_tags"];
+        /**
+         * Detach tags from a prompt
+         * @description Detach one or more tags from a prompt.
+         *
+         *     **Payload Requirements**
+         *     - `tag_ids` is required and must contain between 1 and 100 tag IDs.
+         *     - A tag ID that is not currently attached is reported in `not_deleted`
+         *       rather than causing the whole request to fail.
+         *     - Unrecognized fields are rejected with `400`.
+         *
+         *     Returns a `200` with `completed`, `deleted`, and `not_deleted` for the
+         *     requested tag IDs.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "tag_ids": ["VGFnOjEyMzQ1", "VGFnOjEyMzQ2"]
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (empty list)
+         *     ```json
+         *     {
+         *       "tag_ids": []
+         *     }
+         *     ```
+         *     ```json
+         *     {
+         *       "type": "https://arize.com/docs/ax/rest-reference/errors#validation-error",
+         *       "title": "Unprocessable Entity",
+         *       "status": 422,
+         *       "detail": "tag_ids must contain at least 1 tag ID",
+         *       "request_id": "req_01HZY6X8E7"
+         *     }
+         *     ```
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        delete: operations["remove_prompt_tags"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2143,16 +3378,16 @@ export interface paths {
          * List resource restrictions the caller is permitted to manage.
          * @description List active resource restrictions the authenticated user is permitted to manage.
          *     A restriction is returned only if the caller can manage it — i.e. an account/org admin
-         *     (via admin escalation), a holder of the `PROJECT_RESTRICT` permission in the project's
-         *     space, or a holder of `PROJECT_RESTRICT` granted directly on the project.
+         *     (via admin escalation), a holder of the correct permissions in the parent resource
+         *     or a holder of the correct permissions granted directly on the resource.
          *
          *     Results are paginated; use `limit` and `cursor` for subsequent pages. Because entries
          *     are authorization-filtered after a page is read, a page may contain fewer items than
          *     `limit` (or be empty) while `has_more` is still `true`. Clients MUST keep paging until
          *     `has_more` is `false` — do not stop on an empty page.
          *
-         *     Use the optional `resource_type` query param to filter to a single resource type.
-         *     When omitted, `PROJECT` restrictions are returned (currently the only supported type).
+         *     The `resource_type` query parameter is optional. When omitted, restrictions of all
+         *     supported types are returned in one merged list.
          *
          *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
@@ -2160,23 +3395,25 @@ export interface paths {
         put?: never;
         /**
          * Restrict a resource
-         * @description Mark a resource as restricted. Only space admins or users with the RESOURCE_RESTRICT
-         *     permission can perform this action. Idempotent.
+         * @description Mark a resource as restricted. Only space admins or users with the
+         *     the correct permissions can perform this action. Idempotent.
          *
          *     **Payload Requirements**
-         *     - `resource_id`: The ID for the resource.
-         *       Only `project` resources are currently supported. Other resource types are not currently supported and will return 400.
+         *     - `resource_id`: The global ID for the resource.
          *
-         *     **Valid example**
+         *     **Valid examples**
          *     ```json
          *     { "resource_id": "TW9kZWw6MTIxOmFCY0Q=" }
+         *     ```
+         *     ```json
+         *     { "resource_id": "RGFzaGJvYXJkOjQ1NjphQmNE" }
          *     ```
          *
          *     **Invalid example**
          *     ```json
-         *     { "resource_id": "Not a project ID" }
+         *     { "resource_id": "Not a valid global ID" }
          *     ```
-         *     Returns 400 — only Project / Model IDs are accepted
+         *     Returns 400 — only resources with the correct type are accepted
          *
          *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
@@ -2223,11 +3460,19 @@ export interface paths {
          *     subsequent pages.
          *
          *     The `resource_type` query parameter is **required** and must be one of
-         *     `SPACE` or `PROJECT`. All bindings in the account are visible to any
-         *     authenticated account member. Use `user_id` to narrow to a specific
-         *     user.
+         *     `SPACE` or `PROJECT`. Results include only bindings for spaces where the
+         *     caller has the `ROLE_BINDING_READ` permission. If the caller has no
+         *     authorized spaces, the response contains an empty list. Use `user_id` to
+         *     narrow to a specific user — including a service key's bot user, whose ID
+         *     is returned as `bot_user.id` from `POST /v2/api-keys` or `GET /v2/api-keys`.
          *
-         *       <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
+         *     **Authorization**
+         *     Results are limited to bindings on spaces where the caller has
+         *     `ROLE_BINDING_READ`. If the caller has no authorized spaces, this
+         *     endpoint returns `200` with an empty list rather than `403`.
+         *
+         *     Returns `404` if `user_id` is supplied and does not correspond to a
+         *     user in the account.
          */
         get: operations["list_role_bindings"];
         put?: never;
@@ -2239,6 +3484,11 @@ export interface paths {
          *     - `role_id`, `user_id`, `resource_type`, and `resource_id` are required.
          *     - `resource_type` must be `SPACE` or `PROJECT`.
          *     - `resource_id` must be a unique identifier for the selected `resource_type`.
+         *     - `user_id` is the ID of the user to bind the role to. For a **service
+         *       key**, this is the ID of the key's bot user — not the ID of the person
+         *       who created the key. Read it from `bot_user.id` on the
+         *       `POST /v2/api-keys` response, or from `bot_user.id` on the matching
+         *       service key entry returned by `GET /v2/api-keys`.
          *     - Only one binding per user and resource is allowed. If the target user
          *       already has any binding on the resource, the request returns
          *       `409 Conflict`.
@@ -2255,6 +3505,18 @@ export interface paths {
          *     }
          *     ```
          *
+         *     **Valid example — binding a service key's bot user**
+         *     ```json
+         *     {
+         *       "role_id": "Um9sZToxOlY0S2E=",
+         *       "user_id": "VXNlcjo0MzpiT3RV",
+         *       "resource_type": "PROJECT",
+         *       "resource_id": "TW9kZWw6MTpGdmxM"
+         *     }
+         *     ```
+         *     `user_id` here is the bot user's ID from the service key's creation
+         *     response, not the caller's own ID.
+         *
          *     **Invalid example**
          *     ```json
          *     {
@@ -2267,10 +3529,16 @@ export interface paths {
          *     This fails because `resource_id` must encode a `PROJECT` ID when
          *     `resource_type` is `PROJECT`.
          *
+         *     **Authorization**
+         *     Requires `ROLE_BINDING_CREATE` permission on the resource. This grants
+         *     administrator-level authority on the resource, including the ability
+         *     to assign any role visible in the account. If authorization fails, the
+         *     endpoint returns `403`, including when the resource is nonexistent or
+         *     outside the caller's account. If the target user or role is outside the
+         *     caller's account, the endpoint returns `404` after store validation.
+         *
          *     Use `PATCH /v2/role-bindings/{binding_id}` to change the assigned role
          *     for an existing binding.
-         *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["create_role_binding"];
         delete?: never;
@@ -2290,7 +3558,10 @@ export interface paths {
          * Get a role binding
          * @description Get a single role binding by its ID.
          *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
+         *     **Authorization**
+         *     Requires `ROLE_BINDING_READ` permission on the binding's resource. If
+         *     the binding does not exist, belongs to another account, or the caller
+         *     lacks this permission, the endpoint returns `404`.
          */
         get: operations["get_role_binding"];
         put?: never;
@@ -2299,7 +3570,10 @@ export interface paths {
          * Delete a role binding
          * @description Delete a role binding by its ID.
          *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
+         *     **Authorization**
+         *     Requires `ROLE_BINDING_DELETE` permission on the binding's resource. If
+         *     the binding does not exist, belongs to another account, or the caller
+         *     lacks this permission, the endpoint returns `404`.
          */
         delete: operations["delete_role_binding"];
         options?: never;
@@ -2332,7 +3606,12 @@ export interface paths {
          *     ```
          *     This fails because only `role_id` can be updated on an existing binding.
          *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
+         *     **Authorization**
+         *     Requires both `ROLE_BINDING_CREATE` and `ROLE_BINDING_DELETE` permissions
+         *     on the binding's resource. Together, these permissions grant
+         *     administrator-level authority on the resource. If the binding does not
+         *     exist, belongs to another account, or the caller lacks either permission,
+         *     the endpoint returns `404`.
          */
         patch: operations["update_role_binding"];
         trace?: never;
@@ -2349,7 +3628,8 @@ export interface paths {
          * @description List custom and predefined roles for the authenticated user's account.
          *     Results are paginated; use `limit` and `cursor` for subsequent pages.
          *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
+         *     Account admins, members, and other callers with `ROLE_READ` receive each
+         *     role's full permission list. Callers without `ROLE_READ` are rejected with 403.
          */
         get: operations["list_roles"];
         put?: never;
@@ -2379,8 +3659,6 @@ export interface paths {
          *       "name": "Data Scientist"
          *     }
          *     ```
-         *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["create_role"];
         delete?: never;
@@ -2400,7 +3678,7 @@ export interface paths {
          * Get a role
          * @description Get a role by its ID.
          *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
+         *     Requires `ROLE_READ`
          */
         get: operations["get_role"];
         put?: never;
@@ -2410,7 +3688,8 @@ export interface paths {
          * @description Delete a custom role by its ID (soft-delete). Predefined roles cannot
          *     be deleted.
          *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
+         *     A role cannot be deleted while it still has role bindings — remove every
+         *     binding for this role first, then delete the role.
          */
         delete: operations["delete_role"];
         options?: never;
@@ -2438,8 +3717,6 @@ export interface paths {
          *     ```json
          *     {}
          *     ```
-         *
-         *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         patch: operations["update_role"];
         trace?: never;
@@ -2668,15 +3945,22 @@ export interface paths {
          *       one span by its `record_id` and provides one or more annotation values.
          *     - Each `record_id` must be unique within the request (duplicates return 400).
          *     - Each record's `values` list must not contain duplicate annotation config names (returns 400).
+         *     - `granularity` selects what `record_id` identifies: `SPAN` (a span ID, the
+         *       default), `TRACE` (a trace's root span ID), or `SESSION` (a session ID).
+         *       For SESSION, the annotation is written to the root span of the session's
+         *       earliest trace found within the lookup window.
          *     - `start_time` / `end_time` constrain the time range for span lookup.
-         *       If omitted, `start_time` defaults to 31 days ago and `end_time` to now.
-         *       Both `start_time` and `end_time` may not be in the future. The window may
-         *       not exceed 31 days. If ANY span ID cannot be located within the given
-         *       range, the entire request is rejected with 404 and no annotations are
-         *       written (all-or-nothing pre-validation). Only after all spans are
-         *       confirmed does the write phase begin.
+         *       If omitted, `start_time` defaults to 31 days before `end_time` (7 days
+         *       for SESSION granularity) and `end_time` to now. Both `start_time` and
+         *       `end_time` may not be in the future. For SPAN/TRACE the window may not
+         *       exceed 31 days; for SESSION it may not exceed 7 days. If ANY span
+         *       cannot be located within the given range, the entire request is
+         *       rejected with 404 and no annotations are written (all-or-nothing
+         *       pre-validation). Only after all spans are confirmed does the write
+         *       phase begin.
          *     - Annotation names must match existing annotation configs in the project's space.
-         *     - Up to 1000 span records may be annotated per request.
+         *     - Up to 1000 records may be annotated per request for SPAN/TRACE granularity;
+         *       up to 100 records per request for SESSION granularity.
          *
          *     **Valid example**
          *     ```json
@@ -2684,6 +3968,17 @@ export interface paths {
          *       "project_id": "proj_abc123",
          *       "annotations": [
          *         {"record_id": "span_abc", "values": [{"name": "relevance", "label": "good", "score": 1.0}]}
+         *       ]
+         *     }
+         *     ```
+         *
+         *     **Valid example** (session granularity)
+         *     ```json
+         *     {
+         *       "project_id": "proj_abc123",
+         *       "granularity": "SESSION",
+         *       "annotations": [
+         *         {"record_id": "session_abc", "values": [{"name": "quality", "label": "good", "score": 1.0}]}
          *       ]
          *     }
          *     ```
@@ -2710,6 +4005,19 @@ export interface paths {
          *     }
          *     ```
          *
+         *     **Invalid example** (session time window exceeds 7 days)
+         *     ```json
+         *     {
+         *       "project_id": "proj_abc123",
+         *       "granularity": "SESSION",
+         *       "start_time": "2025-01-01T00:00:00Z",
+         *       "end_time": "2025-01-15T00:00:00Z",
+         *       "annotations": [
+         *         {"record_id": "session_abc", "values": [{"name": "quality", "label": "good"}]}
+         *       ]
+         *     }
+         *     ```
+         *
          *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["annotate_spans"];
@@ -2717,6 +4025,143 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/v2/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a tag
+         * @description Create a tag in a space. Tags are shared within the space and can then be
+         *     attached to resources across the platform.
+         *
+         *     **Payload Requirements**
+         *     - `name` is required, must be non-empty after trimming, and at most 100 characters.
+         *     - `name` must be unique within the space, compared **case-insensitively** — a
+         *       space that already contains `Production` cannot also contain `production`.
+         *       A collision returns `409`.
+         *     - `space_id` is required and must be a space the caller can create tags in.
+         *     - `color`, when provided, must be one of the `TagColor` values.
+         *     - System-managed fields (`id`, `created_at`, `updated_at`) are rejected on input.
+         *     - Unrecognized fields are rejected with `400` rather than ignored.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "name": "production",
+         *       "description": "Resources serving production traffic",
+         *       "color": "GREEN",
+         *       "space_id": "U3BhY2U6MTIzNDU="
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (name collides with an existing tag, differing only in case)
+         *
+         *     Request:
+         *     ```json
+         *     {
+         *       "name": "Production",
+         *       "space_id": "U3BhY2U6MTIzNDU="
+         *     }
+         *     ```
+         *
+         *     Response:
+         *     ```json
+         *     {
+         *       "type": "https://arize.com/docs/ax/rest-reference/errors#resource-conflict",
+         *       "title": "Conflict",
+         *       "status": 409,
+         *       "detail": "A tag with this name already exists in the space",
+         *       "request_id": "req_01HZY6X8E7"
+         *     }
+         *     ```
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["create_tag"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/tags/{tag_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a tag
+         * @description Delete a tag by its ID. This operation is irreversible.
+         *
+         *     The tag is detached from every resource it was attached to. The resources
+         *     themselves are not affected.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        delete: operations["delete_tag"];
+        options?: never;
+        head?: never;
+        /**
+         * Update a tag
+         * @description Update a tag's name, description, or color.
+         *
+         *     Tags are shared, so an update is visible on every resource the tag is
+         *     attached to.
+         *
+         *     **Payload Requirements**
+         *     - At least one of `name`, `description`, or `color` must be provided.
+         *       Omitted fields are left unchanged.
+         *     - `name`, when provided, must be non-empty after trimming, at most 100
+         *       characters, and unique within the space compared **case-insensitively**.
+         *       A collision returns `409`.
+         *     - `description` and `color` accept `null` to clear the current value.
+         *     - System-managed fields (`id`, `created_at`, `updated_at`) cannot be modified.
+         *       `updated_at` is advanced automatically.
+         *
+         *     **Valid example**
+         *     ```json
+         *     {
+         *       "name": "production-critical",
+         *       "color": "RED"
+         *     }
+         *     ```
+         *
+         *     **Invalid example** (empty body — nothing to update)
+         *
+         *     Request:
+         *     ```json
+         *     {}
+         *     ```
+         *
+         *     Response:
+         *     ```json
+         *     {
+         *       "type": "https://arize.com/docs/ax/rest-reference/errors#invalid-request",
+         *       "title": "Bad Request",
+         *       "status": 400,
+         *       "detail": "At least one field (name, description, color) must be provided",
+         *       "request_id": "req_01HZY6X8E7"
+         *     }
+         *     ```
+         *
+         *     Unrecognized fields are rejected with `400` rather than ignored, so a
+         *     misspelled field name fails loudly instead of silently doing nothing.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        patch: operations["update_tag"];
         trace?: never;
     };
     "/v2/tasks": {
@@ -2958,7 +4403,9 @@ export interface paths {
          *
          *     Supply `experiment_name` (required) plus any of the optional per-run fields:
          *     `dataset_version_id`, `example_ids` (exclusive with `max_examples`),
-         *     `max_examples`, `tracing_metadata`, `evaluation_task_ids`.
+         *     `max_examples`, `query_filter` (run only on matching examples; may be
+         *     combined with `example_ids` to run their intersection),
+         *     `tracing_metadata`, `evaluation_task_ids`.
          *
          *     The fields `data_start_time`, `data_end_time`, `max_spans`,
          *     `override_evaluations`, and `experiment_ids` are not applicable and will
@@ -3035,31 +4482,6 @@ export interface paths {
          *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         post: operations["cancel_task_run"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v2/monitors/{monitor_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get a monitor
-         * @description Get a monitor by its ID.
-         *
-         *     The response shape varies by `type` (`data_quality`, `performance`,
-         *     `drift`, `custom_metric`, `tracing`)
-         *
-         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
-         */
-        get: operations["get_monitors"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3301,6 +4723,262 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v2/webhook-subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List webhook subscriptions
+         * @description List webhook subscriptions attached to prompts and evaluators the caller
+         *     can read, most recently created first. To list one source, provide both
+         *     `source_type` and `source_id`; providing only one returns a 400. An
+         *     unfiltered list returns a 403 when the caller can read no prompt or
+         *     evaluator at all.
+         *
+         *     Each subscription delivers one event to one webhook, so a webhook that
+         *     receives several events from the source appears once per event.
+         *     Subscriptions whose webhook has since been deleted are omitted after
+         *     the page is read, so a page may hold fewer than `limit` items, or none,
+         *     while `has_more` is still `true`. Keep paging until `has_more` is
+         *     `false`.
+         *
+         *     When filtering by source, a 404 is returned when the source does not
+         *     exist or is not readable.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["list_webhook_subscriptions"];
+        put?: never;
+        /**
+         * Create a webhook subscription
+         * @description Subscribe a webhook to one event on a prompt or evaluator. To deliver
+         *     several events to the same webhook, create one subscription per event.
+         *
+         *     **Payload Requirements**
+         *     - `webhook_id`, `source_type`, `source_id`, and `event` are required.
+         *     - `webhook_id` must be a webhook in the source's organization; unknown
+         *       webhooks yield a 404.
+         *     - `event` must belong to the source type: prompt events for `PROMPT`
+         *       sources and evaluator events for `EVALUATOR` sources.
+         *       Other combinations are rejected with a 422.
+         *     - A webhook can subscribe to a given event on a given source only once
+         *       (409 on conflict).
+         *     - At most 200 webhooks may subscribe to the same event on a source;
+         *       requests that would exceed this limit are rejected with a 422.
+         *
+         *     Creating a subscription requires `PROMPT_UPDATE` for a prompt source or
+         *     `EVALUATOR_UPDATE` for an evaluator source. Callers with the matching
+         *     `PROMPT_READ` or `EVALUATOR_READ` permission but not the required update
+         *     permission receive a 403; sources the caller cannot read yield a 404.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["create_webhook_subscription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/webhook-subscriptions/{subscription_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a webhook subscription
+         * @description Get a specific webhook subscription by its ID. A 404 is returned when
+         *     the subscription does not exist, its source is not readable, or its
+         *     webhook has since been deleted.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["get_webhook_subscription"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a webhook subscription
+         * @description Delete a webhook subscription by its ID. The webhook stops receiving
+         *     that event from the source. Other subscriptions on the source and the
+         *     webhook itself are unaffected.
+         *
+         *     Deleting a subscription requires `PROMPT_UPDATE` for a prompt source or
+         *     `EVALUATOR_UPDATE` for an evaluator source. Callers with the matching
+         *     `PROMPT_READ` or `EVALUATOR_READ` permission but not the required update
+         *     permission receive a 403; sources the caller cannot read yield a 404.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        delete: operations["delete_webhook_subscription"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/webhooks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List webhooks
+         * @description List the webhooks in the organizations the user has access to, most
+         *     recently created first. Use `org_id` to narrow the list to a single
+         *     organization; a 404 is returned only when the given `org_id` does not
+         *     exist or is not accessible.
+         *
+         *     Webhooks used as monitor notification channels are included — a
+         *     webhook is an organization-level destination regardless of what it is
+         *     attached to.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["list_webhooks"];
+        put?: never;
+        /**
+         * Create a webhook
+         * @description Create a new webhook in an organization.
+         *
+         *     **Payload Requirements**
+         *     - `organization_id`, `name`, and `url` are required.
+         *     - The webhook name must be unique within the organization (409 on conflict).
+         *     - `auth_type` is optional, defaults to `BEARER`, and cannot be changed
+         *       after creation.
+         *     - `auth_token` is only valid when `auth_type` is `BEARER`, and is
+         *       write-only — it is never returned in any response.
+         *     - `timeout_ms` is optional, defaults to 30000, and must be between
+         *       1000 and 60000.
+         *     - `headers` is optional and holds at most 20 entries; header names
+         *       must be valid HTTP header names, and connection-management headers
+         *       are rejected. Write-only: header values are never returned.
+         *     - System-managed fields (`id`, `created_at`, `updated_at`) are
+         *       generated automatically and rejected if provided.
+         *
+         *     For `HMAC_SHA256` webhooks, a signing secret is generated and returned
+         *     in this response — **the only time it is ever returned**. Store it
+         *     securely: only a redacted hint is readable afterwards, and losing the
+         *     secret means deleting and recreating the webhook.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["create_webhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/webhooks/{webhook_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a webhook
+         * @description Get a specific webhook by its ID.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["get_webhook"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a webhook
+         * @description Delete a webhook by its ID. The webhook stops receiving events and is
+         *     detached from every prompt, evaluator, and monitor it was subscribed
+         *     to. This operation is irreversible.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        delete: operations["delete_webhook"];
+        options?: never;
+        head?: never;
+        /**
+         * Update a webhook
+         * @description Update a webhook by its ID. At least one field must be provided.
+         *
+         *     **Payload Requirements**
+         *     - At least one of `name`, `description`, `url`, `auth_token`,
+         *       `timeout_ms`, or `headers` must be provided.
+         *     - If `name` is provided, it must be unique within the organization
+         *       (409 on conflict).
+         *     - `headers` replaces the whole header map. Write-only: header values
+         *       are never returned.
+         *     - `auth_type` cannot be changed after creation, and the signing secret
+         *       of an `HMAC_SHA256` webhook cannot be rotated — create a new webhook
+         *       instead.
+         *     - System-managed fields (`id`, `created_at`, `updated_at`) cannot be
+         *       modified.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        patch: operations["update_webhook"];
+        trace?: never;
+    };
+    "/v2/webhooks/{webhook_id}/delivery-attempts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List a webhook's delivery attempts
+         * @description List the webhook's delivery attempts, most recent first. Each event
+         *     may have several attempts, since failed deliveries are retried.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        get: operations["list_webhook_delivery_attempts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/webhooks/{webhook_id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send a test event to a webhook
+         * @description Send a test event to the webhook's endpoint and report the outcome.
+         *     Use this to verify the endpoint is reachable and accepts deliveries
+         *     before subscribing the webhook to real events.
+         *
+         *     A 200 response means the test ran — check `status_code` and
+         *     `error_message` in the body for the endpoint's actual outcome.
+         *     A 404 means the destination was not available to receive a test.
+         *     A 503 means the test could not be sent; retry later.
+         *
+         *     Test deliveries are not supported for `HMAC_SHA256` webhooks; those
+         *     requests fail with a 400.
+         *
+         *     <Warning>This endpoint is in alpha, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Warning>
+         */
+        post: operations["test_webhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3349,15 +5027,15 @@ export interface components {
             created_by_user_id: string;
         };
         /**
-         * @description The authentication method for this integration
+         * @description The authentication method for this integration. `OAUTH2_CLIENT_CREDENTIALS` is returned for integrations configured with OAuth 2.0 client credentials in the Arize UI. Setting it through this API is not yet supported.
          * @enum {string}
          */
-        AiIntegrationAuthType: "DEFAULT" | "PROXY_WITH_HEADERS" | "BEARER_TOKEN";
+        AiIntegrationAuthType: "DEFAULT" | "PROXY_WITH_HEADERS" | "BEARER_TOKEN" | "OAUTH2_CLIENT_CREDENTIALS";
         /**
          * @description The AI provider for this integration
          * @enum {string}
          */
-        AiIntegrationProvider: "OPEN_AI" | "AZURE_OPEN_AI" | "AWS_BEDROCK" | "VERTEX_AI" | "ANTHROPIC" | "CUSTOM" | "NVIDIA_NIM" | "GEMINI";
+        AiIntegrationProvider: "OPEN_AI" | "AZURE_OPEN_AI" | "AWS_BEDROCK" | "VERTEX_AI" | "ANTHROPIC" | "CUSTOM" | "NVIDIA_NIM" | "GEMINI" | "LITELLM" | "FIREWORKS" | "TOGETHER_AI";
         /** @description Visibility scoping for the integration */
         AiIntegrationScoping: {
             /** @description Organization identifier (base64). Null means account-wide. */
@@ -3485,7 +5163,7 @@ export interface components {
             annotation_config_type: components["schemas"]["AnnotationConfigType"];
         } & (components["schemas"]["UpdateContinuousAnnotationConfigRequest"] | components["schemas"]["UpdateCategoricalAnnotationConfigRequest"] | components["schemas"]["UpdateFreeformAnnotationConfigRequest"]);
         AddAnnotationQueueRecordsRequest: {
-            /** @description Record sources to add to the annotation queue. At most 2 record sources (projects or datasets) may be provided in a single request. The total number of records resolved from all sources must not exceed 500. */
+            /** @description Record sources to add to the annotation queue. At most 2 record sources (projects or datasets) may be provided in a single request. The total number of records resolved from all sources must not exceed 500. The total number of session records across all sources must not exceed 100. */
             record_sources: components["schemas"]["AnnotationQueueRecordInput"][];
         };
         /** @description Annotations to submit for an annotation queue record. Annotations are upserted by annotation config name; omitted configs are left unchanged. */
@@ -3542,6 +5220,16 @@ export interface components {
              * @example 2024-01-20T14:45:00Z
              */
             updated_at: string;
+            /**
+             * @description The record column names annotators assigned to this queue are allowed to see.
+             *     Absent or `null` means the queue is unrestricted and annotators see every column.
+             * @example [
+             *       "context.trace_id",
+             *       "attributes.llm.input_messages",
+             *       "column with spaces"
+             *     ]
+             */
+            column_allowlist?: string[] | null;
         };
         /** @description A user assigned to a record with their completion status */
         AnnotationQueueAssignedUser: {
@@ -3585,12 +5273,14 @@ export interface components {
             annotations: components["schemas"]["Annotation"][];
             /** @description Trace annotations on this record. */
             trace_annotations: components["schemas"]["Annotation"][];
+            /** @description Session annotations on this record. */
+            session_annotations: components["schemas"]["Annotation"][];
             /** @description Evaluation results on this record */
             evaluations: components["schemas"]["Evaluation"][];
             /** @description Users assigned to this record */
             assigned_users: components["schemas"]["AnnotationQueueAssignedUser"][];
         };
-        AnnotationQueueRecordInput: components["schemas"]["AnnotationQueueExampleRecordInput"] | components["schemas"]["AnnotationQueueSpanRecordInput"] | components["schemas"]["AnnotationQueueTraceRecordInput"];
+        AnnotationQueueRecordInput: components["schemas"]["AnnotationQueueExampleRecordInput"] | components["schemas"]["AnnotationQueueSpanRecordInput"] | components["schemas"]["AnnotationQueueTraceRecordInput"] | components["schemas"]["AnnotationQueueSessionRecordInput"];
         /**
          * @description Source type of the annotation queue record.
          *     - SPANS - The record originates from span data.
@@ -3700,8 +5390,20 @@ export interface components {
              * @default ALL
              */
             assignment_method?: components["schemas"]["AssignmentMethod"];
-            /** @description Record sources to add to the annotation queue on creation. At most 2 record sources (projects or datasets) may be provided in a single create request. The total number of records resolved from all sources must not exceed 500. Additional records from other sources can be added after creation. */
+            /** @description Record sources to add to the annotation queue on creation. At most 2 record sources (projects or datasets) may be provided in a single create request. The total number of records resolved from all sources must not exceed 500. The total number of session records across all sources must not exceed 100. Additional records from other sources can be added after creation. */
             record_sources?: components["schemas"]["AnnotationQueueRecordInput"][];
+            /**
+             * @description The record column names annotators assigned to this queue are allowed to see.
+             *     Omit or send an empty list to leave the queue unrestricted, so annotators see every
+             *     column. Because this is an allowlist, columns introduced by records added to the
+             *     queue later stay hidden until an admin allows them.
+             * @example [
+             *       "context.trace_id",
+             *       "attributes.llm.input_messages",
+             *       "column with spaces"
+             *     ]
+             */
+            column_allowlist?: string[];
         };
         DeleteAnnotationQueueRecordsRequest: {
             /** @description The IDs of the annotation queue records to delete. */
@@ -3711,9 +5413,10 @@ export interface components {
          * @description Granularity of an annotation queue record.
          *     - SPAN: The record represents a span.
          *     - TRACE: The record represents a trace.
+         *     - SESSION: The record represents a session.
          * @enum {string}
          */
-        RecordGranularity: "SPAN" | "TRACE";
+        RecordGranularity: "SPAN" | "TRACE" | "SESSION";
         UpdateAnnotationQueueRequest: {
             /**
              * @description The name of the annotation queue. Must be unique within the space.
@@ -3746,6 +5449,17 @@ export interface components {
              *     ]
              */
             annotator_emails?: components["schemas"]["Email"][];
+            /**
+             * @description The full list of record column names annotators assigned to this queue are allowed
+             *     to see. This replaces the existing allowlist. Set to `null` to remove the
+             *     restriction so annotators see every column. Omit to leave it unchanged.
+             * @example [
+             *       "context.trace_id",
+             *       "attributes.llm.input_messages",
+             *       "column with spaces"
+             *     ]
+             */
+            column_allowlist?: string[] | null;
         };
         /** @description Batch annotation request for dataset examples. */
         AnnotateDatasetExamplesRequest: {
@@ -3759,14 +5473,14 @@ export interface components {
         };
         /** @description A single record to annotate in a batch, identified by its record ID. */
         AnnotateRecordInput: {
-            /** @description The record identifier (span ID, dataset example ID, or experiment run ID, depending on the endpoint). */
+            /** @description The record identifier — a span ID, session ID, dataset example ID, or experiment run ID, depending on the endpoint and (for spans) the `granularity` field. */
             record_id: string;
             /** @description One or more annotation values to set on this record. */
             values: components["schemas"]["AnnotationInput"][];
         };
         /** @description The annotation result for a single annotated record. */
         AnnotateRecordResult: {
-            /** @description The record identifier (span ID, dataset example ID, or experiment run ID, depending on the endpoint). */
+            /** @description The record identifier — a span ID, session ID, dataset example ID, or experiment run ID, depending on the endpoint and (for spans) the `granularity` field. */
             record_id: string;
             /** @description The annotations that were written to this record. */
             annotations: components["schemas"]["Annotation"][];
@@ -3780,7 +5494,7 @@ export interface components {
             project_id: string;
             /**
              * Format: date-time
-             * @description Start of the time range for span lookup. Optional; defaults to 31 days ago.
+             * @description Start of the time range for span lookup. Optional; defaults to 31 days before end_time, or 7 days before end_time when granularity is SESSION.
              * @example 2024-01-01T00:00:00Z
              */
             start_time?: string;
@@ -3791,11 +5505,11 @@ export interface components {
              */
             end_time?: string;
             /**
-             * @description Whether the record is a span or a trace, which affects whether annotations are written as span annotations or trace annotations. Attempts to write trace annotations on spans will be rejected. Optional; defaults to 'SPAN'.
+             * @description Whether the record is a span, a trace, or a session, which affects whether annotations are written as span, trace, or session annotations. For TRACE, each `record_id` must be a trace's root span; attempts to write trace annotations on non-root spans will be rejected. For SESSION, each `record_id` is a session ID; the annotation is written to the root span of the session's earliest trace within the lookup window. Optional; defaults to 'SPAN'.
              * @default SPAN
              */
             granularity?: components["schemas"]["RecordGranularity"];
-            /** @description Batch of span annotations to write. Up to 1000 spans per request. */
+            /** @description Batch of annotations to write. Up to 1000 records per request for SPAN or TRACE granularity; up to 100 records per request for SESSION granularity. */
             annotations: components["schemas"]["AnnotateRecordInput"][];
         };
         /** @description A human annotation on a record. */
@@ -3906,7 +5620,7 @@ export interface components {
          *     - `USER` — standard user key; no bot user.
          *     - `SERVICE` — service key tied to a service account; includes a `bot_user` with the service account's resolved role assignments.
          */
-        CreateApiKeyResponse: components["schemas"]["UserApiKeyCreated"] | components["schemas"]["ServiceApiKeyCreated"];
+        CreateApiKeyResponse: components["schemas"]["CreatedUserApiKey"] | components["schemas"]["CreatedServiceApiKey"];
         CreateServiceApiKeyRequest: {
             /**
              * @description Must be `"SERVICE"`. (enum property replaced by openapi-typescript)
@@ -3972,6 +5686,44 @@ export interface components {
              */
             expires_at?: string;
         };
+        CreatedServiceApiKey: components["schemas"]["ApiKey"] & {
+            /**
+             * @description Discriminator value for service keys.
+             * @enum {string}
+             */
+            key_type?: "SERVICE";
+            /**
+             * @description The full API key value. **Only returned once** at creation or refresh time.
+             *     Store it securely — it cannot be retrieved again.
+             */
+            key: string;
+            /** @description The bot user created for this service key, including their resolved role assignments. */
+            bot_user: components["schemas"]["ServiceKeyBotUser"];
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            key_type: "SERVICE";
+        };
+        CreatedUserApiKey: components["schemas"]["ApiKey"] & {
+            /**
+             * @description Discriminator value for user keys.
+             * @enum {string}
+             */
+            key_type?: "USER";
+            /**
+             * @description The full API key value. **Only returned once** at creation or refresh time.
+             *     Store it securely — it cannot be retrieved again.
+             */
+            key: string;
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            key_type: "USER";
+        };
         ListApiKeysResponse: {
             /** @description API keys matching the request filters. */
             api_keys: components["schemas"]["ApiKey"][];
@@ -4015,26 +5767,6 @@ export interface components {
              *     refresh. Store it securely — it cannot be retrieved again.
              */
             key: string;
-        };
-        ServiceApiKeyCreated: components["schemas"]["ApiKey"] & {
-            /**
-             * @description Discriminator value for service keys.
-             * @enum {string}
-             */
-            key_type?: "SERVICE";
-            /**
-             * @description The full API key value. **Only returned once** at creation or refresh time.
-             *     Store it securely — it cannot be retrieved again.
-             */
-            key: string;
-            /** @description The bot user created for this service key, including their resolved role assignments. */
-            bot_user: components["schemas"]["ServiceKeyBotUser"];
-        } & {
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            key_type: "SERVICE";
         };
         ServiceKeyBotUser: {
             /** @description Global ID of the bot user. */
@@ -4118,24 +5850,6 @@ export interface components {
              *     }
              */
             role?: Omit<components["schemas"]["SpaceRoleAssignmentRequest"], "type">;
-        };
-        UserApiKeyCreated: components["schemas"]["ApiKey"] & {
-            /**
-             * @description Discriminator value for user keys.
-             * @enum {string}
-             */
-            key_type?: "USER";
-            /**
-             * @description The full API key value. **Only returned once** at creation or refresh time.
-             *     Store it securely — it cannot be retrieved again.
-             */
-            key: string;
-        } & {
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            key_type: "USER";
         };
         /** @description A single audit log entry recording an authenticated user action. */
         AuditLog: {
@@ -4301,6 +6015,40 @@ export interface components {
             /** @description Array of examples to append to the dataset version */
             examples: components["schemas"]["CreateDatasetExampleInput"][];
         };
+        /**
+         * @description Optional criteria for searching a dataset's examples. Omit all fields to
+         *     return the first page of examples in ascending order of `created_at`, with
+         *     `id` as a tiebreaker. Keep the filter unchanged when using a returned
+         *     cursor to fetch the next page.
+         *
+         *     Filters use the same SQL-like language as span search. Supported column
+         *     families include unprefixed example columns, `id`, and
+         *     `annotation.<name>.*` when present in the example schema. A present empty
+         *     or whitespace-only filter is invalid.
+         */
+        SearchDatasetExamplesRequest: {
+            /**
+             * @description SQL-like filter expression. Omit to search all examples; an empty or whitespace-only value is invalid.
+             * @example topic = 'arithmetic'
+             */
+            filter?: string;
+            /**
+             * Format: int32
+             * @description Maximum number of examples to return. Defaults to 50 and must be between 1 and 500.
+             * @example 50
+             */
+            limit?: number;
+            /**
+             * @description Opaque cursor from `pagination.next_cursor`. Omit to start at the first page; keep the filter unchanged while paging.
+             * @example opaque-cursor
+             */
+            cursor?: string;
+            /**
+             * @description Unique identifier of the dataset version to search. If omitted, the latest version is selected.
+             * @example RGF0YXNldFZlcnNpb246MTIzNDU=
+             */
+            dataset_version_id?: string;
+        };
         /** @description Examples to update by ID matching, optionally into a new version. */
         UpdateDatasetExamplesRequest: {
             /** @description Array of examples with 'id' field for matching and updating existing records */
@@ -4350,11 +6098,7 @@ export interface components {
             /** @description The code configuration for this version */
             code_config: components["schemas"]["CodeConfigRequest"];
         };
-        /**
-         * @description Body containing evaluator creation parameters with an initial version.
-         *
-         *     Only `type: TEMPLATE` and `type: CODE` are currently accepted on creation.
-         */
+        /** @description Body containing evaluator creation parameters with an initial version. */
         CreateEvaluatorRequest: {
             /** @description Space identifier (base64) */
             space_id: string;
@@ -4366,10 +6110,11 @@ export interface components {
             version: components["schemas"]["CreateEvaluatorVersionRequest"];
         };
         /**
-         * @description Payload for an evaluator version: exactly one of `template_config` or `code_config`.
-         *     Used both when creating an evaluator (initial `version`) and when appending a version.
+         * @description Payload for an evaluator version: exactly one of `template_config`, `code_config`,
+         *     or `remote_config`. Used both when creating an evaluator (initial `version`) and when
+         *     appending a version.
          */
-        CreateEvaluatorVersionRequest: components["schemas"]["CreateTemplateEvaluatorVersionRequest"] | components["schemas"]["CreateCodeEvaluatorVersionRequest"];
+        CreateEvaluatorVersionRequest: components["schemas"]["CreateTemplateEvaluatorVersionRequest"] | components["schemas"]["CreateCodeEvaluatorVersionRequest"] | components["schemas"]["CreateRemoteEvaluatorVersionRequest"];
         CreateTemplateEvaluatorVersionRequest: {
             /** @description Commit message describing the changes */
             commit_message: string;
@@ -4446,9 +6191,52 @@ export interface components {
          */
         DataGranularity: "SPAN" | "TRACE" | "SESSION";
         /**
+         * @description Body identifying the versions to delete from the evaluator named by the
+         *     `evaluator_id` path parameter.
+         */
+        DeleteEvaluatorVersionsRequest: {
+            /**
+             * @description IDs of the evaluator versions to delete (up to 100 per request). IDs that
+             *     do not belong to `evaluator_id` are reported as not deleted. Duplicate IDs
+             *     are accepted and silently collapsed so each version is processed at most once.
+             */
+            version_ids: string[];
+        };
+        /**
+         * @description Result of a DELETE /v2/evaluators/{evaluator_id}/versions request.
+         *
+         *     The delete is partial-tolerant: requested versions that exist and belong to
+         *     `evaluator_id` are deleted; every requested ID that was not deleted is reported
+         *     in `not_deleted_version_ids`. An ID may be not-deleted because it does not exist
+         *     or belongs to a different evaluator.
+         *
+         *     `completed` is `true` when this response is returned because the synchronous
+         *     delete has fully processed the request. It does not mean every requested
+         *     version was found and deleted: each requested ID appears in exactly one of
+         *     `deleted_version_ids` or `not_deleted_version_ids`.
+         *
+         *     The delete operation is idempotent — re-submitting already-deleted IDs is safe
+         *     and simply reports them as not deleted.
+         *
+         *     Deleting a version that is currently pinned to a running online task un-pins
+         *     that task, which then falls back to resolving the evaluator's latest version.
+         */
+        DeleteEvaluatorVersionsResponse: {
+            /**
+             * @description Always `true` in a successful response, indicating both result lists are
+             *     complete. This does not indicate whether all requested versions existed.
+             */
+            completed: boolean;
+            /** @description Evaluator version IDs confirmed deleted in this request. */
+            deleted_version_ids: string[];
+            /** @description Requested evaluator version IDs that were not deleted. */
+            not_deleted_version_ids: string[];
+        };
+        /**
          * @description An evaluator defines reusable evaluation logic that can be attached to
          *     evaluation tasks. The type field determines the kind of evaluation:
-         *     TEMPLATE (LLM-based template evaluation) or CODE (custom code evaluation).
+         *     TEMPLATE (LLM-based template evaluation), CODE (custom code evaluation),
+         *     or REMOTE (externally hosted evaluation).
          */
         Evaluator: {
             /** @description The unique identifier for the evaluator */
@@ -4489,6 +6277,76 @@ export interface components {
             model_name: string;
             invocation_parameters: components["schemas"]["InvocationParamsRequest"];
             provider_parameters: components["schemas"]["ProviderParamsRequest"];
+        };
+        /**
+         * @description A built-in LLM-as-a-judge evaluator template. Templates are the same
+         *     catalog offered in the product's create-evaluator flow, and are identical
+         *     for every caller. They carry no space, account, or user data.
+         *
+         *     A template is a starting point for an evaluator. To create one from it, map
+         *     its fields onto `POST /v2/evaluators`. See the field-by-field mapping and a
+         *     complete example on `GET /v2/evaluator-templates`.
+         */
+        EvaluatorTemplate: {
+            /**
+             * @description Stable identifier for the template, and the eval column name it writes
+             *     to by default (e.g. `hallucination`). Unique across all templates.
+             * @example hallucination
+             */
+            column_name: string;
+            /**
+             * @description Human-readable name shown in the product.
+             * @example Hallucination
+             */
+            display_name: string;
+            /**
+             * @description The judge prompt. Variables are single-brace, f-string style (e.g.
+             *     `{input}`, `{output}`, `{context}`) and are bound to real data by a
+             *     task's column mappings when the evaluator runs.
+             *
+             *     This is the only prompt you need. To have the judge explain its label,
+             *     set `include_explanations` on `POST /v2/evaluators`. The explanation
+             *     request is added at run time, not by editing this prompt.
+             * @example You are evaluating whether the answer is factual...
+             *     {input}
+             *     {output}
+             */
+            template: string;
+            /**
+             * @description The labels the judge is allowed to return, in the order the product
+             *     displays them.
+             * @example [
+             *       "hallucinated",
+             *       "factual"
+             *     ]
+             */
+            rails: string[];
+            /**
+             * @description Maps each label to its numeric score. Pass this through unchanged when
+             *     creating an evaluator, since the labels must match those named in the
+             *     template.
+             * @example {
+             *       "hallucinated": 1,
+             *       "factual": 0
+             *     }
+             */
+            classification_choices: {
+                [key: string]: number;
+            };
+            /**
+             * @description Whether a higher score is better (`MAXIMIZE`), worse (`MINIMIZE`), or
+             *     neither (`NONE`). Controls how trends are rendered. Pass it through
+             *     unchanged, since it must agree with `classification_choices`. If the two
+             *     disagree, the product renders the trend backwards.
+             */
+            direction: components["schemas"]["OptimizationDirection"];
+            /**
+             * @description The unit this template evaluates. `null` means span level, which is the
+             *     default for most response-quality, RAG, and security templates.
+             *     `SESSION` templates score a whole conversation and require spans that
+             *     carry a session identifier.
+             */
+            data_granularity: components["schemas"]["DataGranularity"] | null;
         };
         /**
          * @description The evaluator type:
@@ -4543,6 +6401,22 @@ export interface components {
             /** @description The unique identifier for the user who created this version */
             created_by_user_id: string | null;
             type: components["schemas"]["EvaluatorType"];
+        };
+        /** @description Evaluator version backed by a remote evaluator integration. */
+        EvaluatorVersionRemote: components["schemas"]["EvaluatorVersionCommon"] & {
+            /**
+             * @description Discriminator identifying this as a remote evaluator version. Always `REMOTE` for this variant.
+             * @enum {string}
+             */
+            type?: "REMOTE";
+            /** @description The remote evaluation configuration for this version */
+            remote_config: components["schemas"]["RemoteConfig"];
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "REMOTE";
         };
         /** @description Evaluator version carrying a template (LLM) configuration. */
         EvaluatorVersionTemplate: components["schemas"]["EvaluatorVersionCommon"] & {
@@ -4672,8 +6546,8 @@ export interface components {
             template: string;
             /** @description Whether to include explanations in the evaluation output */
             include_explanations: boolean;
-            /** @description Whether to use function calling if the model supports it */
-            use_function_calling_if_available: boolean;
+            /** @description Whether to use function calling if the model supports it. */
+            use_function_calling?: boolean;
             /**
              * @description Whether to use structured output if the model supports it
              * @default true
@@ -4700,8 +6574,8 @@ export interface components {
             template: string;
             /** @description Whether to include explanations in the evaluation output */
             include_explanations: boolean;
-            /** @description Whether to use function calling if the model supports it */
-            use_function_calling_if_available: boolean;
+            /** @description Whether to use function calling if the model supports it. */
+            use_function_calling: boolean;
             /**
              * @description Whether to use structured output if the model supports it. When omitted the server defaults to true.
              * @default true
@@ -4745,13 +6619,16 @@ export interface components {
          *     Providing both, or neither, is a validation error.
          */
         CreateExperimentRequest: {
-            /** @description Name of the experiment */
+            /**
+             * @description Name of the experiment. Must be 1–255 characters and must not contain
+             *     double quotes (`"`) or backslashes (`\`).
+             */
             name: string;
             /** @description ID of the dataset to associate the experiment with. Provide `space_id` instead when the experiment isn't associated with a dataset. */
             dataset_id?: string | null;
             /** @description ID of the space to create the experiment in. Provide instead of `dataset_id`. */
             space_id?: string | null;
-            /** @description Array of experiment run data */
+            /** @description Array of experiment run data. Between 1 and 1000 runs per request. */
             experiment_runs: components["schemas"]["ExperimentRunInput"][];
         };
         /**
@@ -4827,6 +6704,36 @@ export interface components {
             experiment_runs: components["schemas"]["ExperimentRunInput"][];
         };
         /**
+         * @description Optional criteria for searching an experiment's runs. Omit all fields to
+         *     return the first page of runs in stable `id` ascending order. Keep the
+         *     filter unchanged when using a returned cursor to fetch the next page.
+         *
+         *     Filters use the same SQL-like language as span search. Supported column
+         *     families include unprefixed `id`, `output`, and `example_id`; custom run
+         *     columns; `eval.<name>.score`, `eval.<name>.label`,
+         *     `eval.<name>.explanation`, and `eval.<name>.metadata.*`; and
+         *     `annotation.<name>.*` when present in the run schema. A present empty or
+         *     whitespace-only filter is invalid.
+         */
+        SearchExperimentRunsRequest: {
+            /**
+             * @description SQL-like filter expression. Omit to search all runs; an empty or whitespace-only value is invalid.
+             * @example eval.quality.score < 0.5
+             */
+            filter?: string;
+            /**
+             * Format: int32
+             * @description Maximum number of runs to return. Defaults to 50 and must be between 1 and 500.
+             * @example 50
+             */
+            limit?: number;
+            /**
+             * @description Opaque cursor from `pagination.next_cursor`. Omit to start at the first page; keep the filter unchanged while paging.
+             * @example opaque-cursor
+             */
+            cursor?: string;
+        };
+        /**
          * @description Configuration for `type: AGENT` integrations: a customer-hosted HTTPS
          *     endpoint plus a JSON Schema describing the request payload.
          */
@@ -4866,7 +6773,7 @@ export interface components {
              * @enum {string}
              */
             type: "AGENT";
-            /** @description The integration name. Unique per (account, type). */
+            /** @description The integration name. Unique among active AGENT and EVALUATOR integrations in the account. */
             name: string;
             /** @description Optional human-readable description of the integration. */
             description?: string | null;
@@ -4912,9 +6819,15 @@ export interface components {
             config: {
                 [key: string]: unknown;
             };
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description When the preset was created. Read-only.
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description When the preset was last updated. Read-only.
+             */
             readonly updated_at?: string;
         } & {
             [key: string]: unknown;
@@ -4930,6 +6843,8 @@ export interface components {
             provider: "ANTHROPIC";
             /** @description Whether an API key is configured (the key itself is never returned). */
             has_api_key: boolean;
+            /** @description Endpoint URL serving the Anthropic Messages API, including the version path. Null when not set. */
+            base_url: string | null;
         } & {
             [key: string]: unknown;
         };
@@ -5007,12 +6922,13 @@ export interface components {
         };
         CreateAgentIntegrationRequest: {
             /**
-             * @description discriminator enum property added by openapi-typescript
+             * @description Discriminator identifying this request as an agent integration. (enum property replaced by openapi-typescript)
              * @enum {string}
              */
             type: "AGENT";
-            /** @description Integration name (unique within the account). */
+            /** @description Integration name. Must be unique among active AGENT and EVALUATOR integrations in the account. */
             name: string;
+            /** @description Optional human-readable description of the integration. */
             description?: string | null;
             /**
              * @description Visibility scoping rules. Defaults to account-wide if omitted
@@ -5020,6 +6936,7 @@ export interface components {
              *     `organization_id`.
              */
             scopings?: components["schemas"]["IntegrationScopingRequest"][];
+            /** @description Endpoint and request-schema configuration for the agent integration. */
             config: components["schemas"]["CreateAgentConfig"];
         };
         /**
@@ -5039,24 +6956,26 @@ export interface components {
                 [key: string]: unknown;
             };
         };
-        /** @description Create config for an Anthropic LLM integration. `api_key` is required and is write-only (never returned in responses). */
+        /** @description Create config for an Anthropic LLM integration. `api_key` is required and is write-only (never returned in responses). `base_url` is optional; omit it to use the public Anthropic API. */
         CreateAnthropicConfig: {
             /** @description Enable function/tool calling. Defaults to true. */
             is_function_calling_enabled?: boolean;
             /**
-             * @description discriminator enum property added by openapi-typescript
+             * @description Discriminator identifying the Anthropic provider. (enum property replaced by openapi-typescript)
              * @enum {string}
              */
             provider: "ANTHROPIC";
             /** @description API key for the provider (write-only, never returned). */
             api_key: string;
+            /** @description Endpoint URL (HTTPS) serving the Anthropic Messages API, including the version path (e.g. `https://api.anthropic.com/v1`). Do not include `/messages`, which is appended automatically. Defaults to the public Anthropic API. */
+            base_url?: string;
         };
         /** @description AWS Bedrock auth settings for create and update, discriminated by `auth_type`. On PATCH this object replaces the stored auth settings wholesale (auth_type may change); omitted fields of the previous auth mode are cleared. */
         CreateAwsBedrockAuth: components["schemas"]["CreateAwsBedrockDefaultAuth"] | components["schemas"]["CreateAwsBedrockBearerTokenAuth"] | components["schemas"]["CreateAwsBedrockProxyWithHeadersAuth"];
         /** @description Create bearer-token auth. `api_key` is required and write-only (never returned; surfaces as `has_api_key` on read). */
         CreateAwsBedrockBearerTokenAuth: {
             /**
-             * @description discriminator enum property added by openapi-typescript
+             * @description Discriminator identifying bearer-token auth. (enum property replaced by openapi-typescript)
              * @enum {string}
              */
             auth_type: "BEARER_TOKEN";
@@ -5068,7 +6987,7 @@ export interface components {
         /** @description Create config for an AWS Bedrock LLM integration. `auth` selects one of three auth modes via `auth_type`. The integration must have at least one model available: enable `is_default_models_enabled` or provide at least one entry in `model_names`, otherwise the request is rejected with 422. */
         CreateAwsBedrockConfig: {
             /**
-             * @description discriminator enum property added by openapi-typescript
+             * @description Discriminator identifying the AWS Bedrock provider. (enum property replaced by openapi-typescript)
              * @enum {string}
              */
             provider: "AWS_BEDROCK";
@@ -5081,7 +7000,7 @@ export interface components {
         /** @description Create role-assumption auth. `role_arn` is required. */
         CreateAwsBedrockDefaultAuth: {
             /**
-             * @description discriminator enum property added by openapi-typescript
+             * @description Discriminator identifying role-assumption auth. (enum property replaced by openapi-typescript)
              * @enum {string}
              */
             auth_type: "DEFAULT";
@@ -5095,7 +7014,7 @@ export interface components {
         /** @description Create proxy auth. `base_url` is required. `headers` is write-only; names are returned as `header_names` on read. */
         CreateAwsBedrockProxyWithHeadersAuth: {
             /**
-             * @description discriminator enum property added by openapi-typescript
+             * @description Discriminator identifying proxy auth. (enum property replaced by openapi-typescript)
              * @enum {string}
              */
             auth_type: "PROXY_WITH_HEADERS";
@@ -5106,18 +7025,20 @@ export interface components {
                 [key: string]: string;
             };
         };
+        /** @description Custom endpoint auth settings for create and update, discriminated by `auth_type`. On PATCH this object replaces the stored auth settings wholesale (auth_type may change); credentials belonging to the auth mode being switched away from are cleared. */
+        CreateCustomAuth: components["schemas"]["CreateCustomDefaultAuth"] | components["schemas"]["CreateCustomOauth2ClientCredentialsAuth"];
         /** @description Create config for a custom OpenAI-compatible endpoint integration. `base_url` is required and must implement the OpenAI API shape (it is validated server-side and must resolve to a public address). `api_key` and `headers` are write-only (never returned; headers surface as `header_names` on read). The integration must have at least one model source: enable `is_default_models_enabled` or provide at least one entry in `model_names`, otherwise the request is rejected with 422. */
         CreateCustomConfig: {
             /** @description Enable function/tool calling. Defaults to true. */
             is_function_calling_enabled?: boolean;
             /**
-             * @description discriminator enum property added by openapi-typescript
+             * @description Discriminator identifying a custom OpenAI-compatible endpoint. (enum property replaced by openapi-typescript)
              * @enum {string}
              */
             provider: "CUSTOM";
             /** @description Endpoint URL requests are sent to (HTTPS). */
             base_url: string;
-            /** @description API key for the endpoint (write-only, never returned). */
+            /** @description API key for the endpoint (write-only, never returned). Equivalent to an `auth` block with `auth_type: DEFAULT`; supplying both this and `auth` is rejected with 422. */
             api_key?: string;
             /** @description Custom request headers sent to the endpoint, as a name-to-value map. Write-only: values are never returned; names are exposed as `header_names` on read. Defaults to no headers. The serialized header map must not exceed 8,175 bytes. */
             headers?: {
@@ -5127,24 +7048,119 @@ export interface components {
             is_default_models_enabled?: boolean;
             /** @description Custom model names to make available. Defaults to none. */
             model_names?: string[];
+            auth?: components["schemas"]["CreateCustomAuth"];
+        };
+        /** @description API-key auth. `api_key` is optional — a custom endpoint may require no credential at all. On PATCH this block replaces the stored auth wholesale, so omitting `api_key` clears any stored key rather than leaving it unchanged; send the key again to keep it. */
+        CreateCustomDefaultAuth: {
+            /**
+             * @description Discriminator identifying API-key auth. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            auth_type: "DEFAULT";
+            /** @description API key for the endpoint (write-only, never returned). */
+            api_key?: string;
+        };
+        /** @description Create OAuth 2.0 client-credentials auth (RFC 6749 section 4.4). Arize exchanges these credentials at `token_url` for a short-lived bearer token on each request to the endpoint. Mutually exclusive with a static `api_key`: supplying this auth block clears any stored API key. */
+        CreateCustomOauth2ClientCredentialsAuth: {
+            /**
+             * @description Discriminator identifying OAuth 2.0 client-credentials auth. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            auth_type: "OAUTH2_CLIENT_CREDENTIALS";
+            /** @description Token endpoint Arize exchanges the client credentials at (HTTPS; validated server-side and must resolve to a public address). */
+            token_url: string;
+            /** @description OAuth client ID. Not a secret, so it is returned on read. Must not contain a colon, which is ambiguous in HTTP Basic authentication. */
+            client_id: string;
+            /** @description OAuth client secret (write-only, never returned). */
+            client_secret: string;
+            /** @description Space-separated scopes to request at the token endpoint. Defaults to not set. */
+            scopes?: string;
+            /** @description Audience to request at the token endpoint, required by some authorization servers. Defaults to not set. */
+            audience?: string;
+        };
+        /**
+         * @description Write shape for the evaluator config on create. `headers` is encrypted at
+         *     rest and never returned in responses; reads surface `has_headers`.
+         */
+        CreateEvaluatorIntegrationConfigInput: {
+            /**
+             * Format: uri
+             * @description HTTPS endpoint requests are sent to. Validated server-side and must resolve to a public address.
+             */
+            endpoint: string;
+            /**
+             * @description Cleartext header map. Encrypted at rest; never returned in responses.
+             *     Omitting this field on create means no headers are configured.
+             */
+            headers?: {
+                [key: string]: string;
+            };
+            /**
+             * @description JSON Schema (Draft-07) the endpoint's request body conforms to. The
+             *     root schema must have `type: object`, must not define the reserved
+             *     top-level `arize_metadata` field, and must not exceed 64 KiB.
+             */
+            input_schema: {
+                [key: string]: unknown;
+            };
+        };
+        CreateEvaluatorIntegrationRequest: {
+            /**
+             * @description Discriminator identifying this request as an evaluator integration. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "EVALUATOR";
+            /** @description Integration name. Must be unique among active AGENT and EVALUATOR integrations in the account. */
+            name: string;
+            /** @description Optional human-readable description of the integration. */
+            description?: string | null;
+            /**
+             * @description Visibility scoping rules. Defaults to account-wide if omitted
+             *     or empty. A scoping with `space_id` set MUST also set
+             *     `organization_id`.
+             */
+            scopings?: components["schemas"]["IntegrationScopingRequest"][];
+            config: components["schemas"]["CreateEvaluatorIntegrationConfigInput"];
         };
         /** @description Create config for a Google Gemini LLM integration. `api_key` is required and is write-only (never returned in responses). */
         CreateGeminiConfig: {
             /** @description Enable function/tool calling. Defaults to true. */
             is_function_calling_enabled?: boolean;
             /**
-             * @description discriminator enum property added by openapi-typescript
+             * @description Discriminator identifying the Gemini provider. (enum property replaced by openapi-typescript)
              * @enum {string}
              */
             provider: "GEMINI";
             /** @description API key for the provider (write-only, never returned). */
             api_key: string;
         };
-        CreateIntegrationRequest: components["schemas"]["CreateLlmIntegrationRequest"] | components["schemas"]["CreateAgentIntegrationRequest"];
-        CreateLlmConfig: components["schemas"]["CreateOpenAiConfig"] | components["schemas"]["CreateAnthropicConfig"] | components["schemas"]["CreateGeminiConfig"] | components["schemas"]["CreateAwsBedrockConfig"] | components["schemas"]["CreateCustomConfig"] | components["schemas"]["CreateVertexAiConfig"] | components["schemas"]["CreateNvidiaNimConfig"];
+        CreateIntegrationRequest: components["schemas"]["CreateLlmIntegrationRequest"] | components["schemas"]["CreateAgentIntegrationRequest"] | components["schemas"]["CreateEvaluatorIntegrationRequest"];
+        /** @description Create config for a LiteLLM integration. `base_url` is required and points at the LiteLLM endpoint (validated server-side); LiteLLM is self-hosted, so there is no default endpoint. `api_key` is required: the virtual key scopes the models Arize can resolve and call. `api_key` and `headers` are write-only (never returned; headers surface as `header_names` on read). */
+        CreateLiteLlmConfig: {
+            /** @description Enable function/tool calling. Defaults to true. */
+            is_function_calling_enabled?: boolean;
+            /**
+             * @description Discriminator identifying the LiteLLM provider. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            provider: "LITELLM";
+            /** @description LiteLLM endpoint URL requests are sent to (HTTPS). */
+            base_url: string;
+            /** @description LiteLLM virtual key (write-only, never returned). */
+            api_key: string;
+            /** @description Custom request headers sent to the endpoint, as a name-to-value map. Write-only: values are never returned; names are exposed as `header_names` on read. Defaults to no headers. The serialized header map must not exceed 8,175 bytes. */
+            headers?: {
+                [key: string]: string;
+            };
+            /** @description Custom model names to make available. Defaults to an empty list. */
+            model_names?: string[];
+        };
+        CreateLlmConfig: {
+            [key: string]: unknown;
+        } & (components["schemas"]["CreateOpenAiConfig"] | components["schemas"]["CreateAnthropicConfig"] | components["schemas"]["CreateGeminiConfig"] | components["schemas"]["CreateAwsBedrockConfig"] | components["schemas"]["CreateCustomConfig"] | components["schemas"]["CreateVertexAiConfig"] | components["schemas"]["CreateNvidiaNimConfig"] | components["schemas"]["CreateLiteLlmConfig"] | components["schemas"]["CreateFireworksConfig"] | components["schemas"]["CreateTogetherAiConfig"]);
         CreateLlmIntegrationRequest: {
             /**
-             * @description discriminator enum property added by openapi-typescript
+             * @description Discriminator identifying this request as an LLM integration. (enum property replaced by openapi-typescript)
              * @enum {string}
              */
             type: "LLM";
@@ -5152,6 +7168,7 @@ export interface components {
             name: string;
             /** @description Visibility scoping rules. Defaults to account-wide. */
             scopings?: components["schemas"]["IntegrationScopingRequest"][];
+            /** @description Provider-specific configuration for the LLM integration, selected by `config.provider`. */
             config: components["schemas"]["CreateLlmConfig"];
         };
         /** @description Create config for an NVIDIA NIM integration. Every connection field is optional: omit `base_url` to use the provider default endpoint, or set it to a self-hosted NIM endpoint (validated server-side). `api_key` and `headers` are write-only (never returned; headers surface as `header_names` on read). The integration must have at least one model source: enable `is_default_models_enabled` or provide at least one entry in `model_names`, otherwise the request is rejected with 422. */
@@ -5159,7 +7176,7 @@ export interface components {
             /** @description Enable function/tool calling. Defaults to true. */
             is_function_calling_enabled?: boolean;
             /**
-             * @description discriminator enum property added by openapi-typescript
+             * @description Discriminator identifying the NVIDIA NIM provider. (enum property replaced by openapi-typescript)
              * @enum {string}
              */
             provider: "NVIDIA_NIM";
@@ -5181,7 +7198,7 @@ export interface components {
             /** @description Enable function/tool calling. Defaults to true. */
             is_function_calling_enabled?: boolean;
             /**
-             * @description discriminator enum property added by openapi-typescript
+             * @description Discriminator identifying the OpenAI provider. (enum property replaced by openapi-typescript)
              * @enum {string}
              */
             provider: "OPEN_AI";
@@ -5191,7 +7208,7 @@ export interface components {
         /** @description Create config for a Google Vertex AI integration. No credentials are stored: Arize accesses Vertex through the configured GCP project. `project_id`, `location`, and `project_access_label` are all required. */
         CreateVertexAiConfig: {
             /**
-             * @description discriminator enum property added by openapi-typescript
+             * @description Discriminator identifying the Vertex AI provider. (enum property replaced by openapi-typescript)
              * @enum {string}
              */
             provider: "VERTEX_AI";
@@ -5202,7 +7219,9 @@ export interface components {
             /** @description Label used to verify Arize's access to the GCP project. */
             project_access_label: string;
         };
-        /** @description Config for a custom OpenAI-compatible endpoint integration. `base_url` is the endpoint Arize sends requests to; it must implement the OpenAI API shape. Secrets are write-only: the API key surfaces as `has_api_key` and custom request headers surface as `header_names` (names only). */
+        /** @description Custom endpoint auth settings, discriminated by `auth_type`. */
+        CustomAuth: components["schemas"]["CustomDefaultAuth"] | components["schemas"]["CustomOauth2ClientCredentialsAuth"];
+        /** @description Config for a custom OpenAI-compatible endpoint integration. `base_url` is the endpoint Arize sends requests to; it must implement the OpenAI API shape. Secrets are write-only: the API key surfaces as `has_api_key` and custom request headers surface as `header_names` (names only). `auth` is how the endpoint is authenticated. */
         CustomConfig: {
             /** @description Whether function/tool calling is enabled. */
             is_function_calling_enabled: boolean;
@@ -5211,7 +7230,7 @@ export interface components {
              * @enum {string}
              */
             provider: "CUSTOM";
-            /** @description Whether an API key is configured (the key itself is never returned). */
+            /** @description Whether an API key is configured (the key itself is never returned). An API key and OAuth credentials are mutually exclusive, and switching to `OAUTH2_CLIENT_CREDENTIALS` clears any stored key, so this reads false on an integration authenticated that way. */
             has_api_key: boolean;
             /** @description Endpoint URL requests are sent to. */
             base_url: string;
@@ -5221,8 +7240,95 @@ export interface components {
             is_default_models_enabled: boolean;
             /** @description Custom model names configured on this integration. Empty when none. */
             model_names: string[];
+            auth: components["schemas"]["CustomAuth"];
         } & {
             [key: string]: unknown;
+        };
+        /** @description API-key auth for a custom endpoint. The key surfaces as `has_api_key`; the key itself is never returned. A custom endpoint may require no credential at all, in which case `has_api_key` is false. */
+        CustomDefaultAuth: {
+            /**
+             * @description Discriminator identifying API-key auth. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            auth_type: "DEFAULT";
+            /** @description Whether an API key is configured (the key itself is never returned). */
+            has_api_key: boolean;
+        };
+        /** @description OAuth 2.0 client-credentials auth (RFC 6749 section 4.4). Arize exchanges the stored credentials at `token_url` for a short-lived bearer token and sends it as `Authorization: Bearer` on every request to the endpoint. The client secret is write-only and surfaces as `has_client_secret`. */
+        CustomOauth2ClientCredentialsAuth: {
+            /**
+             * @description Discriminator identifying OAuth 2.0 client-credentials auth. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            auth_type: "OAUTH2_CLIENT_CREDENTIALS";
+            /** @description Token endpoint Arize exchanges the client credentials at. */
+            token_url: string;
+            /** @description OAuth client ID. Not a secret, so it is returned on read. */
+            client_id: string;
+            /** @description Whether a client secret is configured (the secret itself is never returned). */
+            has_client_secret: boolean;
+            /** @description Space-separated scopes requested at the token endpoint. Null when not set. */
+            scopes: string | null;
+            /** @description Audience requested at the token endpoint. Null when not set. */
+            audience: string | null;
+        };
+        /**
+         * @description An evaluator integration (type=EVALUATOR): a customer-hosted HTTPS endpoint
+         *     plus a JSON Schema describing the request payload. Used to run remote
+         *     evaluators against LLM outputs.
+         */
+        EvaluatorIntegration: {
+            /** @description The unique identifier for the integration. */
+            id: string;
+            /**
+             * @description Discriminator identifying an evaluator integration. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "EVALUATOR";
+            /** @description The integration name. Unique among active AGENT and EVALUATOR integrations in the account. */
+            name: string;
+            /** @description Optional human-readable description of the integration. */
+            description?: string | null;
+            /** @description Visibility scoping rules. Account-wide when empty. */
+            scopings: components["schemas"]["IntegrationScoping"][];
+            /**
+             * Format: date-time
+             * @description When the integration was created.
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description When the integration was last updated.
+             */
+            updated_at: string;
+            /** @description Unique identifier of the user who created the integration. Null if that user has since been deleted. */
+            created_by_user_id: string | null;
+            config: components["schemas"]["EvaluatorIntegrationConfig"];
+        };
+        /**
+         * @description Configuration for `type: EVALUATOR` integrations: a customer-hosted HTTPS
+         *     endpoint plus a JSON Schema describing the request payload.
+         */
+        EvaluatorIntegrationConfig: {
+            /**
+             * Format: uri
+             * @description HTTPS endpoint URL Arize calls for remote evaluation. Validated
+             *     server-side for SSRF (must resolve to a public address).
+             */
+            endpoint: string;
+            /**
+             * @description Whether any headers are configured. Read-only — derived from
+             *     `headers` on write. Header values are never returned.
+             */
+            readonly has_headers: boolean;
+            /**
+             * @description JSON Schema (Draft-07) the endpoint's request body conforms to. The
+             *     root schema must have `type: object`, must not define the reserved
+             *     top-level `arize_metadata` field, and must not exceed 64 KiB.
+             */
+            input_schema: {
+                [key: string]: unknown;
+            };
         };
         /** @description Config for a Google Gemini LLM integration. */
         GeminiConfig: {
@@ -5239,7 +7345,9 @@ export interface components {
             [key: string]: unknown;
         };
         /** @description A polymorphic integration resource. The `type` field selects the `config` shape; for `LLM`, `config.provider` selects the per-provider config. */
-        Integration: components["schemas"]["LlmIntegration"] | components["schemas"]["AgentIntegration"];
+        Integration: {
+            [key: string]: unknown;
+        } & (components["schemas"]["LlmIntegration"] | components["schemas"]["AgentIntegration"] | components["schemas"]["EvaluatorIntegration"]);
         /** @description Visibility scoping for the integration. */
         IntegrationScoping: {
             /** @description Organization identifier (base64). Null means account-wide. */
@@ -5258,19 +7366,45 @@ export interface components {
          * @description The integration category. Selects the shape of `config`. Additive — new
          *     types (alerting, webhook, ...) are added non-breakingly.
          *
-         *     - `LLM`   — a model-provider integration (e.g. OpenAI).
-         *     - `AGENT` — connects your own agent, exposed at an HTTP endpoint.
+         *     - `LLM`       — a model-provider integration (e.g. OpenAI).
+         *     - `AGENT`     — connects your own agent, exposed at an HTTP endpoint.
+         *     - `EVALUATOR` — connects a remote evaluator endpoint. Only returned when
+         *                     `?type=EVALUATOR` is passed explicitly; excluded from the
+         *                     default (`LLM` + `AGENT`) list to keep the cursor contract
+         *                     stable. Requires the remote evaluators feature to be enabled.
          * @enum {string}
          */
-        IntegrationType: "LLM" | "AGENT";
+        IntegrationType: "LLM" | "AGENT" | "EVALUATOR";
         ListIntegrationsResponse: {
             /** @description A polymorphic, type-tagged list of integrations. */
             integrations: components["schemas"]["Integration"][];
             /** @description Cursor-based pagination metadata. */
             pagination: components["schemas"]["PaginationMetadata"];
         };
+        /** @description Config for a LiteLLM integration. `base_url` is the LiteLLM endpoint Arize sends requests to and is always set — LiteLLM is self-hosted, so there is no default endpoint. Secrets are write-only: the virtual key surfaces as `has_api_key` and custom request headers surface as `header_names` (names only). `model_names` lists only the model names configured on this integration; models resolved live from the LiteLLM deployment are served through the Arize UI and are not returned here. */
+        LiteLlmConfig: {
+            /** @description Whether function/tool calling is enabled. */
+            is_function_calling_enabled: boolean;
+            /**
+             * @description Discriminator identifying the LiteLLM provider. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            provider: "LITELLM";
+            /** @description Whether an API key is configured (the key itself is never returned). */
+            has_api_key: boolean;
+            /** @description LiteLLM endpoint URL requests are sent to. */
+            base_url: string;
+            /** @description Names of the custom request headers configured on this integration. Empty when none are configured. Header values are write-only and never returned. */
+            header_names: string[];
+            /** @description Custom model names configured on this integration. Empty when none. */
+            model_names: string[];
+        } & {
+            [key: string]: unknown;
+        };
         /** @description Per-provider LLM config, discriminated by `provider`. */
-        LlmConfig: components["schemas"]["OpenAiConfig"] | components["schemas"]["AnthropicConfig"] | components["schemas"]["GeminiConfig"] | components["schemas"]["AwsBedrockConfig"] | components["schemas"]["CustomConfig"] | components["schemas"]["VertexAiConfig"] | components["schemas"]["NvidiaNimConfig"];
+        LlmConfig: {
+            [key: string]: unknown;
+        } & (components["schemas"]["OpenAiConfig"] | components["schemas"]["AnthropicConfig"] | components["schemas"]["GeminiConfig"] | components["schemas"]["AwsBedrockConfig"] | components["schemas"]["CustomConfig"] | components["schemas"]["VertexAiConfig"] | components["schemas"]["NvidiaNimConfig"] | components["schemas"]["LiteLlmConfig"] | components["schemas"]["FireworksConfig"] | components["schemas"]["TogetherAiConfig"]);
         /** @description An LLM integration (type=LLM). */
         LlmIntegration: {
             /** @description The unique identifier for the integration. */
@@ -5299,10 +7433,10 @@ export interface components {
             config: components["schemas"]["LlmConfig"];
         };
         /**
-         * @description The LLM vendor for an `LLM` integration. Selects the per-provider `config` member. `OPEN_AI`, `ANTHROPIC`, `GEMINI`, `AWS_BEDROCK`, `CUSTOM`, `VERTEX_AI`, and `NVIDIA_NIM` are implemented; additional providers are added non-breakingly.
+         * @description The LLM vendor for an `LLM` integration. Selects the per-provider `config` member. `OPEN_AI`, `ANTHROPIC`, `GEMINI`, `AWS_BEDROCK`, `CUSTOM`, `VERTEX_AI`, `NVIDIA_NIM`, `LITELLM`, `FIREWORKS`, and `TOGETHER_AI` are implemented; additional providers are added non-breakingly.
          * @enum {string}
          */
-        LlmIntegrationProvider: "OPEN_AI" | "ANTHROPIC" | "GEMINI" | "AWS_BEDROCK" | "CUSTOM" | "VERTEX_AI" | "NVIDIA_NIM";
+        LlmIntegrationProvider: "OPEN_AI" | "ANTHROPIC" | "GEMINI" | "AWS_BEDROCK" | "CUSTOM" | "VERTEX_AI" | "NVIDIA_NIM" | "LITELLM" | "FIREWORKS" | "TOGETHER_AI";
         /** @description Config for an NVIDIA NIM integration. Every connection field is optional: `base_url` targets a self-hosted NIM endpoint (null when using the provider default). Secrets are write-only: the API key surfaces as `has_api_key` and custom request headers surface as `header_names` (names only). */
         NvidiaNimConfig: {
             /** @description Whether function/tool calling is enabled. */
@@ -5344,7 +7478,10 @@ export interface components {
          *     replace-on-provide.
          */
         UpdateAgentConfig: {
-            /** Format: uri */
+            /**
+             * Format: uri
+             * @description New HTTPS endpoint URL. Validated server-side and must resolve to a public address.
+             */
             endpoint?: string;
             /**
              * @description Replace-on-provide. Pass `null` (or `{}`) to clear all headers.
@@ -5374,7 +7511,9 @@ export interface components {
              * @enum {string}
              */
             type: "AGENT";
+            /** @description New integration name. Must be unique among active AGENT and EVALUATOR integrations in the account. */
             name?: string;
+            /** @description New human-readable description of the integration. Pass null to clear it. */
             description?: string | null;
             /** @description Replace-on-provide. Empty array reverts to account-wide. */
             scopings?: components["schemas"]["IntegrationScopingRequest"][];
@@ -5399,25 +7538,80 @@ export interface components {
                 [key: string]: unknown;
             };
         };
-        /** @description Partial update of an integration, discriminated by `type` (immutable). The `type` field selects the per-type PATCH shape. Provide at least one updatable field in addition to `type`. */
-        UpdateIntegrationRequest: components["schemas"]["UpdateLlmIntegrationRequest"] | components["schemas"]["UpdateAgentIntegrationRequest"];
-        /** @description Partial LLM config for PATCH. `provider` is immutable; if present it must match the stored value. Field applicability is provider-specific and enforced by the handler with 422: `api_key` and `is_function_calling_enabled` do not apply to `AWS_BEDROCK` or `VERTEX_AI`; `auth` applies to `AWS_BEDROCK` only; `base_url` and `headers` apply to `CUSTOM` and `NVIDIA_NIM` only; `is_default_models_enabled` and `model_names` apply to `AWS_BEDROCK`, `CUSTOM`, and `NVIDIA_NIM` only; `project_id`, `location`, and `project_access_label` apply to `VERTEX_AI` only. */
-        UpdateLlmConfig: {
-            provider?: components["schemas"]["LlmIntegrationProvider"];
-            /** @description Rotate the API key. Pass null to clear it. Omit to keep unchanged. Not valid for `AWS_BEDROCK` (bearer tokens are rotated via `auth`) or `VERTEX_AI`. */
-            api_key?: string | null;
-            /** @description Enable or disable function/tool calling. Omit to keep unchanged. Not valid for `AWS_BEDROCK` or `VERTEX_AI`. */
-            is_function_calling_enabled?: boolean;
-            auth?: components["schemas"]["CreateAwsBedrockAuth"];
-            /** @description (`CUSTOM` and `NVIDIA_NIM` only) New endpoint URL. For `NVIDIA_NIM` the field is optional on the resource, so null clears it (falling back to the provider default endpoint). For `CUSTOM` it is required on the resource — null is rejected with 422. Omit to keep unchanged. */
-            base_url?: string | null;
-            /** @description (`CUSTOM` and `NVIDIA_NIM` only) Replaces the configured custom request headers: the provided map becomes the full header set. Pass null to clear all headers. Omit to keep unchanged. Write-only; names are exposed as `header_names` on read. The serialized header map must not exceed 8,175 bytes. */
+        /** @description Partial evaluator config for PATCH. Omitted fields are left unchanged. */
+        UpdateEvaluatorIntegrationConfigInput: {
+            /**
+             * Format: uri
+             * @description New HTTPS endpoint URL.
+             */
+            endpoint?: string;
+            /**
+             * @description Replace-on-provide. Pass `null` (or `{}`) to clear all headers.
+             *     Encrypted at rest; never returned in responses.
+             */
             headers?: {
                 [key: string]: string;
             } | null;
-            /** @description (`AWS_BEDROCK`, `CUSTOM`, and `NVIDIA_NIM` only) Enable or disable Arize's default model catalog. The effective config must keep at least one model source or the request is rejected with 422. Omit to keep unchanged. */
+            /**
+             * @description New JSON Schema for the request payload shape. The root schema must
+             *     have `type: object`, must not define the reserved top-level
+             *     `arize_metadata` field, and must not exceed 64 KiB.
+             */
+            input_schema?: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * @description Partial update body for `type=EVALUATOR`. `type` is immutable; if present
+         *     it must equal `EVALUATOR` (422 otherwise).
+         */
+        UpdateEvaluatorIntegrationRequest: {
+            /**
+             * @description Discriminator. Immutable; must match the integration's type. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "EVALUATOR";
+            /** @description New integration name. Must be unique among active AGENT and EVALUATOR integrations in the account. */
+            name?: string;
+            /** @description New human-readable description of the integration. Pass null to clear it. */
+            description?: string | null;
+            /** @description Replace-on-provide. Empty array reverts to account-wide. */
+            scopings?: components["schemas"]["IntegrationScopingRequest"][];
+            config?: components["schemas"]["UpdateEvaluatorIntegrationConfigInput"];
+        };
+        /** @description Partial update of an integration, discriminated by `type` (immutable). The `type` field selects the per-type PATCH shape. Provide at least one updatable field in addition to `type`. */
+        UpdateIntegrationRequest: components["schemas"]["UpdateLlmIntegrationRequest"] | components["schemas"]["UpdateAgentIntegrationRequest"] | components["schemas"]["UpdateEvaluatorIntegrationRequest"];
+        /** @description Replacement auth settings for the providers that model credentials as an auth block: `AWS_BEDROCK` and `CUSTOM`. The block must match the stored provider; a Bedrock block on a `CUSTOM` integration (or the reverse) is rejected with 422. There is no discriminator here because `auth_type: DEFAULT` means different things for the two providers — role assumption for Bedrock, API-key auth for a custom endpoint — so the correct variant is determined by the stored provider rather than by `auth_type` alone. */
+        UpdateLlmAuth: components["schemas"]["CreateAwsBedrockAuth"] | components["schemas"]["CreateCustomAuth"];
+        /**
+         * @description Partial LLM config for PATCH. `provider` is immutable; if present it must
+         *     match the stored value. Invalid provider/field combinations return 422.
+         *
+         *     Provider-specific fields:
+         *     - `api_key`, `is_function_calling_enabled`: all except `AWS_BEDROCK`, `VERTEX_AI`
+         *     - `auth`: `AWS_BEDROCK`, `CUSTOM`
+         *     - `base_url`: `ANTHROPIC`, `CUSTOM`, `LITELLM`, `NVIDIA_NIM`
+         *     - `headers`: `CUSTOM`, `LITELLM`, `NVIDIA_NIM`
+         *     - `is_default_models_enabled`: `AWS_BEDROCK`, `CUSTOM`, `FIREWORKS`, `NVIDIA_NIM`, `TOGETHER_AI`
+         *     - `model_names`: `AWS_BEDROCK`, `CUSTOM`, `FIREWORKS`, `LITELLM`, `NVIDIA_NIM`, `TOGETHER_AI`
+         *     - `project_id`, `location`, `project_access_label`: `VERTEX_AI` only
+         */
+        UpdateLlmConfig: {
+            provider?: components["schemas"]["LlmIntegrationProvider"];
+            /** @description Rotate the API key. Pass null to clear it. Omit to keep unchanged. Not valid for `AWS_BEDROCK` (bearer tokens are rotated via `auth`) or `VERTEX_AI`. For `CUSTOM` it cannot be combined with `auth` in the same request; use one or the other. */
+            api_key?: string | null;
+            /** @description Enable or disable function/tool calling. Omit to keep unchanged. Not valid for `AWS_BEDROCK` or `VERTEX_AI`. */
+            is_function_calling_enabled?: boolean;
+            auth?: components["schemas"]["UpdateLlmAuth"];
+            /** @description (`CUSTOM`, `NVIDIA_NIM`, `LITELLM`, and `ANTHROPIC` only) New endpoint URL. For `NVIDIA_NIM` and `ANTHROPIC` the field is optional on the resource, so null clears it (falling back to the provider default endpoint). For `CUSTOM` and `LITELLM` it is required on the resource — null is rejected with 422. Omit to keep unchanged. */
+            base_url?: string | null;
+            /** @description (`CUSTOM`, `NVIDIA_NIM`, and `LITELLM` only) Replaces the configured custom request headers: the provided map becomes the full header set. Pass null to clear all headers. Omit to keep unchanged. Write-only; names are exposed as `header_names` on read. The serialized header map must not exceed 8,175 bytes. */
+            headers?: {
+                [key: string]: string;
+            } | null;
+            /** @description (`AWS_BEDROCK`, `CUSTOM`, `FIREWORKS`, `NVIDIA_NIM`, and `TOGETHER_AI` only) Enable or disable Arize's default model catalog. For `AWS_BEDROCK`, `CUSTOM`, and `NVIDIA_NIM` the effective config must keep at least one model source or the request is rejected with 422. Omit to keep unchanged. */
             is_default_models_enabled?: boolean;
-            /** @description (`AWS_BEDROCK`, `CUSTOM`, and `NVIDIA_NIM` only) Replaces the custom model list. The effective config must keep at least one model source or the request is rejected with 422. Omit to keep unchanged. */
+            /** @description (`AWS_BEDROCK`, `CUSTOM`, `FIREWORKS`, `NVIDIA_NIM`, `LITELLM`, and `TOGETHER_AI` only) Replaces the custom model list. For `AWS_BEDROCK`, `CUSTOM`, and `NVIDIA_NIM` the effective config must keep at least one model source or the request is rejected with 422; `FIREWORKS`, `LITELLM`, and `TOGETHER_AI` resolve models from the provider, so the list may be emptied. Omit to keep unchanged. */
             model_names?: string[];
             /** @description (`VERTEX_AI` only) New GCP project ID. Required on the resource, so it may be changed but never cleared; omitted fields keep their stored values (per-scalar deep-merge). */
             project_id?: string;
@@ -5455,6 +7649,14 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        ListMonitorsResponse: {
+            /** @description A list of monitors. */
+            monitors: components["schemas"]["Monitor"][];
+            /** @description Pagination metadata for cursor-based navigation */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
+        /** @description A monitor. The `type` field discriminates which variant (and therefore which type-specific fields) applies. */
+        Monitor: components["schemas"]["DataQualityMonitor"] | components["schemas"]["PerformanceMonitor"] | components["schemas"]["DriftMonitor"] | components["schemas"]["CustomMetricMonitor"] | components["schemas"]["TracingMonitor"];
         AddOrganizationUserRequest: {
             /** @description The unique identifier of the user to add */
             user_id: components["schemas"]["Id"];
@@ -5501,7 +7703,7 @@ export interface components {
          *     Auto-generated from proto/auth/protocol/permissions.proto.
          * @enum {string}
          */
-        Permission: "AI_PROVIDER_READ" | "ALYX_RUN" | "ANNOTATION_CONFIG_CREATE" | "ANNOTATION_CONFIG_DELETE" | "ANNOTATION_CONFIG_READ" | "ANNOTATION_CONFIG_UPDATE" | "CUSTOM_METRIC_CREATE" | "CUSTOM_METRIC_DELETE" | "CUSTOM_METRIC_READ" | "CUSTOM_METRIC_UPDATE" | "DASHBOARD_CREATE" | "DASHBOARD_DELETE" | "DASHBOARD_READ" | "DASHBOARD_UPDATE" | "DATASET_CREATE" | "DATASET_DELETE" | "DATASET_EXAMPLE_ANNOTATE" | "DATASET_EXAMPLE_CREATE" | "DATASET_EXAMPLE_DELETE" | "DATASET_EXAMPLE_READ" | "DATASET_EXAMPLE_UPDATE" | "DATASET_READ" | "DATASET_UPDATE" | "DATASET_VIEW_CREATE" | "DATASET_VIEW_DELETE" | "DATASET_VIEW_READ" | "DATASET_VIEW_UPDATE" | "DATA_FABRIC_CONNECTOR_CREATE" | "DATA_FABRIC_CONNECTOR_DELETE" | "DATA_FABRIC_CONNECTOR_READ" | "DATA_FABRIC_CONNECTOR_UPDATE" | "EVALUATOR_CREATE" | "EVALUATOR_DELETE" | "EVALUATOR_READ" | "EVALUATOR_UPDATE" | "EXPERIMENT_CREATE" | "EXPERIMENT_DELETE" | "EXPERIMENT_EVAL_TASK_CREATE" | "EXPERIMENT_EVAL_TASK_DELETE" | "EXPERIMENT_EVAL_TASK_READ" | "EXPERIMENT_EVAL_TASK_UPDATE" | "EXPERIMENT_READ" | "EXPERIMENT_RUN_ANNOTATE" | "EXPERIMENT_RUN_READ" | "EXPERIMENT_UPDATE" | "FILE_IMPORT_CREATE" | "FILE_IMPORT_DELETE" | "FILE_IMPORT_READ" | "FILE_IMPORT_UPDATE" | "LLM_INTEGRATION_CREATE" | "LLM_INTEGRATION_DELETE" | "LLM_INTEGRATION_UPDATE" | "MANAGED_AGENT_CREATE" | "MANAGED_AGENT_DELETE" | "MANAGED_AGENT_READ" | "MANAGED_AGENT_UPDATE" | "ML_MODEL_CREATE" | "ML_MODEL_DELETE" | "ML_MODEL_READ" | "ML_MODEL_UPDATE" | "MONITOR_CREATE" | "MONITOR_DELETE" | "MONITOR_READ" | "MONITOR_TRIGGER" | "MONITOR_UPDATE" | "ORGANIZATION_CREATE" | "ORGANIZATION_DELETE" | "ORGANIZATION_READ" | "ORGANIZATION_UPDATE" | "PLAYGROUND_RUN" | "PLAYGROUND_VIEW_CREATE" | "PLAYGROUND_VIEW_DELETE" | "PLAYGROUND_VIEW_READ" | "PLAYGROUND_VIEW_UPDATE" | "PROJECT_CREATE" | "PROJECT_DELETE" | "PROJECT_EVAL_TASK_CREATE" | "PROJECT_EVAL_TASK_DELETE" | "PROJECT_EVAL_TASK_READ" | "PROJECT_EVAL_TASK_UPDATE" | "PROJECT_READ" | "PROJECT_RESTRICT" | "PROJECT_SPAN_ANNOTATE" | "PROJECT_SPAN_CREATE" | "PROJECT_SPAN_DELETE" | "PROJECT_SPAN_READ" | "PROJECT_SPAN_UPDATE" | "PROJECT_UPDATE" | "PROMPT_CREATE" | "PROMPT_DELETE" | "PROMPT_OPTIMIZE_TASK_CREATE" | "PROMPT_OPTIMIZE_TASK_DELETE" | "PROMPT_OPTIMIZE_TASK_READ" | "PROMPT_OPTIMIZE_TASK_UPDATE" | "PROMPT_READ" | "PROMPT_UPDATE" | "QUEUE_CREATE" | "QUEUE_DELETE" | "QUEUE_READ" | "QUEUE_RECORD_ANNOTATE" | "QUEUE_RECORD_CREATE" | "QUEUE_RECORD_DELETE" | "QUEUE_RECORD_READ" | "QUEUE_RECORD_UPDATE" | "QUEUE_UPDATE" | "REMOTE_ENDPOINT_INTEGRATION_CREATE" | "REMOTE_ENDPOINT_INTEGRATION_DELETE" | "REMOTE_ENDPOINT_INTEGRATION_READ" | "REMOTE_ENDPOINT_INTEGRATION_UPDATE" | "ROLE_BINDING_CREATE" | "ROLE_BINDING_DELETE" | "ROLE_BINDING_READ" | "SERVICE_KEY_CREATE" | "SERVICE_KEY_READ" | "SERVICE_KEY_REVOKE" | "SPACE_CREATE" | "SPACE_DELETE" | "SPACE_READ" | "SPACE_UPDATE" | "TAG_CREATE" | "TAG_DELETE" | "TAG_READ" | "TAG_UPDATE" | "TRACE_VIEW_CREATE" | "TRACE_VIEW_DELETE" | "TRACE_VIEW_READ" | "TRACE_VIEW_UPDATE" | "USER_CREATE" | "USER_DELETE" | "USER_PERMISSION_UPDATE" | "USER_READ" | "USER_UPDATE";
+        Permission: "AGENT_ROLE_CREATE" | "AGENT_ROLE_DELETE" | "AGENT_ROLE_READ" | "AGENT_ROLE_UPDATE" | "AI_PROVIDER_READ" | "ALYX_RUN" | "ANNOTATION_CONFIG_CREATE" | "ANNOTATION_CONFIG_DELETE" | "ANNOTATION_CONFIG_READ" | "ANNOTATION_CONFIG_UPDATE" | "COST_CONFIG_CREATE" | "COST_CONFIG_DELETE" | "COST_CONFIG_READ" | "COST_CONFIG_UPDATE" | "CUSTOM_METRIC_CREATE" | "CUSTOM_METRIC_DELETE" | "CUSTOM_METRIC_READ" | "CUSTOM_METRIC_UPDATE" | "DASHBOARD_CREATE" | "DASHBOARD_DELETE" | "DASHBOARD_READ" | "DASHBOARD_RESTRICT" | "DASHBOARD_UPDATE" | "DATASET_CREATE" | "DATASET_DELETE" | "DATASET_EXAMPLE_ANNOTATE" | "DATASET_EXAMPLE_CREATE" | "DATASET_EXAMPLE_DELETE" | "DATASET_EXAMPLE_READ" | "DATASET_EXAMPLE_UPDATE" | "DATASET_READ" | "DATASET_UPDATE" | "DATASET_VIEW_CREATE" | "DATASET_VIEW_DELETE" | "DATASET_VIEW_READ" | "DATASET_VIEW_UPDATE" | "DATA_FABRIC_CONNECTOR_CREATE" | "DATA_FABRIC_CONNECTOR_DELETE" | "DATA_FABRIC_CONNECTOR_READ" | "DATA_FABRIC_CONNECTOR_UPDATE" | "EVALUATOR_CREATE" | "EVALUATOR_DELETE" | "EVALUATOR_READ" | "EVALUATOR_UPDATE" | "EXPERIMENT_CREATE" | "EXPERIMENT_DELETE" | "EXPERIMENT_EVAL_TASK_CREATE" | "EXPERIMENT_EVAL_TASK_DELETE" | "EXPERIMENT_EVAL_TASK_READ" | "EXPERIMENT_EVAL_TASK_UPDATE" | "EXPERIMENT_READ" | "EXPERIMENT_RUN_ANNOTATE" | "EXPERIMENT_RUN_READ" | "EXPERIMENT_UPDATE" | "FILE_IMPORT_CREATE" | "FILE_IMPORT_DELETE" | "FILE_IMPORT_READ" | "FILE_IMPORT_UPDATE" | "LLM_INTEGRATION_CREATE" | "LLM_INTEGRATION_DELETE" | "LLM_INTEGRATION_UPDATE" | "MANAGED_AGENT_CREATE" | "MANAGED_AGENT_DELETE" | "MANAGED_AGENT_READ" | "MANAGED_AGENT_UPDATE" | "ML_MODEL_CREATE" | "ML_MODEL_DELETE" | "ML_MODEL_READ" | "ML_MODEL_UPDATE" | "MONITOR_CREATE" | "MONITOR_DELETE" | "MONITOR_READ" | "MONITOR_TRIGGER" | "MONITOR_UPDATE" | "ORGANIZATION_CREATE" | "ORGANIZATION_DELETE" | "ORGANIZATION_READ" | "ORGANIZATION_UPDATE" | "PLAYGROUND_RUN" | "PLAYGROUND_VIEW_CREATE" | "PLAYGROUND_VIEW_DELETE" | "PLAYGROUND_VIEW_READ" | "PLAYGROUND_VIEW_UPDATE" | "PROJECT_CREATE" | "PROJECT_DELETE" | "PROJECT_EVAL_TASK_CREATE" | "PROJECT_EVAL_TASK_DELETE" | "PROJECT_EVAL_TASK_READ" | "PROJECT_EVAL_TASK_UPDATE" | "PROJECT_READ" | "PROJECT_RESTRICT" | "PROJECT_SPAN_ANNOTATE" | "PROJECT_SPAN_CREATE" | "PROJECT_SPAN_DELETE" | "PROJECT_SPAN_READ" | "PROJECT_SPAN_UPDATE" | "PROJECT_UPDATE" | "PROMPT_CREATE" | "PROMPT_DELETE" | "PROMPT_OPTIMIZE_TASK_CREATE" | "PROMPT_OPTIMIZE_TASK_DELETE" | "PROMPT_OPTIMIZE_TASK_READ" | "PROMPT_OPTIMIZE_TASK_UPDATE" | "PROMPT_READ" | "PROMPT_UPDATE" | "QUEUE_CREATE" | "QUEUE_DELETE" | "QUEUE_READ" | "QUEUE_RECORD_ANNOTATE" | "QUEUE_RECORD_CREATE" | "QUEUE_RECORD_DELETE" | "QUEUE_RECORD_READ" | "QUEUE_RECORD_UPDATE" | "QUEUE_UPDATE" | "REMOTE_ENDPOINT_INTEGRATION_CREATE" | "REMOTE_ENDPOINT_INTEGRATION_DELETE" | "REMOTE_ENDPOINT_INTEGRATION_READ" | "REMOTE_ENDPOINT_INTEGRATION_UPDATE" | "ROLE_BINDING_CREATE" | "ROLE_BINDING_DELETE" | "ROLE_BINDING_READ" | "ROLE_CREATE" | "ROLE_DELETE" | "ROLE_READ" | "ROLE_UPDATE" | "SERVICE_KEY_CREATE" | "SERVICE_KEY_READ" | "SERVICE_KEY_REVOKE" | "SPACE_CREATE" | "SPACE_DELETE" | "SPACE_READ" | "SPACE_UPDATE" | "TAG_CREATE" | "TAG_DELETE" | "TAG_READ" | "TAG_UPDATE" | "TRACE_VIEW_CREATE" | "TRACE_VIEW_DELETE" | "TRACE_VIEW_READ" | "TRACE_VIEW_UPDATE" | "USER_CREATE" | "USER_DELETE" | "USER_PERMISSION_UPDATE" | "USER_READ" | "USER_UPDATE";
         /**
          * @description A project represents an LLM application and serves as the primary container for observability data. Each project collects traces and spans that capture the execution flow of your application, enabling you to debug issues, monitor latency, and analyze token usage.
          *     Projects belong to a space and provide a centralized view of your application's performance. Use projects to organize related traces, run experiments against datasets, and track improvements over time.
@@ -5518,7 +7720,20 @@ export interface components {
              * @description When the project was created
              */
             created_at: string;
+            /**
+             * @description The project type for generative LLM projects. Null for projects
+             *     that have not been assigned a type.
+             */
+            project_type?: components["schemas"]["ProjectType"] | null;
         };
+        /**
+         * @description The kind of LLM project.
+         *     - `APPLICATION` — A user-facing LLM application project.
+         *     - `HARNESS` — An agent harness session project.
+         *     - `EXPERIMENT` — An experiment trace project.
+         * @enum {string}
+         */
+        ProjectType: "APPLICATION" | "HARNESS" | "EXPERIMENT";
         /** @description Anthropic-specific headers */
         AnthropicHeaders: {
             /** @description Anthropic beta feature flags */
@@ -5626,6 +7841,8 @@ export interface components {
             reasoning_effort?: string;
             /** @description Controls the verbosity of model output. Supported by OpenAI GPT-5 series. Accepted values: 'low' | 'medium' | 'high'. */
             verbosity?: string;
+            /** @description Processing tier for the request. Supported by OpenAI only, and only for models eligible for Priority processing. Accepted value: 'priority'. Omit to use the project default. */
+            service_tier?: string;
         } & {
             [key: string]: unknown;
         };
@@ -5648,7 +7865,7 @@ export interface components {
             /** @description Response format configuration. Optional. When omitted, no structured output constraint is applied (the provider's default plain-text behavior is used). */
             response_format?: components["schemas"]["ResponseFormatRequest"];
             /** @description Tool configuration for the LLM invocation. Optional. When omitted, no tools are made available to the model. */
-            tool_config?: components["schemas"]["ToolConfig"];
+            tool_config?: components["schemas"]["ToolConfigRequest"];
             /** @description Top-K sampling parameter. A top-K of 1 means the next selected token is the most probable (greedy decoding). */
             top_k?: number;
             /** @description Controls how much reasoning the model performs before responding. Supported by Gemini 3.x models. Accepted values: 'low', 'high'. */
@@ -5697,6 +7914,8 @@ export interface components {
             tool_call_id?: string;
             /** @description Tool calls generated by the model */
             tool_calls?: components["schemas"]["ToolCall"][];
+        } & {
+            [key: string]: unknown;
         };
         /** @description A message in a prompt write request */
         LLMMessageRequest: {
@@ -5941,12 +8160,21 @@ export interface components {
         /**
          * @description Type of the restricted resource.
          *     - PROJECT - A project within a space.
+         *     - DASHBOARD - A dashboard within a space.
          * @example PROJECT
          * @enum {string}
          */
-        ResourceRestrictionType: "PROJECT";
+        ResourceRestrictionType: "PROJECT" | "DASHBOARD";
         CreateRoleBindingRequest: {
             role_id: components["schemas"]["Id"];
+            /**
+             * @description ID of the user to bind the role to.
+             *
+             *     For a **service key**, this is the ID of the key's bot user — not the ID of
+             *     the person who created the key. Read it from `bot_user.id` on the
+             *     `POST /v2/api-keys` response, or from `bot_user.id` on the matching service
+             *     key entry returned by `GET /v2/api-keys`.
+             */
             user_id: components["schemas"]["Id"];
             resource_type: components["schemas"]["RoleBindingResourceType"];
             resource_id: components["schemas"]["Id"];
@@ -5955,6 +8183,14 @@ export interface components {
             /** @description Unique identifier for the role binding. */
             id: string;
             role_id: components["schemas"]["Id"];
+            /**
+             * @description ID of the user this binding assigns the role to.
+             *
+             *     For a **service key**, this is the ID of the key's bot user — not the ID of
+             *     the person who created the key. Read it from `bot_user.id` on the
+             *     `POST /v2/api-keys` response, or from `bot_user.id` on the matching service
+             *     key entry returned by `GET /v2/api-keys`.
+             */
             user_id: components["schemas"]["Id"];
             resource_type: components["schemas"]["RoleBindingResourceType"];
             resource_id: components["schemas"]["Id"];
@@ -6012,6 +8248,7 @@ export interface components {
             /**
              * @description List of permissions granted by this role. Each value corresponds to a
              *     permission identifier (e.g. `PROJECT_READ`, `DATASET_CREATE`).
+             *     Returned only to callers with `ROLE_READ`.
              */
             permissions: components["schemas"]["Permission"][];
             /**
@@ -6102,7 +8339,7 @@ export interface components {
         UpdateSpaceRequest: {
             /** @description Updated name of the space */
             name?: string;
-            /** @description Updated description of the space. Set to `null` to clear it. */
+            /** @description Updated description of the space. Set to `null` to clear it. An empty string is rejected. */
             description?: string | null;
             /**
              * @description Updated visibility for the space. Set to `true` to make the space
@@ -6155,6 +8392,35 @@ export interface components {
              *     empty or whitespace-only.
              */
             filter?: string;
+            /**
+             * @description Columns to include in each span. When set, only these columns (plus
+             *     fixed span fields) are returned. Mutually exclusive with
+             *     `excluded_columns` — providing both returns 422.
+             *
+             *     Values must be full dotted column paths
+             *     (e.g., `attributes.llm.model_name`, `eval.hallucination.score`).
+             *     Unknown column names are silently ignored.
+             *
+             *     Fixed span fields — name, context (trace_id, span_id), kind, parent_id,
+             *     start_time, end_time, status_code, status_message, latency_ms, and
+             *     events — are always returned regardless of this parameter.
+             */
+            included_columns?: string[];
+            /**
+             * @description Columns to exclude from each span. When set, all columns except these
+             *     are returned. Mutually exclusive with `included_columns` — providing
+             *     both returns 422.
+             *
+             *     Values must be full dotted column paths
+             *     (e.g., `attributes.embedding.vectors`, `eval.toxicity.score`).
+             *     Unknown column names are silently ignored. Attempts to exclude fixed
+             *     span fields (name, context, kind, parent_id, start_time, end_time,
+             *     status_code, status_message, latency_ms, events) are silently ignored.
+             *
+             *     Excluding an `attributes.*` column removes that attribute from the
+             *     returned `attributes` object.
+             */
+            excluded_columns?: string[];
         };
         /**
          * @description A Span represents a single unit of work within a distributed trace for an LLM application.
@@ -6224,6 +8490,126 @@ export interface components {
          * @enum {string}
          */
         SpanStatusCode: "OK" | "ERROR" | "UNSET";
+        AddTagsRequest: {
+            /**
+             * @description IDs of the tags to attach. Up to 100 per request. Tags must belong to
+             *     the same space as the resource. Attaching a tag that is already
+             *     attached is idempotent rather than an error, so the same request can be
+             *     retried safely.
+             */
+            tag_ids: components["schemas"]["Id"][];
+        };
+        CreateTagRequest: {
+            /**
+             * @description Name of the tag. Must be unique within the space, compared
+             *     case-insensitively — a space containing `Production` cannot also contain
+             *     `production`. Maximum 100 characters.
+             */
+            name: string;
+            /** @description Description of what the tag is for. Defaults to `null` when omitted. */
+            description?: string | null;
+            /**
+             * @description Display color for the tag. Defaults to `null` when omitted, meaning no
+             *     color is assigned.
+             */
+            color?: components["schemas"]["TagColor"] | null;
+            /** @description The unique identifier of the space to create the tag in */
+            space_id: components["schemas"]["Id"];
+        };
+        RemoveTagsRequest: {
+            /**
+             * @description IDs of the tags to detach. Up to 100 per request. An ID that is not
+             *     currently attached is reported in `not_deleted` rather than causing
+             *     the whole request to fail, so the same request can be retried
+             *     safely.
+             */
+            tag_ids: components["schemas"]["Id"][];
+        };
+        RemoveTagsResponse: {
+            /**
+             * @description True when every requested tag ID was attached and has been detached.
+             *     False when one or more requested IDs appear in `not_deleted`.
+             */
+            completed: boolean;
+            /** @description IDs of the tags that were attached and have been detached. */
+            deleted: components["schemas"]["Id"][];
+            /**
+             * @description IDs from the request that were not attached to the resource. Not an
+             *     error — detaching an already-detached tag is a no-op.
+             */
+            not_deleted: components["schemas"]["Id"][];
+        };
+        ListTagsResponse: {
+            /**
+             * @description The tags attached to the resource, most recently updated first. Empty
+             *     when the resource has no tags.
+             */
+            tags: components["schemas"]["Tag"][];
+            /**
+             * @description Pagination metadata. Tag lists are not paginated yet, so `has_more` is
+             *     always `false` and `next_cursor` is always omitted. The field is present
+             *     so that adding pagination later does not change the response shape.
+             */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
+        /**
+         * @description A tag is a reusable label defined once per space and attached to many
+         *     resources across the platform, so the same vocabulary can be applied to
+         *     projects, datasets, prompts, and more.
+         *
+         *     Tags are shared. Renaming a tag changes it everywhere it appears, and
+         *     deleting a tag detaches it from every resource it was attached to.
+         */
+        Tag: {
+            /** @description The unique identifier of the tag */
+            id: components["schemas"]["Id"];
+            /** @description The tag name. Unique within the space, compared case-insensitively. */
+            name: string;
+            /**
+             * @description Free-form description of what the tag is for. `null` when no description
+             *     has been set.
+             */
+            description?: string | null;
+            /**
+             * @description Display color for the tag. `null` when no color has been assigned, which
+             *     clients render with a neutral treatment.
+             */
+            color?: components["schemas"]["TagColor"] | null;
+            /** @description The unique identifier of the space the tag belongs to */
+            space_id: components["schemas"]["Id"];
+            /**
+             * Format: date-time
+             * @description When the tag was created
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description When the tag was last modified. Equal to `created_at` until the tag is
+             *     updated.
+             */
+            updated_at: string;
+        };
+        /**
+         * @description Display color applied to the tag wherever it is shown. One of the platform's
+         *     19 display colors.
+         * @enum {string}
+         */
+        TagColor: "GRAY" | "INDIGO" | "BLUE" | "CYAN" | "TEAL" | "PINE" | "GREEN" | "LIME" | "OLIVE" | "LEMON" | "YELLOW" | "ORANGE" | "RED" | "CORAL" | "PINK" | "PLUM" | "PURPLE" | "BROWN" | "AUBURN";
+        /**
+         * @description Fields to update on a tag. Omitted fields are left unchanged, so at least
+         *     one field must be provided.
+         */
+        UpdateTagRequest: {
+            /**
+             * @description New tag name. Must be unique within the space, compared
+             *     case-insensitively. Maximum 100 characters. Left unchanged when omitted.
+             */
+            name?: string;
+            /** @description New description. Pass `null` to clear it. Left unchanged when omitted. */
+            description?: string | null;
+            /** @description New display color. Pass `null` to clear it. Left unchanged when omitted. */
+            color?: components["schemas"]["TagColor"] | null;
+        };
         /**
          * @description Configuration for running an agent integration against each dataset
          *     example. The `input_template` is sent to the agent after Mustache
@@ -6249,6 +8635,31 @@ export interface components {
              *     is optional — `{{column}}` and `{{dataset.column}}` are equivalent, and
              *     responses (create, update, and read) always echo the normalized
              *     `{{column}}` form.
+             */
+            input_template: {
+                [key: string]: unknown;
+            };
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Strict request configuration for running an agent integration. */
+        AgentCallRunConfigRequest: {
+            /**
+             * @description Discriminator. Must be `"AGENT_CALL"`. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            experiment_type: "AGENT_CALL";
+            /**
+             * @description Agent integration identifier (base64). The agent invoked for each
+             *     dataset example. Must reference an integration of `type` `AGENT`;
+             *     other integration types are rejected.
+             */
+            integration_id: string;
+            /**
+             * @description JSON request body sent to the agent for each dataset example. Must be a
+             *     JSON object whose values conform to the agent integration's input
+             *     schema. Mustache placeholders (`{{column}}`) are substituted with each
+             *     dataset row's values before the request is sent.
              */
             input_template: {
                 [key: string]: unknown;
@@ -6287,6 +8698,29 @@ export interface components {
             tool_config?: components["schemas"]["ToolConfig"];
             /** @description Prompt version identifier (base64). Links to a Prompt Hub version for traceability. */
             prompt_version_id?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Strict request configuration for running an LLM prompt against each dataset example. */
+        LlmGenerationRunConfigRequest: {
+            /**
+             * @description Discriminator. Must be `"LLM_GENERATION"`. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            experiment_type: "LLM_GENERATION";
+            /** @description AI integration identifier (base64). */
+            ai_integration_id: string;
+            /** @description Model name (e.g. `gpt-4o`). Falls back to the integration's default if omitted. */
+            model_name?: string;
+            /** @description Array of message objects (at least one). */
+            messages: components["schemas"]["LLMMessageRequest"][];
+            input_variable_format: components["schemas"]["InputVariableFormat"];
+            invocation_parameters?: components["schemas"]["InvocationParamsRequest"];
+            /** @description Provider-specific parameters. Defaults to `{}` (no overrides) if omitted. */
+            provider_parameters?: Record<string, unknown>;
+            tool_config?: components["schemas"]["ToolConfigRequest"];
+            /** @description Prompt version identifier (base64). Links to a Prompt Hub version for traceability. */
+            prompt_version_id?: string | null;
         };
         /**
          * @description Experiment execution configuration for a `RUN_EXPERIMENT` task. Exactly one
@@ -6295,10 +8729,47 @@ export interface components {
          */
         RunConfiguration: components["schemas"]["LlmGenerationRunConfig"] | components["schemas"]["TemplateEvaluationRunConfig"] | components["schemas"]["AgentCallRunConfig"];
         /**
+         * @description Strict request form of an experiment execution configuration. Exactly one
+         *     variant must be supplied, identified by `experiment_type`.
+         */
+        RunConfigurationRequest: components["schemas"]["LlmGenerationRunConfigRequest"] | components["schemas"]["TemplateEvaluationRunConfigRequest"] | components["schemas"]["AgentCallRunConfigRequest"];
+        /** @description Span-granularity evaluator input. Uses `query_filter` and `column_mappings`. */
+        SpanEvaluatorInput: {
+            /** @description Evaluator identifier (base64). Duplicates are not allowed. */
+            evaluator_id: string;
+            /**
+             * @description Pin this evaluator to a specific version (base64). Defaults to null, which
+             *     always runs the evaluator's latest version; omitting the field and sending
+             *     null are equivalent. Must be a version of the evaluator named by
+             *     `evaluator_id`, otherwise the request returns 422.
+             */
+            evaluator_version_id?: string | null;
+            /** @description Per-evaluator query filter (span shape). Combined with the task-level filter (AND). */
+            query_filter?: string;
+            /** @description Maps evaluator template variable names to data source column names (span shape). */
+            column_mappings?: {
+                [key: string]: string;
+            };
+        };
+        /**
          * @description A task is a typed, configurable unit of work that ties one or more evaluators
          *     to a data source (project or dataset). `RUN_EXPERIMENT` tasks additionally
          *     carry a `run_configuration` that defines the LLM, evaluator, or agent
          *     settings for each triggered run.
+         *
+         *     Evaluation tasks (`TEMPLATE_EVALUATION` and `CODE_EVALUATION`) use one of
+         *     two mutually exclusive query-filter shapes depending on the granularity of
+         *     the data each evaluator processes:
+         *
+         *     - **Span shape** — `query_filter` (task-level) plus per-evaluator
+         *       `column_mappings`/`query_filter`. For tasks where each evaluated unit is
+         *       a single span. `query_filters` is null.
+         *     - **Trace/session shape** — `query_filters` (named `filters` plus optional
+         *       `expression`) at the task level, and per-evaluator `query_mappings`. For
+         *       tasks where each evaluated unit is a complete trace or session.
+         *       `query_filter` is null.
+         *
+         *     All evaluators on a task must use the same shape; mixing shapes returns 400.
          */
         Task: {
             /** @description The unique identifier for the task */
@@ -6314,8 +8785,18 @@ export interface components {
             sampling_rate?: number | null;
             /** @description Whether the task runs continuously on incoming data. */
             is_continuous: boolean;
-            /** @description Task-level query filter applied to all data. */
+            /**
+             * @description Task-level query filter applied to all data. Span-granularity shape only.
+             *     Null when the task uses the trace/session shape (`query_filters`).
+             *     Mutually exclusive with `query_filters`.
+             */
             query_filter: string | null;
+            /**
+             * @description Named query filters plus optional boolean expression for
+             *     trace/session-granularity evaluators. Null for span-granularity tasks
+             *     (which use `query_filter`). Mutually exclusive with `query_filter`.
+             */
+            query_filters?: components["schemas"]["TaskQueryFilters"] | null;
             /** @description The evaluators attached to this task. Empty for run_experiment tasks. */
             evaluators: components["schemas"]["TaskEvaluator"][];
             /** @description Experiment identifiers (base64) for dataset-based tasks. */
@@ -6354,33 +8835,135 @@ export interface components {
              *     latest version.
              */
             evaluator_version_id: string | null;
-            /** @description Per-evaluator query filter, combined with the task-level filter (AND). */
+            /**
+             * @description Per-evaluator query filter, combined with the task-level filter (AND).
+             *     Span-granularity shape only; null for trace/session evaluators.
+             */
             query_filter: string | null;
-            /** @description Maps evaluator template variable names to data source column names. */
+            /**
+             * @description Maps evaluator template variable names to data source column names.
+             *     Span-granularity shape only; null for trace/session evaluators (which use
+             *     `query_mappings`).
+             */
             column_mappings: {
                 [key: string]: string;
             } | null;
+            /**
+             * @description Maps each evaluator variable to one or more declared query ids plus an
+             *     attribute path, for trace/session evaluators. Present only on
+             *     trace/session tasks; null on span tasks (which use `column_mappings`).
+             */
+            query_mappings?: components["schemas"]["TaskQueryMapping"][] | null;
         };
         /**
          * @description An evaluator attachment supplied when creating or updating a task. At least
-         *     one entry is required on evaluation-task requests.
+         *     one entry is required on evaluation-task requests. Evaluators carry one of
+         *     two mutually exclusive shapes: span evaluators use `query_filter` +
+         *     `column_mappings`; trace/session evaluators use `query_mappings`.
          */
-        TaskEvaluatorInput: {
-            /** @description Evaluator identifier (base64). Duplicates are not allowed. */
-            evaluator_id: string;
+        TaskEvaluatorInput: components["schemas"]["SpanEvaluatorInput"] | components["schemas"]["TraceOrSessionEvaluatorInput"];
+        /**
+         * @description A single named task-level query filter (trace/session shape). The `id` is a
+         *     logical label used in `query_filters.expression` and per-evaluator
+         *     `query_mappings`.
+         */
+        TaskQueryFilter: {
             /**
-             * @description Pin this evaluator to a specific version (base64). Defaults to null, which
-             *     always runs the evaluator's latest version; omitting the field and sending
-             *     null are equivalent. Must be a version of the evaluator named by
-             *     `evaluator_id`, otherwise the request returns 422.
+             * @description Single-letter query id, one of `A`-`E`. Unique within the task. Referenced
+             *     by `query_filters.expression` and by each evaluator's `query_mappings`.
              */
-            evaluator_version_id?: string | null;
-            /** @description Per-evaluator query filter. Combined with the task-level filter (AND). */
-            query_filter?: string;
-            /** @description Maps evaluator template variable names to data source column names. */
-            column_mappings?: {
-                [key: string]: string;
-            };
+            id: string;
+            /** @description The query filter expression for this named query. */
+            filter: string;
+        };
+        /**
+         * @description A single named task-level query filter for create/update requests (trace/session
+         *     shape). The `id` is a logical label used in `query_filters.expression` and
+         *     per-evaluator `query_mappings`.
+         */
+        TaskQueryFilterInput: {
+            /**
+             * @description Single-letter query id, one of `A`-`E`. Unique within the task. Referenced
+             *     by `query_filters.expression` and by each evaluator's `query_mappings`.
+             */
+            id: string;
+            /** @description The query filter expression for this named query. */
+            filter: string;
+        };
+        /**
+         * @description Combined named-query filters and boolean expression for the trace/session
+         *     shape. Supply this object OR `query_filter` (span shape) — not both.
+         */
+        TaskQueryFilters: {
+            /**
+             * @description Named query filters (1-5 entries) with unique `A`-`E` ids. Each entry
+             *     pairs a single-letter id with a filter expression.
+             */
+            filters: components["schemas"]["TaskQueryFilter"][];
+            /**
+             * @description Boolean expression combining the `filters` ids (e.g. `A AND B`).
+             *     Optional when exactly one filter is declared; required when two or more
+             *     are declared. When a client omits `expression` on a single-filter create,
+             *     GET echoes a synthesized expression equal to the lone query id (e.g. `A`).
+             */
+            expression?: string;
+        };
+        /**
+         * @description Combined named-query filters and boolean expression for create/update requests
+         *     (trace/session shape). Supply this object OR `query_filter` (span shape) — not both.
+         */
+        TaskQueryFiltersInput: {
+            /**
+             * @description Named query filters (1-5 entries) with unique `A`-`E` ids. Each entry
+             *     pairs a single-letter id with a filter expression.
+             */
+            filters: components["schemas"]["TaskQueryFilterInput"][];
+            /**
+             * @description Boolean expression combining the `filters` ids (e.g. `A AND B`).
+             *     Optional when exactly one filter is declared; required when two or more
+             *     are declared.
+             */
+            expression?: string;
+        };
+        /**
+         * @description Maps one evaluator variable to one or more query ids and an attribute path
+         *     (trace/session shape).
+         */
+        TaskQueryMapping: {
+            /** @description The evaluator template variable this mapping populates. */
+            variable_name: string;
+            /**
+             * @description Declared query ids (`A`-`E`) whose matching units feed this variable. An
+             *     empty list means "any declared query" (valid for session-level variables
+             *     that match all spans in the conversation). Every id must be declared in
+             *     the task's `query_filters.filters`.
+             */
+            query_ids: string[];
+            /**
+             * @description Span attribute path (e.g. `attributes.input.value`) resolved within each
+             *     admitted unit to populate `variable_name`.
+             */
+            attribute_path: string;
+        };
+        /**
+         * @description Maps one evaluator variable to one or more query ids and an attribute path for
+         *     create/update requests (trace/session shape).
+         */
+        TaskQueryMappingInput: {
+            /** @description The evaluator template variable this mapping populates. */
+            variable_name: string;
+            /**
+             * @description Declared query ids (`A`-`E`) whose matching units feed this variable. An
+             *     empty list means "any declared query" (valid for session-level variables
+             *     that match all spans in the conversation). Every id must be declared in
+             *     the task's `query_filters.filters`.
+             */
+            query_ids: string[];
+            /**
+             * @description Span attribute path (e.g. `attributes.input.value`) resolved within each
+             *     admitted unit to populate `variable_name`.
+             */
+            attribute_path: string;
         };
         /**
          * @description A task run is an async job that executes the work defined on a task. Runs are
@@ -6494,6 +9077,54 @@ export interface components {
             invocation_parameters?: components["schemas"]["InvocationParams"];
             /** @description Provider-specific parameters. Defaults to `{}` (no overrides) if omitted. */
             provider_parameters?: Record<string, unknown>;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Strict request configuration for running a template-based LLM evaluator. */
+        TemplateEvaluationRunConfigRequest: {
+            /**
+             * @description Discriminator. Must be `"TEMPLATE_EVALUATION"`. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            experiment_type: "TEMPLATE_EVALUATION";
+            /** @description AI integration identifier (base64). The LLM that judges each example. */
+            ai_integration_id: string;
+            /** @description Model name (e.g. `gpt-4o`). Falls back to the integration's default if omitted. */
+            model_name?: string;
+            /**
+             * @description The evaluation prompt template. Use `{{variable}}` placeholders that map to dataset
+             *     column paths via `column_mapping`.
+             */
+            template: string;
+            /** @description Whether to ask the LLM to include a written explanation alongside the score/label. */
+            provide_explanation: boolean;
+            /** @description Map of choice label to numeric score (e.g. `{"relevant": 1, "irrelevant": 0}`). */
+            classification_choices?: {
+                [key: string]: number;
+            };
+            /** @description Maps template variable names to dataset column paths. */
+            column_mapping?: {
+                [key: string]: string;
+            };
+            /** @description EvaluatorVersion identifier (base64). Links this run to an Eval Hub evaluator version. */
+            evaluator_version_id?: string | null;
+            invocation_parameters?: components["schemas"]["InvocationParamsRequest"];
+            /** @description Provider-specific parameters. Defaults to `{}` (no overrides) if omitted. */
+            provider_parameters?: Record<string, unknown>;
+        };
+        /** @description Trace/session-granularity evaluator input. Uses `query_mappings`. */
+        TraceOrSessionEvaluatorInput: {
+            /** @description Evaluator identifier (base64). Duplicates are not allowed. */
+            evaluator_id: string;
+            /**
+             * @description Pin this evaluator to a specific version (base64). Defaults to null, which
+             *     always runs the evaluator's latest version; omitting the field and sending
+             *     null are equivalent. Must be a version of the evaluator named by
+             *     `evaluator_id`, otherwise the request returns 422.
+             */
+            evaluator_version_id?: string | null;
+            /** @description Per-evaluator variable-to-query mappings (trace/session shape). */
+            query_mappings: components["schemas"]["TaskQueryMappingInput"][];
         };
         /**
          * @description Trigger body for `POST /v2/tasks/{task_id}/trigger`. The server derives the
@@ -6527,8 +9158,6 @@ export interface components {
          *     evaluation task).
          */
         UpdateTaskRequest: components["schemas"]["UpdateEvaluationTaskRequest"] | components["schemas"]["UpdateRunExperimentTaskRequest"];
-        /** @description A monitor. The `type` field discriminates which variant (and therefore which type-specific fields) applies. */
-        Monitor: components["schemas"]["DataQualityMonitor"] | components["schemas"]["PerformanceMonitor"] | components["schemas"]["DriftMonitor"] | components["schemas"]["CustomMetricMonitor"] | components["schemas"]["TracingMonitor"];
         ListTracesRequest: {
             /** @description The project ID to list traces for */
             project_id: string;
@@ -6605,6 +9234,7 @@ export interface components {
              */
             spans: components["schemas"]["Span"][];
         };
+        /** @description User-level developer permissions are determined by the assigned account role. */
         CreateUserRequest: {
             /** @description Full name of the new user */
             name: string;
@@ -6613,11 +9243,6 @@ export interface components {
             role: components["schemas"]["UserRoleAssignmentRequest"];
             /** @description Controls whether and how an invitation is sent */
             invite_mode: components["schemas"]["InviteMode"];
-            /**
-             * @description Whether the user should have developer permissions (can use the Arize API).
-             *     Defaults to `true` for `ADMIN` and `MEMBER` roles, and `false` for `ANNOTATOR`.
-             */
-            is_developer?: boolean;
         };
         CreateUserResponse: {
             /** @description Unique identifier for the user */
@@ -6701,6 +9326,283 @@ export interface components {
          * @enum {string}
          */
         UserStatus: "ACTIVE" | "INVITED" | "EXPIRED";
+        CreateWebhookRequest: {
+            /** @description The unique identifier of the organization to create the webhook in */
+            organization_id: components["schemas"]["Id"];
+            /** @description Name of the webhook (must be unique within the organization) */
+            name: string;
+            /**
+             * Format: uri
+             * @description The HTTPS endpoint events are delivered to
+             */
+            url: string;
+            /** @description A brief description of the webhook's purpose. Defaults to an empty string if omitted. */
+            description?: string;
+            /**
+             * @description How deliveries from this webhook are authenticated. Defaults to
+             *     `BEARER` if omitted, and cannot be changed after creation. For
+             *     `HMAC_SHA256`, a signing secret is generated for you and returned
+             *     once in the create response.
+             */
+            auth_type?: components["schemas"]["WebhookAuthType"];
+            /**
+             * @description The complete `Authorization` header value sent with each delivery
+             *     request, e.g. `Bearer my-token`. Sent verbatim — include the
+             *     `Bearer ` prefix if your endpoint expects one. Only valid when
+             *     `auth_type` is `BEARER`. Write-only: never returned in any response.
+             */
+            auth_token?: string;
+            /** @description How long a delivery request may run before it is abandoned, in milliseconds. Defaults to 30000 if omitted. */
+            timeout_ms?: number;
+            /**
+             * @description Custom HTTP headers sent with each delivery request, as a map of at
+             *     most 20 header names to values. Header names must be valid HTTP
+             *     header names; connection-management headers (e.g. `Host`,
+             *     `Content-Length`) are rejected. Write-only: never returned in any
+             *     response.
+             */
+            headers?: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * @description The created webhook, plus `signing_secret` for `HMAC_SHA256` webhooks —
+         *     the only time the secret is ever returned.
+         */
+        CreateWebhookResponse: {
+            /** @description Unique identifier for the webhook */
+            id: components["schemas"]["Id"];
+            /** @description The unique identifier of the organization that owns the webhook */
+            organization_id: components["schemas"]["Id"];
+            /** @description Name of the webhook (unique within the organization) */
+            name: string;
+            /** @description A brief description of the webhook's purpose. Defaults to an empty string. */
+            description: string;
+            /**
+             * Format: uri
+             * @description The HTTPS endpoint events are delivered to
+             */
+            url: string;
+            /** @description How deliveries from this webhook are authenticated. Fixed at creation. */
+            auth_type: components["schemas"]["WebhookAuthType"];
+            /**
+             * @description The secret used to verify delivery signatures. **Only returned
+             *     once**, in this response, when `auth_type` is `HMAC_SHA256`.
+             *     Store it securely — it cannot be retrieved again; only a redacted
+             *     hint (`signing_secret_hint`) is readable afterwards. Absent for
+             *     `BEARER` webhooks.
+             */
+            signing_secret?: string;
+            /**
+             * @description Redacted hint of the signing secret (e.g. `whsec_…abcd`), useful for
+             *     identifying which secret the webhook uses. Present only for
+             *     `HMAC_SHA256` webhooks.
+             */
+            signing_secret_hint?: string;
+            /** @description How long a delivery request may run before it is abandoned, in milliseconds. Defaults to 30000. */
+            timeout_ms: number;
+            /**
+             * Format: date-time
+             * @description Timestamp for when the webhook was created
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description Timestamp for when the webhook was last updated
+             */
+            updated_at: string;
+            /** @description The unique identifier of the user who created the webhook. Absent when that user has since been removed from the account. */
+            created_by_user_id?: components["schemas"]["Id"];
+        };
+        ListWebhookDeliveryAttemptsResponse: {
+            /** @description A list of delivery attempts, most recent first */
+            delivery_attempts: components["schemas"]["WebhookDeliveryAttempt"][];
+            /** @description Pagination metadata for cursor-based navigation */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
+        ListWebhooksResponse: {
+            /** @description A list of webhooks */
+            webhooks: components["schemas"]["Webhook"][];
+            /** @description Pagination metadata for cursor-based navigation */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
+        CreateWebhookSubscriptionRequest: {
+            /** @description The unique identifier of the webhook to deliver the event to. Must belong to the source's organization. */
+            webhook_id: components["schemas"]["Id"];
+            /** @description The kind of resource to attach the webhook to */
+            source_type: components["schemas"]["WebhookSourceType"];
+            /** @description The unique identifier of the prompt or evaluator to attach the webhook to */
+            source_id: components["schemas"]["Id"];
+            /** @description The event to deliver. Must belong to the source type. */
+            event: components["schemas"]["WebhookEventType"];
+        };
+        ListWebhookSubscriptionsResponse: {
+            /** @description A list of webhook subscriptions, most recently created first */
+            subscriptions: components["schemas"]["WebhookSubscription"][];
+            /** @description Pagination metadata for cursor-based navigation */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
+        /** @description The outcome of a test delivery to the webhook's endpoint. */
+        TestWebhookResponse: {
+            /** @description HTTP status code returned by the webhook's endpoint. `502` when no response was received, for example because the endpoint was unreachable or timed out. */
+            status_code: number;
+            /** @description Why the test delivery failed. `null` for successful deliveries. */
+            error_message: string | null;
+        };
+        UpdateWebhookRequest: {
+            /** @description Updated name of the webhook (must be unique within the organization) */
+            name?: string;
+            /** @description Updated description of the webhook. Set to `null` to clear it. */
+            description?: string | null;
+            /**
+             * Format: uri
+             * @description Updated HTTPS endpoint events are delivered to
+             */
+            url?: string;
+            /**
+             * @description Replacement `Authorization` header value sent with each delivery
+             *     request, e.g. `Bearer my-token`. Sent verbatim — include the
+             *     `Bearer ` prefix if your endpoint expects one. Only valid when the
+             *     webhook's `auth_type` is `BEARER`. Write-only: never returned in any
+             *     response.
+             */
+            auth_token?: string;
+            /** @description Updated delivery timeout in milliseconds */
+            timeout_ms?: number;
+            /**
+             * @description Replacement custom HTTP headers, as a map of at most 20 header names
+             *     to values. Replaces the whole header map; headers not included are
+             *     removed. Write-only: never returned in any response.
+             */
+            headers?: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * @description A webhook is an organization-owned destination that receives event
+         *     deliveries over HTTPS. Create webhook subscriptions to choose which
+         *     prompt and evaluator events it receives.
+         *
+         *     Credentials are write-only: the bearer token and custom header values are
+         *     never returned, and the HMAC signing secret is returned exactly once, in
+         *     the create response — only its redacted hint is readable afterwards.
+         */
+        Webhook: {
+            /** @description Unique identifier for the webhook */
+            id: components["schemas"]["Id"];
+            /** @description The unique identifier of the organization that owns the webhook */
+            organization_id: components["schemas"]["Id"];
+            /** @description Name of the webhook (unique within the organization) */
+            name: string;
+            /** @description A brief description of the webhook's purpose. Defaults to an empty string. */
+            description: string;
+            /**
+             * Format: uri
+             * @description The HTTPS endpoint events are delivered to
+             */
+            url: string;
+            /** @description How deliveries from this webhook are authenticated. Fixed at creation. */
+            auth_type: components["schemas"]["WebhookAuthType"];
+            /**
+             * @description Redacted hint of the signing secret (e.g. `whsec_…abcd`), useful for
+             *     identifying which secret the webhook uses. Present only for
+             *     `HMAC_SHA256` webhooks. The full secret is returned exactly once, in
+             *     the create response, and cannot be retrieved afterwards.
+             */
+            signing_secret_hint?: string;
+            /** @description How long a delivery request may run before it is abandoned, in milliseconds. Defaults to 30000. */
+            timeout_ms: number;
+            /**
+             * Format: date-time
+             * @description Timestamp for when the webhook was created
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description Timestamp for when the webhook was last updated
+             */
+            updated_at: string;
+            /** @description The unique identifier of the user who created the webhook. Absent when that user has since been removed from the account. */
+            created_by_user_id?: components["schemas"]["Id"];
+        };
+        /**
+         * @description How deliveries from this webhook are authenticated.
+         *     - `BEARER`: the stored `auth_token` is sent verbatim as the
+         *       `Authorization` header of each delivery request.
+         *     - `HMAC_SHA256`: each delivery is signed with the webhook's signing
+         *       secret. The `X-Arize-Webhook-Signature` header carries
+         *       `v1=<hex-encoded HMAC-SHA256>` computed over
+         *       `<timestamp>.<raw request body>`, where `<timestamp>` is the
+         *       Unix-seconds value from the `X-Arize-Webhook-Timestamp` header and the
+         *       raw body is the exact bytes received. Deliveries also carry
+         *       `X-Arize-Webhook-Id` (event identifier) and `X-Arize-Webhook-Event`
+         *       (event type). To verify, recompute the HMAC over the received
+         *       timestamp and raw body with your stored secret and compare it to the
+         *       signature.
+         * @enum {string}
+         */
+        WebhookAuthType: "BEARER" | "HMAC_SHA256";
+        /** @description A single attempt to deliver an event to a webhook's endpoint. */
+        WebhookDeliveryAttempt: {
+            /** @description Unique identifier of the event that triggered this delivery */
+            event_id: string;
+            /** @description Which attempt this was for the event, starting at 1. Failed deliveries are retried. */
+            attempt_number: number;
+            /** @description The JSON payload sent to the webhook's endpoint */
+            payload: {
+                [key: string]: unknown;
+            };
+            /** @description HTTP status code returned by the endpoint. `null` when no response was received. */
+            status_code?: number | null;
+            /** @description Why the delivery failed. `null` for successful deliveries. */
+            error_message?: string | null;
+            /**
+             * Format: date-time
+             * @description Timestamp for when the delivery was attempted
+             */
+            created_at: string;
+        };
+        /**
+         * @description An event that a webhook can subscribe to.
+         *     - `PROMPT_VERSION_CREATED` — a new version of the prompt was created.
+         *     - `PROMPT_VERSION_LABELED` — a label was added to a version of the prompt.
+         *     - `PROMPT_VERSION_UNLABELED` — a label was removed from a version of the prompt.
+         *     - `EVALUATOR_VERSION_CREATED` — a new version of the evaluator was created.
+         *
+         *     Prompt events are valid only for `PROMPT` sources, and evaluator events
+         *     only for `EVALUATOR` sources.
+         * @enum {string}
+         */
+        WebhookEventType: "PROMPT_VERSION_CREATED" | "PROMPT_VERSION_LABELED" | "PROMPT_VERSION_UNLABELED" | "EVALUATOR_VERSION_CREATED";
+        /**
+         * @description The kind of resource a webhook subscription is attached to.
+         *     - `PROMPT` — `source_id` is a prompt id. Prompt events apply.
+         *     - `EVALUATOR` — `source_id` is an evaluator id. Evaluator events apply.
+         * @enum {string}
+         */
+        WebhookSourceType: "PROMPT" | "EVALUATOR";
+        /**
+         * @description A subscription delivers one event from one prompt or evaluator to one
+         *     webhook. A webhook that should receive several events from the same
+         *     resource has one subscription per event.
+         */
+        WebhookSubscription: {
+            /** @description Unique identifier for the subscription */
+            id: components["schemas"]["Id"];
+            /** @description The unique identifier of the webhook that receives the event */
+            webhook_id: components["schemas"]["Id"];
+            /** @description The kind of resource the subscription is attached to */
+            source_type: components["schemas"]["WebhookSourceType"];
+            /** @description The unique identifier of the prompt or evaluator the subscription is attached to */
+            source_id: components["schemas"]["Id"];
+            /** @description The event delivered to the webhook */
+            event: components["schemas"]["WebhookEventType"];
+            /**
+             * Format: date-time
+             * @description Timestamp for when the subscription was created
+             */
+            created_at: string;
+        };
         /**
          * @description A universally unique identifier (base64-encoded opaque string).
          * @example RW50aXR5OjEyMzQ1
@@ -6954,7 +9856,7 @@ export interface components {
              * @enum {string}
              */
             annotation_config_type: "CATEGORICAL";
-            /** @description The full replacement set of categorical annotation values (2–100 items). */
+            /** @description The full replacement set of categorical annotation values (2–500 items). */
             values?: components["schemas"]["CategoricalAnnotationValueRequest"][];
             /** @description New optimization direction. */
             optimization_direction?: components["schemas"]["OptimizationDirection"];
@@ -6996,6 +9898,27 @@ export interface components {
          * @enum {string}
          */
         AssignmentMethod: "ALL" | "RANDOM";
+        AnnotationQueueSessionRecordInput: {
+            /**
+             * @description Discriminator identifying this record as a session record. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            record_type: "SESSION";
+            /** @description The project ID these sessions belong to. */
+            project_id: string;
+            /**
+             * Format: date-time
+             * @description Start of the time range used to resolve each session's first trace. The range (end_time - start_time) must not exceed 7 days.
+             */
+            start_time: string;
+            /**
+             * Format: date-time
+             * @description End of the time range. Must be after start_time.
+             */
+            end_time: string;
+            /** @description List of session IDs to add to the queue. A request may contain at most 100 session IDs in total across all record sources. */
+            session_ids: string[];
+        };
         ListAnnotationQueueRecordsResponse: {
             /** @description A list of annotation queue records */
             records: components["schemas"]["AnnotationQueueRecord"][];
@@ -7287,11 +10210,13 @@ export interface components {
              */
             not_deleted_example_ids?: string[];
         };
-        ListEvaluatorsResponse: {
-            /** @description A list of evaluators */
-            evaluators: components["schemas"]["Evaluator"][];
-            /** @description Pagination metadata for cursor-based navigation */
-            pagination: components["schemas"]["PaginationMetadata"];
+        ListEvaluatorTemplatesResponse: {
+            /**
+             * @description Every built-in template, ordered by category as the product presents
+             *     them (response quality, code quality, trajectory, RAG, security,
+             *     session).
+             */
+            evaluator_templates: components["schemas"]["EvaluatorTemplate"][];
         };
         /**
          * @description Evaluator version backed by a harness evaluation config. Only common
@@ -7312,22 +10237,56 @@ export interface components {
             type: "HARNESS";
         };
         /**
-         * @description Evaluator version backed by a remote evaluation config. Only common
-         *     version metadata (id, commit info, timestamps) is returned — the remote
-         *     configuration is not yet accessible and will be a future addition.
+         * @description Remote configuration for a `REMOTE` evaluator version. The backing
+         *     `EVALUATOR` integration is referenced by this version and may also be
+         *     referenced by other versions. Updating it affects every version that
+         *     references it.
+         *
+         *     `integration_id` is included only when the caller has permission to read
+         *     the backing integration. Callers without that permission still receive the
+         *     remote version metadata, but the integration reference is omitted.
          */
-        EvaluatorVersionRemote: components["schemas"]["EvaluatorVersionCommon"] & {
+        RemoteConfig: {
             /**
-             * @description Discriminator identifying this as a remote evaluator version.
-             * @enum {string}
+             * @description `EVALUATOR` integration identifier (base64), as returned by the
+             *     integrations API (`POST /v2/integrations` with `type: EVALUATOR`).
+             *     Must reference an integration of type `EVALUATOR`; other integration
+             *     types are rejected.
              */
-            type?: "REMOTE";
-        } & {
+            integration_id?: string;
+        };
+        ListEvaluatorsResponse: {
+            /** @description A list of evaluators */
+            evaluators: components["schemas"]["Evaluator"][];
+            /** @description Pagination metadata for cursor-based navigation */
+            pagination: components["schemas"]["PaginationMetadata"];
+        };
+        /** @description Tool configuration in a write request (strict form of ToolConfig) */
+        ToolConfigRequest: {
+            /** @description List of tool definitions available to the model */
+            tools?: components["schemas"]["ToolDefinition"][];
+            /** @description Tool choice configuration */
+            tool_choice?: unknown;
+        };
+        /**
+         * @description Remote configuration for a `REMOTE` evaluator version in write requests.
+         *     The referenced integration may also be used by other versions; editing it
+         *     affects every version that references it.
+         */
+        RemoteConfigInput: {
             /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
+             * @description `EVALUATOR` integration identifier (base64), as returned by the
+             *     integrations API (`POST /v2/integrations` with `type: EVALUATOR`).
+             *     Must reference an integration of type `EVALUATOR`; other integration
+             *     types are rejected.
              */
-            type: "REMOTE";
+            integration_id: string;
+        };
+        CreateRemoteEvaluatorVersionRequest: {
+            /** @description Commit message describing the changes */
+            commit_message: string;
+            /** @description The remote configuration for this version */
+            remote_config: components["schemas"]["RemoteConfigInput"];
         };
         ListEvaluatorVersionsResponse: {
             /** @description A list of evaluator versions */
@@ -7346,6 +10305,483 @@ export interface components {
             experiment_runs: components["schemas"]["ExperimentRun"][];
             /** @description Pagination metadata for cursor-based navigation */
             pagination: components["schemas"]["PaginationMetadata"];
+        };
+        /** @description Config for a Fireworks AI integration. Fireworks is a single hosted service, so there is no endpoint field and no custom request headers. The API key is write-only and surfaces as `has_api_key`. `model_names` lists only the model names configured on this integration; models resolved live from the Fireworks account are served through the Arize UI and are not returned here. */
+        FireworksConfig: {
+            /** @description Whether function/tool calling is enabled. */
+            is_function_calling_enabled: boolean;
+            /**
+             * @description Discriminator identifying the Fireworks AI provider. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            provider: "FIREWORKS";
+            /** @description Whether an API key is configured (the key itself is never returned). */
+            has_api_key: boolean;
+            /** @description Whether Arize's default model catalog is enabled. */
+            is_default_models_enabled: boolean;
+            /** @description Custom model names configured on this integration. Empty when none. */
+            model_names: string[];
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Config for a Together AI integration. Together AI is a single hosted service, so there is no endpoint field and no custom request headers. The API key is write-only and surfaces as `has_api_key`. `model_names` lists only the model names configured on this integration; models resolved live from the Together AI account are served through the Arize UI and are not returned here. */
+        TogetherAiConfig: {
+            /** @description Whether function/tool calling is enabled. */
+            is_function_calling_enabled: boolean;
+            /**
+             * @description Discriminator identifying the Together AI provider. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            provider: "TOGETHER_AI";
+            /** @description Whether an API key is configured (the key itself is never returned). */
+            has_api_key: boolean;
+            /** @description Whether Arize's default model catalog is enabled. */
+            is_default_models_enabled: boolean;
+            /** @description Custom model names configured on this integration. Empty when none. */
+            model_names: string[];
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Create config for a Fireworks AI integration. `api_key` is required and is write-only (never returned; it surfaces as `has_api_key` on read). Fireworks is a single hosted service, so there is no endpoint field and no custom request headers. Neither `is_default_models_enabled` nor `model_names` is required: Arize resolves the models the key can reach from the Fireworks account, so an integration created with neither still has a selectable model list. */
+        CreateFireworksConfig: {
+            /** @description Enable function/tool calling. Defaults to true. */
+            is_function_calling_enabled?: boolean;
+            /**
+             * @description Discriminator identifying the Fireworks AI provider. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            provider: "FIREWORKS";
+            /** @description Fireworks AI API key (write-only, never returned). */
+            api_key: string;
+            /** @description Enable Arize's default model catalog. Defaults to false. */
+            is_default_models_enabled?: boolean;
+            /** @description Custom model names to make available. Defaults to an empty list. */
+            model_names?: string[];
+        };
+        /** @description Create config for a Together AI integration. `api_key` is required and is write-only (never returned; it surfaces as `has_api_key` on read). Together AI is a single hosted service, so there is no endpoint field and no custom request headers. Neither `is_default_models_enabled` nor `model_names` is required: Arize resolves the models the key can reach from the Together AI account, so an integration created with neither still has a selectable model list. */
+        CreateTogetherAiConfig: {
+            /** @description Enable function/tool calling. Defaults to true. */
+            is_function_calling_enabled?: boolean;
+            /**
+             * @description Discriminator identifying the Together AI provider. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            provider: "TOGETHER_AI";
+            /** @description Together AI API key (write-only, never returned). */
+            api_key: string;
+            /** @description Enable Arize's default model catalog. Defaults to false. */
+            is_default_models_enabled?: boolean;
+            /** @description Custom model names to make available. Defaults to an empty list. */
+            model_names?: string[];
+        };
+        /**
+         * @description The kind of monitor. Determines which type-specific fields apply.
+         *     - `DATA_QUALITY` - Monitors a data quality metric (e.g. percent empty, CARDINALITY).
+         *     - `PERFORMANCE` - Monitors a model performance metric (e.g. ACCURACY, RMSE).
+         *     - `DRIFT` - Monitors distributional drift of a feature/output.
+         *     - `CUSTOM_METRIC` - Monitors a user-defined custom metric.
+         *     - `TRACING` - Monitors a span/trace-derived metric (e.g. span attributes, evals).
+         * @enum {string}
+         */
+        MonitorType: "DATA_QUALITY" | "PERFORMANCE" | "DRIFT" | "CUSTOM_METRIC" | "TRACING";
+        /**
+         * @description The monitor's current state from its most recent evaluation.
+         *     - `TRIGGERED` - The metric breached the threshold.
+         *     - `CLEARED` - The metric is within healthy bounds.
+         *     - `NO_DATA` - No data was available to evaluate.
+         * @enum {string}
+         */
+        MonitorStatus: "TRIGGERED" | "CLEARED" | "NO_DATA";
+        /**
+         * @description The category of dimension the metric is evaluated over.
+         * @enum {string}
+         */
+        DimensionCategory: "FEATURE_LABEL" | "TAG" | "MODEL_VERSION" | "BATCH_ID" | "SPAN_ATTRIBUTE" | "LLM_EVAL" | "USER_ANNOTATION" | "ACTUALS" | "ACTUALS_SCORE" | "ACTUALS_CLASS" | "PREDICTIONS" | "PREDICTIONS_SCORE" | "PREDICTIONS_CLASS";
+        /**
+         * @description The data quality metric computed over the selected dimension.
+         * @enum {string}
+         */
+        DataQualityMetric: "COUNT" | "PERCENT_EMPTY" | "CARDINALITY" | "NEW_VALUES" | "MISSING_VALUES" | "AVG" | "SUM" | "STANDARD_DEVIATION" | "P50" | "P95" | "P99" | "P99_9" | "AVERAGE_STRING_LIST_LENGTH";
+        /**
+         * @description The model performance metric.
+         * @enum {string}
+         */
+        PerformanceMetric: "ACCURACY" | "CALIBRATION" | "F_1" | "FALSE_NEGATIVE_DENSITY" | "FALSE_NEGATIVE_RATE" | "FALSE_POSITIVE_RATE" | "PRECISION" | "RECALL" | "SENSITIVITY" | "SPECIFICITY" | "MICRO_AVERAGED_PRECISION" | "MACRO_AVERAGED_PRECISION" | "MULTI_CLASS_PRECISION" | "MICRO_AVERAGED_RECALL" | "MACRO_AVERAGED_RECALL" | "MULTI_CLASS_RECALL" | "ACTUALS_AVERAGE" | "MAE" | "MAPE" | "MEAN_ERROR" | "MSE" | "PREDICTION_AVERAGE" | "RMSE" | "R_SQUARED" | "SMAPE" | "WAPE" | "MASE" | "AUC" | "LOG_LOSS" | "NDCG" | "PR_AUC" | "GROUP_AUC" | "MRR" | "RANKING_MAP" | "RANKING_RECALL" | "RANKING_PRECISION" | "DISPARATE_IMPACT" | "FALSE_POSITIVE_RATE_PARITY" | "RECALL_PARITY";
+        /**
+         * @description The statistical drift metric. `PSI`/`KL`/`JS`/`KS` apply to structured data;
+         *     `EUCLIDEAN_DISTANCE`/`COSINE_SIMILARITY` apply to unstructured (embedding) data.
+         * @enum {string}
+         */
+        DriftMetric: "PSI" | "KL" | "JS" | "KS" | "EUCLIDEAN_DISTANCE" | "COSINE_SIMILARITY";
+        /**
+         * @description Numeric comparison operators used when evaluating a computed metric value against a threshold.
+         * @enum {string}
+         */
+        ThresholdOperator: "GREATER_THAN" | "GREATER_THAN_OR_EQUAL" | "LESS_THAN" | "LESS_THAN_OR_EQUAL" | "EQUALS" | "NOT_EQUALS";
+        ManualSingleThreshold: {
+            /**
+             * @description Identifies this threshold as a single, manually-set value. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "MANUAL_SINGLE";
+            /** @description The comparison applied between the computed metric value and the threshold value. */
+            operator: components["schemas"]["ThresholdOperator"];
+            /** @description The threshold value the computed metric is compared against. */
+            value: number;
+        };
+        /**
+         * @description The statistical calculation used to derive a dynamic threshold.
+         *     - `STDEV` - standard deviation of the metric over the baseline.
+         *     - `MAD` - median absolute deviation of the metric over the baseline.
+         * @enum {string}
+         */
+        ThresholdCalculation: "STDEV" | "MAD";
+        DynamicSingleThreshold: {
+            /**
+             * @description Identifies this threshold as a single value derived from a statistical calculation. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "DYNAMIC_SINGLE";
+            /** @description The statistical calculation used to derive the threshold value. */
+            calculation: components["schemas"]["ThresholdCalculation"];
+            /** @description The comparison applied between the computed metric value and the derived threshold. */
+            operator: components["schemas"]["ThresholdOperator"];
+            /**
+             * @description The multiplier applied to the calculation (e.g. number of standard
+             *     deviations) to derive the threshold.
+             */
+            multiplier: number;
+        };
+        ManualThresholdBound: {
+            /** @description The comparison applied between the computed metric value and this bound. */
+            operator: components["schemas"]["ThresholdOperator"];
+            /** @description The bound value the computed metric is compared against. */
+            value: number;
+        };
+        ManualRangeThreshold: {
+            /**
+             * @description Identifies this threshold as a manually-set lower/upper bound range. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "MANUAL_RANGE";
+            /** @description The lower bound of the range. Its operator must be `GREATER_THAN` or `GREATER_THAN_OR_EQUAL`. */
+            lower: components["schemas"]["ManualThresholdBound"];
+            /** @description The upper bound of the range. Its `operator` must be `LESS_THAN` or `LESS_THAN_OR_EQUAL`. */
+            upper: components["schemas"]["ManualThresholdBound"];
+        };
+        DynamicThresholdBound: {
+            /** @description The comparison applied between the computed metric value and this bound. */
+            operator: components["schemas"]["ThresholdOperator"];
+            /** @description The multiplier applied to the calculation (e.g. number of standard deviations) to derive this bound. */
+            multiplier: number;
+        };
+        DynamicRangeThreshold: {
+            /**
+             * @description Identifies this threshold as a lower/upper bound range derived from a statistical calculation. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "DYNAMIC_RANGE";
+            /** @description The statistical calculation used to derive the lower and upper bounds. */
+            calculation: components["schemas"]["ThresholdCalculation"];
+            /** @description The lower bound of the range. Its `operator` must be `GREATER_THAN` or `GREATER_THAN_OR_EQUAL`. */
+            lower: components["schemas"]["DynamicThresholdBound"];
+            /** @description The upper bound of the range. Its `operator` must be `LESS_THAN` or `LESS_THAN_OR_EQUAL`. */
+            upper: components["schemas"]["DynamicThresholdBound"];
+        };
+        /** @description The monitor's threshold. The `type` field discriminates whether the threshold is manual or dynamic, and single or a bounded range. */
+        ThresholdConfig: components["schemas"]["ManualSingleThreshold"] | components["schemas"]["DynamicSingleThreshold"] | components["schemas"]["ManualRangeThreshold"] | components["schemas"]["DynamicRangeThreshold"];
+        Dimension: {
+            /** @description The category of the monitored dimension. */
+            category: components["schemas"]["DimensionCategory"];
+            /** @description Name of the monitored field. Omitted when the category has no concrete field name. */
+            name?: string;
+        };
+        /**
+         * @description Operators used by a monitor's data filters. Includes string operators as well as numeric ones.
+         * @enum {string}
+         */
+        FilterOperator: "GREATER_THAN" | "GREATER_THAN_OR_EQUAL" | "LESS_THAN" | "LESS_THAN_OR_EQUAL" | "EQUALS" | "NOT_EQUALS" | "TOP_N" | "CONTAINS" | "CONTAINS_STRING" | "SIMILAR_TO";
+        MonitorFilter: {
+            /** @description The field the filter is applied to. */
+            dimension: components["schemas"]["Dimension"];
+            /** @description The comparison applied between the field's value and the filter's values. */
+            operator: components["schemas"]["FilterOperator"];
+            /** @description The values compared against by the operator. */
+            values: string[];
+        };
+        EmailNotificationConfig: {
+            /**
+             * @description Identifies this notification channel as an email address. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "EMAIL";
+            /**
+             * Format: email
+             * @description Email address notified on a triggered transition.
+             */
+            email_address: string;
+        };
+        IntegrationNotificationConfig: {
+            /**
+             * @description Identifies this notification channel as a connected integration. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "INTEGRATION";
+            /** @description The integration to notify (base64 global ID). */
+            integration_id: string;
+        };
+        WebhookNotificationConfig: {
+            /**
+             * @description Identifies this notification channel as a webhook. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "WEBHOOK";
+            /** @description The webhook to notify (base64 global ID). */
+            id: string;
+            /** @description The webhook endpoint URL. */
+            url?: string | null;
+        };
+        NotificationConfig: components["schemas"]["EmailNotificationConfig"] | components["schemas"]["IntegrationNotificationConfig"] | components["schemas"]["WebhookNotificationConfig"];
+        DowntimeConfig: {
+            /**
+             * Format: date-time
+             * @description When the downtime window begins.
+             */
+            start: string;
+            /** @description How long each downtime window lasts, in seconds. */
+            duration_seconds: number;
+            /** @description How often the downtime window repeats, in days. */
+            frequency_days: number;
+        };
+        ScheduledRuntimeConfig: {
+            /** @description Whether the monitor runs on a schedule. `false` means automatic scheduled evaluation is disabled. */
+            enabled: boolean;
+            /** @description How often the monitor evaluates, in seconds. */
+            cadence_seconds?: number;
+            /** @description Days of the week the monitor runs on (`0` = Sunday … `6` = Saturday). */
+            days_of_week?: number[];
+        };
+        MonitorBase: {
+            /** @description Unique identifier for the monitor (base64 global ID). */
+            id: string;
+            /** @description Human-readable name of the monitor. */
+            name: string;
+            /** @description Required on create. Immutable after creation. */
+            type: components["schemas"]["MonitorType"];
+            /** @description The project that the monitor belongs to (base64 global ID). */
+            project_id: string;
+            /** @description The UI deep link to the monitor. */
+            readonly uri: string;
+            /** @description Current evaluation state. Read-only. */
+            status: components["schemas"]["MonitorStatus"];
+            /** @description The condition that determines when this monitor triggers. */
+            threshold: components["schemas"]["ThresholdConfig"];
+            /**
+             * @description Whether notifications fire on a triggered transition.
+             * @default true
+             */
+            notifications_enabled: boolean;
+            /**
+             * @description Whether the monitor is evaluated manually rather than on the automatic cadence.
+             * @default false
+             */
+            manual_evaluation_enabled: boolean;
+            /** @description The user who created the monitor (base64 global ID). */
+            created_by_user_id: string;
+            /** @description Data filters applied to the monitor's metric. Omitted when the metric is computed over all data. */
+            filters?: components["schemas"]["MonitorFilter"][];
+            /** @description Notification channels (email / integration / webhook) notified on a triggered transition. Omitted when no channels are configured. */
+            notification_configs?: components["schemas"]["NotificationConfig"][];
+            /**
+             * Format: date-time
+             * @description When the monitor was created.
+             */
+            readonly created_at: string;
+            /**
+             * Format: date-time
+             * @description When the monitor was last updated.
+             */
+            readonly updated_at: string;
+            /** @description A recurring period during which the monitor is paused and will not trigger. Omitted when no downtime is configured. */
+            downtime?: components["schemas"]["DowntimeConfig"];
+            /** @description Returned when schedule configuration exists. */
+            scheduled_runtime?: components["schemas"]["ScheduledRuntimeConfig"];
+            /** @description The length of the evaluation window in seconds. Omitted when unset. */
+            evaluation_window_length_seconds?: number;
+            /** @description The delay applied before evaluating a window, in seconds. Omitted when unset. */
+            delay_seconds?: number;
+            /**
+             * Format: date-time
+             * @description The last time the metric was computed. Omitted if it has never been evaluated.
+             */
+            readonly evaluated_at?: string;
+            /** @description The most recently computed metric value. Omitted if it has never been evaluated. */
+            readonly latest_computed_value?: number;
+            /** @description Free-form notes attached to the monitor. Omitted when unset. */
+            notes?: string;
+        };
+        /** @description Uses the model's primary baseline as the comparison dataset. */
+        ModelBaselineConfig: {
+            /**
+             * @description Identifies this comparison dataset as the model's primary baseline. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "MODEL_BASELINE";
+            /** @description Filters applied to the comparison dataset. An empty array means no comparison dataset filters are configured. */
+            filters: components["schemas"]["MonitorFilter"][];
+        };
+        /** @description A custom comparison dataset using data between a fixed start and end date. */
+        FixedCustomBaselineWindow: {
+            /**
+             * @description Identifies this comparison window as a fixed date range. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "FIXED";
+            /**
+             * Format: date-time
+             * @description The start of the fixed comparison window.
+             */
+            fixed_start_date: string;
+            /**
+             * Format: date-time
+             * @description The end of the fixed comparison window.
+             */
+            fixed_end_date: string;
+        };
+        /** @description A custom comparison dataset using a moving window defined in seconds. */
+        MovingCustomBaselineWindow: {
+            /**
+             * @description Identifies this comparison window as a moving window relative to now. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "MOVING";
+            /** @description The length of the moving comparison window, in seconds. */
+            moving_window_seconds: number;
+            /** @description The delay before the moving comparison window, in seconds. */
+            moving_window_delay_seconds: number;
+        };
+        /** @description The custom comparison window. The `type` field determines whether the window is fixed or moving. */
+        CustomBaselineWindow: components["schemas"]["FixedCustomBaselineWindow"] | components["schemas"]["MovingCustomBaselineWindow"];
+        /** @description Uses a custom fixed or moving window as the comparison dataset. */
+        CustomBaselineConfig: {
+            /**
+             * @description Identifies this comparison dataset as a custom fixed or moving window. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "CUSTOM_BASELINE";
+            /** @description Filters applied to the comparison dataset. An empty array means no comparison dataset filters are configured. */
+            filters: components["schemas"]["MonitorFilter"][];
+            /** @description Model versions included in the comparison dataset. An empty array means all model versions. */
+            model_versions: string[];
+            /** @description The custom date range or rolling window used as the comparison dataset. */
+            window: components["schemas"]["CustomBaselineWindow"];
+        };
+        /** @description The comparison dataset configuration used by drift and comparison-based data quality monitors. The `type` field determines whether the comparison dataset uses the model's primary baseline or a custom fixed or moving window. */
+        BaselineConfig: components["schemas"]["ModelBaselineConfig"] | components["schemas"]["CustomBaselineConfig"];
+        DataQualityMonitor: components["schemas"]["MonitorBase"] & {
+            /**
+             * @description Identifies this monitor as a data quality monitor.
+             * @enum {string}
+             */
+            type?: "DATA_QUALITY";
+            /** @description The data quality metric this monitor evaluates. */
+            metric: components["schemas"]["DataQualityMetric"];
+            /** @description The field the metric is computed over. */
+            dimension: components["schemas"]["Dimension"];
+            /** @description The model versions the metric is scoped to. An empty array means all model versions. */
+            model_versions: string[];
+            /** @description The comparison dataset the metric is evaluated against. Omitted for monitors that evaluate the metric directly rather than by comparison. */
+            baseline_config?: components["schemas"]["BaselineConfig"];
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "DATA_QUALITY";
+        };
+        PerformanceMonitor: components["schemas"]["MonitorBase"] & {
+            /**
+             * @description Identifies this monitor as a performance monitor.
+             * @enum {string}
+             */
+            type?: "PERFORMANCE";
+            /** @description The model performance metric this monitor evaluates. */
+            metric: components["schemas"]["PerformanceMetric"];
+            /** @description The model versions the metric is scoped to. An empty array means all model versions. */
+            model_versions: string[];
+            /** @description The positive class used for classification metrics. Omitted when unset. */
+            positive_class_value?: string;
+            /** @description The `k` cutoff for ranking metrics (e.g. NDCG@k). Omitted when unset. */
+            metric_at_ranking_k_value?: number;
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "PERFORMANCE";
+        };
+        DriftMonitor: components["schemas"]["MonitorBase"] & {
+            /**
+             * @description Identifies this monitor as a drift monitor.
+             * @enum {string}
+             */
+            type?: "DRIFT";
+            /** @description The statistical drift metric this monitor evaluates. */
+            metric: components["schemas"]["DriftMetric"];
+            /** @description The feature or output the drift metric is computed over. */
+            dimension: components["schemas"]["Dimension"];
+            /** @description The comparison dataset the drift metric is evaluated against. */
+            baseline_config: components["schemas"]["BaselineConfig"];
+            /** @description The model versions the metric is scoped to. An empty array means all model versions. */
+            model_versions: string[];
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "DRIFT";
+        };
+        CustomMetricMonitor: components["schemas"]["MonitorBase"] & {
+            /**
+             * @description Identifies this monitor as a custom metric monitor.
+             * @enum {string}
+             */
+            type?: "CUSTOM_METRIC";
+            /** @description The custom metric this monitor evaluates (base64 global ID). */
+            custom_metric_id: string;
+            /** @description The model versions the metric is scoped to. An empty array means all model versions. */
+            model_versions: string[];
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "CUSTOM_METRIC";
+        };
+        /**
+         * @description The data quality metrics computed by a tracing monitor.
+         *     Numeric span attributes support aggregations such as `SUM` and `AVG`;
+         *     categorical attributes support `COUNT`, `PERCENT_EMPTY`, and `CARDINALITY`.
+         *     Comparison metrics (`NEW_VALUES`, `MISSING_VALUES`) are not supported.
+         * @enum {string}
+         */
+        TracingDataQualityMetric: "COUNT" | "PERCENT_EMPTY" | "CARDINALITY" | "AVG" | "SUM" | "STANDARD_DEVIATION" | "P50" | "P95" | "P99" | "P99_9";
+        TracingMonitor: components["schemas"]["MonitorBase"] & {
+            /**
+             * @description Identifies this monitor as a tracing monitor.
+             * @enum {string}
+             */
+            type?: "TRACING";
+            /** @description Tracing monitors support only these data quality metrics. */
+            metric: components["schemas"]["TracingDataQualityMetric"];
+            /** @description The span/trace-derived field the metric is computed over. **Restricted to span_attribute, llm_eval, and user_annotation only.** */
+            dimension: components["schemas"]["Dimension"];
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "TRACING";
         };
         OrganizationMembership: {
             /** @description Unique identifier for the membership record */
@@ -7497,9 +10933,24 @@ export interface components {
              *     Must be `false` or omitted for dataset-based tasks.
              */
             is_continuous?: boolean;
-            /** @description Task-level query filter applied to all evaluated data. */
+            /**
+             * @description Task-level query filter applied to all evaluated data (span shape).
+             *     Mutually exclusive with `query_filters`.
+             */
             query_filter?: string;
-            /** @description Evaluators to attach (at least one required). */
+            /**
+             * @description Named query filters plus optional expression for trace/session
+             *     evaluators. Mutually exclusive with `query_filter`.
+             */
+            query_filters?: components["schemas"]["TaskQueryFiltersInput"];
+            /**
+             * @description Evaluators to attach (at least one required). Evaluators use one of two
+             *     mutually exclusive shapes by data granularity. Span evaluators use
+             *     `query_filter` + per-evaluator `column_mappings`/`query_filter`.
+             *     Trace/session evaluators use task-level `query_filters` plus
+             *     per-evaluator `query_mappings`. Mixing the two shapes returns 400. The
+             *     granularity must match the chosen shape (enforced server-side).
+             */
             evaluators: components["schemas"]["TaskEvaluatorInput"][];
             /**
              * @description Task type discriminator. Must be `"TEMPLATE_EVALUATION"`. (enum property replaced by openapi-typescript)
@@ -7510,7 +10961,8 @@ export interface components {
         /**
          * @description Request body for creating a `CODE_EVALUATION` task. Requires `evaluators`
          *     and exactly one of `project_id` or `dataset_id`. When `dataset_id` is provided,
-         *     `experiment_ids` must contain at least one entry.
+         *     `experiment_ids` must contain at least one entry. Supports the same span and
+         *     trace/session evaluator shapes as `CreateTemplateEvaluationTaskRequest`.
          */
         CreateCodeEvaluationTaskRequest: {
             /** @description Task name */
@@ -7537,9 +10989,24 @@ export interface components {
              *     Must be `false` or omitted for dataset-based tasks.
              */
             is_continuous?: boolean;
-            /** @description Task-level query filter applied to all evaluated data. */
+            /**
+             * @description Task-level query filter applied to all evaluated data (span shape).
+             *     Mutually exclusive with `query_filters`.
+             */
             query_filter?: string;
-            /** @description Evaluators to attach (at least one required). */
+            /**
+             * @description Named query filters plus optional expression for trace/session
+             *     evaluators. Mutually exclusive with `query_filter`.
+             */
+            query_filters?: components["schemas"]["TaskQueryFiltersInput"];
+            /**
+             * @description Evaluators to attach (at least one required). Evaluators use one of two
+             *     mutually exclusive shapes by data granularity. Span evaluators use
+             *     `query_filter` + per-evaluator `column_mappings`/`query_filter`.
+             *     Trace/session evaluators use task-level `query_filters` plus
+             *     per-evaluator `query_mappings`. Mixing the two shapes returns 400. The
+             *     granularity must match the chosen shape (enforced server-side).
+             */
             evaluators: components["schemas"]["TaskEvaluatorInput"][];
             /**
              * @description Task type discriminator. Must be `"CODE_EVALUATION"`. (enum property replaced by openapi-typescript)
@@ -7562,12 +11029,18 @@ export interface components {
             type: "RUN_EXPERIMENT";
             /** @description Dataset identifier (base64). Required for `RUN_EXPERIMENT` tasks. */
             dataset_id: string;
-            run_configuration: components["schemas"]["RunConfiguration"];
+            run_configuration: components["schemas"]["RunConfigurationRequest"];
         };
         /**
          * @description PATCH body for `TEMPLATE_EVALUATION` and `CODE_EVALUATION` tasks. The two
          *     types share the same updatable shape; the server derives the task type
          *     from the URL's task record. At least one field must be provided.
+         *
+         *     Evaluators carry one of two mutually exclusive shapes depending on their data
+         *     granularity. Span evaluators use task-level `query_filter` plus per-evaluator
+         *     `column_mappings`/`query_filter`. Trace/session evaluators use task-level
+         *     `query_filters` plus per-evaluator `query_mappings`. Mixing the two shapes
+         *     returns 400.
          */
         UpdateEvaluationTaskRequest: {
             /** @description New task name. */
@@ -7576,9 +11049,21 @@ export interface components {
             sampling_rate?: number;
             /** @description Whether the task runs continuously. Only applicable for project-based tasks. */
             is_continuous?: boolean;
-            /** @description Task-level query filter. Pass `null` to clear. */
+            /**
+             * @description Task-level query filter (span shape). Pass `null` to clear. Mutually
+             *     exclusive with `query_filters`.
+             */
             query_filter?: string | null;
-            /** @description Replaces the entire evaluator list. At least one evaluator is required when provided. */
+            /**
+             * @description Named query filters plus optional expression (trace/session shape).
+             *     Pass `null` to clear the entire multi-query shape (filters and
+             *     expression together). Mutually exclusive with `query_filter`.
+             */
+            query_filters?: components["schemas"]["TaskQueryFiltersInput"] | null;
+            /**
+             * @description Replaces the entire evaluator list. At least one evaluator is required
+             *     when provided. Omit the field to leave evaluators unchanged.
+             */
             evaluators?: components["schemas"]["TaskEvaluatorInput"][];
         };
         /**
@@ -7591,7 +11076,7 @@ export interface components {
         UpdateRunExperimentTaskRequest: {
             /** @description New task name. */
             name?: string;
-            run_configuration?: components["schemas"]["RunConfiguration"];
+            run_configuration?: components["schemas"]["RunConfigurationRequest"];
         };
         ListTaskRunsResponse: {
             /** @description A list of task runs */
@@ -7633,12 +11118,15 @@ export interface components {
         };
         /**
          * @description Trigger request for `RUN_EXPERIMENT` tasks. `example_ids` and `max_examples`
-         *     are mutually exclusive; at most one may be provided.
+         *     are mutually exclusive; at most one may be provided. `query_filter` may be
+         *     combined with `example_ids` (the run set is their intersection) or with
+         *     `max_examples`.
          */
         TriggerRunExperimentTaskRunRequest: {
             /**
              * @description Display name for the experiment to be created. Must be unique within
-             *     the dataset.
+             *     the dataset, 1–255 characters, and must not contain double quotes (`"`)
+             *     or backslashes (`\`).
              */
             experiment_name: string;
             /**
@@ -7657,6 +11145,15 @@ export interface components {
              */
             max_examples?: number;
             /**
+             * @description Optional filter expression. When provided, the experiment (and any
+             *     chained evaluation tasks) runs only on the dataset examples matching
+             *     the filter, instead of the whole dataset. May be combined with
+             *     `example_ids` — the run set is then the intersection (the given
+             *     examples that also match the filter) — or with `max_examples` to cap
+             *     the filtered set.
+             */
+            query_filter?: string;
+            /**
              * @description Arbitrary key-value metadata. Providing this enables tracing for
              *     the run.
              */
@@ -7669,382 +11166,6 @@ export interface components {
              *     experiment types.
              */
             evaluation_task_ids?: string[];
-        };
-        /**
-         * @description The kind of monitor. Determines which type-specific fields apply.
-         *     - `DATA_QUALITY` - Monitors a data quality metric (e.g. percent empty, CARDINALITY).
-         *     - `PERFORMANCE` - Monitors a model performance metric (e.g. ACCURACY, RMSE).
-         *     - `DRIFT` - Monitors distributional drift of a feature/output.
-         *     - `CUSTOM_METRIC` - Monitors a user-defined custom metric.
-         *     - `TRACING` - Monitors a span/trace-derived metric (e.g. span attributes, evals).
-         * @enum {string}
-         */
-        MonitorType: "DATA_QUALITY" | "PERFORMANCE" | "DRIFT" | "CUSTOM_METRIC" | "TRACING";
-        /**
-         * @description The monitor's current state from its most recent evaluation.
-         *     - `TRIGGERED` - The metric breached the threshold.
-         *     - `CLEARED` - The metric is within healthy bounds.
-         *     - `NO_DATA` - No data was available to evaluate.
-         * @enum {string}
-         */
-        MonitorStatus: "TRIGGERED" | "CLEARED" | "NO_DATA";
-        /**
-         * @description Numeric comparison operators used when evaluating a computed metric value against a threshold.
-         * @enum {string}
-         */
-        ThresholdOperator: "GREATER_THAN" | "GREATER_THAN_OR_EQUAL" | "LESS_THAN" | "LESS_THAN_OR_EQUAL" | "EQUALS" | "NOT_EQUALS";
-        ManualSingleThreshold: {
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            type: "MANUAL_SINGLE";
-            operator: components["schemas"]["ThresholdOperator"];
-            /** @description The threshold value the computed metric is compared against. */
-            value: number;
-        };
-        /**
-         * @description The statistical calculation used to derive a dynamic threshold.
-         *     - `STDEV` - standard deviation of the metric over the baseline.
-         *     - `MAD` - median absolute deviation of the metric over the baseline.
-         * @enum {string}
-         */
-        ThresholdCalculation: "STDEV" | "MAD";
-        DynamicSingleThreshold: {
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            type: "DYNAMIC_SINGLE";
-            calculation: components["schemas"]["ThresholdCalculation"];
-            operator: components["schemas"]["ThresholdOperator"];
-            /**
-             * @description The multiplier applied to the calculation (e.g. number of standard
-             *     deviations) to derive the threshold.
-             */
-            multiplier: number;
-        };
-        ManualThresholdBound: {
-            operator: components["schemas"]["ThresholdOperator"];
-            /** @description The bound value the computed metric is compared against. */
-            value: number;
-        };
-        ManualRangeThreshold: {
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            type: "MANUAL_RANGE";
-            /** @description The lower bound of the range. Its operator must be `GREATER_THAN` or `GREATER_THAN_OR_EQUAL`. */
-            lower: components["schemas"]["ManualThresholdBound"];
-            /** @description The upper bound of the range. Its `operator` must be `LESS_THAN` or `LESS_THAN_OR_EQUAL`. */
-            upper: components["schemas"]["ManualThresholdBound"];
-        };
-        DynamicThresholdBound: {
-            operator: components["schemas"]["ThresholdOperator"];
-            /** @description The multiplier applied to the calculation (e.g. number of standard deviations) to derive this bound. */
-            multiplier: number;
-        };
-        DynamicRangeThreshold: {
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            type: "DYNAMIC_RANGE";
-            calculation: components["schemas"]["ThresholdCalculation"];
-            /** @description The lower bound of the range. Its `operator` must be `GREATER_THAN` or `GREATER_THAN_OR_EQUAL`. */
-            lower: components["schemas"]["DynamicThresholdBound"];
-            /** @description The upper bound of the range. Its `operator` must be `LESS_THAN` or `LESS_THAN_OR_EQUAL`. */
-            upper: components["schemas"]["DynamicThresholdBound"];
-        };
-        /** @description The monitor's threshold. The `type` field discriminates whether the threshold is manual or dynamic, and single or a bounded range. */
-        ThresholdConfig: components["schemas"]["ManualSingleThreshold"] | components["schemas"]["DynamicSingleThreshold"] | components["schemas"]["ManualRangeThreshold"] | components["schemas"]["DynamicRangeThreshold"];
-        /**
-         * @description The category of dimension the metric is evaluated over.
-         * @enum {string}
-         */
-        DimensionCategory: "FEATURE_LABEL" | "TAG" | "MODEL_VERSION" | "BATCH_ID" | "SPAN_ATTRIBUTE" | "LLM_EVAL" | "USER_ANNOTATION" | "ACTUALS" | "ACTUALS_SCORE" | "ACTUALS_CLASS" | "PREDICTIONS" | "PREDICTIONS_SCORE" | "PREDICTIONS_CLASS";
-        Dimension: {
-            /** @description The category of the monitored dimension. */
-            category: components["schemas"]["DimensionCategory"];
-            /** @description Name of the monitored field. Omitted when the category has no concrete field name. */
-            name?: string;
-        };
-        /**
-         * @description Operators used by a monitor's data filters. Includes string operators as well as numeric ones.
-         * @enum {string}
-         */
-        FilterOperator: "GREATER_THAN" | "GREATER_THAN_OR_EQUAL" | "LESS_THAN" | "LESS_THAN_OR_EQUAL" | "EQUALS" | "NOT_EQUALS" | "TOP_N" | "CONTAINS" | "CONTAINS_STRING" | "SIMILAR_TO";
-        MonitorFilter: {
-            dimension: components["schemas"]["Dimension"];
-            operator: components["schemas"]["FilterOperator"];
-            /** @description The values compared against by the operator. */
-            values: string[];
-        };
-        EmailNotificationConfig: {
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            type: "EMAIL";
-            /**
-             * Format: email
-             * @description Email address notified on a triggered transition.
-             */
-            email_address: string;
-        };
-        IntegrationNotificationConfig: {
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            type: "INTEGRATION";
-            /** @description The integration to notify (base64 global ID). */
-            integration_id: string;
-        };
-        WebhookNotificationConfig: {
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            type: "WEBHOOK";
-            /** @description The webhook to notify (base64 global ID). */
-            id: string;
-            /** @description The webhook endpoint URL. */
-            url?: string | null;
-        };
-        NotificationConfig: components["schemas"]["EmailNotificationConfig"] | components["schemas"]["IntegrationNotificationConfig"] | components["schemas"]["WebhookNotificationConfig"];
-        DowntimeConfig: {
-            /**
-             * Format: date-time
-             * @description When the downtime window begins.
-             */
-            start: string;
-            /** @description How long each downtime window lasts, in seconds. */
-            duration_seconds: number;
-            /** @description How often the downtime window repeats, in days. */
-            frequency_days: number;
-        };
-        ScheduledRuntimeConfig: {
-            /** @description Whether the monitor runs on a schedule. `false` means automatic scheduled evaluation is disabled. */
-            enabled: boolean;
-            /** @description How often the monitor evaluates, in seconds. */
-            cadence_seconds?: number;
-            /** @description Days of the week the monitor runs on (`0` = Sunday … `6` = Saturday). */
-            days_of_week?: number[];
-        };
-        MonitorBase: {
-            /** @description Unique identifier for the monitor (base64 global ID). */
-            id: string;
-            /** @description Human-readable name of the monitor. */
-            name: string;
-            /** @description Required on create. Immutable after creation. */
-            type: components["schemas"]["MonitorType"];
-            /** @description The project that the monitor belongs to (base64 global ID). */
-            project_id: string;
-            /** @description The UI deep link to the monitor. */
-            readonly uri: string;
-            /** @description Current evaluation state. Read-only. */
-            status: components["schemas"]["MonitorStatus"];
-            threshold: components["schemas"]["ThresholdConfig"];
-            /**
-             * @description Whether notifications fire on a triggered transition.
-             * @default true
-             */
-            notifications_enabled: boolean;
-            /**
-             * @description Whether the monitor is evaluated manually rather than on the automatic cadence.
-             * @default false
-             */
-            manual_evaluation_enabled: boolean;
-            /** @description The user who created the monitor (base64 global ID). */
-            created_by_user_id: string;
-            /** @description Data filters applied to the monitor's metric. Omitted when the metric is computed over all data. */
-            filters?: components["schemas"]["MonitorFilter"][];
-            /** @description Notification channels (email / integration / webhook) notified on a triggered transition. Omitted when no channels are configured. */
-            notification_configs?: components["schemas"]["NotificationConfig"][];
-            /**
-             * Format: date-time
-             * @description When the monitor was created.
-             */
-            readonly created_at: string;
-            /**
-             * Format: date-time
-             * @description When the monitor was last updated.
-             */
-            readonly updated_at: string;
-            downtime?: components["schemas"]["DowntimeConfig"];
-            /** @description Returned when schedule configuration exists. */
-            scheduled_runtime?: components["schemas"]["ScheduledRuntimeConfig"];
-            /** @description The length of the evaluation window in seconds. Omitted when unset. */
-            evaluation_window_length_seconds?: number;
-            /** @description The delay applied before evaluating a window, in seconds. Omitted when unset. */
-            delay_seconds?: number;
-            /**
-             * Format: date-time
-             * @description The last time the metric was computed. Omitted if it has never been evaluated.
-             */
-            readonly evaluated_at?: string;
-            /** @description The most recently computed metric value. Omitted if it has never been evaluated. */
-            readonly latest_computed_value?: number;
-            /** @description Free-form notes attached to the monitor. Omitted when unset. */
-            notes?: string;
-        };
-        /**
-         * @description The data quality metric computed over the selected dimension.
-         * @enum {string}
-         */
-        DataQualityMetric: "COUNT" | "PERCENT_EMPTY" | "CARDINALITY" | "NEW_VALUES" | "MISSING_VALUES" | "AVG" | "SUM" | "STANDARD_DEVIATION" | "P50" | "P95" | "P99" | "P99_9" | "AVERAGE_STRING_LIST_LENGTH";
-        /** @description Uses the model's primary baseline as the comparison dataset. */
-        ModelBaselineConfig: {
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            type: "MODEL_BASELINE";
-            /** @description Filters applied to the comparison dataset. An empty array means no comparison dataset filters are configured. */
-            filters: components["schemas"]["MonitorFilter"][];
-        };
-        /** @description A custom comparison dataset using data between a fixed start and end date. */
-        FixedCustomBaselineWindow: {
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            type: "FIXED";
-            /**
-             * Format: date-time
-             * @description The start of the fixed comparison window.
-             */
-            fixed_start_date: string;
-            /**
-             * Format: date-time
-             * @description The end of the fixed comparison window.
-             */
-            fixed_end_date: string;
-        };
-        /** @description A custom comparison dataset using a moving window defined in seconds. */
-        MovingCustomBaselineWindow: {
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            type: "MOVING";
-            /** @description The length of the moving comparison window, in seconds. */
-            moving_window_seconds: number;
-            /** @description The delay before the moving comparison window, in seconds. */
-            moving_window_delay_seconds: number;
-        };
-        /** @description The custom comparison window. The `type` field determines whether the window is fixed or moving. */
-        CustomBaselineWindow: components["schemas"]["FixedCustomBaselineWindow"] | components["schemas"]["MovingCustomBaselineWindow"];
-        /** @description Uses a custom fixed or moving window as the comparison dataset. */
-        CustomBaselineConfig: {
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            type: "CUSTOM_BASELINE";
-            /** @description Filters applied to the comparison dataset. An empty array means no comparison dataset filters are configured. */
-            filters: components["schemas"]["MonitorFilter"][];
-            /** @description Model versions included in the comparison dataset. An empty array means all model versions. */
-            model_versions: string[];
-            window: components["schemas"]["CustomBaselineWindow"];
-        };
-        /** @description The comparison dataset configuration used by drift and comparison-based data quality monitors. The `type` field determines whether the comparison dataset uses the model's primary baseline or a custom fixed or moving window. */
-        BaselineConfig: components["schemas"]["ModelBaselineConfig"] | components["schemas"]["CustomBaselineConfig"];
-        DataQualityMonitor: components["schemas"]["MonitorBase"] & {
-            /** @enum {string} */
-            type?: "DATA_QUALITY";
-            metric: components["schemas"]["DataQualityMetric"];
-            dimension: components["schemas"]["Dimension"];
-            /** @description The model versions the metric is scoped to. An empty array means all model versions. */
-            model_versions: string[];
-            baseline_config?: components["schemas"]["BaselineConfig"];
-        } & {
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            type: "DATA_QUALITY";
-        };
-        /**
-         * @description The model performance metric.
-         * @enum {string}
-         */
-        PerformanceMetric: "ACCURACY" | "CALIBRATION" | "F_1" | "FALSE_NEGATIVE_DENSITY" | "FALSE_NEGATIVE_RATE" | "FALSE_POSITIVE_RATE" | "PRECISION" | "RECALL" | "SENSITIVITY" | "SPECIFICITY" | "MICRO_AVERAGED_PRECISION" | "MACRO_AVERAGED_PRECISION" | "MULTI_CLASS_PRECISION" | "MICRO_AVERAGED_RECALL" | "MACRO_AVERAGED_RECALL" | "MULTI_CLASS_RECALL" | "ACTUALS_AVERAGE" | "MAE" | "MAPE" | "MEAN_ERROR" | "MSE" | "PREDICTION_AVERAGE" | "RMSE" | "R_SQUARED" | "SMAPE" | "WAPE" | "MASE" | "AUC" | "LOG_LOSS" | "NDCG" | "PR_AUC" | "GROUP_AUC" | "MRR" | "RANKING_MAP" | "RANKING_RECALL" | "RANKING_PRECISION" | "DISPARATE_IMPACT" | "FALSE_POSITIVE_RATE_PARITY" | "RECALL_PARITY";
-        PerformanceMonitor: components["schemas"]["MonitorBase"] & {
-            /** @enum {string} */
-            type?: "PERFORMANCE";
-            metric: components["schemas"]["PerformanceMetric"];
-            /** @description The model versions the metric is scoped to. An empty array means all model versions. */
-            model_versions: string[];
-            /** @description The positive class used for classification metrics. Omitted when unset. */
-            positive_class_value?: string;
-            /** @description The `k` cutoff for ranking metrics (e.g. NDCG@k). Omitted when unset. */
-            metric_at_ranking_k_value?: number;
-        } & {
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            type: "PERFORMANCE";
-        };
-        /**
-         * @description The statistical drift metric. `PSI`/`KL`/`JS`/`KS` apply to structured data;
-         *     `EUCLIDEAN_DISTANCE`/`COSINE_SIMILARITY` apply to unstructured (embedding) data.
-         * @enum {string}
-         */
-        DriftMetric: "PSI" | "KL" | "JS" | "KS" | "EUCLIDEAN_DISTANCE" | "COSINE_SIMILARITY";
-        DriftMonitor: components["schemas"]["MonitorBase"] & {
-            /** @enum {string} */
-            type?: "DRIFT";
-            metric: components["schemas"]["DriftMetric"];
-            dimension: components["schemas"]["Dimension"];
-            baseline_config: components["schemas"]["BaselineConfig"];
-            /** @description The model versions the metric is scoped to. An empty array means all model versions. */
-            model_versions: string[];
-        } & {
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            type: "DRIFT";
-        };
-        CustomMetricMonitor: components["schemas"]["MonitorBase"] & {
-            /** @enum {string} */
-            type?: "CUSTOM_METRIC";
-            /** @description The custom metric this monitor evaluates (base64 global ID). */
-            custom_metric_id: string;
-            /** @description The model versions the metric is scoped to. An empty array means all model versions. */
-            model_versions: string[];
-        } & {
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            type: "CUSTOM_METRIC";
-        };
-        /**
-         * @description The data quality metrics computed by a tracing monitor.
-         *     Numeric span attributes support aggregations such as `SUM` and `AVG`;
-         *     categorical attributes support `COUNT`, `PERCENT_EMPTY`, and `CARDINALITY`.
-         *     Comparison metrics (`NEW_VALUES`, `MISSING_VALUES`) are not supported.
-         * @enum {string}
-         */
-        TracingDataQualityMetric: "COUNT" | "PERCENT_EMPTY" | "CARDINALITY" | "AVG" | "SUM" | "STANDARD_DEVIATION" | "P50" | "P95" | "P99" | "P99_9";
-        TracingMonitor: components["schemas"]["MonitorBase"] & {
-            /** @enum {string} */
-            type?: "TRACING";
-            /** @description Tracing monitors support only these data quality metrics. */
-            metric: components["schemas"]["TracingDataQualityMetric"];
-            /** @description The span/trace-derived field the metric is computed over. **Restricted to span_attribute, llm_eval, and user_annotation only.** */
-            dimension: components["schemas"]["Dimension"];
-        } & {
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            type: "TRACING";
         };
     };
     responses: {
@@ -8301,6 +11422,7 @@ export interface components {
                  *           },
                  *           "annotations": [],
                  *           "trace_annotations": [],
+                 *           "session_annotations": [],
                  *           "evaluations": [],
                  *           "assigned_users": [
                  *             {
@@ -8322,6 +11444,7 @@ export interface components {
                  *           },
                  *           "annotations": [],
                  *           "trace_annotations": [],
+                 *           "session_annotations": [],
                  *           "evaluations": [],
                  *           "assigned_users": [
                  *             {
@@ -8400,6 +11523,7 @@ export interface components {
                  *               }
                  *             }
                  *           ],
+                 *           "session_annotations": [],
                  *           "evaluations": [
                  *             {
                  *               "name": "relevance",
@@ -8539,6 +11663,19 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
+                /**
+                 * @example {
+                 *       "id": "QXBpS2V5OjEwMDE6YUJjRA==",
+                 *       "name": "My dev key",
+                 *       "key_type": "USER",
+                 *       "status": "ACTIVE",
+                 *       "key": "ak-abc123def456ghi789jkl012mno345pqr678stu901vwx234yz",
+                 *       "redacted_key": "ak-abc...xyz",
+                 *       "created_by_user_id": "VXNlcjoxMDAxOm5OYkM=",
+                 *       "created_at": "2024-01-15T10:30:00Z",
+                 *       "expires_at": "2025-01-15T10:30:00Z"
+                 *     }
+                 */
                 "application/json": components["schemas"]["RefreshApiKeyResponse"];
             };
         };
@@ -8722,6 +11859,19 @@ export interface components {
             };
             content?: never;
         };
+        /**
+         * @description Evaluator versions processed. A successful response includes `completed: true`
+         *     because both result lists are complete. This does not indicate whether every
+         *     requested version existed or was deleted. The delete is idempotent.
+         */
+        DeleteEvaluatorVersionsResponse: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["DeleteEvaluatorVersionsResponse"];
+            };
+        };
         /** @description An evaluator object */
         Evaluator: {
             headers: {
@@ -8758,48 +11908,52 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
+                "application/json": components["schemas"]["EvaluatorWithVersion"];
+            };
+        };
+        /** @description The full list of built-in evaluator templates. */
+        ListEvaluatorTemplatesResponse: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
                 /**
                  * @example {
-                 *       "id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
-                 *       "name": "Hallucination Eval",
-                 *       "description": "Detects hallucinated content in LLM responses",
-                 *       "type": "TEMPLATE",
-                 *       "space_id": "U3BhY2U6NDkzOkJaSkc=",
-                 *       "created_at": "2026-02-16T22:05:47.900Z",
-                 *       "updated_at": "2026-02-16T22:05:48.150Z",
-                 *       "created_by_user_id": "VXNlcjoxOm5OYkM=",
-                 *       "version": {
-                 *         "id": "RXZhbHVhdG9yVmVyc2lvbjoxMDpYeVp3",
-                 *         "evaluator_id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
-                 *         "commit_hash": "a3b1c9e4f7d2a0518e6c3bb9217f87d1c4e810f2",
-                 *         "commit_message": "Initial version",
-                 *         "type": "TEMPLATE",
-                 *         "template_config": {
-                 *           "name": "hallucination",
-                 *           "template": "You are an evaluation assistant...",
-                 *           "include_explanations": true,
-                 *           "use_function_calling_if_available": true,
+                 *       "evaluator_templates": [
+                 *         {
+                 *           "column_name": "hallucination",
+                 *           "display_name": "Hallucination",
+                 *           "template": "You are evaluating whether an answer is factual given reference text.\n\n[Input]: {input}\n[Reference]: {context}\n[Answer]: {output}\n\nRespond with a single word: factual or hallucinated.",
+                 *           "rails": [
+                 *             "hallucinated",
+                 *             "factual"
+                 *           ],
                  *           "classification_choices": {
-                 *             "hallucinated": 0,
-                 *             "factual": 1
+                 *             "hallucinated": 1,
+                 *             "factual": 0
                  *           },
-                 *           "direction": "MAXIMIZE",
-                 *           "data_granularity": "SPAN",
-                 *           "llm_config": {
-                 *             "ai_integration_id": "TGxtSW50ZWdyYXRpb246MTI6YUJjRA==",
-                 *             "model_name": "gpt-4o",
-                 *             "invocation_parameters": {
-                 *               "temperature": 0
-                 *             },
-                 *             "provider_parameters": {}
-                 *           }
+                 *           "direction": "MINIMIZE",
+                 *           "data_granularity": "SPAN"
                  *         },
-                 *         "created_at": "2026-02-16T22:05:48.143Z",
-                 *         "created_by_user_id": "VXNlcjoxOm5OYkM="
-                 *       }
+                 *         {
+                 *           "column_name": "session_frustration",
+                 *           "display_name": "Session Frustration",
+                 *           "template": "You are given a multi-turn session between a user and an AI assistant.\n\n{conversation}\n\nRespond with a single word: frustrated or ok.",
+                 *           "rails": [
+                 *             "frustrated",
+                 *             "ok"
+                 *           ],
+                 *           "classification_choices": {
+                 *             "frustrated": 1,
+                 *             "ok": 0
+                 *           },
+                 *           "direction": "MINIMIZE",
+                 *           "data_granularity": "SESSION"
+                 *         }
+                 *       ]
                  *     }
                  */
-                "application/json": components["schemas"]["EvaluatorWithVersion"];
+                "application/json": components["schemas"]["ListEvaluatorTemplatesResponse"];
             };
         };
         /** @description Returns a list of evaluator version objects */
@@ -8865,6 +12019,7 @@ export interface components {
                 /**
                  * @example {
                  *       "id": "RXhwZXJpbWVudDoxOmFCY0Q=",
+                 *       "space_id": "U3BhY2U6MTphQmNE",
                  *       "name": "Experiment 1",
                  *       "dataset_id": "RGF0YXNldDoxOmFCY0Q=",
                  *       "dataset_version_id": "RGF0YXNldFZlcnNpb246MTphQmNE",
@@ -8885,6 +12040,7 @@ export interface components {
                 /**
                  * @example {
                  *       "id": "RXhwZXJpbWVudDoxOmFCY0Q=",
+                 *       "space_id": "U3BhY2U6MTphQmNE",
                  *       "name": "Experiment 1",
                  *       "dataset_id": "RGF0YXNldDoxOmFCY0Q=",
                  *       "dataset_version_id": "RGF0YXNldFZlcnNpb246MTphQmNE",
@@ -8951,6 +12107,7 @@ export interface components {
                  *       "experiments": [
                  *         {
                  *           "id": "RXhwZXJpbWVudDoxOmFCY0Q=",
+                 *           "space_id": "U3BhY2U6MTphQmNE",
                  *           "name": "Experiment 1",
                  *           "dataset_id": "RGF0YXNldDoxOmFCY0Q=",
                  *           "dataset_version_id": "RGF0YXNldFZlcnNpb246MTphQmNE",
@@ -8960,6 +12117,7 @@ export interface components {
                  *         },
                  *         {
                  *           "id": "RXhwZXJpbWVudDoyOmFCY0Q=",
+                 *           "space_id": "U3BhY2U6MTphQmNE",
                  *           "name": "Experiment 2",
                  *           "dataset_id": "RGF0YXNldDoyOmFCY0Q=",
                  *           "dataset_version_id": "RGF0YXNldFZlcnNpb246MjphQmNE",
@@ -8990,27 +12148,6 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                /**
-                 * @example {
-                 *       "id": "TGxtSW50ZWdyYXRpb246MTI6YUJjRA==",
-                 *       "type": "LLM",
-                 *       "name": "Production OpenAI",
-                 *       "scopings": [
-                 *         {
-                 *           "organization_id": null,
-                 *           "space_id": null
-                 *         }
-                 *       ],
-                 *       "created_at": "2026-02-13T21:27:19.055Z",
-                 *       "updated_at": "2026-02-13T21:27:19.279Z",
-                 *       "created_by_user_id": "VXNlcjoxOm5OYkM=",
-                 *       "config": {
-                 *         "provider": "OPEN_AI",
-                 *         "has_api_key": true,
-                 *         "is_function_calling_enabled": true
-                 *       }
-                 *     }
-                 */
                 "application/json": components["schemas"]["Integration"];
             };
         };
@@ -9020,58 +12157,179 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
+                "application/json": components["schemas"]["ListIntegrationsResponse"];
+            };
+        };
+        /** @description Returns a list of monitor objects */
+        ListMonitorsResponse: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
                 /**
                  * @example {
-                 *       "integrations": [
+                 *       "monitors": [
                  *         {
-                 *           "id": "TGxtSW50ZWdyYXRpb246MTI6YUJjRA==",
-                 *           "type": "LLM",
-                 *           "name": "Production OpenAI",
-                 *           "scopings": [
-                 *             {
-                 *               "organization_id": null,
-                 *               "space_id": null
-                 *             }
-                 *           ],
-                 *           "created_at": "2026-02-13T21:27:19.055Z",
-                 *           "updated_at": "2026-02-13T21:27:19.279Z",
-                 *           "created_by_user_id": "VXNlcjoxOm5OYkM=",
-                 *           "config": {
-                 *             "provider": "OPEN_AI",
-                 *             "has_api_key": true,
-                 *             "is_function_calling_enabled": true
+                 *           "id": "TW9uaXRvcjo4NzEwMToxMlo5Wg==",
+                 *           "name": "Output Empty Rate",
+                 *           "project_id": "TW9kZWw6ODU0MjAxODQ6RFNxUg==",
+                 *           "uri": "https://app.arize.com/organizations/ZXhhbXBsZU9yZ2FuaXphdGlvbjo1Njg6V2RnREk=/spaces/U3BhY2U6NzU1OnBsR1c=/monitors/TW9uaXRvcjo4NzEwMToxMlo5Wg==",
+                 *           "status": "TRIGGERED",
+                 *           "created_at": "2026-07-09T22:07:34.010Z",
+                 *           "updated_at": "2026-07-09T23:22:14.638Z",
+                 *           "threshold": {
+                 *             "type": "MANUAL_SINGLE",
+                 *             "operator": "GREATER_THAN",
+                 *             "value": 0.25
+                 *           },
+                 *           "notifications_enabled": true,
+                 *           "manual_evaluation_enabled": false,
+                 *           "created_by_user_id": "VXNlcjoxMTIzOlRlc3Rlcg==",
+                 *           "evaluation_window_length_seconds": 86400,
+                 *           "delay_seconds": 0,
+                 *           "evaluated_at": "2026-07-09T23:00:00.000Z",
+                 *           "latest_computed_value": 0.31,
+                 *           "type": "TRACING",
+                 *           "metric": "PERCENT_EMPTY",
+                 *           "dimension": {
+                 *             "category": "SPAN_ATTRIBUTE",
+                 *             "name": "attributes.output.value"
                  *           }
                  *         },
                  *         {
-                 *           "id": "UmVtb3RlRW5kcG9pbnRJbnRlZ3JhdGlvbjoxMjM=",
-                 *           "type": "AGENT",
-                 *           "name": "My agent endpoint",
-                 *           "description": null,
-                 *           "scopings": [
-                 *             {
-                 *               "organization_id": null,
-                 *               "space_id": null
-                 *             }
-                 *           ],
-                 *           "created_at": "2026-06-10T12:00:00.000Z",
-                 *           "updated_at": "2026-06-10T12:00:00.000Z",
-                 *           "created_by_user_id": "VXNlcjoxOmFCY0Q=",
-                 *           "config": {
-                 *             "endpoint": "https://agent.example.com/v1/run",
-                 *             "has_headers": false,
-                 *             "input_schema": {
-                 *               "type": "object"
-                 *             },
-                 *             "request_presets": []
-                 *           }
+                 *           "id": "TW9uaXRvcjo4NzA5ODpKcVdz",
+                 *           "name": "Accuracy Monitor",
+                 *           "project_id": "TW9kZWw6ODU0MjAxNzE6ZkxwUQ==",
+                 *           "uri": "https://app.arize.com/organizations/ZXhhbXBsZU9yZ2FuaXphdGlvbjo1Njg6V2RnREk=/spaces/U3BhY2U6NzU1OnBsR1c=/monitors/TW9uaXRvcjo4NzA5ODpKcVdz",
+                 *           "status": "CLEARED",
+                 *           "created_at": "2026-07-08T18:12:11.204Z",
+                 *           "updated_at": "2026-07-08T18:12:11.204Z",
+                 *           "threshold": {
+                 *             "type": "DYNAMIC_SINGLE",
+                 *             "calculation": "STDEV",
+                 *             "operator": "LESS_THAN",
+                 *             "multiplier": 2
+                 *           },
+                 *           "notifications_enabled": false,
+                 *           "manual_evaluation_enabled": false,
+                 *           "created_by_user_id": "VXNlcjoxMTIzOlRlc3Rlcg==",
+                 *           "type": "PERFORMANCE",
+                 *           "metric": "ACCURACY",
+                 *           "model_versions": []
                  *         }
                  *       ],
                  *       "pagination": {
-                 *         "has_more": false
+                 *         "has_more": true,
+                 *         "next_cursor": "eyJjcmVhdGVkX2F0IjoiMjAyNi0wNy0wOFQxODoxMjoxMS4yMDRaIiwiaWQiOjg3MDk4fQ=="
                  *       }
                  *     }
                  */
-                "application/json": components["schemas"]["ListIntegrationsResponse"];
+                "application/json": components["schemas"]["ListMonitorsResponse"];
+            };
+        };
+        /** @description Returns a single monitor object */
+        Monitor: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "TW9uaXRvcjo4NzEwMToxMlo5Wg==",
+                 *       "name": "Test Monitor",
+                 *       "project_id": "TW9kZWw6ODU0MjAxODQ6RFNxUg==",
+                 *       "uri": "https://app.arize.com/organizations/ZXhhbXBsZU9yZ2FuaXphdGlvbjo1Njg6V2RnREk=/spaces/U3BhY2U6NzU1OnBsR1c=/monitors/TW9uaXRvcjo4NzEwMToxMlo5Wg==",
+                 *       "status": "TRIGGERED",
+                 *       "created_at": "2026-07-09T22:07:34.010Z",
+                 *       "updated_at": "2026-07-09T23:22:14.638Z",
+                 *       "threshold": {
+                 *         "type": "DYNAMIC_RANGE",
+                 *         "calculation": "STDEV",
+                 *         "lower": {
+                 *           "operator": "GREATER_THAN",
+                 *           "multiplier": 0.00001
+                 *         },
+                 *         "upper": {
+                 *           "operator": "LESS_THAN_OR_EQUAL",
+                 *           "multiplier": 0.00001
+                 *         }
+                 *       },
+                 *       "notifications_enabled": true,
+                 *       "manual_evaluation_enabled": false,
+                 *       "created_by_user_id": "VXNlcjoxMTIzOlRlc3Rlcg==",
+                 *       "filters": [
+                 *         {
+                 *           "dimension": {
+                 *             "category": "LLM_EVAL",
+                 *             "name": "eval.Test Eval.label"
+                 *           },
+                 *           "operator": "CONTAINS_STRING",
+                 *           "values": [
+                 *             "No Value",
+                 *             "NULL"
+                 *           ]
+                 *         },
+                 *         {
+                 *           "dimension": {
+                 *             "category": "USER_ANNOTATION",
+                 *             "name": "annotation.Accuracy.score"
+                 *           },
+                 *           "operator": "EQUALS",
+                 *           "values": [
+                 *             "NULL"
+                 *           ]
+                 *         }
+                 *       ],
+                 *       "notification_configs": [
+                 *         {
+                 *           "type": "EMAIL",
+                 *           "email_address": "test.user1@example.com"
+                 *         },
+                 *         {
+                 *           "type": "EMAIL",
+                 *           "email_address": "test.user2@example.com"
+                 *         },
+                 *         {
+                 *           "type": "EMAIL",
+                 *           "email_address": "test.admin@example.com"
+                 *         },
+                 *         {
+                 *           "type": "WEBHOOK",
+                 *           "id": "V2ViaG9vazoyMzpBczpH",
+                 *           "url": "https://webhook.site/test-webhook-1"
+                 *         },
+                 *         {
+                 *           "type": "WEBHOOK",
+                 *           "id": "V2ViaG9vazoyNDpTdW5x",
+                 *           "url": "https://testsite.com/test5"
+                 *         }
+                 *       ],
+                 *       "downtime": {
+                 *         "start": "2026-07-09T22:47:02.155Z",
+                 *         "duration_seconds": 3600,
+                 *         "frequency_days": 1
+                 *       },
+                 *       "scheduled_runtime": {
+                 *         "enabled": true,
+                 *         "cadence_seconds": 10800,
+                 *         "days_of_week": [
+                 *           0
+                 *         ]
+                 *       },
+                 *       "evaluation_window_length_seconds": 86400,
+                 *       "delay_seconds": 0,
+                 *       "evaluated_at": "2026-07-09T23:00:00.000Z",
+                 *       "latest_computed_value": 251,
+                 *       "notes": "This monitor should trigger when the metric moves slightly above the baseline.",
+                 *       "type": "TRACING",
+                 *       "metric": "COUNT",
+                 *       "dimension": {
+                 *         "category": "SPAN_ATTRIBUTE",
+                 *         "name": "attributes.output.value"
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["Monitor"];
             };
         };
         /** @description User successfully added to the organization */
@@ -9621,19 +12879,22 @@ export interface components {
                  *           "id": "spc_001",
                  *           "name": "LLM Evaluation",
                  *           "description": "Space for evaluating LLM performance",
-                 *           "created_at": "2024-01-01T12:00:00Z"
+                 *           "created_at": "2024-01-01T12:00:00Z",
+                 *           "is_private": false
                  *         },
                  *         {
                  *           "id": "spc_002",
                  *           "name": "Customer Support Bot",
                  *           "description": "Production chatbot monitoring",
-                 *           "created_at": "2024-01-02T12:00:00Z"
+                 *           "created_at": "2024-01-02T12:00:00Z",
+                 *           "is_private": false
                  *         },
                  *         {
                  *           "id": "spc_003",
                  *           "name": "RAG Pipeline",
                  *           "description": "Retrieval-augmented generation experiments",
-                 *           "created_at": "2024-01-03T12:00:00Z"
+                 *           "created_at": "2024-01-03T12:00:00Z",
+                 *           "is_private": true
                  *         }
                  *       ],
                  *       "pagination": {
@@ -9663,7 +12924,8 @@ export interface components {
                  *       "id": "spc_001",
                  *       "name": "LLM Evaluation",
                  *       "description": "Space for evaluating LLM performance",
-                 *       "created_at": "2024-01-01T12:00:00Z"
+                 *       "created_at": "2024-01-01T12:00:00Z",
+                 *       "is_private": false
                  *     }
                  */
                 "application/json": components["schemas"]["Space"];
@@ -9754,6 +13016,62 @@ export interface components {
                 "application/json": components["schemas"]["ListSpansResponse"];
             };
         };
+        /** @description Tag successfully deleted and detached from all resources */
+        DeleteTagResponse: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
+        /** @description Reports which tags were detached and which were not attached */
+        RemoveTagsResponse: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "completed": false,
+                 *       "deleted": [
+                 *         "VGFnOjEyMzQ1"
+                 *       ],
+                 *       "not_deleted": [
+                 *         "VGFnOjEyMzQ2"
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["RemoveTagsResponse"];
+            };
+        };
+        /** @description Returns the tags attached to the resource */
+        ListTagsResponse: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ListTagsResponse"];
+            };
+        };
+        /** @description A tag object */
+        Tag: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "VGFnOjEyMzQ1",
+                 *       "name": "production",
+                 *       "description": "Resources serving production traffic",
+                 *       "color": "GREEN",
+                 *       "space_id": "U3BhY2U6MTIzNDU=",
+                 *       "created_at": "2026-01-01T12:00:00Z",
+                 *       "updated_at": "2026-01-01T12:00:00Z"
+                 *     }
+                 */
+                "application/json": components["schemas"]["Tag"];
+            };
+        };
         /** @description Task deleted successfully */
         DeleteTaskResponse: {
             headers: {
@@ -9816,6 +13134,7 @@ export interface components {
                  *             {
                  *               "evaluator_id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
                  *               "evaluator_name": "Hallucination Eval",
+                 *               "evaluator_version_id": null,
                  *               "query_filter": null,
                  *               "column_mappings": {
                  *                 "input": "attributes.input.value",
@@ -9858,6 +13177,7 @@ export interface components {
                  *         {
                  *           "evaluator_id": "RXZhbHVhdG9yOjEyOmFCY0Q=",
                  *           "evaluator_name": "Hallucination Eval",
+                 *           "evaluator_version_id": null,
                  *           "query_filter": null,
                  *           "column_mappings": {
                  *             "input": "attributes.input.value",
@@ -9899,111 +13219,6 @@ export interface components {
                  *     }
                  */
                 "application/json": components["schemas"]["TaskRun"];
-            };
-        };
-        /** @description Returns a single monitor object */
-        Monitor: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                /**
-                 * @example {
-                 *       "id": "TW9uaXRvcjo4NzEwMToxMlo5Wg==",
-                 *       "name": "Test Monitor",
-                 *       "project_id": "TW9kZWw6ODU0MjAxODQ6RFNxUg==",
-                 *       "uri": "https://app.arize.com/organizations/ZXhhbXBsZU9yZ2FuaXphdGlvbjo1Njg6V2RnREk=/spaces/U3BhY2U6NzU1OnBsR1c=/monitors/TW9uaXRvcjo4NzEwMToxMlo5Wg==",
-                 *       "status": "TRIGGERED",
-                 *       "created_at": "2026-07-09T22:07:34.010Z",
-                 *       "updated_at": "2026-07-09T23:22:14.638Z",
-                 *       "threshold": {
-                 *         "type": "DYNAMIC_RANGE",
-                 *         "calculation": "STDEV",
-                 *         "lower": {
-                 *           "operator": "GREATER_THAN",
-                 *           "multiplier": 0.00001
-                 *         },
-                 *         "upper": {
-                 *           "operator": "LESS_THAN_OR_EQUAL",
-                 *           "multiplier": 0.00001
-                 *         }
-                 *       },
-                 *       "notifications_enabled": true,
-                 *       "manual_evaluation_enabled": false,
-                 *       "created_by_user_id": "VXNlcjoxMTIzOlRlc3Rlcg==",
-                 *       "filters": [
-                 *         {
-                 *           "dimension": {
-                 *             "category": "LLM_EVAL",
-                 *             "name": "eval.Test Eval.label"
-                 *           },
-                 *           "operator": "CONTAINS_STRING",
-                 *           "values": [
-                 *             "No Value",
-                 *             "NULL"
-                 *           ]
-                 *         },
-                 *         {
-                 *           "dimension": {
-                 *             "category": "USER_ANNOTATION",
-                 *             "name": "annotation.Accuracy.score"
-                 *           },
-                 *           "operator": "EQUALS",
-                 *           "values": [
-                 *             "NULL"
-                 *           ]
-                 *         }
-                 *       ],
-                 *       "notification_configs": [
-                 *         {
-                 *           "type": "EMAIL",
-                 *           "email_address": "test.user1@example.com"
-                 *         },
-                 *         {
-                 *           "type": "EMAIL",
-                 *           "email_address": "test.user2@example.com"
-                 *         },
-                 *         {
-                 *           "type": "EMAIL",
-                 *           "email_address": "test.admin@example.com"
-                 *         },
-                 *         {
-                 *           "type": "WEBHOOK",
-                 *           "id": "V2ViaG9vazoyMzpBczpH",
-                 *           "url": "https://webhook.site/test-webhook-1"
-                 *         },
-                 *         {
-                 *           "type": "WEBHOOK",
-                 *           "id": "V2ViaG9vazoyNDpTdW5x",
-                 *           "url": "https://testsite.com/test5"
-                 *         }
-                 *       ],
-                 *       "downtime": {
-                 *         "start": "2026-07-09T22:47:02.155Z",
-                 *         "duration_seconds": 3600,
-                 *         "frequency_days": 1
-                 *       },
-                 *       "scheduled_runtime": {
-                 *         "enabled": true,
-                 *         "cadence_seconds": 10800,
-                 *         "days_of_week": [
-                 *           0
-                 *         ]
-                 *       },
-                 *       "evaluation_window_length_seconds": 86400,
-                 *       "delay_seconds": 0,
-                 *       "evaluated_at": "2026-07-09T23:00:00.000Z",
-                 *       "latest_computed_value": 251,
-                 *       "notes": "This monitor should trigger when the metric moves slightly above the baseline.",
-                 *       "type": "TRACING",
-                 *       "metric": "COUNT",
-                 *       "dimension": {
-                 *         "category": "SPAN_ATTRIBUTE",
-                 *         "name": "attributes.output.value"
-                 *       }
-                 *     }
-                 */
-                "application/json": components["schemas"]["Monitor"];
             };
         };
         /** @description Returns a list of traces */
@@ -10155,6 +13370,225 @@ export interface components {
                  *     }
                  */
                 "application/json": components["schemas"]["User"];
+            };
+        };
+        /**
+         * @description The created webhook. For `HMAC_SHA256` webhooks the response includes
+         *     `signing_secret` — the only time it is ever returned.
+         */
+        CreateWebhookResponse: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["CreateWebhookResponse"];
+            };
+        };
+        /** @description The created webhook subscription */
+        CreateWebhookSubscriptionResponse: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "V2ViaG9va1N1YnNjcmlwdGlvbjoxMjM0NQ==",
+                 *       "webhook_id": "V2ViaG9vazoxMjM0NQ==",
+                 *       "source_type": "PROMPT",
+                 *       "source_id": "UHJvbXB0OjEyMzQ1",
+                 *       "event": "PROMPT_VERSION_LABELED",
+                 *       "created_at": "2026-08-01T12:00:00Z"
+                 *     }
+                 */
+                "application/json": components["schemas"]["WebhookSubscription"];
+            };
+        };
+        /** @description Webhook successfully deleted */
+        DeleteWebhookResponse: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
+        /** @description Webhook subscription successfully deleted */
+        DeleteWebhookSubscriptionResponse: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
+        /** @description Returns a list of delivery attempts, most recent first */
+        ListWebhookDeliveryAttemptsResponse: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "delivery_attempts": [
+                 *         {
+                 *           "event_id": "3f1c9a2e-8b4d-4f6a-9c7e-2d5b8a1f0c3e",
+                 *           "attempt_number": 2,
+                 *           "payload": {
+                 *             "event": "prompt.version.created",
+                 *             "data": {
+                 *               "prompt_id": "UHJvbXB0OjEyMzQ1"
+                 *             }
+                 *           },
+                 *           "status_code": 200,
+                 *           "error_message": null,
+                 *           "created_at": "2026-08-01T12:05:00Z"
+                 *         },
+                 *         {
+                 *           "event_id": "3f1c9a2e-8b4d-4f6a-9c7e-2d5b8a1f0c3e",
+                 *           "attempt_number": 1,
+                 *           "payload": {
+                 *             "event": "prompt.version.created",
+                 *             "data": {
+                 *               "prompt_id": "UHJvbXB0OjEyMzQ1"
+                 *             }
+                 *           },
+                 *           "status_code": null,
+                 *           "error_message": "Delivery timed out",
+                 *           "created_at": "2026-08-01T12:00:00Z"
+                 *         }
+                 *       ],
+                 *       "pagination": {
+                 *         "next_cursor": "cursor_12345",
+                 *         "has_more": true
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["ListWebhookDeliveryAttemptsResponse"];
+            };
+        };
+        /** @description Returns a list of webhook objects */
+        ListWebhooksResponse: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "webhooks": [
+                 *         {
+                 *           "id": "V2ViaG9vazoxMjM0NQ==",
+                 *           "organization_id": "T3JnYW5pemF0aW9uOjEyMzQ1",
+                 *           "name": "Prompt release notifications",
+                 *           "description": "Notifies the deploy pipeline when a prompt version is labeled",
+                 *           "url": "https://example.com/hooks/arize",
+                 *           "auth_type": "HMAC_SHA256",
+                 *           "signing_secret_hint": "whsec_…abcd",
+                 *           "timeout_ms": 30000,
+                 *           "created_at": "2026-08-01T12:00:00Z",
+                 *           "updated_at": "2026-08-01T12:00:00Z",
+                 *           "created_by_user_id": "VXNlcjoxMjM0NQ=="
+                 *         },
+                 *         {
+                 *           "id": "V2ViaG9vazoxMjM0Ng==",
+                 *           "organization_id": "T3JnYW5pemF0aW9uOjEyMzQ1",
+                 *           "name": "Evaluator version notifications",
+                 *           "description": "",
+                 *           "url": "https://example.com/hooks/evaluators",
+                 *           "auth_type": "BEARER",
+                 *           "timeout_ms": 10000,
+                 *           "created_at": "2026-08-02T12:00:00Z",
+                 *           "updated_at": "2026-08-02T12:00:00Z"
+                 *         }
+                 *       ],
+                 *       "pagination": {
+                 *         "next_cursor": "cursor_12345",
+                 *         "has_more": true
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["ListWebhooksResponse"];
+            };
+        };
+        /** @description Returns a list of webhook subscriptions, most recently created first */
+        ListWebhookSubscriptionsResponse: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "subscriptions": [
+                 *         {
+                 *           "id": "V2ViaG9va1N1YnNjcmlwdGlvbjoxMjM0Ng==",
+                 *           "webhook_id": "V2ViaG9vazoxMjM0NQ==",
+                 *           "source_type": "PROMPT",
+                 *           "source_id": "UHJvbXB0OjEyMzQ1",
+                 *           "event": "PROMPT_VERSION_LABELED",
+                 *           "created_at": "2026-08-02T12:00:00Z"
+                 *         },
+                 *         {
+                 *           "id": "V2ViaG9va1N1YnNjcmlwdGlvbjoxMjM0NQ==",
+                 *           "webhook_id": "V2ViaG9vazoxMjM0NQ==",
+                 *           "source_type": "PROMPT",
+                 *           "source_id": "UHJvbXB0OjEyMzQ1",
+                 *           "event": "PROMPT_VERSION_CREATED",
+                 *           "created_at": "2026-08-01T12:00:00Z"
+                 *         }
+                 *       ],
+                 *       "pagination": {
+                 *         "has_more": false
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["ListWebhookSubscriptionsResponse"];
+            };
+        };
+        /** @description The outcome of the test delivery */
+        TestWebhookResponse: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["TestWebhookResponse"];
+            };
+        };
+        /** @description A webhook object */
+        Webhook: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "V2ViaG9vazoxMjM0NQ==",
+                 *       "organization_id": "T3JnYW5pemF0aW9uOjEyMzQ1",
+                 *       "name": "Prompt release notifications",
+                 *       "description": "Notifies the deploy pipeline when a prompt version is labeled",
+                 *       "url": "https://example.com/hooks/arize",
+                 *       "auth_type": "HMAC_SHA256",
+                 *       "signing_secret_hint": "whsec_…abcd",
+                 *       "timeout_ms": 30000,
+                 *       "created_at": "2026-08-01T12:00:00Z",
+                 *       "updated_at": "2026-08-01T12:00:00Z",
+                 *       "created_by_user_id": "VXNlcjoxMjM0NQ=="
+                 *     }
+                 */
+                "application/json": components["schemas"]["Webhook"];
+            };
+        };
+        /** @description A webhook subscription object */
+        WebhookSubscription: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "id": "V2ViaG9va1N1YnNjcmlwdGlvbjoxMjM0NQ==",
+                 *       "webhook_id": "V2ViaG9vazoxMjM0NQ==",
+                 *       "source_type": "PROMPT",
+                 *       "source_id": "UHJvbXB0OjEyMzQ1",
+                 *       "event": "PROMPT_VERSION_LABELED",
+                 *       "created_at": "2026-08-01T12:00:00Z"
+                 *     }
+                 */
+                "application/json": components["schemas"]["WebhookSubscription"];
             };
         };
         /** @description Invalid request */
@@ -10487,23 +13921,109 @@ export interface components {
          * @example TGxtSW50ZWdyYXRpb246MTI6YUJjRA==
          */
         IntegrationIdPathParam: components["schemas"]["Id"];
-        /** @description Filter the list to a single integration type. When omitted, integrations of every type are returned; each item carries its `type` for client-side discrimination. */
+        /** @description Filter the list to a single integration type. When omitted, `LLM` and `AGENT` integrations are returned; `EVALUATOR` integrations must be requested explicitly with `type=EVALUATOR`. Each item carries its `type` for client-side discrimination. */
         IntegrationTypeQueryParam: components["schemas"]["IntegrationType"];
         /**
-         * @description The unique organization identifier (base64). When provided, only spaces belonging to this organization are returned.
+         * @description Filter to `CUSTOM_METRIC` monitors evaluating this custom metric
+         *     (base64 identifier). If omitted, no custom metric filtering is
+         *     applied.
+         * @example Q3VzdG9tTWV0cmljOjEyMzQ1
+         */
+        MonitorCustomMetricIdQueryParam: components["schemas"]["Id"];
+        /**
+         * @description Filter to monitors computing this data quality metric. Matches both
+         *     `DATA_QUALITY` and `TRACING` monitors; combine with `type` to narrow
+         *     to one of them. If omitted, no data quality metric filtering is
+         *     applied.
+         * @example PERCENT_EMPTY
+         */
+        MonitorDataQualityMetricQueryParam: components["schemas"]["DataQualityMetric"];
+        /**
+         * @description Filter to monitors whose metric is computed over a dimension of this
+         *     category. Values copied from a returned monitor's `dimension.category`
+         *     work as filters. If omitted, no dimension category filtering is
+         *     applied.
+         * @example LLM_EVAL
+         */
+        MonitorDimensionCategoryQueryParam: components["schemas"]["DimensionCategory"];
+        /**
+         * @description Exact-match filter on the name of the dimension the monitor's metric
+         *     is computed over. Values copied from a returned monitor's
+         *     `dimension.name` work as filters. If omitted, no dimension name
+         *     filtering is applied.
+         * @example eval.Hallucination.label
+         */
+        MonitorDimensionNameQueryParam: string;
+        /**
+         * @description Filter to `DRIFT` monitors computing this drift metric. If omitted,
+         *     no drift metric filtering is applied.
+         * @example PSI
+         */
+        MonitorDriftMetricQueryParam: components["schemas"]["DriftMetric"];
+        /**
+         * @description The unique monitor identifier (base64)
+         * @example TW9uaXRvcjoxMjM=
+         */
+        MonitorIdPathParam: components["schemas"]["Id"];
+        /**
+         * @description Filter by whether notifications fire on a triggered transition.
+         *     `true` returns only monitors with notifications enabled; `false`
+         *     returns only monitors with notifications disabled. If omitted,
+         *     monitors are returned regardless of notification state.
+         * @example true
+         */
+        MonitorNotificationsEnabledQueryParam: boolean;
+        /**
+         * @description Filter to `PERFORMANCE` monitors computing this performance metric.
+         *     Does not match `CUSTOM_METRIC` monitors. If omitted, no performance
+         *     metric filtering is applied.
+         * @example ACCURACY
+         */
+        MonitorPerformanceMetricQueryParam: components["schemas"]["PerformanceMetric"];
+        /**
+         * @description Exact-match filter on the name of the project the monitor's primary
+         *     metric is computed over. Unlike `name` and `space_name`, this is an
+         *     exact (case-sensitive) match, not a substring search. If omitted, no
+         *     project name filtering is applied.
+         * @example my-llm-app
+         */
+        MonitorProjectNameQueryParam: string;
+        /**
+         * @description Filter by the monitor's current evaluation state (`TRIGGERED`,
+         *     `CLEARED`, or `NO_DATA`). If omitted, monitors in every state are
+         *     returned.
+         * @example TRIGGERED
+         */
+        MonitorStatusQueryParam: components["schemas"]["MonitorStatus"];
+        /**
+         * @description Filter by monitor type. Types are exact: `DATA_QUALITY` does not
+         *     include `TRACING` monitors, and `PERFORMANCE` does not include
+         *     `CUSTOM_METRIC` monitors. If omitted, monitors of all types are
+         *     returned.
+         * @example TRACING
+         */
+        MonitorTypeQueryParam: components["schemas"]["MonitorType"];
+        /**
+         * @description The unique organization identifier (base64). When provided, only resources belonging to this organization are returned.
          * @example T3JnYW5pemF0aW9uOjEyMzQ1
          */
         OrganizationIdQueryParam: components["schemas"]["Id"];
         /**
          * @description The unique project identifier (base64)
-         * @example UHJvamVjdDoxMjM0NQ==
+         * @example TW9kZWw6MTIzOmFCY0Q=
          */
         ProjectIdPathParam: components["schemas"]["Id"];
         /**
-         * @description Filter to tasks for a specific project (base64 identifier (base64))
-         * @example UHJvamVjdDoxMjM0NQ==
+         * @description Filter results to resources associated with a specific project (base64 identifier). If omitted, results are not filtered by project.
+         * @example TW9kZWw6MTIzOmFCY0Q=
          */
         ProjectIdQueryParam: components["schemas"]["Id"];
+        /**
+         * @description Filter projects by type. When omitted, harness projects are excluded from
+         *     list results. Set to `HARNESS` to include harness session projects.
+         * @example HARNESS
+         */
+        ProjectTypeQueryParam: components["schemas"]["ProjectType"];
         /** @description The name of the label (e.g., "production", "staging") */
         LabelNamePathParam: string;
         /**
@@ -10559,6 +14079,11 @@ export interface components {
          */
         SpaceNameQueryParam: string;
         /**
+         * @description The unique tag identifier (base64)
+         * @example VGFnOjEyMzQ1
+         */
+        TagIdPathParam: components["schemas"]["Id"];
+        /**
          * @description The unique task identifier (base64)
          * @example VGFzazoxMjM0NQ==
          */
@@ -10596,6 +14121,30 @@ export interface components {
          */
         UserStatusQueryParam: components["schemas"]["UserStatus"][];
         /**
+         * @description The unique webhook identifier (base64)
+         * @example V2ViaG9vazoxMjM0NQ==
+         */
+        WebhookIdPathParam: components["schemas"]["Id"];
+        /**
+         * @description Filter subscriptions to one prompt or evaluator. Must be paired with
+         *     `source_type`. When both filters are omitted, subscriptions from every
+         *     readable supported source are returned.
+         * @example UHJvbXB0OjEyMzQ1
+         */
+        WebhookSourceIdQueryParam: components["schemas"]["Id"];
+        /**
+         * @description Filter subscriptions to one kind of source. Must be paired with
+         *     `source_id`. When both filters are omitted, subscriptions from every
+         *     supported source type are returned.
+         * @example PROMPT
+         */
+        WebhookSourceTypeQueryParam: components["schemas"]["WebhookSourceType"];
+        /**
+         * @description The unique webhook subscription identifier (base64)
+         * @example V2ViaG9va1N1YnNjcmlwdGlvbjoxMjM0NQ==
+         */
+        WebhookSubscriptionIdPathParam: components["schemas"]["Id"];
+        /**
          * @description Opaque pagination cursor returned from a previous response
          *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
          *     attempt to parse or construct it.
@@ -10613,12 +14162,12 @@ export interface components {
          * @example 2026-05-18T23:59:59Z
          */
         EndTimeQueryParam: string;
-        /** @description Maximum items to return */
-        LimitQueryParamMax100: number;
-        /** @description Maximum items to return */
-        LimitQueryParamMax50: number;
-        /** @description Maximum items to return */
-        LimitQueryParamMax500: number;
+        /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 100. */
+        LimitQueryParam: number;
+        /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 500. */
+        LimitQueryParamLarge: number;
+        /** @description Maximum items to return. Defaults to 25 if omitted; maximum is 50. */
+        LimitQueryParamSmall: number;
         /**
          * @description Case-insensitive substring filter on the resource name. Returns only
          *     resources whose name contains the given string. For example,
@@ -10639,27 +14188,24 @@ export interface components {
          */
         VersionIdQueryParam: components["schemas"]["Id"];
         /**
-         * @description The unique monitor identifier (base64)
-         * @example TW9uaXRvcjoxMjM=
-         */
-        MonitorIdPathParam: components["schemas"]["Id"];
-        /**
          * @description The unique organization identifier (base64)
          * @example T3JnYW5pemF0aW9uOjEyMzQ1
          */
         OrgIdPathParam: components["schemas"]["Id"];
         /**
-         * @description Filter restrictions to a single resource type.
+         * @description Filter the results to a specific resource type.
+         *     When omitted, restrictions of all supported types are returned.
          *     - `PROJECT` — Return only restricted projects.
-         *
-         *     When not specified, restrictions of all supported resource types are
-         *     returned (currently only `PROJECT`).
+         *     - `DASHBOARD` — Return only restricted dashboards.
          * @example PROJECT
          */
         ResourceRestrictionTypeQueryParam: components["schemas"]["ResourceRestrictionType"];
         /**
          * @description Filter role bindings by user. When provided, only bindings assigned to this
          *     user are returned. Must be a valid global user ID.
+         *
+         *     For a service key, pass its bot user's ID (`bot_user.id` from
+         *     `POST /v2/api-keys` or `GET /v2/api-keys`) to list that key's bindings.
          * @example VXNlcjoxOmxQZzI=
          */
         RoleBindingsUserIdQueryParam: components["schemas"]["Id"];
@@ -10930,6 +14476,19 @@ export interface components {
                 "application/json": components["schemas"]["InsertDatasetExamplesRequest"];
             };
         };
+        /** @description Body containing optional search criteria for dataset examples */
+        SearchDatasetExamplesRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "filter": "topic = 'arithmetic'",
+                 *       "limit": 50,
+                 *       "cursor": "eyJjcmVhdGVkX2F0IjoiMDAwMS0wMS0wMVQwMDowMDowMFoiLCJpZCI6IjQifQ"
+                 *     }
+                 */
+                "application/json": components["schemas"]["SearchDatasetExamplesRequest"];
+            };
+        };
         /** @description Body containing dataset examples for update operation by ID matching */
         UpdateDatasetExamplesRequestBody: {
             content: {
@@ -10970,7 +14529,7 @@ export interface components {
         /**
          * @description Body containing evaluator creation parameters with an initial version.
          *
-         *     Only `type: TEMPLATE` and `type: CODE` are currently accepted on creation.
+         *     `type: TEMPLATE`, `type: CODE`, and `type: REMOTE` are accepted on creation.
          */
         CreateEvaluatorRequestBody: {
             content: {
@@ -10981,6 +14540,19 @@ export interface components {
         CreateEvaluatorVersionRequestBody: {
             content: {
                 "application/json": components["schemas"]["CreateEvaluatorVersionRequest"];
+            };
+        };
+        DeleteEvaluatorVersionsRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "version_ids": [
+                 *         "RXZhbHVhdG9yVmVyc2lvbjo5NzphQmNE",
+                 *         "RXZhbHVhdG9yVmVyc2lvbjo5ODphQmNE"
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["DeleteEvaluatorVersionsRequest"];
             };
         };
         /** @description Body containing evaluator update parameters */
@@ -11078,18 +14650,34 @@ export interface components {
                 "application/json": components["schemas"]["InsertExperimentRunsRequest"];
             };
         };
+        /** @description Body containing optional search criteria for experiment runs */
+        SearchExperimentRunsRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "filter": "eval.quality.score < 0.5",
+                 *       "limit": 50,
+                 *       "cursor": "eyJjcmVhdGVkX2F0IjoiMDAwMS0wMS0wMVQwMDowMDowMFoiLCJpZCI6IjQifQ"
+                 *     }
+                 */
+                "application/json": components["schemas"]["SearchExperimentRunsRequest"];
+            };
+        };
         /**
          * @description Create a new integration. The `type` field selects the config shape; for
          *     `LLM`, `config.provider` selects the per-provider config.
          *
          *     **Payload Requirements**
          *     - `type`, `name`, and `config` are required.
-         *     - `name` must be unique within the account for the given `type`.
+         *     - `name` must be unique within the account. `LLM` names are unique among
+         *       LLM integrations; `AGENT` and `EVALUATOR` names share the same remote
+         *       endpoint integration namespace.
          *     - `scopings` defaults to account-wide visibility when omitted.
          *     - Type- and provider-specific rules (required fields, defaults, write-only
          *       secrets) are documented on each config schema: see the per-provider
-         *       members of `CreateLlmConfig` for `type: LLM`, and `CreateAgentConfig`
-         *       for `type: AGENT`.
+         *       members of `CreateLlmConfig` for `type: LLM`, `CreateAgentConfig`
+         *       for `type: AGENT`, and `CreateEvaluatorIntegrationConfigInput`
+         *       for `type: EVALUATOR`.
          *
          *     **Valid example**
          *     ```json
@@ -11134,8 +14722,9 @@ export interface components {
          *       immutable: it must match the stored integration's type, otherwise the
          *       request is rejected with 422 (change category by delete + recreate).
          *     - At least one updatable field (`name`, `scopings`, `config`, or — for
-         *       `AGENT` only — `description`) must be provided in addition to `type`.
-         *       `description` is not a valid field for `type: LLM` and is rejected.
+         *       `AGENT` and `EVALUATOR` — `description`) must be provided in addition
+         *       to `type`. `description` is not a valid field for `type: LLM` and is
+         *       rejected.
          *     - For `LLM`, `config.provider` is immutable, and config-field
          *       applicability is provider-specific (enforced with 422) — see the
          *       per-field docs on `UpdateLlmConfig`.
@@ -11143,6 +14732,8 @@ export interface components {
          *       `null` = clear (for nullable fields).
          *     - Collections (`scopings`, `config.model_names`, `config.headers`,
          *       `config.request_presets`) replace the existing values when provided.
+         *     - For `type: EVALUATOR`, `config.headers` accepts a string map (replace),
+         *       `null` (clear), or may be omitted (keep).
          *
          *     **Valid example**
          *     ```json
@@ -11317,14 +14908,6 @@ export interface components {
         /** @description Body containing role binding creation parameters. */
         CreateRoleBindingRequestBody: {
             content: {
-                /**
-                 * @example {
-                 *       "role_id": "Um9sZToxOmFCY0Q=",
-                 *       "user_id": "VXNlcjo0MjphQmNE",
-                 *       "resource_type": "SPACE",
-                 *       "resource_id": "U3BhY2U6MTpWNEth"
-                 *     }
-                 */
                 "application/json": components["schemas"]["CreateRoleBindingRequest"];
             };
         };
@@ -11436,6 +15019,63 @@ export interface components {
                 "application/json": components["schemas"]["ListSpansRequest"];
             };
         };
+        /** @description Body containing the IDs of the tags to attach to the resource */
+        AddTagsRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "tag_ids": [
+                 *         "VGFnOjEyMzQ1",
+                 *         "VGFnOjEyMzQ2"
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["AddTagsRequest"];
+            };
+        };
+        /** @description Body containing tag creation parameters */
+        CreateTagRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "name": "production",
+                 *       "description": "Resources serving production traffic",
+                 *       "color": "GREEN",
+                 *       "space_id": "U3BhY2U6MTIzNDU="
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreateTagRequest"];
+            };
+        };
+        /** @description Body containing the IDs of the tags to detach from the resource */
+        RemoveTagsRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "tag_ids": [
+                 *         "VGFnOjEyMzQ1",
+                 *         "VGFnOjEyMzQ2"
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["RemoveTagsRequest"];
+            };
+        };
+        /**
+         * @description Body containing the tag fields to update. At least one of `name`,
+         *     `description`, or `color` must be provided.
+         */
+        UpdateTagRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "name": "production-critical",
+                 *       "color": "RED"
+                 *     }
+                 */
+                "application/json": components["schemas"]["UpdateTagRequest"];
+            };
+        };
         /**
          * @description Body containing task creation parameters. The `type` field is the discriminator.
          *
@@ -11538,6 +15178,30 @@ export interface components {
                 "application/json": components["schemas"]["UpdateUserRequest"];
             };
         };
+        /** @description Body containing webhook creation parameters */
+        CreateWebhookRequestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateWebhookRequest"];
+            };
+        };
+        /** @description Body containing the webhook, the source to attach it to, and the event to deliver */
+        CreateWebhookSubscriptionRequestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateWebhookSubscriptionRequest"];
+            };
+        };
+        /** @description Body containing webhook update parameters. At least one field must be provided. */
+        UpdateWebhookRequestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "name": "Prompt release notifications (staging)",
+                 *       "timeout_ms": 10000
+                 *     }
+                 */
+                "application/json": components["schemas"]["UpdateWebhookRequest"];
+            };
+        };
         /** @description Body containing annotation config update parameters. The annotation_config_type is required and must match the stored config's type. */
         UpdateAnnotationConfigRequestBody: {
             content: {
@@ -11612,8 +15276,8 @@ export interface operations {
                  * @example production
                  */
                 name?: components["parameters"]["NameSearchQueryParam"];
-                /** @description Maximum items to return */
-                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 100. */
+                limit?: components["parameters"]["LimitQueryParam"];
                 /**
                  * @description Opaque pagination cursor returned from a previous response
                  *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
@@ -11747,8 +15411,8 @@ export interface operations {
                  * @example production
                  */
                 name?: components["parameters"]["NameSearchQueryParam"];
-                /** @description Maximum items to return */
-                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 100. */
+                limit?: components["parameters"]["LimitQueryParam"];
                 /**
                  * @description Opaque pagination cursor returned from a previous response
                  *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
@@ -11860,6 +15524,52 @@ export interface operations {
             429: components["responses"]["RateLimitExceeded"];
         };
     };
+    list_annotation_config_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique annotation config identifier (base64)
+                 * @example QW5ub3RhdGlvbkNvbmZpZzoxMjM0NQ==
+                 */
+                annotation_config_id: components["parameters"]["AnnotationConfigIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ListTagsResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    add_annotation_config_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique annotation config identifier (base64)
+                 * @example QW5ub3RhdGlvbkNvbmZpZzoxMjM0NQ==
+                 */
+                annotation_config_id: components["parameters"]["AnnotationConfigIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["AddTagsRequestBody"];
+        responses: {
+            200: components["responses"]["ListTagsResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
     list_annotation_queues: {
         parameters: {
             query?: {
@@ -11883,8 +15593,8 @@ export interface operations {
                  * @example production
                  */
                 name?: components["parameters"]["NameSearchQueryParam"];
-                /** @description Maximum items to return */
-                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 100. */
+                limit?: components["parameters"]["LimitQueryParam"];
                 /**
                  * @description Opaque pagination cursor returned from a previous response
                  *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
@@ -12004,8 +15714,8 @@ export interface operations {
                  *     attempt to parse or construct it.
                  */
                 cursor?: components["parameters"]["CursorQueryParam"];
-                /** @description Maximum items to return */
-                limit?: components["parameters"]["LimitQueryParamMax500"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 500. */
+                limit?: components["parameters"]["LimitQueryParamLarge"];
             };
             header?: never;
             path: {
@@ -12134,6 +15844,52 @@ export interface operations {
             429: components["responses"]["RateLimitExceeded"];
         };
     };
+    list_annotation_queue_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique annotation queue identifier (base64)
+                 * @example QW5ub3RhdGlvblF1ZXVlOjEyMzQ1
+                 */
+                annotation_queue_id: components["parameters"]["AnnotationQueueIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ListTagsResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    add_annotation_queue_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique annotation queue identifier (base64)
+                 * @example QW5ub3RhdGlvblF1ZXVlOjEyMzQ1
+                 */
+                annotation_queue_id: components["parameters"]["AnnotationQueueIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["AddTagsRequestBody"];
+        responses: {
+            200: components["responses"]["ListTagsResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
     list_api_keys: {
         parameters: {
             query?: {
@@ -12165,8 +15921,8 @@ export interface operations {
                  * @example VXNlcjoxMjM0NQ==
                  */
                 user_id?: components["parameters"]["UserIdQueryParam"];
-                /** @description Maximum items to return */
-                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 100. */
+                limit?: components["parameters"]["LimitQueryParam"];
                 /**
                  * @description Opaque pagination cursor returned from a previous response
                  *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
@@ -12280,8 +16036,8 @@ export interface operations {
                  * @example MUTATION
                  */
                 operation_type?: components["parameters"]["OperationTypeQueryParam"];
-                /** @description Maximum items to return */
-                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 100. */
+                limit?: components["parameters"]["LimitQueryParam"];
                 /**
                  * @description Opaque pagination cursor returned from a previous response
                  *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
@@ -12325,8 +16081,8 @@ export interface operations {
                  * @example production
                  */
                 name?: components["parameters"]["NameSearchQueryParam"];
-                /** @description Maximum items to return */
-                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 100. */
+                limit?: components["parameters"]["LimitQueryParam"];
                 /**
                  * @description Opaque pagination cursor returned from a previous response
                  *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
@@ -12364,6 +16120,7 @@ export interface operations {
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             422: components["responses"]["UnprocessableEntity"];
+            429: components["responses"]["RateLimitExceeded"];
         };
     };
     get_dataset: {
@@ -12444,8 +16201,8 @@ export interface operations {
                  * @example RGF0YXNldFZlcnNpb246MTIzNDU=
                  */
                 dataset_version_id?: components["parameters"]["DatasetVersionIdQueryParam"];
-                /** @description Maximum items to return */
-                limit?: components["parameters"]["LimitQueryParamMax500"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 500. */
+                limit?: components["parameters"]["LimitQueryParamLarge"];
                 /**
                  * @description Opaque pagination cursor returned from a previous response
                  *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
@@ -12583,6 +16340,137 @@ export interface operations {
             429: components["responses"]["RateLimitExceeded"];
         };
     };
+    search_dataset_examples: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique dataset identifier (base64)
+                 * @example RGF0YXNldDoxMjM0NQ==
+                 */
+                dataset_id: components["parameters"]["DatasetIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["SearchDatasetExamplesRequestBody"];
+        responses: {
+            200: components["responses"]["ListDatasetExamplesResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    list_dataset_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique dataset identifier (base64)
+                 * @example RGF0YXNldDoxMjM0NQ==
+                 */
+                dataset_id: components["parameters"]["DatasetIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ListTagsResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    add_dataset_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique dataset identifier (base64)
+                 * @example RGF0YXNldDoxMjM0NQ==
+                 */
+                dataset_id: components["parameters"]["DatasetIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["AddTagsRequestBody"];
+        responses: {
+            200: components["responses"]["ListTagsResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    remove_dataset_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique dataset identifier (base64)
+                 * @example RGF0YXNldDoxMjM0NQ==
+                 */
+                dataset_id: components["parameters"]["DatasetIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["RemoveTagsRequestBody"];
+        responses: {
+            200: components["responses"]["RemoveTagsResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    list_evaluator_templates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ListEvaluatorTemplatesResponse"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    get_evaluator_version: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique evaluator version identifier (base64)
+                 * @example RXZhbHVhdG9yVmVyc2lvbjoxMjM0NQ==
+                 */
+                version_id: components["parameters"]["EvaluatorVersionIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["EvaluatorVersion"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
     list_evaluators: {
         parameters: {
             query?: {
@@ -12606,8 +16494,8 @@ export interface operations {
                  * @example production
                  */
                 name?: components["parameters"]["NameSearchQueryParam"];
-                /** @description Maximum items to return */
-                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 100. */
+                limit?: components["parameters"]["LimitQueryParam"];
                 /**
                  * @description Opaque pagination cursor returned from a previous response
                  *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
@@ -12724,11 +16612,81 @@ export interface operations {
             429: components["responses"]["RateLimitExceeded"];
         };
     };
+    list_evaluator_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique evaluator identifier (base64)
+                 * @example RXZhbHVhdG9yOjEyMzQ1
+                 */
+                evaluator_id: components["parameters"]["EvaluatorIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ListTagsResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    add_evaluator_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique evaluator identifier (base64)
+                 * @example RXZhbHVhdG9yOjEyMzQ1
+                 */
+                evaluator_id: components["parameters"]["EvaluatorIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["AddTagsRequestBody"];
+        responses: {
+            200: components["responses"]["ListTagsResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    remove_evaluator_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique evaluator identifier (base64)
+                 * @example RXZhbHVhdG9yOjEyMzQ1
+                 */
+                evaluator_id: components["parameters"]["EvaluatorIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["RemoveTagsRequestBody"];
+        responses: {
+            200: components["responses"]["RemoveTagsResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
     list_evaluator_versions: {
         parameters: {
             query?: {
-                /** @description Maximum items to return */
-                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 100. */
+                limit?: components["parameters"]["LimitQueryParam"];
                 /**
                  * @description Opaque pagination cursor returned from a previous response
                  *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
@@ -12780,24 +16738,25 @@ export interface operations {
             429: components["responses"]["RateLimitExceeded"];
         };
     };
-    get_evaluator_version: {
+    delete_evaluator_versions: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /**
-                 * @description The unique evaluator version identifier (base64)
-                 * @example RXZhbHVhdG9yVmVyc2lvbjoxMjM0NQ==
+                 * @description The unique evaluator identifier (base64)
+                 * @example RXZhbHVhdG9yOjEyMzQ1
                  */
-                version_id: components["parameters"]["EvaluatorVersionIdPathParam"];
+                evaluator_id: components["parameters"]["EvaluatorIdPathParam"];
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: components["requestBodies"]["DeleteEvaluatorVersionsRequestBody"];
         responses: {
-            200: components["responses"]["EvaluatorVersion"];
+            200: components["responses"]["DeleteEvaluatorVersionsResponse"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
@@ -12823,8 +16782,8 @@ export interface operations {
                  * @example production
                  */
                 name?: components["parameters"]["NameSearchQueryParam"];
-                /** @description Maximum items to return */
-                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 100. */
+                limit?: components["parameters"]["LimitQueryParam"];
                 /**
                  * @description Opaque pagination cursor returned from a previous response
                  *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
@@ -12913,8 +16872,8 @@ export interface operations {
     list_experiment_runs: {
         parameters: {
             query?: {
-                /** @description Maximum items to return */
-                limit?: components["parameters"]["LimitQueryParamMax500"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 500. */
+                limit?: components["parameters"]["LimitQueryParamLarge"];
                 /**
                  * @description Opaque pagination cursor returned from a previous response
                  *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
@@ -12990,10 +16949,80 @@ export interface operations {
             429: components["responses"]["RateLimitExceeded"];
         };
     };
+    search_experiment_runs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique experiment identifier (base64)
+                 * @example RXhwZXJpbWVudDoxMjM0NQ==
+                 */
+                experiment_id: components["parameters"]["ExperimentIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["SearchExperimentRunsRequestBody"];
+        responses: {
+            200: components["responses"]["ListExperimentRunsResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    list_experiment_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique experiment identifier (base64)
+                 * @example RXhwZXJpbWVudDoxMjM0NQ==
+                 */
+                experiment_id: components["parameters"]["ExperimentIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ListTagsResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    add_experiment_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique experiment identifier (base64)
+                 * @example RXhwZXJpbWVudDoxMjM0NQ==
+                 */
+                experiment_id: components["parameters"]["ExperimentIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["AddTagsRequestBody"];
+        responses: {
+            200: components["responses"]["ListTagsResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
     list_integrations: {
         parameters: {
             query?: {
-                /** @description Filter the list to a single integration type. When omitted, integrations of every type are returned; each item carries its `type` for client-side discrimination. */
+                /** @description Filter the list to a single integration type. When omitted, `LLM` and `AGENT` integrations are returned; `EVALUATOR` integrations must be requested explicitly with `type=EVALUATOR`. Each item carries its `type` for client-side discrimination. */
                 type?: components["parameters"]["IntegrationTypeQueryParam"];
                 /**
                  * @description Filter search results to a particular space ID
@@ -13015,8 +17044,8 @@ export interface operations {
                  * @example production
                  */
                 name?: components["parameters"]["NameSearchQueryParam"];
-                /** @description Maximum items to return */
-                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 100. */
+                limit?: components["parameters"]["LimitQueryParam"];
                 /**
                  * @description Opaque pagination cursor returned from a previous response
                  *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
@@ -13099,6 +17128,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -13127,6 +17157,224 @@ export interface operations {
             429: components["responses"]["RateLimitExceeded"];
         };
     };
+    list_monitors: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Filter search results to a particular space ID
+                 * @example U3BhY2U6MTIzNDU=
+                 */
+                space_id?: components["parameters"]["SpaceIdQueryParam"];
+                /**
+                 * @description Case-insensitive substring filter on the space name. Narrows results
+                 *     to resources in spaces whose name contains the given string. If omitted,
+                 *     no space name filtering is applied and all resources are returned.
+                 * @example my-space
+                 */
+                space_name?: components["parameters"]["SpaceNameQueryParam"];
+                /**
+                 * @description Case-insensitive substring filter on the resource name. Returns only
+                 *     resources whose name contains the given string. For example,
+                 *     `name=prod` matches "production", "my-prod-dataset", etc. If omitted,
+                 *     no name filtering is applied and all resources are returned.
+                 * @example production
+                 */
+                name?: components["parameters"]["NameSearchQueryParam"];
+                /**
+                 * @description Filter results to resources associated with a specific project (base64 identifier). If omitted, results are not filtered by project.
+                 * @example TW9kZWw6MTIzOmFCY0Q=
+                 */
+                project_id?: components["parameters"]["ProjectIdQueryParam"];
+                /**
+                 * @description Exact-match filter on the name of the project the monitor's primary
+                 *     metric is computed over. Unlike `name` and `space_name`, this is an
+                 *     exact (case-sensitive) match, not a substring search. If omitted, no
+                 *     project name filtering is applied.
+                 * @example my-llm-app
+                 */
+                project_name?: components["parameters"]["MonitorProjectNameQueryParam"];
+                /**
+                 * @description Filter by monitor type. Types are exact: `DATA_QUALITY` does not
+                 *     include `TRACING` monitors, and `PERFORMANCE` does not include
+                 *     `CUSTOM_METRIC` monitors. If omitted, monitors of all types are
+                 *     returned.
+                 * @example TRACING
+                 */
+                type?: components["parameters"]["MonitorTypeQueryParam"];
+                /**
+                 * @description Filter by the monitor's current evaluation state (`TRIGGERED`,
+                 *     `CLEARED`, or `NO_DATA`). If omitted, monitors in every state are
+                 *     returned.
+                 * @example TRIGGERED
+                 */
+                status?: components["parameters"]["MonitorStatusQueryParam"];
+                /**
+                 * @description Filter by whether notifications fire on a triggered transition.
+                 *     `true` returns only monitors with notifications enabled; `false`
+                 *     returns only monitors with notifications disabled. If omitted,
+                 *     monitors are returned regardless of notification state.
+                 * @example true
+                 */
+                notifications_enabled?: components["parameters"]["MonitorNotificationsEnabledQueryParam"];
+                /**
+                 * @description Filter to monitors whose metric is computed over a dimension of this
+                 *     category. Values copied from a returned monitor's `dimension.category`
+                 *     work as filters. If omitted, no dimension category filtering is
+                 *     applied.
+                 * @example LLM_EVAL
+                 */
+                dimension_category?: components["parameters"]["MonitorDimensionCategoryQueryParam"];
+                /**
+                 * @description Exact-match filter on the name of the dimension the monitor's metric
+                 *     is computed over. Values copied from a returned monitor's
+                 *     `dimension.name` work as filters. If omitted, no dimension name
+                 *     filtering is applied.
+                 * @example eval.Hallucination.label
+                 */
+                dimension_name?: components["parameters"]["MonitorDimensionNameQueryParam"];
+                /**
+                 * @description Filter to monitors computing this data quality metric. Matches both
+                 *     `DATA_QUALITY` and `TRACING` monitors; combine with `type` to narrow
+                 *     to one of them. If omitted, no data quality metric filtering is
+                 *     applied.
+                 * @example PERCENT_EMPTY
+                 */
+                data_quality_metric?: components["parameters"]["MonitorDataQualityMetricQueryParam"];
+                /**
+                 * @description Filter to `PERFORMANCE` monitors computing this performance metric.
+                 *     Does not match `CUSTOM_METRIC` monitors. If omitted, no performance
+                 *     metric filtering is applied.
+                 * @example ACCURACY
+                 */
+                performance_metric?: components["parameters"]["MonitorPerformanceMetricQueryParam"];
+                /**
+                 * @description Filter to `DRIFT` monitors computing this drift metric. If omitted,
+                 *     no drift metric filtering is applied.
+                 * @example PSI
+                 */
+                drift_metric?: components["parameters"]["MonitorDriftMetricQueryParam"];
+                /**
+                 * @description Filter to `CUSTOM_METRIC` monitors evaluating this custom metric
+                 *     (base64 identifier). If omitted, no custom metric filtering is
+                 *     applied.
+                 * @example Q3VzdG9tTWV0cmljOjEyMzQ1
+                 */
+                custom_metric_id?: components["parameters"]["MonitorCustomMetricIdQueryParam"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 100. */
+                limit?: components["parameters"]["LimitQueryParam"];
+                /**
+                 * @description Opaque pagination cursor returned from a previous response
+                 *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
+                 *     attempt to parse or construct it.
+                 */
+                cursor?: components["parameters"]["CursorQueryParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ListMonitorsResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    get_monitor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique monitor identifier (base64)
+                 * @example TW9uaXRvcjoxMjM=
+                 */
+                monitor_id: components["parameters"]["MonitorIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Monitor"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    list_monitor_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique monitor identifier (base64)
+                 * @example TW9uaXRvcjoxMjM=
+                 */
+                monitor_id: components["parameters"]["MonitorIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ListTagsResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    add_monitor_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique monitor identifier (base64)
+                 * @example TW9uaXRvcjoxMjM=
+                 */
+                monitor_id: components["parameters"]["MonitorIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["AddTagsRequestBody"];
+        responses: {
+            200: components["responses"]["ListTagsResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    remove_monitor_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique monitor identifier (base64)
+                 * @example TW9uaXRvcjoxMjM=
+                 */
+                monitor_id: components["parameters"]["MonitorIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["RemoveTagsRequestBody"];
+        responses: {
+            200: components["responses"]["RemoveTagsResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
     list_organizations: {
         parameters: {
             query?: {
@@ -13138,8 +17386,8 @@ export interface operations {
                  * @example production
                  */
                 name?: components["parameters"]["NameSearchQueryParam"];
-                /** @description Maximum items to return */
-                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 100. */
+                limit?: components["parameters"]["LimitQueryParam"];
                 /**
                  * @description Opaque pagination cursor returned from a previous response
                  *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
@@ -13323,14 +17571,20 @@ export interface operations {
                  * @example production
                  */
                 name?: components["parameters"]["NameSearchQueryParam"];
-                /** @description Maximum items to return */
-                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 100. */
+                limit?: components["parameters"]["LimitQueryParam"];
                 /**
                  * @description Opaque pagination cursor returned from a previous response
                  *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
                  *     attempt to parse or construct it.
                  */
                 cursor?: components["parameters"]["CursorQueryParam"];
+                /**
+                 * @description Filter projects by type. When omitted, harness projects are excluded from
+                 *     list results. Set to `HARNESS` to include harness session projects.
+                 * @example HARNESS
+                 */
+                project_type?: components["parameters"]["ProjectTypeQueryParam"];
             };
             header?: never;
             path?: never;
@@ -13371,7 +17625,7 @@ export interface operations {
             path: {
                 /**
                  * @description The unique project identifier (base64)
-                 * @example UHJvamVjdDoxMjM0NQ==
+                 * @example TW9kZWw6MTIzOmFCY0Q=
                  */
                 project_id: components["parameters"]["ProjectIdPathParam"];
             };
@@ -13382,7 +17636,6 @@ export interface operations {
             200: components["responses"]["Project"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
@@ -13394,7 +17647,7 @@ export interface operations {
             path: {
                 /**
                  * @description The unique project identifier (base64)
-                 * @example UHJvamVjdDoxMjM0NQ==
+                 * @example TW9kZWw6MTIzOmFCY0Q=
                  */
                 project_id: components["parameters"]["ProjectIdPathParam"];
             };
@@ -13417,7 +17670,7 @@ export interface operations {
             path: {
                 /**
                  * @description The unique project identifier (base64)
-                 * @example UHJvamVjdDoxMjM0NQ==
+                 * @example TW9kZWw6MTIzOmFCY0Q=
                  */
                 project_id: components["parameters"]["ProjectIdPathParam"];
             };
@@ -13426,6 +17679,76 @@ export interface operations {
         requestBody: components["requestBodies"]["UpdateProjectRequestBody"];
         responses: {
             200: components["responses"]["Project"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    list_project_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique project identifier (base64)
+                 * @example TW9kZWw6MTIzOmFCY0Q=
+                 */
+                project_id: components["parameters"]["ProjectIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ListTagsResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    add_project_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique project identifier (base64)
+                 * @example TW9kZWw6MTIzOmFCY0Q=
+                 */
+                project_id: components["parameters"]["ProjectIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["AddTagsRequestBody"];
+        responses: {
+            200: components["responses"]["ListTagsResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    remove_project_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique project identifier (base64)
+                 * @example TW9kZWw6MTIzOmFCY0Q=
+                 */
+                project_id: components["parameters"]["ProjectIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["RemoveTagsRequestBody"];
+        responses: {
+            200: components["responses"]["RemoveTagsResponse"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
@@ -13457,8 +17780,8 @@ export interface operations {
                  * @example production
                  */
                 name?: components["parameters"]["NameSearchQueryParam"];
-                /** @description Maximum items to return */
-                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 100. */
+                limit?: components["parameters"]["LimitQueryParam"];
                 /**
                  * @description Opaque pagination cursor returned from a previous response
                  *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
@@ -13602,11 +17925,81 @@ export interface operations {
             429: components["responses"]["RateLimitExceeded"];
         };
     };
+    list_prompt_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique prompt identifier (base64)
+                 * @example UHJvbXB0OjEyMzQ1
+                 */
+                prompt_id: components["parameters"]["PromptIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ListTagsResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    add_prompt_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique prompt identifier (base64)
+                 * @example UHJvbXB0OjEyMzQ1
+                 */
+                prompt_id: components["parameters"]["PromptIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["AddTagsRequestBody"];
+        responses: {
+            200: components["responses"]["ListTagsResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    remove_prompt_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique prompt identifier (base64)
+                 * @example UHJvbXB0OjEyMzQ1
+                 */
+                prompt_id: components["parameters"]["PromptIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["RemoveTagsRequestBody"];
+        responses: {
+            200: components["responses"]["RemoveTagsResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["UnprocessableEntity"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
     list_prompt_versions: {
         parameters: {
             query?: {
-                /** @description Maximum items to return */
-                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 100. */
+                limit?: components["parameters"]["LimitQueryParam"];
                 /**
                  * @description Opaque pagination cursor returned from a previous response
                  *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
@@ -13733,16 +18126,15 @@ export interface operations {
         parameters: {
             query?: {
                 /**
-                 * @description Filter restrictions to a single resource type.
+                 * @description Filter the results to a specific resource type.
+                 *     When omitted, restrictions of all supported types are returned.
                  *     - `PROJECT` — Return only restricted projects.
-                 *
-                 *     When not specified, restrictions of all supported resource types are
-                 *     returned (currently only `PROJECT`).
+                 *     - `DASHBOARD` — Return only restricted dashboards.
                  * @example PROJECT
                  */
                 resource_type?: components["parameters"]["ResourceRestrictionTypeQueryParam"];
-                /** @description Maximum items to return */
-                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 100. */
+                limit?: components["parameters"]["LimitQueryParam"];
                 /**
                  * @description Opaque pagination cursor returned from a previous response
                  *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
@@ -13809,8 +18201,8 @@ export interface operations {
     list_role_bindings: {
         parameters: {
             query: {
-                /** @description Maximum items to return */
-                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 100. */
+                limit?: components["parameters"]["LimitQueryParam"];
                 /**
                  * @description Opaque pagination cursor returned from a previous response
                  *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
@@ -13820,6 +18212,9 @@ export interface operations {
                 /**
                  * @description Filter role bindings by user. When provided, only bindings assigned to this
                  *     user are returned. Must be a valid global user ID.
+                 *
+                 *     For a service key, pass its bot user's ID (`bot_user.id` from
+                 *     `POST /v2/api-keys` or `GET /v2/api-keys`) to list that key's bindings.
                  * @example VXNlcjoxOmxQZzI=
                  */
                 user_id?: components["parameters"]["RoleBindingsUserIdQueryParam"];
@@ -13933,8 +18328,8 @@ export interface operations {
     list_roles: {
         parameters: {
             query?: {
-                /** @description Maximum items to return */
-                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 100. */
+                limit?: components["parameters"]["LimitQueryParam"];
                 /**
                  * @description Opaque pagination cursor returned from a previous response
                  *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
@@ -13976,6 +18371,7 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             422: components["responses"]["UnprocessableEntity"];
             429: components["responses"]["RateLimitExceeded"];
@@ -13999,6 +18395,7 @@ export interface operations {
             200: components["responses"]["Role"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
@@ -14023,6 +18420,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -14055,7 +18453,7 @@ export interface operations {
         parameters: {
             query?: {
                 /**
-                 * @description The unique organization identifier (base64). When provided, only spaces belonging to this organization are returned.
+                 * @description The unique organization identifier (base64). When provided, only resources belonging to this organization are returned.
                  * @example T3JnYW5pemF0aW9uOjEyMzQ1
                  */
                 org_id?: components["parameters"]["OrganizationIdQueryParam"];
@@ -14067,8 +18465,8 @@ export interface operations {
                  * @example production
                  */
                 name?: components["parameters"]["NameSearchQueryParam"];
-                /** @description Maximum items to return */
-                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 100. */
+                limit?: components["parameters"]["LimitQueryParam"];
                 /**
                  * @description Opaque pagination cursor returned from a previous response
                  *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
@@ -14085,7 +18483,7 @@ export interface operations {
             200: components["responses"]["ListSpacesResponse"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -14126,7 +18524,6 @@ export interface operations {
             200: components["responses"]["Space"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
         };
@@ -14234,8 +18631,8 @@ export interface operations {
     list_spans: {
         parameters: {
             query?: {
-                /** @description Maximum items to return */
-                limit?: components["parameters"]["LimitQueryParamMax500"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 500. */
+                limit?: components["parameters"]["LimitQueryParamLarge"];
                 /**
                  * @description Opaque pagination cursor returned from a previous response
                  *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
@@ -14295,6 +18692,73 @@ export interface operations {
             429: components["responses"]["RateLimitExceeded"];
         };
     };
+    create_tag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["CreateTagRequestBody"];
+        responses: {
+            201: components["responses"]["Tag"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    delete_tag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique tag identifier (base64)
+                 * @example VGFnOjEyMzQ1
+                 */
+                tag_id: components["parameters"]["TagIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: components["responses"]["DeleteTagResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    update_tag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique tag identifier (base64)
+                 * @example VGFnOjEyMzQ1
+                 */
+                tag_id: components["parameters"]["TagIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["UpdateTagRequestBody"];
+        responses: {
+            200: components["responses"]["Tag"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
     list_tasks: {
         parameters: {
             query?: {
@@ -14319,8 +18783,8 @@ export interface operations {
                  */
                 name?: components["parameters"]["NameSearchQueryParam"];
                 /**
-                 * @description Filter to tasks for a specific project (base64 identifier (base64))
-                 * @example UHJvamVjdDoxMjM0NQ==
+                 * @description Filter results to resources associated with a specific project (base64 identifier). If omitted, results are not filtered by project.
+                 * @example TW9kZWw6MTIzOmFCY0Q=
                  */
                 project_id?: components["parameters"]["ProjectIdQueryParam"];
                 /**
@@ -14333,8 +18797,8 @@ export interface operations {
                  * @example TEMPLATE_EVALUATION
                  */
                 type?: components["parameters"]["TaskTypeQueryParam"];
-                /** @description Maximum items to return */
-                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 100. */
+                limit?: components["parameters"]["LimitQueryParam"];
                 /**
                  * @description Opaque pagination cursor returned from a previous response
                  *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
@@ -14451,8 +18915,8 @@ export interface operations {
                  * @example COMPLETED
                  */
                 status?: components["parameters"]["TaskRunStatusQueryParam"];
-                /** @description Maximum items to return */
-                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 100. */
+                limit?: components["parameters"]["LimitQueryParam"];
                 /**
                  * @description Opaque pagination cursor returned from a previous response
                  *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
@@ -14550,33 +19014,11 @@ export interface operations {
             429: components["responses"]["RateLimitExceeded"];
         };
     };
-    get_monitors: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /**
-                 * @description The unique monitor identifier (base64)
-                 * @example TW9uaXRvcjoxMjM=
-                 */
-                monitor_id: components["parameters"]["MonitorIdPathParam"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: components["responses"]["Monitor"];
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            404: components["responses"]["NotFound"];
-            429: components["responses"]["RateLimitExceeded"];
-        };
-    };
     list_traces: {
         parameters: {
             query?: {
-                /** @description Maximum items to return */
-                limit?: components["parameters"]["LimitQueryParamMax50"];
+                /** @description Maximum items to return. Defaults to 25 if omitted; maximum is 50. */
+                limit?: components["parameters"]["LimitQueryParamSmall"];
                 /**
                  * @description Opaque pagination cursor returned from a previous response
                  *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
@@ -14602,8 +19044,8 @@ export interface operations {
     list_users: {
         parameters: {
             query?: {
-                /** @description Maximum items to return */
-                limit?: components["parameters"]["LimitQueryParamMax100"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 100. */
+                limit?: components["parameters"]["LimitQueryParam"];
                 /**
                  * @description Opaque pagination cursor returned from a previous response
                  *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
@@ -14780,6 +19222,294 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    list_webhook_subscriptions: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Filter subscriptions to one kind of source. Must be paired with
+                 *     `source_id`. When both filters are omitted, subscriptions from every
+                 *     supported source type are returned.
+                 * @example PROMPT
+                 */
+                source_type?: components["parameters"]["WebhookSourceTypeQueryParam"];
+                /**
+                 * @description Filter subscriptions to one prompt or evaluator. Must be paired with
+                 *     `source_type`. When both filters are omitted, subscriptions from every
+                 *     readable supported source are returned.
+                 * @example UHJvbXB0OjEyMzQ1
+                 */
+                source_id?: components["parameters"]["WebhookSourceIdQueryParam"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 100. */
+                limit?: components["parameters"]["LimitQueryParam"];
+                /**
+                 * @description Opaque pagination cursor returned from a previous response
+                 *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
+                 *     attempt to parse or construct it.
+                 */
+                cursor?: components["parameters"]["CursorQueryParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ListWebhookSubscriptionsResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    create_webhook_subscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["CreateWebhookSubscriptionRequestBody"];
+        responses: {
+            201: components["responses"]["CreateWebhookSubscriptionResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    get_webhook_subscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique webhook subscription identifier (base64)
+                 * @example V2ViaG9va1N1YnNjcmlwdGlvbjoxMjM0NQ==
+                 */
+                subscription_id: components["parameters"]["WebhookSubscriptionIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["WebhookSubscription"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    delete_webhook_subscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique webhook subscription identifier (base64)
+                 * @example V2ViaG9va1N1YnNjcmlwdGlvbjoxMjM0NQ==
+                 */
+                subscription_id: components["parameters"]["WebhookSubscriptionIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: components["responses"]["DeleteWebhookSubscriptionResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    list_webhooks: {
+        parameters: {
+            query?: {
+                /**
+                 * @description The unique organization identifier (base64). When provided, only resources belonging to this organization are returned.
+                 * @example T3JnYW5pemF0aW9uOjEyMzQ1
+                 */
+                org_id?: components["parameters"]["OrganizationIdQueryParam"];
+                /**
+                 * @description Case-insensitive substring filter on the resource name. Returns only
+                 *     resources whose name contains the given string. For example,
+                 *     `name=prod` matches "production", "my-prod-dataset", etc. If omitted,
+                 *     no name filtering is applied and all resources are returned.
+                 * @example production
+                 */
+                name?: components["parameters"]["NameSearchQueryParam"];
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 100. */
+                limit?: components["parameters"]["LimitQueryParam"];
+                /**
+                 * @description Opaque pagination cursor returned from a previous response
+                 *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
+                 *     attempt to parse or construct it.
+                 */
+                cursor?: components["parameters"]["CursorQueryParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ListWebhooksResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    create_webhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["CreateWebhookRequestBody"];
+        responses: {
+            201: components["responses"]["CreateWebhookResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    get_webhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique webhook identifier (base64)
+                 * @example V2ViaG9vazoxMjM0NQ==
+                 */
+                webhook_id: components["parameters"]["WebhookIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Webhook"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    delete_webhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique webhook identifier (base64)
+                 * @example V2ViaG9vazoxMjM0NQ==
+                 */
+                webhook_id: components["parameters"]["WebhookIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: components["responses"]["DeleteWebhookResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    update_webhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique webhook identifier (base64)
+                 * @example V2ViaG9vazoxMjM0NQ==
+                 */
+                webhook_id: components["parameters"]["WebhookIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["UpdateWebhookRequestBody"];
+        responses: {
+            200: components["responses"]["Webhook"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["UnprocessableEntity"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    list_webhook_delivery_attempts: {
+        parameters: {
+            query?: {
+                /** @description Maximum items to return. Defaults to 50 if omitted; maximum is 500. */
+                limit?: components["parameters"]["LimitQueryParamLarge"];
+                /**
+                 * @description Opaque pagination cursor returned from a previous response
+                 *     (`pagination.next_cursor`). Treat it as an unreadable token; do not
+                 *     attempt to parse or construct it.
+                 */
+                cursor?: components["parameters"]["CursorQueryParam"];
+            };
+            header?: never;
+            path: {
+                /**
+                 * @description The unique webhook identifier (base64)
+                 * @example V2ViaG9vazoxMjM0NQ==
+                 */
+                webhook_id: components["parameters"]["WebhookIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ListWebhookDeliveryAttemptsResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+        };
+    };
+    test_webhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The unique webhook identifier (base64)
+                 * @example V2ViaG9vazoxMjM0NQ==
+                 */
+                webhook_id: components["parameters"]["WebhookIdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["TestWebhookResponse"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["RateLimitExceeded"];
+            503: components["responses"]["ServiceUnavailable"];
         };
     };
 }

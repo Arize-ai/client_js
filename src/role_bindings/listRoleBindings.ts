@@ -26,7 +26,9 @@ export type ListRoleBindingsParams = WithClient<
  *
  * @param client - An optional ArizeClient instance to use for the request.
  * @param resourceType - The {@link RoleBindingResourceType | ResourceType} to list bindings for.
- * @param userId - An optional user ID to filter bindings for a specific user.
+ * @param userId - An optional user ID to filter bindings for a specific
+ *   user, including a service key's bot user (`botUser.id` from
+ *   `createApiKey` or `listApiKeys`).
  * @param limit - An optional limit on the number of role bindings to return.
  * @param cursor - An optional cursor for pagination.
  * @returns A paginated list of {@link RoleBinding} objects.

@@ -26,6 +26,7 @@ export type RawSpanContext = components["schemas"]["SpanContext"];
 export type RawSpanEvent = components["schemas"]["SpanEvent"];
 export type RawAnnotation = components["schemas"]["Annotation"];
 export type RawEvaluation = components["schemas"]["Evaluation"];
+export type RawTrace = components["schemas"]["Trace"];
 export type RawSpace = components["schemas"]["Space"];
 export type RawPrompt = components["schemas"]["Prompt"];
 export type RawPromptVersion = components["schemas"]["PromptVersion"];
@@ -48,9 +49,9 @@ export type RawApiKey = components["schemas"]["ApiKey"];
 
 // openapi-typescript generates Omit<Union, "type"> (non-distributive) for role
 // fields, which is structurally incompatible with the SDK's DistributiveOmit
-// types. Redefine the bot_user chain here so transformApiKeyCreated can map
+// types. Redefine the bot_user chain here so transformCreatedApiKey can map
 // them without casts. The coercion is applied once at the HTTP boundary
-// (createApiKey / refreshApiKey) via `as unknown as RawApiKeyCreated`.
+// (createApiKey / refreshApiKey) via `as unknown as RawCreatedApiKey`.
 type RawBotUserSpaceAssignment = Omit<
   components["schemas"]["ServiceKeyBotUserSpaceAssignment"],
   "role"
@@ -69,14 +70,14 @@ type RawServiceKeyBotUser = Omit<
   organizations: RawBotUserOrgAssignment[];
 };
 
-type RawServiceApiKeyCreated = Omit<
-  components["schemas"]["ServiceApiKeyCreated"],
+type RawCreatedServiceApiKey = Omit<
+  components["schemas"]["CreatedServiceApiKey"],
   "bot_user"
 > & { bot_user: RawServiceKeyBotUser };
 
-export type RawApiKeyCreated =
-  | components["schemas"]["UserApiKeyCreated"]
-  | RawServiceApiKeyCreated;
+export type RawCreatedApiKey =
+  | components["schemas"]["CreatedUserApiKey"]
+  | RawCreatedServiceApiKey;
 export type RawRefreshApiKey = RawApiKey & { key: string };
 export type RawTask = components["schemas"]["Task"];
 export type RawTaskEvaluator = components["schemas"]["TaskEvaluator"];
@@ -108,6 +109,17 @@ export type RawResourceRestrictionType =
   components["schemas"]["ResourceRestrictionType"];
 export type RawRoleBinding = components["schemas"]["RoleBinding"];
 export type RawSpaceMembership = components["schemas"]["SpaceMembership"];
+export type RawWebhook = components["schemas"]["Webhook"];
+export type RawCreateWebhookResponse =
+  components["schemas"]["CreateWebhookResponse"];
+export type RawTestWebhookResponse =
+  components["schemas"]["TestWebhookResponse"];
+export type RawWebhookDeliveryAttempt =
+  components["schemas"]["WebhookDeliveryAttempt"];
+export type RawWebhookSubscription =
+  components["schemas"]["WebhookSubscription"];
+export type RawUpdateWebhookRequest =
+  components["schemas"]["UpdateWebhookRequest"];
 export type RawOrganization = components["schemas"]["Organization"];
 export type RawOrganizationMembership =
   components["schemas"]["OrganizationMembership"];

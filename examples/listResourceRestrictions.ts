@@ -2,7 +2,9 @@ import { listResourceRestrictions } from "../src/resource_restrictions";
 
 (async () => {
   try {
-    const restrictions = await listResourceRestrictions();
+    const restrictions = await listResourceRestrictions({
+      resourceType: "PROJECT",
+    });
     // eslint-disable-next-line no-console
     console.log("Resource restrictions:");
     // eslint-disable-next-line no-console

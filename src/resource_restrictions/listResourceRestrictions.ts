@@ -16,6 +16,7 @@ import { transformResourceRestriction } from "./utils";
 
 export type ListResourceRestrictionsParams = WithClient<
   PaginationParams & {
+    /** Optional filter. When omitted, restrictions of all supported types (PROJECT and DASHBOARD) are returned. */
     resourceType?: ResourceRestrictionResourceType;
   }
 >;
@@ -24,11 +25,11 @@ export type ListResourceRestrictionsParams = WithClient<
  * List active resource restrictions the authenticated user is permitted to manage.
  *
  * Only restrictions the caller can manage (space admins or users with the
- * `PROJECT_RESTRICT` permission) are returned. Currently only `PROJECT`
- * resources are supported.
+ * appropriate resource restriction permission) are returned.
  *
  * @param client - An optional ArizeClient instance to use for the request.
- * @param resourceType - An optional filter to return only restrictions of a single resource type.
+ * @param resourceType - Optional filter. When omitted, restrictions of all supported
+ *   types (PROJECT and DASHBOARD) are returned in one merged list.
  * @param limit - An optional limit on the number of restrictions to return.
  * @param cursor - An optional cursor for pagination.
  * @returns A paginated list of {@link ResourceRestriction} objects.
@@ -37,8 +38,12 @@ export type ListResourceRestrictionsParams = WithClient<
  * ```typescript
  * import { listResourceRestrictions } from "@arizeai/ax-client"
  *
- * const restrictions = await listResourceRestrictions();
- * console.log(restrictions);
+ * // Return all restricted resources (all types):
+ * const all = await listResourceRestrictions({});
+ *
+ * // Return only restricted projects:
+ * const projects = await listResourceRestrictions({ resourceType: "PROJECT" });
+ * console.log(all, projects);
  * ```
  */
 export async function listResourceRestrictions(

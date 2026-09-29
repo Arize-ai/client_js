@@ -162,6 +162,49 @@ describe("transformIntegration (LLM) per-provider config", () => {
       modelNames: ["meta/llama-3.1-8b-instruct"],
     });
   });
+
+  it("maps LITELLM without a default-catalog flag", () => {
+    const result = transformIntegration(
+      makeLlmIntegration(rawLlmConfigs.LITELLM),
+    );
+    if (result.type !== "LLM") throw new Error("expected LLM");
+    expect(result.config).toEqual({
+      provider: "LITELLM",
+      hasApiKey: true,
+      isFunctionCallingEnabled: true,
+      baseUrl: "https://litellm.internal:4000",
+      headerNames: ["x-team-token"],
+      modelNames: ["team-gpt-4o"],
+    });
+  });
+
+  it("maps FIREWORKS without an endpoint or headers", () => {
+    const result = transformIntegration(
+      makeLlmIntegration(rawLlmConfigs.FIREWORKS),
+    );
+    if (result.type !== "LLM") throw new Error("expected LLM");
+    expect(result.config).toEqual({
+      provider: "FIREWORKS",
+      hasApiKey: true,
+      isFunctionCallingEnabled: true,
+      isDefaultModelsEnabled: false,
+      modelNames: ["accounts/fireworks/models/glm-5p3"],
+    });
+  });
+
+  it("maps TOGETHER_AI without an endpoint or headers", () => {
+    const result = transformIntegration(
+      makeLlmIntegration(rawLlmConfigs.TOGETHER_AI),
+    );
+    if (result.type !== "LLM") throw new Error("expected LLM");
+    expect(result.config).toEqual({
+      provider: "TOGETHER_AI",
+      hasApiKey: true,
+      isFunctionCallingEnabled: true,
+      isDefaultModelsEnabled: false,
+      modelNames: ["meta-llama/Llama-4-70B-Instruct-Turbo"],
+    });
+  });
 });
 
 describe("transformIntegration (AGENT)", () => {
@@ -467,6 +510,83 @@ describe("toRawCreateIntegration (LLM)", () => {
       },
     });
   });
+
+  it("builds a LITELLM create body", () => {
+    expect(
+      toRawCreateIntegration({
+        type: "LLM",
+        name: "LiteLLM",
+        config: {
+          provider: "LITELLM",
+          baseUrl: "https://litellm.internal:4000",
+          apiKey: "sk-litellm-x",
+          modelNames: ["team-gpt-4o"],
+        },
+      }),
+    ).toEqual({
+      type: "LLM",
+      name: "LiteLLM",
+      scopings: undefined,
+      config: {
+        provider: "LITELLM",
+        is_function_calling_enabled: undefined,
+        base_url: "https://litellm.internal:4000",
+        api_key: "sk-litellm-x",
+        headers: undefined,
+        model_names: ["team-gpt-4o"],
+      },
+    });
+  });
+
+  it("builds a FIREWORKS create body", () => {
+    expect(
+      toRawCreateIntegration({
+        type: "LLM",
+        name: "Fireworks",
+        config: {
+          provider: "FIREWORKS",
+          apiKey: "fw-x",
+          modelNames: ["accounts/fireworks/models/glm-5p3"],
+        },
+      }),
+    ).toEqual({
+      type: "LLM",
+      name: "Fireworks",
+      scopings: undefined,
+      config: {
+        provider: "FIREWORKS",
+        is_function_calling_enabled: undefined,
+        api_key: "fw-x",
+        is_default_models_enabled: undefined,
+        model_names: ["accounts/fireworks/models/glm-5p3"],
+      },
+    });
+  });
+
+  it("builds a TOGETHER_AI create body", () => {
+    expect(
+      toRawCreateIntegration({
+        type: "LLM",
+        name: "Together AI",
+        config: {
+          provider: "TOGETHER_AI",
+          apiKey: "ta-x",
+          modelNames: ["meta-llama/Llama-4-70B-Instruct-Turbo"],
+        },
+      }),
+    ).toEqual({
+      type: "LLM",
+      name: "Together AI",
+      scopings: undefined,
+      config: {
+        provider: "TOGETHER_AI",
+        is_function_calling_enabled: undefined,
+        api_key: "ta-x",
+        is_default_models_enabled: undefined,
+        model_names: ["meta-llama/Llama-4-70B-Instruct-Turbo"],
+      },
+    });
+  });
 });
 
 describe("toRawCreateIntegration (AGENT)", () => {
@@ -496,6 +616,57 @@ describe("toRawCreateIntegration (AGENT)", () => {
         request_presets: [
           { name: "p1", description: undefined, config: { input: "hi" } },
         ],
+      },
+    });
+  });
+});
+
+describe("toRawCreateIntegration (EVALUATOR)", () => {
+  it("builds an EVALUATOR create body", () => {
+    expect(
+      toRawCreateIntegration({
+        type: "EVALUATOR",
+        name: "Evaluator",
+        description: "desc",
+        scopings: [{ organizationId: "org", spaceId: null }],
+        config: {
+          endpoint: "https://e.example.com",
+          headers: { "x-key": "v" },
+          inputSchema: { type: "object" },
+        },
+      }),
+    ).toEqual({
+      type: "EVALUATOR",
+      name: "Evaluator",
+      description: "desc",
+      scopings: [{ organization_id: "org", space_id: null }],
+      config: {
+        endpoint: "https://e.example.com",
+        headers: { "x-key": "v" },
+        input_schema: { type: "object" },
+      },
+    });
+  });
+
+  it("omits headers when not provided", () => {
+    expect(
+      toRawCreateIntegration({
+        type: "EVALUATOR",
+        name: "Evaluator",
+        config: {
+          endpoint: "https://e.example.com",
+          inputSchema: { type: "object" },
+        },
+      }),
+    ).toEqual({
+      type: "EVALUATOR",
+      name: "Evaluator",
+      description: undefined,
+      scopings: undefined,
+      config: {
+        endpoint: "https://e.example.com",
+        headers: undefined,
+        input_schema: { type: "object" },
       },
     });
   });
@@ -642,6 +813,67 @@ describe("toRawUpdateIntegration (LLM)", () => {
     });
   });
 
+  it("builds a LITELLM update body without a default-catalog flag", () => {
+    expect(
+      toRawUpdateIntegration({
+        type: "LLM",
+        config: { provider: "LITELLM", modelNames: ["m2"] },
+      }),
+    ).toEqual({
+      type: "LLM",
+      name: undefined,
+      scopings: undefined,
+      config: {
+        provider: "LITELLM",
+        api_key: undefined,
+        is_function_calling_enabled: undefined,
+        base_url: undefined,
+        headers: undefined,
+        model_names: ["m2"],
+      },
+    });
+  });
+
+  it("builds a FIREWORKS update body with no endpoint or header fields", () => {
+    expect(
+      toRawUpdateIntegration({
+        type: "LLM",
+        config: { provider: "FIREWORKS", isDefaultModelsEnabled: true },
+      }),
+    ).toEqual({
+      type: "LLM",
+      name: undefined,
+      scopings: undefined,
+      config: {
+        provider: "FIREWORKS",
+        api_key: undefined,
+        is_function_calling_enabled: undefined,
+        is_default_models_enabled: true,
+        model_names: undefined,
+      },
+    });
+  });
+
+  it("builds a TOGETHER_AI update body with no endpoint or header fields", () => {
+    expect(
+      toRawUpdateIntegration({
+        type: "LLM",
+        config: { provider: "TOGETHER_AI", isDefaultModelsEnabled: true },
+      }),
+    ).toEqual({
+      type: "LLM",
+      name: undefined,
+      scopings: undefined,
+      config: {
+        provider: "TOGETHER_AI",
+        api_key: undefined,
+        is_function_calling_enabled: undefined,
+        is_default_models_enabled: true,
+        model_names: undefined,
+      },
+    });
+  });
+
   it("clears NVIDIA_NIM base_url by passing null (allowed unlike CUSTOM)", () => {
     expect(
       toRawUpdateIntegration({
@@ -717,6 +949,43 @@ describe("toRawUpdateIntegration (AGENT)", () => {
         request_presets: [
           { name: "p2", description: undefined, config: { input: "yo" } },
         ],
+      },
+    });
+  });
+});
+
+describe("toRawUpdateIntegration (EVALUATOR)", () => {
+  it("omits config when not provided (EVALUATOR rename)", () => {
+    expect(
+      toRawUpdateIntegration({ type: "EVALUATOR", name: "renamed" }),
+    ).toEqual({
+      type: "EVALUATOR",
+      name: "renamed",
+      description: undefined,
+      scopings: undefined,
+      config: undefined,
+    });
+  });
+
+  it("builds an EVALUATOR update body clearing headers", () => {
+    expect(
+      toRawUpdateIntegration({
+        type: "EVALUATOR",
+        config: {
+          endpoint: "https://new.example.com",
+          headers: null,
+          inputSchema: { type: "object" },
+        },
+      }),
+    ).toEqual({
+      type: "EVALUATOR",
+      name: undefined,
+      description: undefined,
+      scopings: undefined,
+      config: {
+        endpoint: "https://new.example.com",
+        headers: null,
+        input_schema: { type: "object" },
       },
     });
   });

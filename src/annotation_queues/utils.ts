@@ -33,6 +33,22 @@ export function serializeRecordInput(input: AnnotationQueueRecordInput) {
         end_time: input.endTime,
         span_ids: input.spanIds,
       };
+    case "TRACE":
+      return {
+        record_type: "TRACE" as const,
+        project_id: input.projectId,
+        start_time: input.startTime,
+        end_time: input.endTime,
+        trace_ids: input.traceIds,
+      };
+    case "SESSION":
+      return {
+        record_type: "SESSION" as const,
+        project_id: input.projectId,
+        start_time: input.startTime,
+        end_time: input.endTime,
+        session_ids: input.sessionIds,
+      };
     default:
       assertUnreachable(input);
   }

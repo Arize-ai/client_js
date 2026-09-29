@@ -37,7 +37,7 @@ export type CreateTemplateEvaluatorVersionParams =
  *     name: "Relevance",
  *     template: "Rate the relevance of the response.\nQuery: {{query}}\nResponse: {{response}}",
  *     includeExplanations: true,
- *     useFunctionCallingIfAvailable: true,
+ *     useFunctionCalling: true,
  *     classificationChoices: { relevant: 1, irrelevant: 0 },
  *     direction: "MAXIMIZE",
  *     llmConfig: {

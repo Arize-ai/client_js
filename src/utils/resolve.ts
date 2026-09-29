@@ -744,3 +744,58 @@ export async function findOrganizationId(
 
   throw new ResolutionError("organization", organization, available);
 }
+
+/**
+ * Resolve a webhook ID or name to a webhook ID.
+ *
+ * If the value is a base64 ID, it is returned as-is. Otherwise `organization`
+ * (ID or name) is required, since webhook names are unique only within an
+ * organization. The organization is resolved first, then the list webhooks
+ * endpoint is paged for an exact name match.
+ *
+ * @throws {ResolutionError} If `webhook` is a name and `organization` is
+ *   omitted, or if no webhook with that exact name exists in the organization.
+ */
+export async function findWebhookId(
+  client: Client,
+  webhook: string,
+  organization?: string,
+): Promise<string> {
+  if (isResourceId(webhook)) {
+    return webhook;
+  }
+
+  if (!organization) {
+    throw new ResolutionError(
+      "webhook",
+      webhook,
+      [],
+      "Provide 'organization' so the webhook name can be resolved, or provide the webhook ID instead of the name.",
+    );
+  }
+
+  const orgId = await findOrganizationId(client, organization);
+
+  const available: string[] = [];
+  let cursor: string | undefined;
+
+  do {
+    const response = await client.GET("/v2/webhooks", {
+      params: {
+        query: { org_id: orgId, name: webhook, limit: 100, cursor },
+      },
+    });
+    if (response.error) {
+      return handleApiError(response);
+    }
+    for (const w of response.data.webhooks) {
+      if (w.name === webhook) {
+        return w.id;
+      }
+      available.push(w.name);
+    }
+    cursor = response.data.pagination.next_cursor ?? undefined;
+  } while (cursor);
+
+  throw new ResolutionError("webhook", webhook, available);
+}

@@ -1,5 +1,30 @@
 # @arizeai/ax-client
 
+## [1.30.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.29.0...arize-js-sdk/v1.30.0) (2026-09-29)
+
+
+### 🎁 New Features
+
+* **datasets:** adding complex filter queries to list dataset examples ([#88160](https://github.com/Arize-ai/arize/issues/88160)) ([8d44e41](https://github.com/Arize-ai/arize/commit/8d44e41497a481d09a984d103fd4809a44d34a04))
+* **experiments:** adding complex filter queries to list experiment runs ([#87925](https://github.com/Arize-ai/arize/issues/87925)) ([49b812a](https://github.com/Arize-ai/arize/commit/49b812a1adf4a90fa167609e9215f871c3c48ba2))
+
+## [1.29.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.28.0...arize-js-sdk/v1.29.0) (2026-09-09)
+
+
+### 🎁 New Features
+
+* Add support for session annotations ([#84868](https://github.com/Arize-ai/arize/issues/84868)) ([a19b7f2](https://github.com/Arize-ai/arize/commit/a19b7f2f859ba2025a86aec156aaf0e97e745531))
+* **evaluators:** Add evaluator schema and routing ([#84209](https://github.com/Arize-ai/arize/issues/84209)) ([3dc0205](https://github.com/Arize-ai/arize/commit/3dc02057ad6983ee733bb9961dbba10fe37f69a5))
+* **auth:** Add dashboard resource restrictions API (needs [#84566](https://github.com/Arize-ai/arize/issues/84566)) ([#84567](https://github.com/Arize-ai/arize/issues/84567)) ([ebd3224](https://github.com/Arize-ai/arize/commit/ebd32248bd2578948f45b165a31111f4c293aef1))
+* Bump categorical annotation configuration limits ([#86027](https://github.com/Arize-ai/arize/issues/86027)) ([695581c](https://github.com/Arize-ai/arize/commit/695581c7e9d6c1397e7fed46fe2ceeeeee2a0dde))
+* **traces:** Add trace and session record support in annotation queues ([#85836](https://github.com/Arize-ai/arize/issues/85836)) ([fb7ddc2](https://github.com/Arize-ai/arize/commit/fb7ddc2b19221a283a564408981a40cb627f1eb5))
+* **evaluators:** Add remote evaluator support ([#82177](https://github.com/Arize-ai/arize/issues/82177)) ([60f587b](https://github.com/Arize-ai/arize/commit/60f587bbad2fe01871fc5af53fb60673e141799d))
+
+
+### 🐛 Bug Fixes
+
+* Fix query-filter/query-mapping validation gaps ([#85343](https://github.com/Arize-ai/arize/issues/85343)) ([bfa8a6f](https://github.com/Arize-ai/arize/commit/bfa8a6fe3aa7e22622a7173fbbf0b0d4c5a3aa62))
+
 ## [1.28.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.27.0...arize-js-sdk/v1.28.0) (2026-08-07)
 
 

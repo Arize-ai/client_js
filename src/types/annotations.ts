@@ -3,6 +3,8 @@ import { AnnotationInput } from "./annotation_queues";
 
 type RawAnnotation = components["schemas"]["Annotation"];
 
+export type RecordGranularity = components["schemas"]["RecordGranularity"];
+
 export type Annotation = {
   name: RawAnnotation["name"];
   score?: RawAnnotation["score"];

@@ -9,7 +9,7 @@ const mockTemplateConfig = {
   name: "Relevance",
   template: "Is {{output}} relevant?",
   includeExplanations: true,
-  useFunctionCallingIfAvailable: false,
+  useFunctionCalling: false,
   classificationChoices: { relevant: 1, irrelevant: 0 },
   llmConfig: {
     aiIntegrationId: mockAiIntegrationId,
@@ -29,7 +29,7 @@ const mockResponseData = {
     name: "Relevance",
     template: "Is {{output}} relevant?",
     include_explanations: true,
-    use_function_calling_if_available: false,
+    use_function_calling: false,
     classification_choices: null,
     direction: undefined,
     data_granularity: null,

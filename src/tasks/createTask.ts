@@ -3,7 +3,7 @@ import { createClient } from "../client";
 import { CreateTaskInput, Task, WithClient } from "../types";
 import { findDatasetId, findProjectId, toSpaceRef } from "../utils/resolve";
 import { warnPreRelease } from "../utils/warning";
-import { toRawTaskEvaluator, transformTask } from "./utils";
+import { toRawQueryFilters, toRawTaskEvaluator, transformTask } from "./utils";
 
 export type CreateTaskParams = WithClient<CreateTaskInput>;
 
@@ -86,10 +86,16 @@ export async function createTask({
       name: input.name,
       type: "RUN_EXPERIMENT",
       dataset_id: datasetId,
-      run_configuration: rawConfig as components["schemas"]["RunConfiguration"],
+      run_configuration:
+        rawConfig as components["schemas"]["RunConfigurationRequest"],
     };
     body = runExpBody;
   } else {
+    if (input.queryFilter != null && input.queryFilters != null) {
+      throw new Error(
+        "queryFilter and queryFilters are mutually exclusive; provide one or the other.",
+      );
+    }
     const spaceRef = toSpaceRef(input.space);
     const resolvedProjectId = input.project
       ? await findProjectId(client, input.project, spaceRef)
@@ -106,6 +112,13 @@ export async function createTask({
       sampling_rate: input.samplingRate,
       experiment_ids: input.experimentIds,
       query_filter: input.queryFilter,
+      query_filters:
+        input.queryFilters != null
+          ? {
+              filters: toRawQueryFilters(input.queryFilters.filters),
+              expression: input.queryFilters.expression ?? undefined,
+            }
+          : undefined,
       evaluators: input.evaluators.map(toRawTaskEvaluator),
     };
     body = evalBody;

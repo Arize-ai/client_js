@@ -26,11 +26,11 @@ export type UpdateIntegrationParams = WithClient<
  *
  * @param client - An optional ArizeClient instance to use for the request.
  * @param integration - The name or ID of the integration to update.
- * @param type - The integration type (`"LLM"` or `"AGENT"`). Immutable.
+ * @param type - The integration type (`"LLM"`, `"AGENT"`, or `"EVALUATOR"`). Immutable.
  * @param space - The name or ID of the space (optional filter when using a name).
  * @param name - An optional new name for the integration.
  * @param scopings - Optional replacement visibility scoping rules.
- * @param description - An optional new description (AGENT integrations only).
+ * @param description - An optional new description (AGENT and EVALUATOR integrations only).
  * @param config - Optional type-specific configuration changes.
  * @returns The updated {@link Integration}.
  * @throws Error if no updatable field is provided, or if the integration
@@ -60,7 +60,8 @@ export async function updateIntegration(
     params.name !== undefined ||
     params.scopings !== undefined ||
     params.config !== undefined ||
-    (params.type === "AGENT" && params.description !== undefined);
+    ((params.type === "AGENT" || params.type === "EVALUATOR") &&
+      params.description !== undefined);
   if (!hasUpdateFields) {
     throw new Error(
       params.type === "LLM"

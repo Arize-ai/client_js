@@ -11,6 +11,7 @@ export const mockTaskEvaluator: RawTaskEvaluator = {
   evaluator_version_id: null,
   query_filter: "span_kind == 'LLM'",
   column_mappings: { input: "question", output: "answer" },
+  query_mappings: null,
 };
 
 export const mockTask: RawTask = {
@@ -22,6 +23,7 @@ export const mockTask: RawTask = {
   is_continuous: false,
   sampling_rate: 0.5,
   query_filter: null,
+  query_filters: null,
   evaluators: [mockTaskEvaluator],
   experiment_ids: [],
   last_run_at: mockLastRunDateString,

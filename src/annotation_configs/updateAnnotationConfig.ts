@@ -7,7 +7,6 @@ import {
   WithClient,
 } from "../types";
 import { findAnnotationConfigId, toSpaceRef } from "../utils/resolve";
-import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { transformAnnotationConfig } from "./utils";
 
@@ -64,10 +63,6 @@ export async function updateContinuousAnnotationConfig({
   maximumScore,
   optimizationDirection,
 }: UpdateContinuousAnnotationConfigParams): Promise<AnnotationConfig> {
-  warnPreRelease({
-    functionName: "updateContinuousAnnotationConfig",
-    stage: "beta",
-  });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const annotationConfigId = await findAnnotationConfigId(
@@ -123,7 +118,7 @@ export type UpdateCategoricalAnnotationConfigParams = WithClient<
  * @param annotationConfig - The name or ID of the annotation config to update.
  * @param space - An optional space name or ID. Required when `annotationConfig` is a name.
  * @param name - An optional new name for the annotation config. Must be unique within the space.
- * @param values - An optional full replacement set of labels (2-100 items).
+ * @param values - An optional full replacement set of labels (2-500 items).
  * @param optimizationDirection - An optional new direction of optimization.
  * @returns The updated {@link AnnotationConfig}.
  * @throws Error if the annotation config cannot be updated or the response is invalid.
@@ -152,10 +147,6 @@ export async function updateCategoricalAnnotationConfig({
   values,
   optimizationDirection,
 }: UpdateCategoricalAnnotationConfigParams): Promise<AnnotationConfig> {
-  warnPreRelease({
-    functionName: "updateCategoricalAnnotationConfig",
-    stage: "beta",
-  });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const annotationConfigId = await findAnnotationConfigId(
@@ -230,10 +221,6 @@ export async function updateFreeformAnnotationConfig({
   space,
   name,
 }: UpdateFreeformAnnotationConfigParams): Promise<AnnotationConfig> {
-  warnPreRelease({
-    functionName: "updateFreeformAnnotationConfig",
-    stage: "beta",
-  });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const annotationConfigId = await findAnnotationConfigId(

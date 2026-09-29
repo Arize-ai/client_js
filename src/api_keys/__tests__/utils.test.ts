@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { transformApiKey, transformApiKeyCreated } from "../utils";
-import { mockRawApiKey, mockRawApiKeyCreated } from "./fixtures";
+import { transformApiKey, transformCreatedApiKey } from "../utils";
+import { mockRawApiKey, mockRawCreatedUserApiKey } from "./fixtures";
 
 describe("transformApiKey", () => {
   it("maps snake_case fields to camelCase", () => {
@@ -36,9 +36,9 @@ describe("transformApiKey", () => {
   });
 });
 
-describe("transformApiKeyCreated", () => {
+describe("transformCreatedApiKey", () => {
   it("includes the raw key value alongside the transformed ApiKey fields", () => {
-    const result = transformApiKeyCreated(mockRawApiKeyCreated);
+    const result = transformCreatedApiKey(mockRawCreatedUserApiKey);
 
     expect(result.key).toBe("ak-full-secret-value");
     expect(result.keyType).toBe("USER");

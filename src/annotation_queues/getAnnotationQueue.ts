@@ -1,6 +1,5 @@
 import { createClient } from "../client";
 import { AnnotationQueue, WithClient } from "../types";
-import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { transformAnnotationQueue } from "./utils";
 import { findAnnotationQueueId, toSpaceRef } from "../utils/resolve";
@@ -37,7 +36,6 @@ export async function getAnnotationQueue({
   annotationQueue,
   space,
 }: GetAnnotationQueueParams): Promise<AnnotationQueue> {
-  warnPreRelease({ functionName: "getAnnotationQueue", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const annotationQueueId = await findAnnotationQueueId(

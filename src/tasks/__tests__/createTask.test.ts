@@ -20,6 +20,7 @@ function makeTaskResponse(type = "TEMPLATE_EVALUATION") {
     sampling_rate: null,
     is_continuous: false,
     query_filter: null,
+    query_filters: null,
     evaluators: [],
     experiment_ids: [],
     run_configuration: null,
@@ -206,6 +207,126 @@ describe("createTask", () => {
         evaluators: [],
       }),
     ).rejects.toThrow("bad request");
+  });
+
+  it("creates a trace eval task with query_filters + expression + query_mappings", async () => {
+    vi.spyOn(resolveModule, "findProjectId").mockResolvedValue(PROJECT_ID);
+    const msqResponse = {
+      ...makeTaskResponse(),
+      query_filter: null,
+      query_filters: {
+        filters: [{ id: "A", filter: "span_kind == 'CHAIN'" }],
+        expression: "A",
+      },
+      evaluators: [
+        {
+          evaluator_id: "ev-1",
+          evaluator_name: "My Eval",
+          evaluator_version_id: null,
+          query_filter: null,
+          column_mappings: null,
+          query_mappings: [
+            {
+              variable_name: "input",
+              query_ids: ["A"],
+              attribute_path: "attributes.input.value",
+            },
+          ],
+        },
+      ],
+    };
+    const client = makeClient(msqResponse);
+
+    const task = await createTask({
+      client,
+      name: "Trace Eval Task",
+      type: "TEMPLATE_EVALUATION",
+      project: PROJECT_ID,
+      queryFilters: {
+        filters: [{ id: "A", filter: "span_kind == 'CHAIN'" }],
+        expression: "A",
+      },
+      evaluators: [
+        {
+          evaluatorId: "ev-1",
+          queryMappings: [
+            {
+              variableName: "input",
+              queryIds: ["A"],
+              attributePath: "attributes.input.value",
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(client.POST).toHaveBeenCalledWith("/v2/tasks", {
+      body: expect.objectContaining({
+        query_filters: {
+          filters: [{ id: "A", filter: "span_kind == 'CHAIN'" }],
+          expression: "A",
+        },
+        evaluators: [
+          expect.objectContaining({
+            evaluator_id: "ev-1",
+            query_mappings: [
+              {
+                variable_name: "input",
+                query_ids: ["A"],
+                attribute_path: "attributes.input.value",
+              },
+            ],
+          }),
+        ],
+      }),
+    });
+    expect(task.queryFilters).toEqual({
+      filters: [{ id: "A", filter: "span_kind == 'CHAIN'" }],
+      expression: "A",
+    });
+    expect(task.evaluators[0]?.queryMappings).toEqual([
+      {
+        variableName: "input",
+        queryIds: ["A"],
+        attributePath: "attributes.input.value",
+      },
+    ]);
+  });
+
+  it("sends span task without query_filters (span tasks unaffected)", async () => {
+    vi.spyOn(resolveModule, "findProjectId").mockResolvedValue(PROJECT_ID);
+    const client = makeClient();
+
+    await createTask({
+      client,
+      name: "Span Task",
+      type: "TEMPLATE_EVALUATION",
+      project: PROJECT_ID,
+      queryFilter: "span_kind == 'LLM'",
+      evaluators: [
+        {
+          evaluatorId: "ev-span",
+          columnMappings: { input: "question", output: "answer" },
+        },
+      ],
+    });
+
+    expect(client.POST).toHaveBeenCalledWith("/v2/tasks", {
+      body: expect.objectContaining({
+        type: "TEMPLATE_EVALUATION",
+        query_filter: "span_kind == 'LLM'",
+        evaluators: [
+          expect.objectContaining({
+            evaluator_id: "ev-span",
+            column_mappings: { input: "question", output: "answer" },
+          }),
+        ],
+      }),
+    });
+    const callBody = (client.POST as ReturnType<typeof vi.fn>).mock
+      .calls[0]?.[1]?.body;
+    // query_filters is not set for span tasks (undefined, omitted in JSON)
+    expect(callBody?.query_filters).toBeUndefined();
   });
 
   it("propagates the custom code evaluator limit", async () => {

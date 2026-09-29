@@ -167,4 +167,45 @@ describe("toRawTaskEvaluator", () => {
     });
     expect(result.evaluator_version_id).toBeNull();
   });
+
+  it("should map queryMappings to the trace/session shape", () => {
+    const result = toRawTaskEvaluator({
+      evaluatorId: "eval-123",
+      queryMappings: [
+        {
+          variableName: "output",
+          queryIds: ["A"],
+          attributePath: "attributes.output.value",
+        },
+      ],
+    });
+    expect(result).toEqual({
+      evaluator_id: "eval-123",
+      evaluator_version_id: undefined,
+      query_mappings: [
+        {
+          variable_name: "output",
+          query_ids: ["A"],
+          attribute_path: "attributes.output.value",
+        },
+      ],
+    });
+  });
+
+  it("should throw instead of silently dropping span fields when both shapes are present", () => {
+    const input = {
+      evaluatorId: "eval-123",
+      queryFilter: "span_kind == 'LLM'",
+      columnMappings: { input: "question" },
+      queryMappings: [
+        {
+          variableName: "output",
+          queryIds: ["A"],
+          attributePath: "attributes.output.value",
+        },
+      ],
+    } as never;
+
+    expect(() => toRawTaskEvaluator(input)).toThrow(/mutually exclusive/);
+  });
 });

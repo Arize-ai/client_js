@@ -1,5 +1,5 @@
 import { components } from "../../__generated__/api/v2";
-import { RawApiKey, RawApiKeyCreated } from "../../types/internal";
+import { RawApiKey, RawCreatedApiKey } from "../../types/internal";
 
 export const mockRawApiKey: RawApiKey = {
   id: "key-id-123",
@@ -13,13 +13,13 @@ export const mockRawApiKey: RawApiKey = {
   created_by_user_id: "user-123",
 };
 
-export const mockRawApiKeyCreated: RawApiKeyCreated = {
+export const mockRawCreatedUserApiKey: RawCreatedApiKey = {
   ...mockRawApiKey,
   key_type: "USER",
   key: "ak-full-secret-value",
 };
 
-export const mockRawServiceApiKeyCreated: components["schemas"]["ServiceApiKeyCreated"] =
+export const mockRawCreatedServiceApiKey: components["schemas"]["CreatedServiceApiKey"] =
   {
     id: "key-id-456",
     name: "bot-key",

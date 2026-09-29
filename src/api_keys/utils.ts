@@ -1,5 +1,5 @@
-import { ApiKey, ApiKeyCreated } from "../types";
-import { RawApiKey, RawApiKeyCreated } from "../types/internal";
+import { ApiKey, CreatedApiKey } from "../types";
+import { RawApiKey, RawCreatedApiKey } from "../types/internal";
 
 function assertUnreachable(x: never): never {
   throw new Error(`Unhandled key_type: ${JSON.stringify(x)}`);
@@ -26,9 +26,9 @@ export function transformApiKey(apiKey: RawApiKey): ApiKey {
   };
 }
 
-export function transformApiKeyCreated(
-  apiKey: RawApiKeyCreated,
-): ApiKeyCreated {
+export function transformCreatedApiKey(
+  apiKey: RawCreatedApiKey,
+): CreatedApiKey {
   if (apiKey.key_type === "SERVICE") {
     const { key, bot_user, ...rest } = apiKey;
     return {

@@ -8,6 +8,7 @@ const EXPERIMENT_RUN_LIMIT = 5;
       space: "your_space_name",
       dataset: "your_dataset_name",
       experiment: "your_experiment_name",
+      filter: "eval.quality.score < 0.5",
       limit: EXPERIMENT_RUN_LIMIT,
     });
     // eslint-disable-next-line no-console

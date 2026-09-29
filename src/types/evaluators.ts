@@ -25,7 +25,7 @@ export interface TemplateConfig {
   name: string;
   template: string;
   includeExplanations: boolean;
-  useFunctionCallingIfAvailable: boolean;
+  useFunctionCalling: boolean;
   classificationChoices?: Record<string, number> | null;
   direction?: EvaluatorDirection | null;
   dataGranularity?: EvaluatorDataGranularity | null;
@@ -47,7 +47,7 @@ export interface TemplateConfigInput {
   name: string;
   template: string;
   includeExplanations: boolean;
-  useFunctionCallingIfAvailable: boolean;
+  useFunctionCalling: boolean;
   classificationChoices: Record<string, number>;
   direction?: EvaluatorDirection | null;
   dataGranularity?: EvaluatorDataGranularity | null;
@@ -110,15 +110,22 @@ export interface EvaluatorVersionCode extends EvaluatorVersionBase {
 }
 
 /**
- * Harness and remote versions expose only common version metadata; their
- * configurations are not yet accessible via the REST API.
+ * Harness versions expose only common version metadata; the harness
+ * configuration is not yet accessible via the REST API.
  */
 export interface EvaluatorVersionHarness extends EvaluatorVersionBase {
   type: "HARNESS";
 }
 
+/** Remote evaluator config referencing an EVALUATOR integration by ID. */
+export interface RemoteConfig {
+  integrationId?: string;
+}
+
 export interface EvaluatorVersionRemote extends EvaluatorVersionBase {
   type: "REMOTE";
+  /** The remote configuration for this version. */
+  remoteConfig: RemoteConfig;
 }
 
 export type EvaluatorVersion =
@@ -163,4 +170,19 @@ export type CreateCodeEvaluatorVersionInput = {
   space?: string;
   commitMessage: string;
   codeConfig: CodeConfig;
+};
+
+export type CreateRemoteEvaluatorInput = {
+  name: string;
+  description?: string;
+  space: string;
+  integrationId: string;
+  commitMessage: string;
+};
+
+export type CreateRemoteEvaluatorVersionInput = {
+  evaluator: string;
+  space?: string;
+  integrationId: string;
+  commitMessage: string;
 };

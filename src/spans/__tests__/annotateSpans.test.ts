@@ -105,7 +105,7 @@ describe("annotateSpans", () => {
     );
   });
 
-  it("omits start_time and end_time from body when not provided", async () => {
+  it("omits start_time, end_time, and granularity from body when not provided", async () => {
     await annotateSpans({
       client: mockClient,
       project: "my-project",
@@ -117,6 +117,27 @@ describe("annotateSpans", () => {
     const body = post.mock.calls[0]?.[1]?.body as Record<string, unknown>;
     expect(body).not.toHaveProperty("start_time");
     expect(body).not.toHaveProperty("end_time");
+    expect(body).not.toHaveProperty("granularity");
+  });
+
+  it("includes granularity in body when provided", async () => {
+    await annotateSpans({
+      client: mockClient,
+      project: "my-project",
+      annotations: [
+        { recordId: "20144", values: [{ name: "q", label: "good" }] },
+      ],
+      granularity: "SESSION",
+    });
+
+    expect(post).toHaveBeenCalledWith(
+      "/v2/spans/annotate",
+      expect.objectContaining({
+        body: expect.objectContaining({
+          granularity: "SESSION",
+        }),
+      }),
+    );
   });
 
   it("throws when API returns an error", async () => {

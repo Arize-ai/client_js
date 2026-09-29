@@ -4,7 +4,6 @@ import {
   AnnotationQueueRecord,
   WithClient,
 } from "../types";
-import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { serializeRecordInput, transformAnnotationQueueRecord } from "./utils";
 import { findAnnotationQueueId, toSpaceRef } from "../utils/resolve";
@@ -28,7 +27,9 @@ export type AddAnnotationQueueRecordsParams = WithClient<
  * @param client - An optional ArizeClient instance to use for the request.
  * @param annotationQueue - The name or ID of the annotation queue to add records to.
  * @param space - An optional space name or ID. Required when `annotationQueue` is a name.
- * @param recordSources - The record sources to add. At most 2 sources per request.
+ * @param recordSources - The example, span, trace, or session record sources to
+ * add. At most 2 sources and 500 records may be added per request, including at
+ * most 100 sessions.
  * @returns A list of created {@link AnnotationQueueRecord} objects.
  * @throws Error if the records cannot be added or the response is invalid.
  * @example
@@ -40,11 +41,11 @@ export type AddAnnotationQueueRecordsParams = WithClient<
  *   space: "my_space",
  *   recordSources: [
  *     {
- *       recordType: "SPAN",
+ *       recordType: "SESSION",
  *       projectId: "proj_abc123",
  *       startTime: "2024-01-15T00:00:00Z",
  *       endTime: "2024-01-15T23:59:59Z",
- *       spanIds: ["span_abc123"],
+ *       sessionIds: ["session_abc123"],
  *     },
  *   ],
  * });
@@ -57,7 +58,6 @@ export async function addAnnotationQueueRecords({
   space,
   recordSources,
 }: AddAnnotationQueueRecordsParams): Promise<AnnotationQueueRecord[]> {
-  warnPreRelease({ functionName: "addAnnotationQueueRecords", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const annotationQueueId = await findAnnotationQueueId(

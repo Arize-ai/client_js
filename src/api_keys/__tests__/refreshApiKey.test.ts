@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { refreshApiKey } from "../refreshApiKey";
-import { mockRawApiKeyCreated } from "./fixtures";
+import { mockRawCreatedUserApiKey } from "./fixtures";
 
 describe("refreshApiKey", () => {
   const post = vi.fn();
@@ -14,7 +14,7 @@ describe("refreshApiKey", () => {
     post.mockReset();
     post.mockResolvedValue({
       error: undefined,
-      data: mockRawApiKeyCreated,
+      data: mockRawCreatedUserApiKey,
     });
   });
 

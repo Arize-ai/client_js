@@ -29,7 +29,7 @@ export const mockRawTemplateConfig: RawTemplateConfig = {
   template:
     "Is the response relevant?\nQuery: {{query}}\nResponse: {{response}}",
   include_explanations: true,
-  use_function_calling_if_available: true,
+  use_function_calling: true,
   classification_choices: { relevant: 1, irrelevant: 0 },
   direction: "MAXIMIZE",
   data_granularity: "SPAN",
@@ -40,7 +40,7 @@ export const mockRawTemplateConfigMinimal: RawTemplateConfig = {
   name: "FreeformEval",
   template: "Evaluate the output: {{output}}",
   include_explanations: false,
-  use_function_calling_if_available: false,
+  use_function_calling: false,
   classification_choices: null,
   direction: undefined,
   data_granularity: null,
@@ -113,12 +113,15 @@ export const mockRawEvaluatorVersionHarness: RawEvaluatorVersion = {
   created_by_user_id: mockUserId,
 };
 
+export const mockRemoteIntegrationId = "Integration:remote-eval-integration-1";
+
 export const mockRawEvaluatorVersionRemote: RawEvaluatorVersion = {
   id: mockVersionId,
   evaluator_id: mockEvaluatorId,
   commit_hash: "remote123",
   commit_message: "Initial remote version",
   type: "REMOTE",
+  remote_config: { integration_id: mockRemoteIntegrationId },
   created_at: mockDateString,
   created_by_user_id: mockUserId,
 };

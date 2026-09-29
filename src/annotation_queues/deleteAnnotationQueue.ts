@@ -1,6 +1,5 @@
 import { createClient } from "../client";
 import { WithClient } from "../types";
-import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { findAnnotationQueueId, toSpaceRef } from "../utils/resolve";
 
@@ -35,7 +34,6 @@ export async function deleteAnnotationQueue({
   annotationQueue,
   space,
 }: DeleteAnnotationQueueParams): Promise<void> {
-  warnPreRelease({ functionName: "deleteAnnotationQueue", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const annotationQueueId = await findAnnotationQueueId(

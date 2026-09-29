@@ -5,6 +5,9 @@ import { handleApiError } from "../errors";
 import { transformRoleBinding } from "./utils";
 
 export type CreateRoleBindingParams = WithClient<{
+  /** The global ID of the user to bind the role to. For a service key, this
+   * is the ID of the key's bot user (`botUser.id` from `createApiKey`), not
+   * the ID of the person who created the key. */
   userId: string;
   roleId: string;
   resourceType: RoleBindingResourceType;
@@ -19,7 +22,10 @@ export type CreateRoleBindingParams = WithClient<{
  * resource, the request returns a `409 Conflict` error.
  *
  * @param client - An optional ArizeClient instance to use for the request.
- * @param userId - The global ID of the user to bind the role to.
+ * @param userId - The global ID of the user to bind the role to. For a
+ *   service key, this is the ID of the key's bot user — not the ID of the
+ *   person who created the key. It is returned as `botUser.id` from
+ *   `createApiKey`.
  * @param roleId - The global ID of the role to assign.
  * @param resourceType - The type of resource (`"SPACE"` or `"PROJECT"`).
  * @param resourceId - The global ID of the resource. Must encode the same type as `resourceType`.

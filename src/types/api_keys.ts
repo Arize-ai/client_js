@@ -126,7 +126,7 @@ export type ServiceKeyBotUser = {
  *
  * For service keys, `botUser` contains the bot user's resolved role assignments.
  */
-export type ApiKeyCreated = ApiKey & {
+export type CreatedApiKey = ApiKey & {
   key: string;
   botUser?: ServiceKeyBotUser;
 };

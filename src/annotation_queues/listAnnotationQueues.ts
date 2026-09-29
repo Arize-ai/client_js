@@ -9,7 +9,6 @@ import {
   DEFAULT_LIST_LIMIT,
   transformPaginationMetadata,
 } from "../utils/pagination";
-import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { transformAnnotationQueue } from "./utils";
 import { resolveSpace } from "../utils/space";
@@ -48,7 +47,6 @@ export type ListAnnotationQueuesParams = WithClient<
 export async function listAnnotationQueues(
   params: ListAnnotationQueuesParams = {},
 ): Promise<PaginatedResponse<AnnotationQueue>> {
-  warnPreRelease({ functionName: "listAnnotationQueues", stage: "beta" });
   const {
     client: clientInstance,
     space,

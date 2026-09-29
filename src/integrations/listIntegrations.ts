@@ -19,8 +19,9 @@ export type ListIntegrationsParams = WithClient<
   PaginationParams & {
     /**
      * The integration type to list. Optional — when set, the response
-     * contains only integrations of this type; when omitted, integrations of
-     * every type are returned, each carrying its `type` discriminator.
+     * contains only integrations of this type. When omitted, the response
+     * contains LLM and AGENT integrations; EVALUATOR integrations require an
+     * explicit `type: "EVALUATOR"` filter.
      */
     type?: IntegrationType;
     /**
@@ -38,7 +39,7 @@ export type ListIntegrationsParams = WithClient<
  * List integrations available to the client.
  *
  * @param client - An optional ArizeClient instance to use for the request.
- * @param type - An optional integration type filter (`"LLM"` or `"AGENT"`). Omit to list integrations of every type.
+ * @param type - An optional integration type filter (`"LLM"`, `"AGENT"`, or `"EVALUATOR"`). Omit to list LLM and AGENT integrations.
  * @param space - An optional space filter. Pass a base64 space ID or a space name for substring filtering.
  * @param name - An optional case-insensitive substring filter on the integration name.
  * @param limit - An optional limit on the number of integrations to return.
@@ -52,8 +53,8 @@ export type ListIntegrationsParams = WithClient<
  * // Only agent integrations
  * const agents = await listIntegrations({ type: "AGENT", space: "my-space" });
  *
- * // Every type, discriminated by `integration.type`
- * const all = await listIntegrations({});
+ * // Default LLM and AGENT integrations, discriminated by `integration.type`
+ * const integrations = await listIntegrations({});
  * ```
  */
 export async function listIntegrations(

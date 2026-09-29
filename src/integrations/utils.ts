@@ -5,6 +5,7 @@ import {
   CreateAwsBedrockAuthInput,
   CreateIntegrationInput,
   CreateLlmIntegrationConfigInput,
+  EvaluatorIntegration,
   Integration,
   IntegrationScoping,
   LlmIntegrationConfig,
@@ -84,7 +85,7 @@ function transformBedrockAuth(auth: RawAwsBedrockAuth): AwsBedrockAuthConfig {
 
 /**
  * Map a raw {@link RawLlmConfig} to its camelCase read shape. Switches on the
- * `provider` discriminator; every one of the 7 supported providers is mapped.
+ * `provider` discriminator; every supported provider is mapped.
  */
 function transformLlmConfig(config: RawLlmConfig): LlmIntegrationConfig {
   switch (config.provider) {
@@ -140,6 +141,31 @@ function transformLlmConfig(config: RawLlmConfig): LlmIntegrationConfig {
         isDefaultModelsEnabled: config.is_default_models_enabled,
         modelNames: config.model_names,
       };
+    case "LITELLM":
+      return {
+        provider: "LITELLM",
+        hasApiKey: config.has_api_key,
+        isFunctionCallingEnabled: config.is_function_calling_enabled,
+        baseUrl: config.base_url,
+        headerNames: config.header_names,
+        modelNames: config.model_names,
+      };
+    case "FIREWORKS":
+      return {
+        provider: "FIREWORKS",
+        hasApiKey: config.has_api_key,
+        isFunctionCallingEnabled: config.is_function_calling_enabled,
+        isDefaultModelsEnabled: config.is_default_models_enabled,
+        modelNames: config.model_names,
+      };
+    case "TOGETHER_AI":
+      return {
+        provider: "TOGETHER_AI",
+        hasApiKey: config.has_api_key,
+        isFunctionCallingEnabled: config.is_function_calling_enabled,
+        isDefaultModelsEnabled: config.is_default_models_enabled,
+        modelNames: config.model_names,
+      };
     default:
       return assertUnreachable(config);
   }
@@ -182,6 +208,22 @@ export function transformIntegration(integration: RawIntegration): Integration {
           ),
         },
       };
+    case "EVALUATOR": {
+      const evaluatorIntegration = integration as Extract<
+        RawIntegration,
+        { type: "EVALUATOR" }
+      >;
+      return {
+        ...base,
+        type: "EVALUATOR",
+        description: evaluatorIntegration.description,
+        config: {
+          endpoint: evaluatorIntegration.config.endpoint,
+          hasHeaders: evaluatorIntegration.config.has_headers,
+          inputSchema: evaluatorIntegration.config.input_schema,
+        },
+      } satisfies EvaluatorIntegration;
+    }
     default:
       return assertUnreachable(type);
   }
@@ -284,6 +326,31 @@ function toRawCreateLlmConfig(
         is_default_models_enabled: config.isDefaultModelsEnabled,
         model_names: config.modelNames,
       };
+    case "LITELLM":
+      return {
+        provider: "LITELLM",
+        is_function_calling_enabled: config.isFunctionCallingEnabled,
+        base_url: config.baseUrl,
+        api_key: config.apiKey,
+        headers: config.headers,
+        model_names: config.modelNames,
+      };
+    case "FIREWORKS":
+      return {
+        provider: "FIREWORKS",
+        is_function_calling_enabled: config.isFunctionCallingEnabled,
+        api_key: config.apiKey,
+        is_default_models_enabled: config.isDefaultModelsEnabled,
+        model_names: config.modelNames,
+      };
+    case "TOGETHER_AI":
+      return {
+        provider: "TOGETHER_AI",
+        is_function_calling_enabled: config.isFunctionCallingEnabled,
+        api_key: config.apiKey,
+        is_default_models_enabled: config.isDefaultModelsEnabled,
+        model_names: config.modelNames,
+      };
     default:
       return assertUnreachable(config);
   }
@@ -316,6 +383,18 @@ export function toRawCreateIntegration(
           headers: input.config.headers,
           input_schema: input.config.inputSchema,
           request_presets: input.config.requestPresets?.map(toRawCreatePreset),
+        },
+      };
+    case "EVALUATOR":
+      return {
+        type: "EVALUATOR",
+        name: input.name,
+        description: input.description,
+        scopings: input.scopings?.map(toRawScoping),
+        config: {
+          endpoint: input.config.endpoint,
+          headers: input.config.headers,
+          input_schema: input.config.inputSchema,
         },
       };
     default:
@@ -366,6 +445,31 @@ function toRawUpdateLlmConfig(
         is_default_models_enabled: config.isDefaultModelsEnabled,
         model_names: config.modelNames,
       };
+    case "LITELLM":
+      return {
+        provider: "LITELLM",
+        api_key: config.apiKey,
+        is_function_calling_enabled: config.isFunctionCallingEnabled,
+        base_url: config.baseUrl,
+        headers: config.headers,
+        model_names: config.modelNames,
+      };
+    case "FIREWORKS":
+      return {
+        provider: "FIREWORKS",
+        api_key: config.apiKey,
+        is_function_calling_enabled: config.isFunctionCallingEnabled,
+        is_default_models_enabled: config.isDefaultModelsEnabled,
+        model_names: config.modelNames,
+      };
+    case "TOGETHER_AI":
+      return {
+        provider: "TOGETHER_AI",
+        api_key: config.apiKey,
+        is_function_calling_enabled: config.isFunctionCallingEnabled,
+        is_default_models_enabled: config.isDefaultModelsEnabled,
+        model_names: config.modelNames,
+      };
     case "VERTEX_AI":
       return {
         provider: "VERTEX_AI",
@@ -406,6 +510,20 @@ export function toRawUpdateIntegration(
               input_schema: input.config.inputSchema,
               request_presets:
                 input.config.requestPresets?.map(toRawUpdatePreset),
+            }
+          : undefined,
+      };
+    case "EVALUATOR":
+      return {
+        type: "EVALUATOR",
+        name: input.name,
+        description: input.description,
+        scopings: input.scopings?.map(toRawScoping),
+        config: input.config
+          ? {
+              endpoint: input.config.endpoint,
+              headers: input.config.headers,
+              input_schema: input.config.inputSchema,
             }
           : undefined,
       };

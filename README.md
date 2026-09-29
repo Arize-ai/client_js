@@ -53,6 +53,7 @@ Arize has both Enterprise and OSS products to support this goal:
   - [Appending dataset examples](#appending-dataset-examples)
   - [Updating dataset examples](#updating-dataset-examples)
   - [Annotating dataset examples](#annotating-dataset-examples)
+  - [Deleting dataset examples](#deleting-dataset-examples)
 - [Experiments](#experiments)
   - [Listing experiments](#listing-experiments)
   - [Creating an experiment](#creating-an-experiment)
@@ -73,10 +74,12 @@ Arize has both Enterprise and OSS products to support this goal:
   - [Listing evaluators](#listing-evaluators)
   - [Creating a template evaluator](#creating-a-template-evaluator)
   - [Creating a code evaluator](#creating-a-code-evaluator)
+  - [Creating a remote evaluator](#creating-a-remote-evaluator)
   - [Getting an evaluator](#getting-an-evaluator)
   - [Updating an evaluator](#updating-an-evaluator)
   - [Deleting an evaluator](#deleting-an-evaluator)
   - [Evaluator versions](#evaluator-versions)
+  - [Deleting evaluator versions](#deleting-evaluator-versions)
 - [Tasks](#tasks)
   - [Listing tasks](#listing-tasks)
   - [Creating an evaluation task](#creating-an-evaluation-task)
@@ -86,8 +89,11 @@ Arize has both Enterprise and OSS products to support this goal:
   - [Triggering and monitoring task runs](#triggering-and-monitoring-task-runs)
 - [Spans](#spans)
   - [Listing spans](#listing-spans)
+    - [Column projection](#column-projection)
   - [Annotating spans](#annotating-spans)
   - [Deleting spans](#deleting-spans)
+- [Traces](#traces)
+  - [Listing traces](#listing-traces)
 - [Annotation Configs](#annotation-configs)
   - [Listing annotation configs](#listing-annotation-configs)
   - [Creating an annotation config](#creating-an-annotation-config)
@@ -120,7 +126,6 @@ Arize has both Enterprise and OSS products to support this goal:
 - [API Keys](#api-keys)
   - [Creating an API key](#creating-an-api-key)
   - [Listing API keys](#listing-api-keys)
-  - [Deleting an API key](#deleting-an-api-key)
   - [Revoking an API key](#revoking-an-api-key)
   - [Refreshing an API key](#refreshing-an-api-key)
 - [Roles](#roles)
@@ -163,6 +168,14 @@ Arize has both Enterprise and OSS products to support this goal:
 - [Space memberships](#space-memberships)
   - [Adding a user to a space](#adding-a-user-to-a-space)
   - [Removing a user from a space](#removing-a-user-from-a-space)
+- [Webhooks](#webhooks)
+  - [Listing webhooks](#listing-webhooks)
+  - [Creating a webhook](#creating-a-webhook)
+  - [Getting, updating, testing, and deleting a webhook](#getting-updating-testing-and-deleting-a-webhook)
+  - [Listing delivery attempts](#listing-delivery-attempts)
+- [Webhook subscriptions](#webhook-subscriptions)
+  - [Subscribing a webhook to an event](#subscribing-a-webhook-to-an-event)
+  - [Listing, getting, and deleting subscriptions](#listing-getting-and-deleting-subscriptions)
 - [REST endpoints](#rest-endpoints)
 
 # Installation
@@ -242,6 +255,9 @@ await deleteDataset({ dataset: "my-dataset", space: "my-space" });
 
 ## Listing dataset examples
 
+Lists the examples of a dataset. `filter` is an optional SQL-like expression
+for more complex queries.
+
 ```typescript
 import { listDatasetExamples } from "@arizeai/ax-client";
 
@@ -250,6 +266,13 @@ const examples = await listDatasetExamples({
   space: "my-space",
 });
 console.log(examples);
+
+const filtered = await listDatasetExamples({
+  dataset: "my-dataset",
+  space: "my-space",
+  filter: "question = 'What is 2+2?'",
+});
+console.log(filtered);
 ```
 
 ## Appending dataset examples
@@ -380,7 +403,7 @@ await deleteExperiment({
 
 ## Listing experiment runs
 
-You can list experiment runs by providing an experiment name or ID (space and dataset context are required when using names).
+List experiment runs by providing an experiment name or ID (space and dataset context are required when using names), optionally narrowed by an SQL-like `filter` over run columns, evaluations (`eval.<name>.score`), and annotations (`annotation.<name>.*`). Runs are returned in stable ID ascending order — pass `pagination.nextCursor` back as `cursor` to fetch the next page, keeping the filter unchanged while paging.
 
 ```typescript
 import { listExperimentRuns } from "@arizeai/ax-client";
@@ -390,6 +413,15 @@ const experimentRuns = await listExperimentRuns({
   dataset: "my-dataset",
   space: "my-space",
 });
+
+const filtered = await listExperimentRuns({
+  experiment: "my-experiment",
+  dataset: "my-dataset",
+  space: "my-space",
+  filter: "eval.quality.score < 0.5",
+  limit: 50,
+});
+console.log(filtered.data);
 ```
 
 ## Appending experiment runs
@@ -575,7 +607,7 @@ await deletePromptVersionLabel({
 
 # Evaluators
 
-The `@arizeai/ax-client` package allows you to create and manage LLM-as-a-judge (template) and code evaluators, along with their versions.
+The `@arizeai/ax-client` package allows you to create and manage LLM-as-a-judge (template), code, and remote evaluators, along with their versions.
 
 ## Listing evaluators
 
@@ -600,7 +632,7 @@ const evaluator = await createTemplateEvaluator({
     template:
       "Is the response relevant?\nQuery: {{query}}\nResponse: {{response}}",
     includeExplanations: true,
-    useFunctionCallingIfAvailable: true,
+    useFunctionCalling: true,
     classificationChoices: { relevant: 1, irrelevant: 0 },
     direction: "MAXIMIZE",
     llmConfig: {
@@ -628,6 +660,22 @@ const evaluator = await createCodeEvaluator({
     managedEvaluator: "JSON_PARSEABLE",
     variables: ["output"],
   },
+});
+```
+
+## Creating a remote evaluator
+
+A remote evaluator calls a customer-hosted HTTP endpoint via an EVALUATOR integration.
+Requires the `enableRemoteEvalTasks` feature flag on the account.
+
+```typescript
+import { createRemoteEvaluator } from "@arizeai/ax-client";
+
+const evaluator = await createRemoteEvaluator({
+  name: "My Remote Eval",
+  space: "my-space",
+  commitMessage: "Initial version",
+  integrationId: "<evaluator-integration-id>",
 });
 ```
 
@@ -683,7 +731,8 @@ const versions = await listEvaluatorVersions({
 // Get a specific version by its ID
 const version = await getEvaluatorVersion({ versionId: "your-version-id" });
 
-// Create a new template version (use createCodeEvaluatorVersion for code evaluators)
+// Create a new template version (use createCodeEvaluatorVersion for code evaluators,
+// or createRemoteEvaluatorVersion for remote evaluators)
 const newVersion = await createTemplateEvaluatorVersion({
   evaluator: "Relevance",
   space: "my-space",
@@ -692,7 +741,7 @@ const newVersion = await createTemplateEvaluatorVersion({
     name: "Relevance",
     template: "Rate the relevance.\nQuery: {{query}}\nResponse: {{response}}",
     includeExplanations: true,
-    useFunctionCallingIfAvailable: true,
+    useFunctionCalling: true,
     classificationChoices: { relevant: 1, irrelevant: 0 },
     direction: "MAXIMIZE",
     llmConfig: {
@@ -702,6 +751,28 @@ const newVersion = await createTemplateEvaluatorVersion({
       providerParameters: {},
     },
   },
+});
+
+// Create a new remote version (switches to a different EVALUATOR integration)
+import { createRemoteEvaluatorVersion } from "@arizeai/ax-client";
+
+const remoteVersion = await createRemoteEvaluatorVersion({
+  evaluator: "My Remote Eval",
+  space: "my-space",
+  commitMessage: "Switch endpoint",
+  integrationId: "<evaluator-integration-id>",
+});
+```
+
+## Deleting evaluator versions
+
+```typescript
+import { deleteEvaluatorVersions } from "@arizeai/ax-client";
+
+await deleteEvaluatorVersions({
+  evaluator: "Relevance",
+  space: "my-space",
+  versionIds: ["your_version_id_1", "your_version_id_2"],
 });
 ```
 
@@ -722,6 +793,12 @@ console.log(tasks);
 
 ## Creating an evaluation task
 
+Each evaluator is either a span-shape entry (with `columnMappings` / `queryFilter`) or a
+trace/session-shape entry (with `queryMappings`). Supply one shape per evaluator; they are
+mutually exclusive via the `SpanEvaluatorInput | TraceOrSessionEvaluatorInput` union.
+
+**Span-granularity task:**
+
 ```typescript
 import { createEvaluationTask } from "@arizeai/ax-client";
 
@@ -730,10 +807,49 @@ const task = await createEvaluationTask({
   type: "TEMPLATE_EVALUATION",
   space: "my-space",
   project: "my-project",
+  queryFilter: "span_kind = 'LLM'",
   evaluators: [
     {
       evaluatorId: "your_evaluator_id",
-      columnMappings: { input: "question", output: "answer" },
+      columnMappings: {
+        input: "attributes.input.value",
+        output: "attributes.output.value",
+      },
+    },
+  ],
+});
+```
+
+**Trace/session-granularity task (multi-span query):**
+
+```typescript
+const task = await createEvaluationTask({
+  name: "Trace Quality Check",
+  type: "TEMPLATE_EVALUATION",
+  space: "my-space",
+  project: "my-project",
+  queryFilters: {
+    filters: [
+      { id: "A", filter: "span_kind = 'LLM'" },
+      { id: "B", filter: "span_kind = 'RETRIEVER'" },
+    ],
+    expression: "A AND B",
+  },
+  evaluators: [
+    {
+      evaluatorId: "your_evaluator_id",
+      queryMappings: [
+        {
+          variableName: "input",
+          queryIds: ["A"],
+          attributePath: "attributes.input.value",
+        },
+        {
+          variableName: "output",
+          queryIds: ["B"],
+          attributePath: "attributes.output.value",
+        },
+      ],
     },
   ],
 });
@@ -778,7 +894,34 @@ const byName = await getTask({ task: "My Task", space: "my-space" });
 ```typescript
 import { updateTask, deleteTask } from "@arizeai/ax-client";
 
-await updateTask({ task: "your_task_id", name: "Renamed Task" });
+// Basic update — rename and adjust sampling rate
+await updateTask({
+  task: "your_task_id",
+  name: "Renamed Task",
+  samplingRate: 0.5,
+});
+
+// Switch to trace/session shape (multi-span query)
+await updateTask({
+  task: "your_task_id",
+  queryFilters: {
+    filters: [{ id: "A", filter: "span_kind = 'LLM'" }],
+    expression: "A",
+  },
+  evaluators: [
+    {
+      evaluatorId: "your_evaluator_id",
+      queryMappings: [
+        {
+          variableName: "input",
+          queryIds: ["A"],
+          attributePath: "attributes.input.value",
+        },
+      ],
+    },
+  ],
+});
+
 await deleteTask({ task: "your_task_id" });
 ```
 
@@ -827,7 +970,25 @@ const spans = await listSpans({ project: "your_project_id" });
 const byName = await listSpans({ project: "My Project", space: "my-space" });
 ```
 
+### Column projection
+
+Set `includedColumns` to return only selected columns. Set `excludedColumns`
+to omit selected columns, such as a large embedding vector. Do not set both.
+Fixed span fields are always returned.
+
+```typescript
+const spans = await listSpans({
+  project: "your_project_id",
+  excludedColumns: ["attributes.embedding.vectors"],
+});
+```
+
 ## Annotating spans
+
+`granularity` selects what each `recordId` identifies: a span (`SPAN`, the
+default), a trace's root span (`TRACE`), or a session (`SESSION`, written to
+the root span of the session's earliest trace). Up to 1000 records may be
+annotated per request for `SPAN`/`TRACE`; up to 100 for `SESSION`.
 
 ```typescript
 import { annotateSpans } from "@arizeai/ax-client";
@@ -847,6 +1008,28 @@ await annotateSpans({
 });
 ```
 
+`startTime`/`endTime` bound the lookup window and are both optional: when
+omitted, `endTime` defaults to now and `startTime` defaults to 31 days before
+that (7 days for `SESSION`). If the record is older than the default window,
+pass `startTime` explicitly or the record won't be found.
+
+```typescript
+// Session-granularity example
+await annotateSpans({
+  space: "my-space",
+  project: "my-project",
+  granularity: "SESSION",
+  startTime: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+  endTime: new Date(),
+  annotations: [
+    {
+      recordId: "20144", // session ID
+      values: [{ name: "quality", label: "good" }],
+    },
+  ],
+});
+```
+
 ## Deleting spans
 
 ```typescript
@@ -859,6 +1042,45 @@ await deleteSpans({
   spanIds: ["a1b2c3d4e5f6a7b8", "f8e7d6c5b4a39281"],
 });
 ```
+
+# Traces
+
+The `@arizeai/ax-client` package allows you to list traces within a project. Each trace carries its full (flat) list of spans plus lightweight roll-up metadata; reconstruct the trace tree client-side using each span's `parentId`.
+
+## Listing traces
+
+```typescript
+import { listTraces } from "@arizeai/ax-client";
+
+// By project ID
+const { data: traces, pagination } = await listTraces({
+  project: "your_project_id",
+});
+
+// By project name (requires space), with a filter and time range
+const filtered = await listTraces({
+  project: "My Project",
+  space: "my-space",
+  filter: "status_code = 'ERROR'",
+  startTime: new Date("2024-01-01T00:00:00Z"),
+  endTime: new Date("2024-01-02T00:00:00Z"),
+  limit: 50,
+});
+
+// Page through results using the opaque cursor
+const next = await listTraces({
+  project: "your_project_id",
+  cursor: pagination.nextCursor,
+});
+```
+
+The `filter` uses the same SQL-like syntax as `listSpans`, but the semantics are
+trace-contains-match: a trace is returned when **any** of its spans matches the
+filter (the matching span is usually a child, not the root).
+
+Each response page also has an overall span limit, so a trace's span list can
+be incomplete even when `spansTruncated` is `false`. Narrow the time window or
+call `listSpans` with a `trace_id` filter to retrieve the trace's spans directly.
 
 # Annotation Configs
 
@@ -1014,7 +1236,7 @@ import {
   assignAnnotationQueueRecord,
 } from "@arizeai/ax-client";
 
-// Add records to the queue from a span source
+// Add records to the queue from span and session sources
 await addAnnotationQueueRecords({
   annotationQueue: "my_queue",
   space: "my-space",
@@ -1025,6 +1247,13 @@ await addAnnotationQueueRecords({
       startTime: "2024-01-15T00:00:00Z",
       endTime: "2024-01-15T23:59:59Z",
       spanIds: ["span_abc123"],
+    },
+    {
+      recordType: "SESSION",
+      projectId: "proj_abc123",
+      startTime: "2024-01-15T00:00:00Z",
+      endTime: "2024-01-15T23:59:59Z",
+      sessionIds: ["session_abc123"],
     },
   ],
 });
@@ -1443,6 +1672,10 @@ const binding = await createRoleBinding({
 console.log(binding);
 ```
 
+`userId` is the ID of the user to bind the role to. To bind a **service key**, pass its bot
+user's ID instead of your own — it is returned as `botUser.id` from `createApiKey` (see
+[Creating an API key](#creating-an-api-key) above).
+
 ## Listing role bindings
 
 ```typescript
@@ -1768,6 +2001,115 @@ await removeSpaceUser({
   spaceId: "spc_abc123",
   userId: "VXNlcjoxMjM0NQ==",
 });
+```
+
+# Webhooks
+
+Webhooks are alpha: every call logs a one-time warning and the API may change. A webhook is an organization-owned HTTPS destination. Pass a webhook ID, or a name together with `organization`.
+
+## Listing webhooks
+
+```typescript
+import { listWebhooks } from "@arizeai/ax-client";
+
+const webhooks = await listWebhooks({ organization: "my-org" });
+console.log(webhooks.data);
+```
+
+## Creating a webhook
+
+```typescript
+import { createWebhook } from "@arizeai/ax-client";
+
+const webhook = await createWebhook({
+  organization: "my-org",
+  name: "deploy-notifier",
+  url: "https://example.com/hooks/arize",
+  authType: "HMAC_SHA256",
+});
+// Only returned here. Store it now; afterwards only signingSecretHint is readable.
+console.log(webhook.signingSecret);
+```
+
+`authToken` and `headers` are write-only and never come back in any response.
+
+## Getting, updating, testing, and deleting a webhook
+
+```typescript
+import {
+  getWebhook,
+  updateWebhook,
+  testWebhook,
+  deleteWebhook,
+} from "@arizeai/ax-client";
+
+const webhook = await getWebhook({
+  webhook: "deploy-notifier",
+  organization: "my-org",
+});
+// Omitted fields keep their value; pass `description: null` to clear it.
+await updateWebhook({
+  webhook: "deploy-notifier",
+  organization: "my-org",
+  timeoutMs: 10000,
+});
+const outcome = await testWebhook({
+  webhook: "deploy-notifier",
+  organization: "my-org",
+});
+console.log(outcome.statusCode, outcome.errorMessage);
+await deleteWebhook({ webhook: "deploy-notifier", organization: "my-org" });
+```
+
+## Listing delivery attempts
+
+```typescript
+import { listWebhookDeliveryAttempts } from "@arizeai/ax-client";
+
+const attempts = await listWebhookDeliveryAttempts({
+  webhook: "deploy-notifier",
+  organization: "my-org",
+  limit: 100, // up to 500
+});
+console.log(attempts.data);
+```
+
+# Webhook subscriptions
+
+A subscription delivers one event from one prompt or evaluator to one webhook. Subscriptions have no name and are addressed by ID.
+
+## Subscribing a webhook to an event
+
+```typescript
+import { createWebhookSubscription } from "@arizeai/ax-client";
+
+const subscription = await createWebhookSubscription({
+  webhook: "deploy-notifier",
+  organization: "my-org",
+  sourceType: "PROMPT",
+  sourceId: "your_prompt_id",
+  event: "PROMPT_VERSION_CREATED",
+});
+```
+
+## Listing, getting, and deleting subscriptions
+
+```typescript
+import {
+  listWebhookSubscriptions,
+  getWebhookSubscription,
+  deleteWebhookSubscription,
+} from "@arizeai/ax-client";
+
+// sourceType and sourceId go together; omit both to list every readable subscription.
+const subscriptions = await listWebhookSubscriptions({
+  sourceType: "PROMPT",
+  sourceId: "your_prompt_id",
+});
+const subscription = await getWebhookSubscription({
+  subscriptionId: "your_subscription_id",
+});
+await deleteWebhookSubscription({ subscriptionId: "your_subscription_id" });
 ```
 
 # REST endpoints

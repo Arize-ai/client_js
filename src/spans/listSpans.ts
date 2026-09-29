@@ -26,6 +26,16 @@ export type ListSpansParams = WithClient<
     startTime?: Date;
     endTime?: Date;
     filter?: string;
+    /**
+     * Full dotted column paths to return for each span. Fixed span fields are
+     * always returned. Cannot be used with `excludedColumns`.
+     */
+    includedColumns?: string[];
+    /**
+     * Full dotted column paths to omit from each span. Fixed span fields are
+     * always returned. Cannot be used with `includedColumns`.
+     */
+    excludedColumns?: string[];
   }
 >;
 
@@ -38,6 +48,8 @@ export type ListSpansParams = WithClient<
  * @param startTime - An optional Date to filter spans starting at or after this time. Defaults to 1 week ago.
  * @param endTime - An optional Date to filter spans starting before this time. Defaults to the current time.
  * @param filter - An optional filter expression using SQL-like syntax (e.g., `status_code = 'ERROR'`).
+ * @param includedColumns - Optional full dotted column paths to return.
+ * @param excludedColumns - Optional full dotted column paths to omit.
  * @param limit - An optional limit on the number of spans to return.
  * @param cursor - An optional cursor for pagination.
  * @returns A paginated list of {@link Span} objects.
@@ -65,6 +77,8 @@ export async function listSpans(
     startTime,
     endTime,
     filter,
+    includedColumns,
+    excludedColumns,
     limit = DEFAULT_LIST_LIMIT,
     cursor,
   } = params;
@@ -80,9 +94,15 @@ export async function listSpans(
     },
     body: {
       project_id: projectId,
-      start_time: startTime?.toISOString(),
-      end_time: endTime?.toISOString(),
-      filter,
+      ...(startTime !== undefined && { start_time: startTime.toISOString() }),
+      ...(endTime !== undefined && { end_time: endTime.toISOString() }),
+      ...(filter !== undefined && { filter }),
+      ...(includedColumns !== undefined && {
+        included_columns: includedColumns,
+      }),
+      ...(excludedColumns !== undefined && {
+        excluded_columns: excludedColumns,
+      }),
     },
   });
   if (response.error) {

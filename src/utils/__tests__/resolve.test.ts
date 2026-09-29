@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AmbiguousNameError, ResolutionError } from "../../errors";
-import { findExperimentId, findSpaceId } from "../resolve";
+import { findExperimentId, findSpaceId, findWebhookId } from "../resolve";
 
 // A valid base64 resource ID — decodes to "Space:1:abc" which contains ":"
 const SPACE_ID_1 = btoa("Space:1:abc");
 const SPACE_ID_2 = btoa("Space:1:xyz");
 const EXPERIMENT_ID_1 = btoa("Experiment:1:abc");
 const EXPERIMENT_ID_2 = btoa("Experiment:1:xyz");
+const ORGANIZATION_ID = btoa("Organization:1:abc");
+const WEBHOOK_ID_1 = btoa("Webhook:1:abc");
 
 describe("findSpaceId", () => {
   const getFn = vi.fn();
@@ -315,6 +317,191 @@ describe("findExperimentId", () => {
       findExperimentId(mockClient, "missing", undefined, {
         spaceId: SPACE_ID_1,
       }),
+    ).rejects.toBeInstanceOf(ResolutionError);
+  });
+});
+
+describe("findWebhookId", () => {
+  const getFn = vi.fn();
+  const mockClient = { GET: getFn } as never;
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    getFn.mockReset();
+  });
+
+  it("returns a resource ID as-is without calling the API", async () => {
+    const result = await findWebhookId(mockClient, WEBHOOK_ID_1);
+    expect(result).toBe(WEBHOOK_ID_1);
+    expect(getFn).not.toHaveBeenCalled();
+  });
+
+  it("throws ResolutionError with a hint when a name is given without an organization", async () => {
+    let thrown: unknown;
+    try {
+      await findWebhookId(mockClient, "my-webhook");
+    } catch (e) {
+      thrown = e;
+    }
+
+    expect(thrown).toBeInstanceOf(ResolutionError);
+    expect((thrown as ResolutionError).message).toContain("organization");
+    expect(getFn).not.toHaveBeenCalled();
+  });
+
+  it("resolves a name within an organization ID using org_id and name filters", async () => {
+    getFn.mockResolvedValue({
+      data: {
+        webhooks: [
+          { id: btoa("Webhook:9:abc"), name: "my-webhook-staging" },
+          { id: WEBHOOK_ID_1, name: "my-webhook" },
+        ],
+        pagination: { has_more: false, next_cursor: null },
+      },
+    });
+
+    const result = await findWebhookId(
+      mockClient,
+      "my-webhook",
+      ORGANIZATION_ID,
+    );
+
+    expect(result).toBe(WEBHOOK_ID_1);
+    expect(getFn).toHaveBeenCalledTimes(1);
+    expect(getFn).toHaveBeenCalledWith("/v2/webhooks", {
+      params: {
+        query: {
+          org_id: ORGANIZATION_ID,
+          name: "my-webhook",
+          limit: 100,
+          cursor: undefined,
+        },
+      },
+    });
+  });
+
+  it("resolves an organization name before listing webhooks", async () => {
+    getFn
+      .mockResolvedValueOnce({
+        data: {
+          organizations: [{ id: ORGANIZATION_ID, name: "my-org" }],
+          pagination: { has_more: false, next_cursor: null },
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          webhooks: [{ id: WEBHOOK_ID_1, name: "my-webhook" }],
+          pagination: { has_more: false, next_cursor: null },
+        },
+      });
+
+    const result = await findWebhookId(mockClient, "my-webhook", "my-org");
+
+    expect(result).toBe(WEBHOOK_ID_1);
+    expect(getFn).toHaveBeenNthCalledWith(1, "/v2/organizations", {
+      params: { query: { name: "my-org", limit: 100, cursor: undefined } },
+    });
+    expect(getFn).toHaveBeenNthCalledWith(2, "/v2/webhooks", {
+      params: {
+        query: {
+          org_id: ORGANIZATION_ID,
+          name: "my-webhook",
+          limit: 100,
+          cursor: undefined,
+        },
+      },
+    });
+  });
+
+  it("pages until an exact match is found", async () => {
+    getFn
+      .mockResolvedValueOnce({
+        data: {
+          webhooks: [{ id: btoa("Webhook:9:abc"), name: "my-webhook-2" }],
+          pagination: { has_more: true, next_cursor: "cursor1" },
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          webhooks: [{ id: WEBHOOK_ID_1, name: "my-webhook" }],
+          pagination: { has_more: false, next_cursor: null },
+        },
+      });
+
+    const result = await findWebhookId(
+      mockClient,
+      "my-webhook",
+      ORGANIZATION_ID,
+    );
+
+    expect(result).toBe(WEBHOOK_ID_1);
+    expect(getFn).toHaveBeenCalledTimes(2);
+    expect(getFn.mock.calls[1]![1]).toEqual({
+      params: {
+        query: {
+          org_id: ORGANIZATION_ID,
+          name: "my-webhook",
+          limit: 100,
+          cursor: "cursor1",
+        },
+      },
+    });
+  });
+
+  it("does not match case-insensitively or on substrings", async () => {
+    getFn.mockResolvedValue({
+      data: {
+        webhooks: [
+          { id: btoa("Webhook:9:abc"), name: "My-Webhook" },
+          { id: btoa("Webhook:8:abc"), name: "my-webhook-2" },
+        ],
+        pagination: { has_more: false, next_cursor: null },
+      },
+    });
+
+    await expect(
+      findWebhookId(mockClient, "my-webhook", ORGANIZATION_ID),
+    ).rejects.toBeInstanceOf(ResolutionError);
+  });
+
+  it("lists the near misses in the ResolutionError", async () => {
+    getFn.mockResolvedValue({
+      data: {
+        webhooks: [
+          { id: btoa("Webhook:9:abc"), name: "my-webhook-staging" },
+          { id: btoa("Webhook:8:abc"), name: "my-webhook-prod" },
+        ],
+        pagination: { has_more: false, next_cursor: null },
+      },
+    });
+
+    let thrown: unknown;
+    try {
+      await findWebhookId(mockClient, "my-webhook", ORGANIZATION_ID);
+    } catch (e) {
+      thrown = e;
+    }
+
+    expect(thrown).toBeInstanceOf(ResolutionError);
+    const err = thrown as ResolutionError;
+    expect(err.resourceType).toBe("webhook");
+    expect(err.resourceName).toBe("my-webhook");
+    expect(err.availableNames).toEqual([
+      "my-webhook-staging",
+      "my-webhook-prod",
+    ]);
+  });
+
+  it("throws ResolutionError when the list is empty", async () => {
+    getFn.mockResolvedValue({
+      data: {
+        webhooks: [],
+        pagination: { has_more: false, next_cursor: null },
+      },
+    });
+
+    await expect(
+      findWebhookId(mockClient, "missing", ORGANIZATION_ID),
     ).rejects.toBeInstanceOf(ResolutionError);
   });
 });

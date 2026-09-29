@@ -98,6 +98,28 @@ export const rawLlmConfigs = {
     is_default_models_enabled: true,
     model_names: ["meta/llama-3.1-8b-instruct"],
   },
+  LITELLM: {
+    provider: "LITELLM",
+    has_api_key: true,
+    is_function_calling_enabled: true,
+    base_url: "https://litellm.internal:4000",
+    header_names: ["x-team-token"],
+    model_names: ["team-gpt-4o"],
+  },
+  FIREWORKS: {
+    provider: "FIREWORKS",
+    has_api_key: true,
+    is_function_calling_enabled: true,
+    is_default_models_enabled: false,
+    model_names: ["accounts/fireworks/models/glm-5p3"],
+  },
+  TOGETHER_AI: {
+    provider: "TOGETHER_AI",
+    has_api_key: true,
+    is_function_calling_enabled: true,
+    is_default_models_enabled: false,
+    model_names: ["meta-llama/Llama-4-70B-Instruct-Turbo"],
+  },
 } satisfies Record<string, RawLlmConfig>;
 
 export const mockAgentIntegration: RawIntegration = {

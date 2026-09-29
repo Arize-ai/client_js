@@ -60,40 +60,6 @@ describe("createUser", () => {
     });
   });
 
-  it("passes is_developer when isDeveloper is provided", async () => {
-    await createUser({
-      client: mockClient,
-      name: "Jane Smith",
-      email: "jane.smith@example.com",
-      role: { type: "PREDEFINED", name: "ANNOTATOR" },
-      inviteMode: "EMAIL_LINK",
-      isDeveloper: true,
-    });
-
-    expect(postFn).toHaveBeenCalledWith("/v2/users", {
-      body: {
-        name: "Jane Smith",
-        email: "jane.smith@example.com",
-        role: { type: "PREDEFINED", name: "ANNOTATOR" },
-        invite_mode: "EMAIL_LINK",
-        is_developer: true,
-      },
-    });
-  });
-
-  it("omits is_developer when isDeveloper is not provided", async () => {
-    await createUser({
-      client: mockClient,
-      name: "Jane Smith",
-      email: "jane.smith@example.com",
-      role: { type: "PREDEFINED", name: "MEMBER" },
-      inviteMode: "EMAIL_LINK",
-    });
-
-    const body = postFn.mock.calls[0]?.[1]?.body as Record<string, unknown>;
-    expect(body).not.toHaveProperty("is_developer");
-  });
-
   it("returns a User (without inviteMode) when API returns 200 (existing invitation)", async () => {
     postFn.mockResolvedValue({
       error: undefined,

@@ -1,16 +1,16 @@
 import { createClient } from "../client";
 import {
   ApiKeyAccountRoleAssignment,
-  ApiKeyCreated,
   ApiKeyOrgRoleAssignment,
   ApiKeySpaceRoleAssignment,
+  CreatedApiKey,
   WithClient,
 } from "../types";
 import { components } from "../__generated__/api/v2";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
-import { transformApiKeyCreated } from "./utils";
-import { RawApiKeyCreated } from "../types/internal";
+import { transformCreatedApiKey } from "./utils";
+import { RawCreatedApiKey } from "../types/internal";
 
 type RawUserApiKeyCreate = components["schemas"]["CreateUserApiKeyRequest"];
 type RawServiceApiKeyCreate =
@@ -94,7 +94,7 @@ export type CreateApiKeyParams =
  * @param expiresAt - Optional expiration date. If omitted, the key never expires.
  * @param organizations - Required for service keys. List of organization bindings, each containing an optional org-level role and space bindings.
  * @param accountRole - Optional account-level role for the bot user. When omitted, the server applies the default predefined `member` role.
- * @returns A {@link ApiKeyCreated} containing the full key value. **Store the `key` field securely — it is only returned once.**
+ * @returns A {@link CreatedApiKey} containing the full key value. **Store the `key` field securely — it is only returned once.**
  * @throws Error if the API key cannot be created or the response is invalid.
  * @example User key (simplest case):
  * ```typescript
@@ -131,7 +131,7 @@ export type CreateApiKeyParams =
  */
 export async function createApiKey(
   params: CreateApiKeyParams,
-): Promise<ApiKeyCreated> {
+): Promise<CreatedApiKey> {
   warnPreRelease({ functionName: "createApiKey", stage: "alpha" });
   const { client: clientInstance, name, description, expiresAt } = params;
   const client = clientInstance ?? createClient();
@@ -183,5 +183,5 @@ export async function createApiKey(
   if (response.error) {
     return handleApiError(response);
   }
-  return transformApiKeyCreated(response.data as unknown as RawApiKeyCreated);
+  return transformCreatedApiKey(response.data as unknown as RawCreatedApiKey);
 }

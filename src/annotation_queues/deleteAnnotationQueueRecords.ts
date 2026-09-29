@@ -1,6 +1,5 @@
 import { createClient } from "../client";
 import { DeleteAnnotationQueueRecordsInput, WithClient } from "../types";
-import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { findAnnotationQueueId, toSpaceRef } from "../utils/resolve";
 
@@ -43,10 +42,6 @@ export async function deleteAnnotationQueueRecords({
   space,
   recordIds,
 }: DeleteAnnotationQueueRecordsParams): Promise<void> {
-  warnPreRelease({
-    functionName: "deleteAnnotationQueueRecords",
-    stage: "beta",
-  });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const annotationQueueId = await findAnnotationQueueId(

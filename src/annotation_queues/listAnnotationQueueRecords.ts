@@ -9,7 +9,6 @@ import {
   DEFAULT_LIST_LIMIT,
   transformPaginationMetadata,
 } from "../utils/pagination";
-import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { transformAnnotationQueueRecord } from "./utils";
 import { findAnnotationQueueId, toSpaceRef } from "../utils/resolve";
@@ -54,7 +53,6 @@ export async function listAnnotationQueueRecords({
 }: ListAnnotationQueueRecordsParams): Promise<
   PaginatedResponse<AnnotationQueueRecord>
 > {
-  warnPreRelease({ functionName: "listAnnotationQueueRecords", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const annotationQueueId = await findAnnotationQueueId(

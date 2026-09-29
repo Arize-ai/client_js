@@ -83,6 +83,135 @@ describe("updateTask", () => {
     });
   });
 
+  it("maps query_filters and expression for trace/session tasks", async () => {
+    await updateTask({
+      client: mockClient,
+      task: "tid",
+      queryFilters: {
+        filters: [{ id: "A", filter: "span_kind == 'CHAIN'" }],
+        expression: "A",
+      },
+      evaluators: [
+        {
+          evaluatorId: "ev-1",
+          queryMappings: [
+            {
+              variableName: "output",
+              queryIds: ["A"],
+              attributePath: "attributes.output.value",
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(patch).toHaveBeenCalledWith("/v2/tasks/{task_id}", {
+      params: { path: { task_id: "resolved-task-id" } },
+      body: {
+        query_filters: {
+          filters: [{ id: "A", filter: "span_kind == 'CHAIN'" }],
+          expression: "A",
+        },
+        evaluators: [
+          {
+            evaluator_id: "ev-1",
+            query_filter: undefined,
+            evaluator_version_id: undefined,
+            column_mappings: undefined,
+            query_mappings: [
+              {
+                variable_name: "output",
+                query_ids: ["A"],
+                attribute_path: "attributes.output.value",
+              },
+            ],
+          },
+        ],
+      },
+    });
+  });
+
+  it("clears query_filters by passing null", async () => {
+    await updateTask({
+      client: mockClient,
+      task: "tid",
+      queryFilters: null,
+    });
+
+    expect(patch).toHaveBeenCalledWith("/v2/tasks/{task_id}", {
+      params: { path: { task_id: "resolved-task-id" } },
+      body: {
+        query_filters: null,
+      },
+    });
+  });
+
+  it("throws when queryFilter and queryFilters both carry actual values", async () => {
+    await expect(
+      updateTask({
+        client: mockClient,
+        task: "tid",
+        queryFilter: "span_kind == 'LLM'",
+        queryFilters: {
+          filters: [{ id: "A", filter: "span_kind == 'CHAIN'" }],
+        },
+      }),
+    ).rejects.toThrow(/mutually exclusive/);
+
+    expect(patch).not.toHaveBeenCalled();
+  });
+
+  it("allows queryFilter set together with queryFilters: null (switch to span shape)", async () => {
+    await updateTask({
+      client: mockClient,
+      task: "tid",
+      queryFilter: "span_kind == 'LLM'",
+      queryFilters: null,
+    });
+
+    expect(patch).toHaveBeenCalledWith("/v2/tasks/{task_id}", {
+      params: { path: { task_id: "resolved-task-id" } },
+      body: {
+        query_filter: "span_kind == 'LLM'",
+        query_filters: null,
+      },
+    });
+  });
+
+  it("allows queryFilters set together with queryFilter: null (switch to trace/session shape)", async () => {
+    await updateTask({
+      client: mockClient,
+      task: "tid",
+      queryFilter: null,
+      queryFilters: {
+        filters: [{ id: "A", filter: "span_kind == 'CHAIN'" }],
+      },
+      evaluators: [
+        {
+          evaluatorId: "ev-1",
+          queryMappings: [
+            {
+              variableName: "output",
+              queryIds: ["A"],
+              attributePath: "attributes.output.value",
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(patch).toHaveBeenCalledTimes(1);
+    const [, requestInit] = patch.mock.calls[0] as [
+      string,
+      { body: Record<string, unknown> },
+    ];
+    expect(requestInit.body.query_filter).toBeNull();
+    expect(requestInit.body.query_filters).toEqual({
+      filters: [{ id: "A", filter: "span_kind == 'CHAIN'" }],
+      expression: undefined,
+    });
+  });
+
   it("throws when no mutable fields are provided", async () => {
     await expect(
       updateTask({

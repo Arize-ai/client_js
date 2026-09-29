@@ -11,7 +11,7 @@ import { createTemplateEvaluatorVersion } from "../src/evaluators";
         template:
           "Rate the relevance of the response on a scale of 0 to 1.\nQuery: {{query}}\nResponse: {{response}}",
         includeExplanations: true,
-        useFunctionCallingIfAvailable: true,
+        useFunctionCalling: true,
         classificationChoices: { relevant: 1, irrelevant: 0 },
         direction: "MAXIMIZE",
         llmConfig: {

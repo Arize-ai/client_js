@@ -4,6 +4,29 @@ import { RawTask, RawTaskRun } from "./internal";
 export type TaskType = RawTask["type"];
 export type TaskRunStatus = RawTaskRun["status"];
 
+/**
+ * A named query filter entry used in the trace/session (multi-query) shape.
+ * The `id` is a single letter (`A`-`E`) referenced by `expression` and
+ * per-evaluator `queryMappings`.
+ */
+export type TaskQueryFilter = components["schemas"]["TaskQueryFilter"];
+
+/**
+ * Combined named-query filters and boolean expression for the trace/session
+ * shape.
+ */
+export type TaskQueryFilters = components["schemas"]["TaskQueryFilters"];
+
+/**
+ * Maps one evaluator template variable to one or more named query ids plus an
+ * attribute path, for trace/session-granularity evaluators.
+ */
+export type TaskQueryMapping = {
+  variableName: string;
+  queryIds: string[];
+  attributePath: string;
+};
+
 // ---- Run-experiment config input types ----
 
 /**
@@ -12,7 +35,7 @@ export type TaskRunStatus = RawTaskRun["status"];
  * AI integration ID before sending the request.
  */
 export type LlmGenerationConfigInput =
-  components["schemas"]["LlmGenerationRunConfig"] & {
+  components["schemas"]["LlmGenerationRunConfigRequest"] & {
     /**
      * Optional: resolve the AI integration by name instead of by ID.
      * When set, the SDK looks up the integration ID and overwrites
@@ -26,7 +49,7 @@ export type LlmGenerationConfigInput =
  * with an optional `aiIntegration` name field.
  */
 export type TemplateEvaluationConfigInput =
-  components["schemas"]["TemplateEvaluationRunConfig"] & {
+  components["schemas"]["TemplateEvaluationRunConfigRequest"] & {
     /** Optional: resolve aiIntegration by name instead of ID. */
     aiIntegration?: string;
   };
@@ -57,7 +80,8 @@ export type RunExperimentConfigInput =
 
 // ---- Create-task input types ----
 
-export type CreateTaskEvaluatorInput = {
+/** Evaluator input for span-granularity evaluators. Mutually exclusive with {@link TraceOrSessionEvaluatorInput}. */
+export type SpanEvaluatorInput = {
   evaluatorId: string;
   /**
    * Pins this evaluator to one version. Omit it, or pass null, to run the
@@ -67,6 +91,26 @@ export type CreateTaskEvaluatorInput = {
   queryFilter?: string;
   columnMappings?: Record<string, string>;
 };
+
+/** Evaluator input for trace/session-granularity evaluators. Mutually exclusive with {@link SpanEvaluatorInput}. */
+export type TraceOrSessionEvaluatorInput = {
+  evaluatorId: string;
+  /**
+   * Pins this evaluator to one version. Omit it, or pass null, to run the
+   * evaluator's latest version. Must be a version of `evaluatorId`.
+   */
+  evaluatorVersionId?: string | null;
+  queryMappings: TaskQueryMapping[];
+};
+
+/**
+ * Per-evaluator input. Discriminated union — supply either span fields
+ * ({@link SpanEvaluatorInput}) or trace/session fields
+ * ({@link TraceOrSessionEvaluatorInput}), not both.
+ */
+export type CreateTaskEvaluatorInput =
+  | SpanEvaluatorInput
+  | TraceOrSessionEvaluatorInput;
 
 /**
  * Input for creating a new evaluation task (`TEMPLATE_EVALUATION` or
@@ -91,7 +135,15 @@ export type CreateEvaluationTaskInput = {
   experimentIds?: string[];
   isContinuous?: boolean;
   samplingRate?: number;
+  /**
+   * Task-level query filter (span shape). Mutually exclusive with `queryFilters`.
+   */
   queryFilter?: string;
+  /**
+   * Combined named query filters and boolean expression for trace/session-granularity
+   * evaluators (1–5 filters with unique `A`–`E` ids). Mutually exclusive with `queryFilter`.
+   */
+  queryFilters?: TaskQueryFilters;
   evaluators: CreateTaskEvaluatorInput[];
 };
 
@@ -131,8 +183,15 @@ export interface TaskEvaluator {
   evaluatorName: string;
   /** The pinned version, or null when the evaluator runs its latest version. */
   evaluatorVersionId: string | null;
+  /** Per-evaluator query filter (span shape). Null for trace/session evaluators. */
   queryFilter: string | null;
+  /** Column mappings (span shape). Null for trace/session evaluators. */
   columnMappings: Record<string, string> | null;
+  /**
+   * Per-evaluator variable-to-query mappings (trace/session shape).
+   * Null for span evaluators.
+   */
+  queryMappings: TaskQueryMapping[] | null;
 }
 
 export interface Task {
@@ -143,7 +202,13 @@ export interface Task {
   datasetId: string | null;
   isContinuous: boolean;
   samplingRate: number | null;
+  /** Task-level query filter (span shape). Null for trace/session tasks. */
   queryFilter: string | null;
+  /**
+   * Task-level named query filters plus optional boolean expression for
+   * trace/session tasks. Null for span tasks.
+   */
+  queryFilters: TaskQueryFilters | null;
   evaluators: TaskEvaluator[];
   experimentIds: string[];
   /**
@@ -195,6 +260,12 @@ export type UpdateTaskInput = {
   name?: string;
   samplingRate?: number;
   isContinuous?: boolean;
+  /** Task-level query filter (span shape). Pass `null` to clear. Mutually exclusive with `queryFilters`. */
   queryFilter?: string | null;
+  /**
+   * Combined named query filters and boolean expression for trace/session-granularity
+   * evaluators. Pass `null` to clear. Mutually exclusive with `queryFilter`.
+   */
+  queryFilters?: TaskQueryFilters | null;
   evaluators?: CreateTaskEvaluatorInput[];
 };

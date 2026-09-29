@@ -25,6 +25,7 @@ import {
   mockRawEvaluatorVersionManagedCode,
   mockRawEvaluatorVersionNullableFields,
   mockRawEvaluatorVersionRemote,
+  mockRemoteIntegrationId,
   mockRawEvaluatorWithVersion,
   mockRawLlmConfig,
   mockRawManagedCodeConfig,
@@ -55,7 +56,7 @@ describe("transformTemplateConfig", () => {
       template:
         "Is the response relevant?\nQuery: {{query}}\nResponse: {{response}}",
       includeExplanations: true,
-      useFunctionCallingIfAvailable: true,
+      useFunctionCalling: true,
       classificationChoices: { relevant: 1, irrelevant: 0 },
       direction: "MAXIMIZE",
       dataGranularity: "SPAN",
@@ -151,7 +152,7 @@ describe("transformEvaluatorVersion — harness branch", () => {
 });
 
 describe("transformEvaluatorVersion — remote branch", () => {
-  it("returns a remote version with only common metadata", () => {
+  it("returns a remote version with common metadata and remoteConfig", () => {
     const result = transformEvaluatorVersion(mockRawEvaluatorVersionRemote);
     expect(result).toEqual({
       id: mockVersionId,
@@ -159,9 +160,17 @@ describe("transformEvaluatorVersion — remote branch", () => {
       commitHash: "remote123",
       commitMessage: "Initial remote version",
       type: "REMOTE",
+      remoteConfig: { integrationId: mockRemoteIntegrationId },
       createdAt: new Date("2024-01-01T00:00:00.000Z"),
       createdByUserId: mockUserId,
     });
+  });
+
+  it("exposes remoteConfig.integrationId on the transformed result", () => {
+    const result = transformEvaluatorVersion(mockRawEvaluatorVersionRemote);
+    expect(result.type).toBe("REMOTE");
+    if (result.type !== "REMOTE") return;
+    expect(result.remoteConfig.integrationId).toBe(mockRemoteIntegrationId);
   });
 });
 
@@ -218,12 +227,12 @@ describe("transformEvaluatorWithVersion", () => {
 });
 
 describe("templateConfigToRaw", () => {
-  it("converts camelCase fields to snake_case for the API", () => {
+  it("converts camelCase fields to snake_case for the API, sending only use_function_calling", () => {
     const input: TemplateConfigInput = {
       name: "Relevance",
       template: "Rate: {{query}}",
       includeExplanations: true,
-      useFunctionCallingIfAvailable: false,
+      useFunctionCalling: false,
       classificationChoices: { yes: 1, no: 0 },
       direction: "MAXIMIZE",
       dataGranularity: "SPAN",
@@ -236,15 +245,13 @@ describe("templateConfigToRaw", () => {
     };
     const raw = templateConfigToRaw(input);
     expect(raw.include_explanations).toBe(true);
-    expect(raw.use_function_calling_if_available).toBe(false);
+    expect(raw.use_function_calling).toBe(false);
     expect(raw.llm_config.ai_integration_id).toBe(mockAiIntegrationId);
     expect(raw.llm_config.model_name).toBe("gpt-4o");
     expect(
       (raw as Record<string, unknown>).includeExplanations,
     ).toBeUndefined();
-    expect(
-      (raw as Record<string, unknown>).useFunctionCallingIfAvailable,
-    ).toBeUndefined();
+    expect((raw as Record<string, unknown>).useFunctionCalling).toBeUndefined();
     expect(raw.classification_choices).toEqual({ yes: 1, no: 0 });
     expect(raw.data_granularity).toBe("SPAN");
     expect(raw.direction).toBe("MAXIMIZE");
@@ -254,18 +261,17 @@ describe("templateConfigToRaw", () => {
     expect((raw as Record<string, unknown>).dataGranularity).toBeUndefined();
   });
 
-  it("round-trips through transform → raw without data loss", () => {
+  it("round-trips through transform → raw; output uses the new field only", () => {
     const transformed = transformTemplateConfig(mockRawTemplateConfig);
-    // The read-back config's choices are nullable; narrow to the write-only
-    // input shape (the fixture supplies choices) before serializing.
-    if (transformed.classificationChoices == null) {
-      throw new Error("fixture must include classificationChoices");
-    }
-    const raw = templateConfigToRaw({
-      ...transformed,
-      classificationChoices: transformed.classificationChoices,
-    });
-    expect(raw).toEqual(mockRawTemplateConfig);
+    const raw = templateConfigToRaw(transformed);
+    // templateConfigToRaw sends use_function_calling only; the server returns both.
+    expect(raw.use_function_calling).toBe(
+      mockRawTemplateConfig.use_function_calling,
+    );
+    expect(raw.name).toBe(mockRawTemplateConfig.name);
+    expect(raw.include_explanations).toBe(
+      mockRawTemplateConfig.include_explanations,
+    );
   });
 
   it("throws when classificationChoices is missing (defensive guard for untyped callers)", () => {
@@ -284,7 +290,7 @@ describe("templateConfigToRaw", () => {
       name: "Relevance",
       template: "Rate: {{query}}",
       includeExplanations: true,
-      useFunctionCallingIfAvailable: false,
+      useFunctionCalling: false,
       classificationChoices: {},
       llmConfig: {
         aiIntegrationId: mockAiIntegrationId,

@@ -11,7 +11,7 @@ import { createTemplateEvaluator } from "../src/evaluators";
         template:
           "Is the following response relevant to the query?\nQuery: {{query}}\nResponse: {{response}}",
         includeExplanations: true,
-        useFunctionCallingIfAvailable: true,
+        useFunctionCalling: true,
         classificationChoices: { relevant: 1, irrelevant: 0 },
         direction: "MAXIMIZE",
         llmConfig: {

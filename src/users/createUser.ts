@@ -26,11 +26,6 @@ export type CreateUserParams = WithClient<{
    *   the user must reset it on first login.
    */
   inviteMode: InviteMode;
-  /**
-   * Whether the user should have developer permissions (can create GraphQL API keys).
-   * Defaults to `true` for `ADMIN` and `MEMBER` roles, and `false` for `ANNOTATOR`.
-   */
-  isDeveloper?: boolean;
 }>;
 
 /**
@@ -76,7 +71,6 @@ export async function createUser({
   email,
   role,
   inviteMode,
-  isDeveloper,
 }: CreateUserParams): Promise<User | UserCreated> {
   warnPreRelease({ functionName: "createUser", stage: "beta" });
   const client = clientInstance ?? createClient();
@@ -86,7 +80,6 @@ export async function createUser({
       email,
       role,
       invite_mode: inviteMode,
-      ...(isDeveloper !== undefined && { is_developer: isDeveloper }),
     },
   });
   if (response.error) {

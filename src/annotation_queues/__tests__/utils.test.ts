@@ -120,4 +120,38 @@ describe("serializeRecordInput", () => {
       span_ids: ["span_abc"],
     });
   });
+
+  it("should serialize a trace record input to snake_case", () => {
+    const result = serializeRecordInput({
+      recordType: "TRACE",
+      projectId: "proj_001",
+      startTime: "2024-01-01T00:00:00Z",
+      endTime: "2024-01-02T00:00:00Z",
+      traceIds: ["trace_abc"],
+    });
+    expect(result).toEqual({
+      record_type: "TRACE",
+      project_id: "proj_001",
+      start_time: "2024-01-01T00:00:00Z",
+      end_time: "2024-01-02T00:00:00Z",
+      trace_ids: ["trace_abc"],
+    });
+  });
+
+  it("should serialize a session record input to snake_case", () => {
+    const result = serializeRecordInput({
+      recordType: "SESSION",
+      projectId: "proj_001",
+      startTime: "2024-01-01T00:00:00Z",
+      endTime: "2024-01-02T00:00:00Z",
+      sessionIds: ["session_abc"],
+    });
+    expect(result).toEqual({
+      record_type: "SESSION",
+      project_id: "proj_001",
+      start_time: "2024-01-01T00:00:00Z",
+      end_time: "2024-01-02T00:00:00Z",
+      session_ids: ["session_abc"],
+    });
+  });
 });

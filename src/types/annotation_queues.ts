@@ -70,9 +70,27 @@ export interface AnnotationQueueSpanRecordInput {
   spanIds: string[];
 }
 
+export interface AnnotationQueueTraceRecordInput {
+  recordType: "TRACE";
+  projectId: string;
+  startTime: string;
+  endTime: string;
+  traceIds: string[];
+}
+
+export interface AnnotationQueueSessionRecordInput {
+  recordType: "SESSION";
+  projectId: string;
+  startTime: string;
+  endTime: string;
+  sessionIds: string[];
+}
+
 export type AnnotationQueueRecordInput =
   | AnnotationQueueExampleRecordInput
-  | AnnotationQueueSpanRecordInput;
+  | AnnotationQueueSpanRecordInput
+  | AnnotationQueueTraceRecordInput
+  | AnnotationQueueSessionRecordInput;
 
 export interface CreateAnnotationQueueInput {
   name: string;

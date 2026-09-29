@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createApiKey } from "../createApiKey";
-import { mockRawApiKeyCreated, mockRawServiceApiKeyCreated } from "./fixtures";
+import {
+  mockRawCreatedServiceApiKey,
+  mockRawCreatedUserApiKey,
+} from "./fixtures";
 
 describe("createApiKey", () => {
   const post = vi.fn();
@@ -18,7 +21,7 @@ describe("createApiKey", () => {
     beforeEach(() => {
       post.mockResolvedValue({
         error: undefined,
-        data: mockRawApiKeyCreated,
+        data: mockRawCreatedUserApiKey,
       });
     });
 
@@ -79,7 +82,7 @@ describe("createApiKey", () => {
       );
     });
 
-    it("returns transformed ApiKeyCreated with camelCase fields", async () => {
+    it("returns transformed CreatedApiKey with camelCase fields", async () => {
       const result = await createApiKey({
         client: mockClient,
         keyType: "USER",
@@ -120,7 +123,7 @@ describe("createApiKey", () => {
     beforeEach(() => {
       post.mockResolvedValue({
         error: undefined,
-        data: mockRawServiceApiKeyCreated,
+        data: mockRawCreatedServiceApiKey,
       });
     });
 
@@ -298,7 +301,7 @@ describe("createApiKey", () => {
       );
     });
 
-    it("returns transformed ApiKeyCreated with botUser for service keys", async () => {
+    it("returns transformed CreatedApiKey with botUser for service keys", async () => {
       const result = await createApiKey({
         client: mockClient,
         keyType: "SERVICE",

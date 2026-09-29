@@ -129,6 +129,48 @@ export interface NvidiaNimLlmConfig {
 }
 
 /**
+ * Read config for a LiteLLM integration. `baseUrl` is always set: LiteLLM is
+ * self-hosted, so there is no default endpoint. `modelNames` holds only the
+ * model names configured on the integration.
+ */
+export interface LiteLlmConfig {
+  provider: "LITELLM";
+  hasApiKey: boolean;
+  isFunctionCallingEnabled: boolean;
+  /** LiteLLM endpoint URL requests are sent to. */
+  baseUrl: string;
+  /** Names of the configured custom request headers (values never returned). */
+  headerNames: string[];
+  modelNames: string[];
+}
+
+/**
+ * Read config for a Fireworks AI integration. Fireworks is a single hosted
+ * service, so there is no endpoint field and no custom request headers.
+ * `modelNames` holds only the model names configured on the integration.
+ */
+export interface FireworksLlmConfig {
+  provider: "FIREWORKS";
+  hasApiKey: boolean;
+  isFunctionCallingEnabled: boolean;
+  isDefaultModelsEnabled: boolean;
+  modelNames: string[];
+}
+
+/**
+ * Read config for a Together AI integration. Together AI is a single hosted
+ * service, so there is no endpoint field and no custom request headers.
+ * `modelNames` holds only the model names configured on the integration.
+ */
+export interface TogetherAiLlmConfig {
+  provider: "TOGETHER_AI";
+  hasApiKey: boolean;
+  isFunctionCallingEnabled: boolean;
+  isDefaultModelsEnabled: boolean;
+  modelNames: string[];
+}
+
+/**
  * Config for an `LLM` integration — a provider-discriminated union covering all
  * supported vendors. Narrow on `provider` to access provider-specific fields.
  */
@@ -139,7 +181,10 @@ export type LlmIntegrationConfig =
   | AwsBedrockLlmConfig
   | CustomLlmConfig
   | VertexAiLlmConfig
-  | NvidiaNimLlmConfig;
+  | NvidiaNimLlmConfig
+  | LiteLlmConfig
+  | FireworksLlmConfig
+  | TogetherAiLlmConfig;
 
 /** A named, reusable request payload bound to an agent integration. */
 export interface AgentRequestPreset {
@@ -188,8 +233,28 @@ export interface AgentIntegration extends IntegrationBase {
   config: AgentIntegrationConfig;
 }
 
+/** Config for an `EVALUATOR` integration. */
+export interface EvaluatorIntegrationConfig {
+  /** HTTPS endpoint URL Arize calls for remote evaluation. */
+  endpoint: string;
+  /** Whether any headers are configured (values are never returned). */
+  hasHeaders: boolean;
+  /** JSON Schema (Draft-07) the endpoint's request body conforms to. */
+  inputSchema: Record<string, unknown>;
+}
+
+/** An evaluator integration (customer-hosted HTTPS endpoint used for remote evaluators). */
+export interface EvaluatorIntegration extends IntegrationBase {
+  type: "EVALUATOR";
+  description?: string | null;
+  config: EvaluatorIntegrationConfig;
+}
+
 /** A polymorphic integration resource, discriminated by `type`. */
-export type Integration = LlmIntegration | AgentIntegration;
+export type Integration =
+  | LlmIntegration
+  | AgentIntegration
+  | EvaluatorIntegration;
 
 // ---- Create input types (discriminated on `type`) ----
 
@@ -316,6 +381,49 @@ export interface CreateNvidiaNimLlmConfigInput {
 }
 
 /**
+ * Create config for a LiteLLM integration. `baseUrl` and `apiKey` are both
+ * required: LiteLLM is self-hosted, and the virtual key scopes the models
+ * Arize can resolve and call.
+ */
+export interface CreateLiteLlmConfigInput {
+  provider: "LITELLM";
+  /** LiteLLM endpoint URL requests are sent to (HTTPS). */
+  baseUrl: string;
+  /** LiteLLM virtual key (write-only, never returned). */
+  apiKey: string;
+  isFunctionCallingEnabled?: boolean;
+  /** Custom request headers as a name-to-value map. Write-only. */
+  headers?: Record<string, string>;
+  modelNames?: string[];
+}
+
+/**
+ * Create config for a Fireworks AI integration. `apiKey` is required; the
+ * server requires ≥1 model (default catalog or `modelNames`).
+ */
+export interface CreateFireworksLlmConfigInput {
+  provider: "FIREWORKS";
+  /** Fireworks AI API key (write-only, never returned). */
+  apiKey: string;
+  isFunctionCallingEnabled?: boolean;
+  isDefaultModelsEnabled?: boolean;
+  modelNames?: string[];
+}
+
+/**
+ * Create config for a Together AI integration. `apiKey` is required; the
+ * server requires ≥1 model (default catalog or `modelNames`).
+ */
+export interface CreateTogetherAiLlmConfigInput {
+  provider: "TOGETHER_AI";
+  /** Together AI API key (write-only, never returned). */
+  apiKey: string;
+  isFunctionCallingEnabled?: boolean;
+  isDefaultModelsEnabled?: boolean;
+  modelNames?: string[];
+}
+
+/**
  * Config for creating an `LLM` integration — a provider-discriminated union.
  * Required fields and secrets are per-provider; secrets are write-only.
  */
@@ -326,7 +434,10 @@ export type CreateLlmIntegrationConfigInput =
   | CreateAwsBedrockLlmConfigInput
   | CreateCustomLlmConfigInput
   | CreateVertexAiLlmConfigInput
-  | CreateNvidiaNimLlmConfigInput;
+  | CreateNvidiaNimLlmConfigInput
+  | CreateLiteLlmConfigInput
+  | CreateFireworksLlmConfigInput
+  | CreateTogetherAiLlmConfigInput;
 
 /** Write shape for an agent request preset on create. */
 export interface CreateAgentRequestPresetInput {
@@ -359,10 +470,27 @@ export interface CreateAgentIntegrationInput {
   config: CreateAgentIntegrationConfigInput;
 }
 
-/** Discriminated create input — either an LLM or an agent integration. */
+/** Config for creating an `EVALUATOR` integration. */
+export interface CreateEvaluatorIntegrationConfigInput {
+  endpoint: string;
+  /** Cleartext header map. Encrypted at rest; never returned. */
+  headers?: Record<string, string>;
+  inputSchema: Record<string, unknown>;
+}
+
+export interface CreateEvaluatorIntegrationInput {
+  type: "EVALUATOR";
+  name: string;
+  description?: string | null;
+  scopings?: IntegrationScoping[];
+  config: CreateEvaluatorIntegrationConfigInput;
+}
+
+/** Discriminated create input — an LLM, agent, or evaluator integration. */
 export type CreateIntegrationInput =
   | CreateLlmIntegrationInput
-  | CreateAgentIntegrationInput;
+  | CreateAgentIntegrationInput
+  | CreateEvaluatorIntegrationInput;
 
 // ---- Update input types (discriminated on `type`, which is immutable) ----
 
@@ -435,6 +563,36 @@ export interface UpdateNvidiaNimLlmConfigInput {
   modelNames?: string[];
 }
 
+/** Partial update config for a LiteLLM integration. */
+export interface UpdateLiteLlmConfigInput {
+  provider: "LITELLM";
+  apiKey?: string | null;
+  isFunctionCallingEnabled?: boolean;
+  /** New endpoint URL. Null is rejected by the server (base_url is required). */
+  baseUrl?: string | null;
+  /** Replaces the full custom-header set. Pass null to clear all headers. */
+  headers?: Record<string, string> | null;
+  modelNames?: string[];
+}
+
+/** Partial update config for a Fireworks AI integration. */
+export interface UpdateFireworksLlmConfigInput {
+  provider: "FIREWORKS";
+  apiKey?: string | null;
+  isFunctionCallingEnabled?: boolean;
+  isDefaultModelsEnabled?: boolean;
+  modelNames?: string[];
+}
+
+/** Partial update config for a Together AI integration. */
+export interface UpdateTogetherAiLlmConfigInput {
+  provider: "TOGETHER_AI";
+  apiKey?: string | null;
+  isFunctionCallingEnabled?: boolean;
+  isDefaultModelsEnabled?: boolean;
+  modelNames?: string[];
+}
+
 /**
  * Partial update config for a Google Vertex AI integration. Fields are
  * required on the resource, so they may change but are never cleared
@@ -459,7 +617,10 @@ export type UpdateLlmIntegrationConfigInput =
   | UpdateAwsBedrockLlmConfigInput
   | UpdateCustomLlmConfigInput
   | UpdateVertexAiLlmConfigInput
-  | UpdateNvidiaNimLlmConfigInput;
+  | UpdateNvidiaNimLlmConfigInput
+  | UpdateLiteLlmConfigInput
+  | UpdateFireworksLlmConfigInput
+  | UpdateTogetherAiLlmConfigInput;
 
 /** Write shape for an agent request preset on update. */
 export interface UpdateAgentRequestPresetInput {
@@ -493,7 +654,24 @@ export interface UpdateAgentIntegrationInput {
   config?: UpdateAgentIntegrationConfigInput;
 }
 
+/** Partial config for updating an `EVALUATOR` integration (replace-on-provide). */
+export interface UpdateEvaluatorIntegrationConfigInput {
+  endpoint?: string;
+  /** Replace-on-provide. Pass null to clear all headers. */
+  headers?: Record<string, string> | null;
+  inputSchema?: Record<string, unknown>;
+}
+
+export interface UpdateEvaluatorIntegrationInput {
+  type: "EVALUATOR";
+  name?: string;
+  description?: string | null;
+  scopings?: IntegrationScoping[];
+  config?: UpdateEvaluatorIntegrationConfigInput;
+}
+
 /** Discriminated update input. `type` is required (selects the variant) and immutable. */
 export type UpdateIntegrationInput =
   | UpdateLlmIntegrationInput
-  | UpdateAgentIntegrationInput;
+  | UpdateAgentIntegrationInput
+  | UpdateEvaluatorIntegrationInput;

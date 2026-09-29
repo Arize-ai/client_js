@@ -4,7 +4,6 @@ import {
   CreateAnnotationQueueInput,
   WithClient,
 } from "../types";
-import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { serializeRecordInput, transformAnnotationQueue } from "./utils";
 
@@ -21,7 +20,9 @@ export type CreateAnnotationQueueParams =
  * @param annotatorEmails - Email addresses of annotators to assign to the queue.
  * @param instructions - Optional instructions for annotators.
  * @param assignmentMethod - How records are assigned to annotators: "ALL" or "RANDOM". Defaults to "ALL".
- * @param recordSources - Optional record sources to add on creation.
+ * @param recordSources - Optional example, span, trace, or session record sources
+ * to add on creation. At most 2 sources and 500 records may be added, including
+ * at most 100 sessions.
  * @returns A created {@link AnnotationQueue}.
  * @throws Error if the annotation queue cannot be created or the response is invalid.
  * @example
@@ -48,7 +49,6 @@ export async function createAnnotationQueue({
   assignmentMethod,
   recordSources,
 }: CreateAnnotationQueueParams): Promise<AnnotationQueue> {
-  warnPreRelease({ functionName: "createAnnotationQueue", stage: "beta" });
   const client = clientInstance ?? createClient();
   const response = await client.POST("/v2/annotation-queues", {
     body: {

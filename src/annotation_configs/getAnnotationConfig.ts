@@ -1,7 +1,6 @@
 import { createClient } from "../client";
 import { AnnotationConfig, WithClient } from "../types";
 import { findAnnotationConfigId, toSpaceRef } from "../utils/resolve";
-import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { transformAnnotationConfig } from "./utils";
 
@@ -34,7 +33,6 @@ export async function getAnnotationConfig({
   annotationConfig,
   space,
 }: GetAnnotationConfigParams): Promise<AnnotationConfig> {
-  warnPreRelease({ functionName: "getAnnotationConfig", stage: "beta" });
   const client = clientInstance ?? createClient();
   const spaceRef = toSpaceRef(space);
   const annotationConfigId = await findAnnotationConfigId(

@@ -3,6 +3,7 @@ import {
   Evaluator,
   EvaluatorLlmConfig,
   EvaluatorVersion,
+  EvaluatorVersionRemote,
   EvaluatorWithVersion,
   ManagedCodeConfig,
   StaticParam,
@@ -41,7 +42,7 @@ export function templateConfigToRaw(
     name: config.name,
     template: config.template,
     include_explanations: config.includeExplanations,
-    use_function_calling_if_available: config.useFunctionCallingIfAvailable,
+    use_function_calling: config.useFunctionCalling,
     classification_choices: config.classificationChoices,
     direction: config.direction ?? undefined,
     data_granularity: config.dataGranularity ?? undefined,
@@ -103,7 +104,7 @@ export function transformTemplateConfig(
     name: raw.name,
     template: raw.template,
     includeExplanations: raw.include_explanations,
-    useFunctionCallingIfAvailable: raw.use_function_calling_if_available,
+    useFunctionCalling: raw.use_function_calling ?? false,
     classificationChoices: raw.classification_choices,
     direction: raw.direction,
     dataGranularity: raw.data_granularity,
@@ -184,12 +185,19 @@ export function transformEvaluatorVersion(
         type: "TEMPLATE",
         templateConfig: transformTemplateConfig(raw.template_config),
       };
-    // Harness and remote versions expose only common version metadata; their
-    // configurations are not yet accessible via the REST API.
+    // Harness versions expose only common version metadata.
     case "HARNESS":
       return { ...base, type: "HARNESS" };
-    case "REMOTE":
-      return { ...base, type: "REMOTE" };
+    case "REMOTE": {
+      const remote: EvaluatorVersionRemote = {
+        ...base,
+        type: "REMOTE",
+        remoteConfig: {
+          integrationId: raw.remote_config.integration_id,
+        },
+      };
+      return remote;
+    }
   }
 }
 

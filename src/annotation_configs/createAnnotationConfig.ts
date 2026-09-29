@@ -9,7 +9,6 @@ import {
   WithClient,
 } from "../types";
 import { findSpaceId } from "../utils/resolve";
-import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { transformAnnotationConfig } from "./utils";
 
@@ -47,10 +46,6 @@ export async function createContinuousAnnotationConfig({
   client: clientInstance,
   ...params
 }: CreateContinuousAnnotationConfigParams): Promise<ContinuousAnnotationConfig> {
-  warnPreRelease({
-    functionName: "createContinuousAnnotationConfig",
-    stage: "beta",
-  });
   const client = clientInstance ?? createClient();
   const spaceId = await findSpaceId(client, params.space);
   const response = await client.POST("/v2/annotation-configs", {
@@ -104,10 +99,6 @@ export async function createCategoricalAnnotationConfig({
   client: clientInstance,
   ...params
 }: CreateCategoricalAnnotationConfigParams): Promise<CategoricalAnnotationConfig> {
-  warnPreRelease({
-    functionName: "createCategoricalAnnotationConfig",
-    stage: "beta",
-  });
   const client = clientInstance ?? createClient();
   const spaceId = await findSpaceId(client, params.space);
   const response = await client.POST("/v2/annotation-configs", {
@@ -155,10 +146,6 @@ export async function createFreeformAnnotationConfig({
   client: clientInstance,
   ...params
 }: CreateFreeformAnnotationConfigParams): Promise<FreeformAnnotationConfig> {
-  warnPreRelease({
-    functionName: "createFreeformAnnotationConfig",
-    stage: "beta",
-  });
   const client = clientInstance ?? createClient();
   const spaceId = await findSpaceId(client, params.space);
   const response = await client.POST("/v2/annotation-configs", {
