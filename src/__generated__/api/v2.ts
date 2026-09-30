@@ -14019,8 +14019,8 @@ export interface components {
          */
         ProjectIdQueryParam: components["schemas"]["Id"];
         /**
-         * @description Filter projects by type. When omitted, harness projects are excluded from
-         *     list results. Set to `HARNESS` to include harness session projects.
+         * @description Filter projects by type. When omitted, projects of every type are
+         *     returned. Set to `HARNESS` to return only harness session projects.
          * @example HARNESS
          */
         ProjectTypeQueryParam: components["schemas"]["ProjectType"];
@@ -17580,8 +17580,8 @@ export interface operations {
                  */
                 cursor?: components["parameters"]["CursorQueryParam"];
                 /**
-                 * @description Filter projects by type. When omitted, harness projects are excluded from
-                 *     list results. Set to `HARNESS` to include harness session projects.
+                 * @description Filter projects by type. When omitted, projects of every type are
+                 *     returned. Set to `HARNESS` to return only harness session projects.
                  * @example HARNESS
                  */
                 project_type?: components["parameters"]["ProjectTypeQueryParam"];

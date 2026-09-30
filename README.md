@@ -1402,6 +1402,40 @@ const agent = await createIntegration({
 });
 ```
 
+`config.provider` selects the LLM config shape. Secrets are write-only and never returned.
+
+| Provider                         | Required fields                               | Optional fields                                                                                    |
+| -------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `OPEN_AI`, `ANTHROPIC`, `GEMINI` | `apiKey`                                      | `isFunctionCallingEnabled`                                                                         |
+| `AWS_BEDROCK`                    | `auth`                                        | `modelNames`, `isDefaultModelsEnabled`                                                             |
+| `VERTEX_AI`                      | `projectId`, `location`, `projectAccessLabel` |                                                                                                    |
+| `CUSTOM`                         | `baseUrl`                                     | `apiKey`, `headers`, `modelNames`, `isDefaultModelsEnabled`, `isFunctionCallingEnabled`            |
+| `NVIDIA_NIM`                     | none                                          | `baseUrl`, `apiKey`, `headers`, `modelNames`, `isDefaultModelsEnabled`, `isFunctionCallingEnabled` |
+| `LITELLM`                        | `baseUrl`, `apiKey`                           | `headers`, `modelNames`, `isFunctionCallingEnabled`                                                |
+| `FIREWORKS`, `TOGETHER_AI`       | `apiKey`                                      | `modelNames`, `isDefaultModelsEnabled`, `isFunctionCallingEnabled`                                 |
+
+```typescript
+// Self-hosted LiteLLM proxy: the endpoint and virtual key are both required.
+const litellm = await createIntegration({
+  type: "LLM",
+  name: "Team LiteLLM",
+  config: {
+    provider: "LITELLM",
+    baseUrl: "https://litellm.internal:4000",
+    apiKey: "sk-...",
+  },
+});
+
+// Hosted providers such as Fireworks AI and Together AI need only the API key.
+// Arize resolves the models the key can reach; list `modelNames` for
+// fine-tunes or dedicated deployments that cannot be discovered.
+const together = await createIntegration({
+  type: "LLM",
+  name: "Together AI",
+  config: { provider: "TOGETHER_AI", apiKey: "..." },
+});
+```
+
 ## Getting an integration
 
 ```typescript

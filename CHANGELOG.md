@@ -1,5 +1,12 @@
 # @arizeai/ax-client
 
+## [1.30.1](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.30.0...arize-js-sdk/v1.30.1) (2026-09-30)
+
+
+### 📚 Documentation
+
+* **ax-client:** document the per-provider llm integration configs ([#88583](https://github.com/Arize-ai/arize/issues/88583)) ([763046b](https://github.com/Arize-ai/arize/commit/763046b3080715a767f2fe54b1fd4a992f94b3af))
+
 ## [1.30.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.29.0...arize-js-sdk/v1.30.0) (2026-09-29)
 
 
