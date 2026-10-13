@@ -45,13 +45,11 @@ export type RawCreateLlmConfig = components["schemas"]["CreateLlmConfig"];
 export type RawCreateAwsBedrockAuth =
   components["schemas"]["CreateAwsBedrockAuth"];
 export type RawUpdateLlmConfig = components["schemas"]["UpdateLlmConfig"];
-export type RawApiKey = components["schemas"]["ApiKey"];
-
 // openapi-typescript generates Omit<Union, "type"> (non-distributive) for role
 // fields, which is structurally incompatible with the SDK's DistributiveOmit
-// types. Redefine the bot_user chain here so transformCreatedApiKey can map
+// types. Redefine the bot_user chain here so transform helpers can map
 // them without casts. The coercion is applied once at the HTTP boundary
-// (createApiKey / refreshApiKey) via `as unknown as RawCreatedApiKey`.
+// (createApiKey / refreshApiKey / listApiKeys) via `as unknown as Raw...`.
 type RawBotUserSpaceAssignment = Omit<
   components["schemas"]["ServiceKeyBotUserSpaceAssignment"],
   "role"
@@ -62,13 +60,20 @@ type RawBotUserOrgAssignment = Omit<
   "role" | "spaces"
 > & { role: ApiKeyOrgRoleAssignment; spaces: RawBotUserSpaceAssignment[] };
 
-type RawServiceKeyBotUser = Omit<
+export type RawServiceKeyBotUser = Omit<
   components["schemas"]["ServiceKeyBotUser"],
   "account_role" | "organizations"
 > & {
   account_role: ApiKeyAccountRoleAssignment;
   organizations: RawBotUserOrgAssignment[];
 };
+
+type RawServiceApiKey = Omit<
+  components["schemas"]["ServiceApiKey"],
+  "bot_user"
+> & { bot_user: RawServiceKeyBotUser };
+
+export type RawApiKey = components["schemas"]["UserApiKey"] | RawServiceApiKey;
 
 type RawCreatedServiceApiKey = Omit<
   components["schemas"]["CreatedServiceApiKey"],
@@ -78,7 +83,7 @@ type RawCreatedServiceApiKey = Omit<
 export type RawCreatedApiKey =
   | components["schemas"]["CreatedUserApiKey"]
   | RawCreatedServiceApiKey;
-export type RawRefreshApiKey = RawApiKey & { key: string };
+export type RawRefreshApiKey = components["schemas"]["RefreshApiKeyResponse"];
 export type RawTask = components["schemas"]["Task"];
 export type RawTaskEvaluator = components["schemas"]["TaskEvaluator"];
 export type RawTaskRun = components["schemas"]["TaskRun"];

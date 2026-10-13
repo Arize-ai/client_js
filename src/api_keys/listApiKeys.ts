@@ -14,6 +14,7 @@ import {
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
 import { transformApiKey } from "./utils";
+import { RawApiKey } from "../types/internal";
 
 export type ListApiKeysParams = WithClient<
   PaginationParams & {
@@ -81,8 +82,9 @@ export async function listApiKeys(
   if (response.error) {
     return handleApiError(response);
   }
+  const apiKeys = response.data.api_keys as unknown as RawApiKey[];
   return {
-    data: response.data.api_keys.map(transformApiKey),
+    data: apiKeys.map(transformApiKey),
     pagination: transformPaginationMetadata(response.data.pagination),
   };
 }

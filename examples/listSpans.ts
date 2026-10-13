@@ -5,6 +5,7 @@ import { listSpans } from "../src/spans";
     const spans = await listSpans({
       project: process.env.ARIZE_PROJECT_ID!,
       excludedColumns: ["attributes.embedding.vectors"],
+      truncateStringLength: 200,
     });
     // eslint-disable-next-line no-console
     console.dir(spans, { depth: null });

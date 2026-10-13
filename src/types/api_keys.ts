@@ -77,11 +77,13 @@ export type OrgBinding = {
   spaces: [SpaceBinding, ...SpaceBinding[]];
 };
 
-export type ApiKey = {
+/**
+ * Fields common to every API key, regardless of `keyType`.
+ */
+export type ApiKeyCommon = {
   id: string;
   name: string;
   description?: string;
-  keyType: KeyType;
   status: ApiKeyStatus;
   redactedKey: string;
   createdAt: Date;
@@ -89,6 +91,15 @@ export type ApiKey = {
   createdByUserId: string;
   lastUsedAt?: Date;
 };
+
+/**
+ * An API key as returned by `listApiKeys`. For a service key (`keyType: "SERVICE"`),
+ * `botUser` carries the same bot user detail returned by `createApiKey` — use `botUser.id` as
+ * the `userId` when creating a role binding for the key. Narrow on `keyType` to access it.
+ */
+export type ApiKey =
+  | (ApiKeyCommon & { keyType: "USER" })
+  | (ApiKeyCommon & { keyType: "SERVICE"; botUser: ServiceKeyBotUser });
 
 /**
  * A space binding on the bot user returned in a service key creation response.
@@ -120,21 +131,26 @@ export type ServiceKeyBotUser = {
 };
 
 /**
- * Returned only from createApiKey and refreshApiKey.
+ * Returned only from createApiKey.
  * The `key` field contains the full API key value and is **only returned once**.
  * Store it securely — it cannot be retrieved again.
  *
  * For service keys, `botUser` contains the bot user's resolved role assignments.
  */
-export type CreatedApiKey = ApiKey & {
-  key: string;
-  botUser?: ServiceKeyBotUser;
-};
+export type CreatedApiKey =
+  | (ApiKeyCommon & { keyType: "USER"; key: string })
+  | (ApiKeyCommon & {
+      keyType: "SERVICE";
+      key: string;
+      botUser: ServiceKeyBotUser;
+    });
 
 /**
  * Returned from refreshApiKey. Refresh returns a replacement credential and
- * its metadata, but does not include service-account bindings.
+ * its metadata, but — unlike createApiKey — never includes `botUser`: refresh
+ * reuses the existing service account rather than creating a new one.
  */
-export type ApiKeyRefreshed = ApiKey & {
+export type ApiKeyRefreshed = ApiKeyCommon & {
+  keyType: KeyType;
   key: string;
 };

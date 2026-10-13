@@ -1,5 +1,9 @@
 import { components } from "../../__generated__/api/v2";
-import { RawApiKey, RawCreatedApiKey } from "../../types/internal";
+import {
+  RawApiKey,
+  RawCreatedApiKey,
+  RawRefreshApiKey,
+} from "../../types/internal";
 
 export const mockRawApiKey: RawApiKey = {
   id: "key-id-123",
@@ -17,6 +21,28 @@ export const mockRawCreatedUserApiKey: RawCreatedApiKey = {
   ...mockRawApiKey,
   key_type: "USER",
   key: "ak-full-secret-value",
+};
+
+export const mockRawServiceApiKey: RawApiKey = {
+  id: "key-id-456",
+  name: "bot-key",
+  key_type: "SERVICE",
+  status: "ACTIVE",
+  redacted_key: "ak-bot...abc",
+  created_at: "2026-01-01T00:00:00.000Z",
+  created_by_user_id: "user-123",
+  bot_user: {
+    id: "bot-user-456",
+    name: "bot-key",
+    account_role: { name: "MEMBER" },
+    organizations: [
+      {
+        org_id: "T3JnMTIz",
+        role: { name: "READ_ONLY" },
+        spaces: [{ space_id: "U3BhY2UxMjM", role: { name: "MEMBER" } }],
+      },
+    ],
+  },
 };
 
 export const mockRawCreatedServiceApiKey: components["schemas"]["CreatedServiceApiKey"] =
@@ -43,3 +69,15 @@ export const mockRawCreatedServiceApiKey: components["schemas"]["CreatedServiceA
       ],
     },
   };
+
+export const mockRawRefreshedServiceApiKey: RawRefreshApiKey = {
+  id: "key-id-456",
+  name: "bot-key",
+  key_type: "SERVICE",
+  status: "ACTIVE",
+  redacted_key: "ak-new...def",
+  created_at: "2026-01-01T00:00:00.000Z",
+  expires_at: "2027-01-01T00:00:00.000Z",
+  created_by_user_id: "user-123",
+  key: "ak-refreshed-secret",
+};

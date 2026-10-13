@@ -739,7 +739,17 @@ export interface paths {
          *     that space. When `key_type` is omitted alongside `space_id`, service keys are returned
          *     implicitly. Requires the `SERVICE_KEY_READ` permission in the space (or account/space admin).
          *     Optionally combine with `user_id` to filter service keys by their creator — available to any
-         *     caller with space access (not admin-gated).
+         *     caller with space access (not admin-gated). Each service key entry includes `bot_user`,
+         *     with the same fields as the bot user returned by `POST /v2/api-keys` — use `bot_user.id`
+         *     as the `user_id` when creating a role binding for the key. Unlike the create response,
+         *     `bot_user.organizations` may be empty in a list response:
+         *     - When `space_id` is set, `bot_user.organizations` is always empty, including for the
+         *       queried space. The bot user may hold bindings in spaces or organizations the caller
+         *       cannot read, so the space-scoped listing returns no bindings.
+         *     - When the bot user cannot be resolved (for example, it was deleted while the list ran),
+         *       `bot_user.name` is empty, `bot_user.organizations` is empty, and `bot_user.account_role`
+         *       is a `MEMBER` placeholder, not the bot user's real role. Do not make role decisions from
+         *       `account_role` when `name` is empty.
          *
          *     **User keys (`key_type=USER`):** Returned by default (no `space_id`). Provide `user_id` to
          *     view keys belonging to a specific user — account admins only; non-admins receive `403`.
@@ -1628,6 +1638,10 @@ export interface paths {
          * Delete evaluator
          * @description Deletes an evaluator and all its versions. This operation is irreversible.
          *
+         *     An evaluator that is still used by an online task returns `409`. The
+         *     error lists the tasks that use it. Remove the evaluator from these tasks,
+         *     or delete the tasks, then delete the evaluator.
+         *
          *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
         delete: operations["delete_evaluator"];
@@ -1916,6 +1930,11 @@ export interface paths {
          *     Deleting a version currently pinned to a running online task un-pins that
          *     task; it falls back to resolving the evaluator's latest version.
          *
+         *     A request that would delete every remaining version of an evaluator that
+         *     an online task still uses returns `409`, and no versions are deleted. The
+         *     error lists the tasks that use the evaluator. Keep at least one version,
+         *     or remove the evaluator from these tasks or delete the tasks first.
+         *
          *     **Payload Requirements**
          *     - `version_ids` must contain between 1 and 100 IDs. Duplicate IDs are accepted
          *       and silently collapsed so each version is processed at most once.
@@ -1935,6 +1954,8 @@ export interface paths {
          *       delete its versions.
          *     - `404` — `evaluator_id` does not exist or is not readable by the caller
          *       (`Evaluator not found`).
+         *     - `409` — the request would delete every remaining version of an
+         *       evaluator that an online task still uses.
          *     - `429` — rate limit exceeded.
          *
          *     **Valid example** — evaluator `RXZhbHVhdG9yOjEyOkI3cmk=` with a single
@@ -3386,8 +3407,8 @@ export interface paths {
          *     `limit` (or be empty) while `has_more` is still `true`. Clients MUST keep paging until
          *     `has_more` is `false` — do not stop on an empty page.
          *
-         *     The `resource_type` query parameter is optional. When omitted, restrictions of all
-         *     supported types are returned in one merged list.
+         *     Use the optional `resource_type` query param to filter to a single resource type.
+         *     When omitted, restrictions of all supported types are returned in one merged list.
          *
          *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
@@ -3876,7 +3897,30 @@ export interface paths {
          * List spans
          * @description Returns a paginated list of spans.
          *
-         *     The spans are sorted by their timestamp, with the most recent coming first.
+         *     Spans are ordered by `start_time` from newest to oldest. Trace and span
+         *     identifiers give spans with the same start time a stable order. Start and
+         *     end time bounds are inclusive.
+         *
+         *     Use the returned cursor with the same project, filter, column selection,
+         *     and time window. You can change the page limit. If the server rejects a
+         *     cursor after an endpoint update, restart the page walk without it.
+         *
+         *     Adjacent inclusive polling windows overlap at their boundary. Remove
+         *     duplicate trace and span identifier pairs. Use an overlap between polling
+         *     windows to include data that arrives late. Cursor pagination keeps one
+         *     time window fixed, but it is not a snapshot of changing data.
+         *
+         *     **Spans that arrive long after they started**
+         *
+         *     `start_time` is the time your application recorded for the span. Arize
+         *     also stores the time it received the span. This endpoint searches
+         *     received-time storage for a few hours on either side of the `start_time`
+         *     range you ask for, which is how the Arize UI reads the same data.
+         *
+         *     A span that reached Arize much later than it started can therefore fall
+         *     outside that search. Backfilled or replayed traces are the common case.
+         *     Widen `start_time` and `end_time` to cover when the data was sent, not
+         *     only when it was recorded, and those spans come back.
          *
          *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
@@ -4511,7 +4555,9 @@ export interface paths {
          *     only traces whose root span matches. The matching span is usually a child,
          *     not the root.
          *
-         *     Traces are returned newest-first.
+         *     Trace entries are ordered by root span `start_time` from newest to oldest.
+         *     Root trace and span identifiers give entries with the same start time a
+         *     stable order. Start and end time bounds are inclusive.
          *
          *     **Behaviors and limitations**
          *     - Traces are anchored on their root span (the span with no parent). A
@@ -4520,8 +4566,26 @@ export interface paths {
          *       boundary-straddling trace that fall outside the range are not included.
          *     - A trace with more than one root span is returned as multiple entries
          *       sharing the same `trace_id`, distinguished by `root_span_id`.
-         *     - Each trace returns at most 1,000 spans. When a trace has more, its
-         *       `spans_truncated` flag is `true`.
+         *     - Each trace returns at most 1,000 spans. Traces share a fetch allowance
+         *       per page. When that allowance is exhausted, traces can be incomplete
+         *       even when `spans_truncated` is `false`.
+         *
+         *     Use the returned cursor with the same project, filter, and time window.
+         *     You can change the page limit. If the server rejects a cursor after an
+         *     endpoint update, restart the page walk without it. Cursor pagination keeps
+         *     one time window fixed, but it is not a snapshot of changing data.
+         *
+         *     **Traces that arrive long after they started**
+         *
+         *     `start_time` is the time your application recorded for the span. Arize
+         *     also stores the time it received the span. This endpoint searches
+         *     received-time storage for a few hours on either side of the `start_time`
+         *     range you ask for, which is how the Arize UI reads the same data.
+         *
+         *     A trace that reached Arize much later than it started can therefore fall
+         *     outside that search. Backfilled or replayed traces are the common case.
+         *     Widen `start_time` and `end_time` to cover when the data was sent, not
+         *     only when it was recorded, and those traces come back.
          *
          *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
@@ -4582,7 +4646,8 @@ export interface paths {
          *     - `role` — required, one of `ADMIN`, `MEMBER`, `ANNOTATOR`; sets the account-level role
          *     - `invite_mode` — required, one of `NONE`, `EMAIL_LINK`, `TEMPORARY_PASSWORD`
          *
-         *     Requires account admin role or USER_CREATE permission.
+         *     Requires account admin or member role. Admins can assign any role;
+         *     members can only assign `MEMBER` or `ANNOTATOR`.
          *
          *     <Note>This endpoint is in beta, read more [here](https://arize.com/docs/ax/rest-reference#api-version-stages).</Note>
          */
@@ -5555,35 +5620,13 @@ export interface components {
             /** @description Free-form text note for the annotation. Omit to leave unchanged. */
             text?: string;
         };
-        ApiKey: {
-            /** @description Unique identifier for the API key. */
-            id: string;
-            /** @description User-defined name for the API key. */
-            name: string;
-            /** @description Optional user-defined description for the API key. */
-            description?: string;
-            key_type: components["schemas"]["ApiKeyType"];
-            status: components["schemas"]["ApiKeyStatus"];
-            /** @description Redacted version of the key suitable for display (e.g., "ak-abc...xyz"). */
-            redacted_key: string;
-            /**
-             * Format: date-time
-             * @description Timestamp when the key was created.
-             */
-            created_at: string;
-            /**
-             * Format: date-time
-             * @description Optional timestamp when the key will expire.
-             */
-            expires_at?: string;
-            /** @description ID of the user who created the key. */
-            created_by_user_id: string;
-            /**
-             * Format: date-time
-             * @description Approximate timestamp when the key was last used for authentication. This value is periodically updated and may not reflect the most recent usage.
-             */
-            last_used_at?: string;
-        };
+        /**
+         * @description An API key as returned by `GET /v2/api-keys`. The `key_type` field discriminates the variant:
+         *     - `USER` — standard user key; no bot user.
+         *     - `SERVICE` — service key tied to a service account; includes a `bot_user` with the
+         *       service account's resolved role assignments.
+         */
+        ApiKey: components["schemas"]["UserApiKey"] | components["schemas"]["ServiceApiKey"];
         /**
          * @description Current status of the API key.
          *     - ACTIVE - The key is valid for use.
@@ -5649,7 +5692,7 @@ export interface components {
              *     Support will be added in a future release.
              *     Defaults to `{ type: PREDEFINED, name: MEMBER }` when omitted.
              *     Must be at or below the caller's own account role.
-             *     The `ANNOTATOR` role is not valid for service keys and returns `422`.
+             *     The `MEMBER_UI_ONLY` and `ANNOTATOR` roles are not valid for service keys and return `400`.
              * @default {
              *       "type": "PREDEFINED",
              *       "name": "MEMBER"
@@ -5686,19 +5729,17 @@ export interface components {
              */
             expires_at?: string;
         };
-        CreatedServiceApiKey: components["schemas"]["ApiKey"] & {
-            /**
-             * @description Discriminator value for service keys.
-             * @enum {string}
-             */
-            key_type?: "SERVICE";
+        CreatedServiceApiKey: components["schemas"]["ServiceApiKey"] & {
             /**
              * @description The full API key value. **Only returned once** at creation or refresh time.
              *     Store it securely — it cannot be retrieved again.
              */
             key: string;
-            /** @description The bot user created for this service key, including their resolved role assignments. */
-            bot_user: components["schemas"]["ServiceKeyBotUser"];
+            /**
+             * @description The bot user created for this service key, including its resolved role
+             *     assignments. Creating a service key always assigns at least one organization.
+             */
+            bot_user: components["schemas"]["CreatedServiceKeyBotUser"];
         } & {
             /**
              * @description discriminator enum property added by openapi-typescript
@@ -5706,12 +5747,21 @@ export interface components {
              */
             key_type: "SERVICE";
         };
-        CreatedUserApiKey: components["schemas"]["ApiKey"] & {
+        CreatedServiceKeyBotUser: {
+            /** @description Global ID of the bot user. */
+            id: string;
+            /** @description Display name of the bot user. */
+            name: string;
+            /** @description Account-level role assigned to the bot user. Always present — defaults are resolved server-side. */
+            account_role: Omit<components["schemas"]["UserRoleAssignment"], "type">;
             /**
-             * @description Discriminator value for user keys.
-             * @enum {string}
+             * @description Organization access assignments for the service account, each containing nested
+             *     space assignments. Always has at least one entry — creating a service key requires
+             *     at least one organization.
              */
-            key_type?: "USER";
+            organizations: components["schemas"]["ServiceKeyBotUserOrgAssignment"][];
+        };
+        CreatedUserApiKey: components["schemas"]["UserApiKey"] & {
             /**
              * @description The full API key value. **Only returned once** at creation or refresh time.
              *     Store it securely — it cannot be retrieved again.
@@ -5761,21 +5811,97 @@ export interface components {
          *     refresh does **not** return `bot_user` details — refresh never creates a new service
          *     account and the existing bot user's bindings are unchanged.
          */
-        RefreshApiKeyResponse: components["schemas"]["ApiKey"] & {
+        RefreshApiKeyResponse: {
+            /** @description Unique identifier for the API key. */
+            id: string;
+            /** @description User-defined name for the API key. */
+            name: string;
+            /** @description Optional user-defined description for the API key. */
+            description?: string;
+            key_type: components["schemas"]["ApiKeyType"];
+            status: components["schemas"]["ApiKeyStatus"];
+            /** @description Redacted version of the key suitable for display (e.g., "ak-abc...xyz"). */
+            redacted_key: string;
+            /**
+             * Format: date-time
+             * @description Timestamp when the key was created.
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description Optional timestamp when the key will expire.
+             */
+            expires_at?: string;
+            /** @description ID of the user who created the key. */
+            created_by_user_id: string;
+            /**
+             * Format: date-time
+             * @description Approximate timestamp when the key was last used for authentication. This value is periodically updated and may not reflect the most recent usage.
+             */
+            last_used_at?: string;
             /**
              * @description The full replacement API key value. **Only returned once** during
              *     refresh. Store it securely — it cannot be retrieved again.
              */
             key: string;
         };
+        ServiceApiKey: {
+            /** @description Unique identifier for the API key. */
+            id: string;
+            /** @description User-defined name for the API key. */
+            name: string;
+            /** @description Optional user-defined description for the API key. */
+            description?: string;
+            /**
+             * @description Discriminator value for service keys. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            key_type: "SERVICE";
+            status: components["schemas"]["ApiKeyStatus"];
+            /** @description Redacted version of the key suitable for display (e.g., "ak-abc...xyz"). */
+            redacted_key: string;
+            /**
+             * Format: date-time
+             * @description Timestamp when the key was created.
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description Optional timestamp when the key will expire.
+             */
+            expires_at?: string;
+            /** @description ID of the user who created the key. */
+            created_by_user_id: string;
+            /**
+             * Format: date-time
+             * @description Approximate timestamp when the key was last used for authentication. This value is periodically updated and may not reflect the most recent usage.
+             */
+            last_used_at?: string;
+            /**
+             * @description The bot user backing this service key, including its resolved role assignments.
+             *     Use `bot_user.id` as the `user_id` when creating a role binding for this key.
+             */
+            bot_user: components["schemas"]["ServiceKeyBotUser"];
+        };
         ServiceKeyBotUser: {
             /** @description Global ID of the bot user. */
             id: string;
             /** @description Display name of the bot user. */
             name: string;
-            /** @description Account-level role assigned to the bot user. Always present — defaults are resolved server-side. */
+            /**
+             * @description Account-level role assigned to the bot user. Always present — defaults are resolved
+             *     server-side. In a list response (`GET /v2/api-keys`) for a bot user that could not be
+             *     resolved, this is a `MEMBER` placeholder and `name` is empty.
+             */
             account_role: Omit<components["schemas"]["UserRoleAssignment"], "type">;
-            /** @description Organization access assignments for the service account, each containing nested space assignments. */
+            /**
+             * @description Organization access assignments for the service account, each containing nested
+             *     space assignments. Always empty in a list response (`GET /v2/api-keys`) filtered by
+             *     `space_id`. Also empty in a list response for a bot user whose bindings could not be
+             *     resolved (e.g. a stale or otherwise unrecoverable bot user). `CreatedServiceKeyBotUser` (used in the `POST /v2/api-keys` response)
+             *     tightens this to at least one entry, since creating a service key always requires
+             *     an organization.
+             */
             organizations: components["schemas"]["ServiceKeyBotUserOrgAssignment"][];
         };
         ServiceKeyBotUserOrgAssignment: {
@@ -5850,6 +5976,39 @@ export interface components {
              *     }
              */
             role?: Omit<components["schemas"]["SpaceRoleAssignmentRequest"], "type">;
+        };
+        UserApiKey: {
+            /** @description Unique identifier for the API key. */
+            id: string;
+            /** @description User-defined name for the API key. */
+            name: string;
+            /** @description Optional user-defined description for the API key. */
+            description?: string;
+            /**
+             * @description Discriminator value for user keys. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            key_type: "USER";
+            status: components["schemas"]["ApiKeyStatus"];
+            /** @description Redacted version of the key suitable for display (e.g., "ak-abc...xyz"). */
+            redacted_key: string;
+            /**
+             * Format: date-time
+             * @description Timestamp when the key was created.
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description Optional timestamp when the key will expire.
+             */
+            expires_at?: string;
+            /** @description ID of the user who created the key. */
+            created_by_user_id: string;
+            /**
+             * Format: date-time
+             * @description Approximate timestamp when the key was last used for authentication. This value is periodically updated and may not reflect the most recent usage.
+             */
+            last_used_at?: string;
         };
         /** @description A single audit log entry recording an authenticated user action. */
         AuditLog: {
@@ -7703,7 +7862,7 @@ export interface components {
          *     Auto-generated from proto/auth/protocol/permissions.proto.
          * @enum {string}
          */
-        Permission: "AGENT_ROLE_CREATE" | "AGENT_ROLE_DELETE" | "AGENT_ROLE_READ" | "AGENT_ROLE_UPDATE" | "AI_PROVIDER_READ" | "ALYX_RUN" | "ANNOTATION_CONFIG_CREATE" | "ANNOTATION_CONFIG_DELETE" | "ANNOTATION_CONFIG_READ" | "ANNOTATION_CONFIG_UPDATE" | "COST_CONFIG_CREATE" | "COST_CONFIG_DELETE" | "COST_CONFIG_READ" | "COST_CONFIG_UPDATE" | "CUSTOM_METRIC_CREATE" | "CUSTOM_METRIC_DELETE" | "CUSTOM_METRIC_READ" | "CUSTOM_METRIC_UPDATE" | "DASHBOARD_CREATE" | "DASHBOARD_DELETE" | "DASHBOARD_READ" | "DASHBOARD_RESTRICT" | "DASHBOARD_UPDATE" | "DATASET_CREATE" | "DATASET_DELETE" | "DATASET_EXAMPLE_ANNOTATE" | "DATASET_EXAMPLE_CREATE" | "DATASET_EXAMPLE_DELETE" | "DATASET_EXAMPLE_READ" | "DATASET_EXAMPLE_UPDATE" | "DATASET_READ" | "DATASET_UPDATE" | "DATASET_VIEW_CREATE" | "DATASET_VIEW_DELETE" | "DATASET_VIEW_READ" | "DATASET_VIEW_UPDATE" | "DATA_FABRIC_CONNECTOR_CREATE" | "DATA_FABRIC_CONNECTOR_DELETE" | "DATA_FABRIC_CONNECTOR_READ" | "DATA_FABRIC_CONNECTOR_UPDATE" | "EVALUATOR_CREATE" | "EVALUATOR_DELETE" | "EVALUATOR_READ" | "EVALUATOR_UPDATE" | "EXPERIMENT_CREATE" | "EXPERIMENT_DELETE" | "EXPERIMENT_EVAL_TASK_CREATE" | "EXPERIMENT_EVAL_TASK_DELETE" | "EXPERIMENT_EVAL_TASK_READ" | "EXPERIMENT_EVAL_TASK_UPDATE" | "EXPERIMENT_READ" | "EXPERIMENT_RUN_ANNOTATE" | "EXPERIMENT_RUN_READ" | "EXPERIMENT_UPDATE" | "FILE_IMPORT_CREATE" | "FILE_IMPORT_DELETE" | "FILE_IMPORT_READ" | "FILE_IMPORT_UPDATE" | "LLM_INTEGRATION_CREATE" | "LLM_INTEGRATION_DELETE" | "LLM_INTEGRATION_UPDATE" | "MANAGED_AGENT_CREATE" | "MANAGED_AGENT_DELETE" | "MANAGED_AGENT_READ" | "MANAGED_AGENT_UPDATE" | "ML_MODEL_CREATE" | "ML_MODEL_DELETE" | "ML_MODEL_READ" | "ML_MODEL_UPDATE" | "MONITOR_CREATE" | "MONITOR_DELETE" | "MONITOR_READ" | "MONITOR_TRIGGER" | "MONITOR_UPDATE" | "ORGANIZATION_CREATE" | "ORGANIZATION_DELETE" | "ORGANIZATION_READ" | "ORGANIZATION_UPDATE" | "PLAYGROUND_RUN" | "PLAYGROUND_VIEW_CREATE" | "PLAYGROUND_VIEW_DELETE" | "PLAYGROUND_VIEW_READ" | "PLAYGROUND_VIEW_UPDATE" | "PROJECT_CREATE" | "PROJECT_DELETE" | "PROJECT_EVAL_TASK_CREATE" | "PROJECT_EVAL_TASK_DELETE" | "PROJECT_EVAL_TASK_READ" | "PROJECT_EVAL_TASK_UPDATE" | "PROJECT_READ" | "PROJECT_RESTRICT" | "PROJECT_SPAN_ANNOTATE" | "PROJECT_SPAN_CREATE" | "PROJECT_SPAN_DELETE" | "PROJECT_SPAN_READ" | "PROJECT_SPAN_UPDATE" | "PROJECT_UPDATE" | "PROMPT_CREATE" | "PROMPT_DELETE" | "PROMPT_OPTIMIZE_TASK_CREATE" | "PROMPT_OPTIMIZE_TASK_DELETE" | "PROMPT_OPTIMIZE_TASK_READ" | "PROMPT_OPTIMIZE_TASK_UPDATE" | "PROMPT_READ" | "PROMPT_UPDATE" | "QUEUE_CREATE" | "QUEUE_DELETE" | "QUEUE_READ" | "QUEUE_RECORD_ANNOTATE" | "QUEUE_RECORD_CREATE" | "QUEUE_RECORD_DELETE" | "QUEUE_RECORD_READ" | "QUEUE_RECORD_UPDATE" | "QUEUE_UPDATE" | "REMOTE_ENDPOINT_INTEGRATION_CREATE" | "REMOTE_ENDPOINT_INTEGRATION_DELETE" | "REMOTE_ENDPOINT_INTEGRATION_READ" | "REMOTE_ENDPOINT_INTEGRATION_UPDATE" | "ROLE_BINDING_CREATE" | "ROLE_BINDING_DELETE" | "ROLE_BINDING_READ" | "ROLE_CREATE" | "ROLE_DELETE" | "ROLE_READ" | "ROLE_UPDATE" | "SERVICE_KEY_CREATE" | "SERVICE_KEY_READ" | "SERVICE_KEY_REVOKE" | "SPACE_CREATE" | "SPACE_DELETE" | "SPACE_READ" | "SPACE_UPDATE" | "TAG_CREATE" | "TAG_DELETE" | "TAG_READ" | "TAG_UPDATE" | "TRACE_VIEW_CREATE" | "TRACE_VIEW_DELETE" | "TRACE_VIEW_READ" | "TRACE_VIEW_UPDATE" | "USER_CREATE" | "USER_DELETE" | "USER_PERMISSION_UPDATE" | "USER_READ" | "USER_UPDATE";
+        Permission: "AGENT_ROLE_CREATE" | "AGENT_ROLE_DELETE" | "AGENT_ROLE_READ" | "AGENT_ROLE_UPDATE" | "AI_PROVIDER_READ" | "ALYX_RUN" | "ANNOTATION_CONFIG_CREATE" | "ANNOTATION_CONFIG_DELETE" | "ANNOTATION_CONFIG_READ" | "ANNOTATION_CONFIG_UPDATE" | "COST_CONFIG_CREATE" | "COST_CONFIG_DELETE" | "COST_CONFIG_READ" | "COST_CONFIG_UPDATE" | "CUSTOM_METRIC_CREATE" | "CUSTOM_METRIC_DELETE" | "CUSTOM_METRIC_READ" | "CUSTOM_METRIC_UPDATE" | "DASHBOARD_CREATE" | "DASHBOARD_DELETE" | "DASHBOARD_READ" | "DASHBOARD_RESTRICT" | "DASHBOARD_TEMPLATE_CREATE" | "DASHBOARD_TEMPLATE_DELETE" | "DASHBOARD_TEMPLATE_READ" | "DASHBOARD_TEMPLATE_UPDATE" | "DASHBOARD_UPDATE" | "DATASET_CREATE" | "DATASET_DELETE" | "DATASET_EXAMPLE_ANNOTATE" | "DATASET_EXAMPLE_CREATE" | "DATASET_EXAMPLE_DELETE" | "DATASET_EXAMPLE_READ" | "DATASET_EXAMPLE_UPDATE" | "DATASET_READ" | "DATASET_UPDATE" | "DATASET_VIEW_CREATE" | "DATASET_VIEW_DELETE" | "DATASET_VIEW_READ" | "DATASET_VIEW_UPDATE" | "DATA_FABRIC_CONNECTOR_CREATE" | "DATA_FABRIC_CONNECTOR_DELETE" | "DATA_FABRIC_CONNECTOR_READ" | "DATA_FABRIC_CONNECTOR_UPDATE" | "EVALUATOR_CREATE" | "EVALUATOR_DELETE" | "EVALUATOR_READ" | "EVALUATOR_UPDATE" | "EXPERIMENT_CREATE" | "EXPERIMENT_DELETE" | "EXPERIMENT_EVAL_TASK_CREATE" | "EXPERIMENT_EVAL_TASK_DELETE" | "EXPERIMENT_EVAL_TASK_READ" | "EXPERIMENT_EVAL_TASK_UPDATE" | "EXPERIMENT_READ" | "EXPERIMENT_RUN_ANNOTATE" | "EXPERIMENT_RUN_READ" | "EXPERIMENT_UPDATE" | "FILE_IMPORT_CREATE" | "FILE_IMPORT_DELETE" | "FILE_IMPORT_READ" | "FILE_IMPORT_UPDATE" | "LLM_INTEGRATION_CREATE" | "LLM_INTEGRATION_DELETE" | "LLM_INTEGRATION_UPDATE" | "MANAGED_AGENT_CREATE" | "MANAGED_AGENT_DELETE" | "MANAGED_AGENT_READ" | "MANAGED_AGENT_UPDATE" | "ML_MODEL_CREATE" | "ML_MODEL_DELETE" | "ML_MODEL_READ" | "ML_MODEL_UPDATE" | "MONITOR_CREATE" | "MONITOR_DELETE" | "MONITOR_READ" | "MONITOR_TRIGGER" | "MONITOR_UPDATE" | "ORGANIZATION_CREATE" | "ORGANIZATION_DELETE" | "ORGANIZATION_READ" | "ORGANIZATION_UPDATE" | "PLAYGROUND_RUN" | "PLAYGROUND_VIEW_CREATE" | "PLAYGROUND_VIEW_DELETE" | "PLAYGROUND_VIEW_READ" | "PLAYGROUND_VIEW_UPDATE" | "PROJECT_CREATE" | "PROJECT_DELETE" | "PROJECT_EVAL_TASK_CREATE" | "PROJECT_EVAL_TASK_DELETE" | "PROJECT_EVAL_TASK_READ" | "PROJECT_EVAL_TASK_UPDATE" | "PROJECT_READ" | "PROJECT_RESTRICT" | "PROJECT_SPAN_ANNOTATE" | "PROJECT_SPAN_CREATE" | "PROJECT_SPAN_DELETE" | "PROJECT_SPAN_READ" | "PROJECT_SPAN_UPDATE" | "PROJECT_UPDATE" | "PROMPT_CREATE" | "PROMPT_DELETE" | "PROMPT_OPTIMIZE_TASK_CREATE" | "PROMPT_OPTIMIZE_TASK_DELETE" | "PROMPT_OPTIMIZE_TASK_READ" | "PROMPT_OPTIMIZE_TASK_UPDATE" | "PROMPT_READ" | "PROMPT_RESTRICT" | "PROMPT_UPDATE" | "QUEUE_CREATE" | "QUEUE_DELETE" | "QUEUE_READ" | "QUEUE_RECORD_ANNOTATE" | "QUEUE_RECORD_CREATE" | "QUEUE_RECORD_DELETE" | "QUEUE_RECORD_READ" | "QUEUE_RECORD_UPDATE" | "QUEUE_UPDATE" | "REMOTE_ENDPOINT_INTEGRATION_CREATE" | "REMOTE_ENDPOINT_INTEGRATION_DELETE" | "REMOTE_ENDPOINT_INTEGRATION_READ" | "REMOTE_ENDPOINT_INTEGRATION_UPDATE" | "ROLE_BINDING_CREATE" | "ROLE_BINDING_DELETE" | "ROLE_BINDING_READ" | "ROLE_CREATE" | "ROLE_DELETE" | "ROLE_READ" | "ROLE_UPDATE" | "SERVICE_KEY_CREATE" | "SERVICE_KEY_READ" | "SERVICE_KEY_REVOKE" | "SPACE_CREATE" | "SPACE_DELETE" | "SPACE_READ" | "SPACE_UPDATE" | "TAG_CREATE" | "TAG_DELETE" | "TAG_READ" | "TAG_UPDATE" | "TRACE_VIEW_CREATE" | "TRACE_VIEW_DELETE" | "TRACE_VIEW_READ" | "TRACE_VIEW_UPDATE" | "USER_CREATE" | "USER_DELETE" | "USER_PERMISSION_UPDATE" | "USER_READ" | "USER_UPDATE";
         /**
          * @description A project represents an LLM application and serves as the primary container for observability data. Each project collects traces and spans that capture the execution flow of your application, enabling you to debug issues, monitor latency, and analyze token usage.
          *     Projects belong to a space and provide a centralized view of your application's performance. Use projects to organize related traces, run experiments against datasets, and track improvements over time.
@@ -8161,10 +8320,11 @@ export interface components {
          * @description Type of the restricted resource.
          *     - PROJECT - A project within a space.
          *     - DASHBOARD - A dashboard within a space.
+         *     - PROMPT - A prompt within a space.
          * @example PROJECT
          * @enum {string}
          */
-        ResourceRestrictionType: "PROJECT" | "DASHBOARD";
+        ResourceRestrictionType: "PROJECT" | "DASHBOARD" | "PROMPT";
         CreateRoleBindingRequest: {
             role_id: components["schemas"]["Id"];
             /**
@@ -8381,7 +8541,7 @@ export interface components {
             start_time?: string;
             /**
              * Format: date-time
-             * @description Filter to spans starting before this timestamp (exclusive).
+             * @description Filter to spans starting at or before this timestamp (inclusive).
              *     ISO 8601 format (e.g., `2024-01-02T00:00:00Z`). Defaults to the current time.
              */
             end_time?: string;
@@ -8421,6 +8581,17 @@ export interface components {
              *     returned `attributes` object.
              */
             excluded_columns?: string[];
+            /**
+             * @description When set, every string value inside each returned span's `attributes` object,
+             *     including strings nested at any depth in objects and arrays, is shortened to
+             *     at most this many characters (Unicode code points). Strings longer than the
+             *     limit are cut and end with a single ellipsis character `…` which counts toward
+             *     the limit; strings at or under the limit are unchanged. Only `attributes` string
+             *     values are affected; span IDs, names, kinds, status, timestamps, annotations,
+             *     evaluations, events and pagination are never truncated. Omitted means no truncation.
+             *     Must be a positive integer; 0 or negative returns 422.
+             */
+            truncate_string_length?: number;
         };
         /**
          * @description A Span represents a single unit of work within a distributed trace for an LLM application.
@@ -8635,6 +8806,18 @@ export interface components {
              *     is optional — `{{column}}` and `{{dataset.column}}` are equivalent, and
              *     responses (create, update, and read) always echo the normalized
              *     `{{column}}` form.
+             *     Write every placeholder as a JSON string. A string that is exactly one
+             *     placeholder (`"{{profile_id}}"`) is replaced by the row value cast to
+             *     the type the input schema declares for that field: numeric strings
+             *     become integers or numbers, `"true"`/`"false"` become booleans, JSON
+             *     text becomes an object or array, and non-string values become strings.
+             *     A placeholder embedded in other text (`"id-{{profile_id}}"`) is
+             *     interpolated as text.
+             *     A whole-value placeholder whose cell is null or whose column is missing
+             *     is sent as `null`. Fields the schema does not type are sent with the
+             *     dataset value's own type. If a value cannot be cast, that experiment
+             *     run fails with an error naming the column, the value, and the target
+             *     type; the other runs continue.
              */
             input_template: {
                 [key: string]: unknown;
@@ -8660,6 +8843,18 @@ export interface components {
              *     JSON object whose values conform to the agent integration's input
              *     schema. Mustache placeholders (`{{column}}`) are substituted with each
              *     dataset row's values before the request is sent.
+             *     Write every placeholder as a JSON string. A string that is exactly one
+             *     placeholder (`"{{profile_id}}"`) is replaced by the row value cast to
+             *     the type the input schema declares for that field: numeric strings
+             *     become integers or numbers, `"true"`/`"false"` become booleans, JSON
+             *     text becomes an object or array, and non-string values become strings.
+             *     A placeholder embedded in other text (`"id-{{profile_id}}"`) is
+             *     interpolated as text.
+             *     A whole-value placeholder whose cell is null or whose column is missing
+             *     is sent as `null`. Fields the schema does not type are sent with the
+             *     dataset value's own type. If a value cannot be cast, that experiment
+             *     run fails with an error naming the column, the value, and the target
+             *     type; the other runs continue.
              */
             input_template: {
                 [key: string]: unknown;
@@ -9169,7 +9364,7 @@ export interface components {
             start_time?: string;
             /**
              * Format: date-time
-             * @description Return traces whose spans start before this timestamp (exclusive).
+             * @description Return traces whose spans start at or before this timestamp (inclusive).
              *     ISO 8601 format (e.g., `2024-01-02T00:00:00Z`). Defaults to the current time.
              */
             end_time?: string;
@@ -9184,9 +9379,19 @@ export interface components {
             filter?: string;
         };
         ListTracesResponse: {
-            /** @description A list of traces, ordered newest-first. */
+            /**
+             * @description A list of root-based trace entries ordered by root span `start_time`
+             *     from newest to oldest. The root trace and span identifiers give entries
+             *     with the same start time a stable order.
+             */
             traces: components["schemas"]["Trace"][];
-            /** @description Pagination metadata for cursor-based navigation */
+            /**
+             * @description Pagination metadata for cursor-based navigation. A cursor keeps the
+             *     resolved time window fixed and applies only to root selection. It is
+             *     valid only for the same project, filter, and sort order. A page walk is
+             *     not a snapshot: data that arrives after the first request can affect
+             *     later pages.
+             */
             pagination: components["schemas"]["PaginationMetadata"];
         };
         /**
@@ -9216,15 +9421,12 @@ export interface components {
              */
             end_time?: string;
             /**
-             * @description `true` when this trace contained more spans than the per-trace limit and
-             *     its returned span list is incomplete. `false` otherwise.
-             *
-             *     Note: each page also has an overall cap on the total number of spans
-             *     returned across all of its traces. On pages that include unusually large
-             *     traces, an individual trace may return fewer spans than it actually has
-             *     even when `spans_truncated` is `false`. To retrieve a trace's spans in
-             *     full, narrow the time window or fetch them directly with
-             *     `POST /v2/spans` filtered to that `trace_id`.
+             * @description `true` when more than 1,000 spans were fetched for this trace and its
+             *     returned list was capped. Traces share a fetch allowance per page.
+             *     If that allowance is exhausted, a trace can be incomplete even when
+             *     this flag is `false`. Narrowing the time window can reduce this risk.
+             *     To retrieve a trace's spans in full, paginate through `POST /v2/spans`
+             *     filtered to that `trace_id` over a time window that covers the full trace.
              */
             spans_truncated: boolean;
             /**
@@ -9317,7 +9519,7 @@ export interface components {
          * @description Account-level role of the user. These are pre-defined roles in Arize.
          * @enum {string}
          */
-        UserRole: "ADMIN" | "MEMBER" | "ANNOTATOR";
+        UserRole: "ADMIN" | "MEMBER" | "MEMBER_UI_ONLY" | "ANNOTATOR";
         /**
          * @description Current status of the user in the account.
          *     - `ACTIVE`: User has verified their email and can access the platform.
@@ -9931,103 +10133,6 @@ export interface components {
         };
         /** @enum {string} */
         UserRoleAssignmentType: "PREDEFINED" | "CUSTOM";
-        /** @description A predefined account-level role assignment in a write request (strict form of PredefinedUserRoleAssignment). */
-        PredefinedUserRoleAssignmentRequest: {
-            /**
-             * @description Discriminator identifying this as a predefined role assignment. Must be `PREDEFINED`. (enum property replaced by openapi-typescript)
-             * @enum {string}
-             */
-            type: "PREDEFINED";
-            name: components["schemas"]["UserRole"];
-        };
-        /** @description A custom RBAC role assignment in a write request (strict form of CustomUserRoleAssignment). */
-        CustomUserRoleAssignmentRequest: {
-            /**
-             * @description Discriminator identifying this as a custom role assignment. Must be `CUSTOM`. (enum property replaced by openapi-typescript)
-             * @enum {string}
-             */
-            type: "CUSTOM";
-            /** @description The unique identifier of the custom RBAC role. */
-            id: components["schemas"]["Id"];
-        };
-        /**
-         * @description Strict request form of UserRoleAssignment. Used in write request bodies.
-         *     - `PREDEFINED`: `{ "type": "PREDEFINED", "name": "ADMIN" | "MEMBER" | "ANNOTATOR" }`
-         *     - `CUSTOM`: `{ "type": "CUSTOM", "id": "<encoded-role-id>" }`
-         */
-        UserRoleAssignmentRequest: components["schemas"]["PredefinedUserRoleAssignmentRequest"] | components["schemas"]["CustomUserRoleAssignmentRequest"];
-        /** @enum {string} */
-        OrganizationRoleAssignmentType: "PREDEFINED" | "CUSTOM";
-        /**
-         * @description Organization-level role for the user.
-         *     - `ADMIN`: Full access to the organization and its resources.
-         *     - `MEMBER`: Standard access to the organization.
-         *     - `READ_ONLY`: Read-only access to the organization.
-         *     - `ANNOTATOR`: Limited access for annotation tasks only.
-         * @enum {string}
-         */
-        OrganizationRole: "ADMIN" | "MEMBER" | "READ_ONLY" | "ANNOTATOR";
-        /** @description A predefined organization role assignment in a write request (strict form of OrganizationPredefinedRoleAssignment). */
-        OrganizationPredefinedRoleAssignmentRequest: {
-            /**
-             * @description Discriminator identifying this as a predefined role assignment. Always `PREDEFINED` for this variant. (enum property replaced by openapi-typescript)
-             * @enum {string}
-             */
-            type: "PREDEFINED";
-            name: components["schemas"]["OrganizationRole"];
-        };
-        /** @description A custom RBAC role assignment in a write request (strict form of OrganizationCustomRoleAssignment). */
-        OrganizationCustomRoleAssignmentRequest: {
-            /**
-             * @description Discriminator identifying this as a custom RBAC role assignment. Always `CUSTOM` for this variant. (enum property replaced by openapi-typescript)
-             * @enum {string}
-             */
-            type: "CUSTOM";
-            /** @description The unique identifier of the custom RBAC role. */
-            id: components["schemas"]["Id"];
-        };
-        /**
-         * @description Strict request form of OrganizationRoleAssignment. Used in write request bodies.
-         *     - `PREDEFINED`: `{ "type": "PREDEFINED", "name": "ADMIN" | "MEMBER" | "READ_ONLY" | "ANNOTATOR" }`
-         *     - `CUSTOM`: `{ "type": "CUSTOM", "id": "<encoded-role-id>" }`
-         */
-        OrganizationRoleAssignmentRequest: components["schemas"]["OrganizationPredefinedRoleAssignmentRequest"] | components["schemas"]["OrganizationCustomRoleAssignmentRequest"];
-        /** @enum {string} */
-        SpaceRoleAssignmentType: "PREDEFINED" | "CUSTOM";
-        /**
-         * @description Space-level role for the user.
-         *     - `ADMIN`: Full access to the space and its resources.
-         *     - `MEMBER`: Standard access to the space.
-         *     - `READ_ONLY`: Read-only access to the space.
-         *     - `ANNOTATOR`: Limited access for annotation tasks only.
-         * @enum {string}
-         */
-        UserSpaceRole: "ADMIN" | "MEMBER" | "READ_ONLY" | "ANNOTATOR";
-        /** @description A predefined space role assignment in a write request (strict form of PredefinedRoleAssignment). */
-        PredefinedRoleAssignmentRequest: {
-            /**
-             * @description Discriminator identifying this as a predefined role assignment. Must be `PREDEFINED`. (enum property replaced by openapi-typescript)
-             * @enum {string}
-             */
-            type: "PREDEFINED";
-            name: components["schemas"]["UserSpaceRole"];
-        };
-        /** @description A custom RBAC role assignment in a write request (strict form of CustomRoleAssignment). */
-        CustomRoleAssignmentRequest: {
-            /**
-             * @description Discriminator identifying this as a custom RBAC role assignment. Must be `CUSTOM`. (enum property replaced by openapi-typescript)
-             * @enum {string}
-             */
-            type: "CUSTOM";
-            /** @description The unique identifier of the custom RBAC role. */
-            id: components["schemas"]["Id"];
-        };
-        /**
-         * @description Strict request form of SpaceRoleAssignment. Used in write request bodies.
-         *     - `PREDEFINED`: `{ "type": "PREDEFINED", "name": "ADMIN" | "MEMBER" | "READ_ONLY" | "ANNOTATOR" }`
-         *     - `CUSTOM`: `{ "type": "CUSTOM", "id": "<encoded-role-id>" }`
-         */
-        SpaceRoleAssignmentRequest: components["schemas"]["PredefinedRoleAssignmentRequest"] | components["schemas"]["CustomRoleAssignmentRequest"];
         /** @description A predefined account-level role assignment. */
         PredefinedUserRoleAssignment: {
             /**
@@ -10060,6 +10165,17 @@ export interface components {
          *     Note: `CUSTOM` role assignments are not yet supported and are reserved for future use.
          */
         UserRoleAssignment: components["schemas"]["PredefinedUserRoleAssignment"] | components["schemas"]["CustomUserRoleAssignment"];
+        /** @enum {string} */
+        OrganizationRoleAssignmentType: "PREDEFINED" | "CUSTOM";
+        /**
+         * @description Organization-level role for the user.
+         *     - `ADMIN`: Full access to the organization and its resources.
+         *     - `MEMBER`: Standard access to the organization.
+         *     - `READ_ONLY`: Read-only access to the organization.
+         *     - `ANNOTATOR`: Limited access for annotation tasks only.
+         * @enum {string}
+         */
+        OrganizationRole: "ADMIN" | "MEMBER" | "READ_ONLY" | "ANNOTATOR";
         /** @description A predefined organization role assignment. */
         OrganizationPredefinedRoleAssignment: {
             /**
@@ -10090,6 +10206,17 @@ export interface components {
          *     - `CUSTOM`: a custom RBAC role identified by its ID
          */
         OrganizationRoleAssignment: components["schemas"]["OrganizationPredefinedRoleAssignment"] | components["schemas"]["OrganizationCustomRoleAssignment"];
+        /** @enum {string} */
+        SpaceRoleAssignmentType: "PREDEFINED" | "CUSTOM";
+        /**
+         * @description Space-level role for the user.
+         *     - `ADMIN`: Full access to the space and its resources.
+         *     - `MEMBER`: Standard access to the space.
+         *     - `READ_ONLY`: Read-only access to the space.
+         *     - `ANNOTATOR`: Limited access for annotation tasks only.
+         * @enum {string}
+         */
+        UserSpaceRole: "ADMIN" | "MEMBER" | "READ_ONLY" | "ANNOTATOR";
         /** @description A predefined space role assignment. */
         PredefinedRoleAssignment: {
             /**
@@ -10122,6 +10249,81 @@ export interface components {
          *     Used wherever a space-level role assignment is required (memberships, service key bindings, etc.).
          */
         SpaceRoleAssignment: components["schemas"]["PredefinedRoleAssignment"] | components["schemas"]["CustomRoleAssignment"];
+        /** @description A predefined account-level role assignment in a write request (strict form of PredefinedUserRoleAssignment). */
+        PredefinedUserRoleAssignmentRequest: {
+            /**
+             * @description Discriminator identifying this as a predefined role assignment. Must be `PREDEFINED`. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "PREDEFINED";
+            name: components["schemas"]["UserRole"];
+        };
+        /** @description A custom RBAC role assignment in a write request (strict form of CustomUserRoleAssignment). */
+        CustomUserRoleAssignmentRequest: {
+            /**
+             * @description Discriminator identifying this as a custom role assignment. Must be `CUSTOM`. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "CUSTOM";
+            /** @description The unique identifier of the custom RBAC role. */
+            id: components["schemas"]["Id"];
+        };
+        /**
+         * @description Strict request form of UserRoleAssignment. Used in write request bodies.
+         *     - `PREDEFINED`: `{ "type": "PREDEFINED", "name": "ADMIN" | "MEMBER" | "ANNOTATOR" }`
+         *     - `CUSTOM`: `{ "type": "CUSTOM", "id": "<encoded-role-id>" }`
+         */
+        UserRoleAssignmentRequest: components["schemas"]["PredefinedUserRoleAssignmentRequest"] | components["schemas"]["CustomUserRoleAssignmentRequest"];
+        /** @description A predefined organization role assignment in a write request (strict form of OrganizationPredefinedRoleAssignment). */
+        OrganizationPredefinedRoleAssignmentRequest: {
+            /**
+             * @description Discriminator identifying this as a predefined role assignment. Always `PREDEFINED` for this variant. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "PREDEFINED";
+            name: components["schemas"]["OrganizationRole"];
+        };
+        /** @description A custom RBAC role assignment in a write request (strict form of OrganizationCustomRoleAssignment). */
+        OrganizationCustomRoleAssignmentRequest: {
+            /**
+             * @description Discriminator identifying this as a custom RBAC role assignment. Always `CUSTOM` for this variant. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "CUSTOM";
+            /** @description The unique identifier of the custom RBAC role. */
+            id: components["schemas"]["Id"];
+        };
+        /**
+         * @description Strict request form of OrganizationRoleAssignment. Used in write request bodies.
+         *     - `PREDEFINED`: `{ "type": "PREDEFINED", "name": "ADMIN" | "MEMBER" | "READ_ONLY" | "ANNOTATOR" }`
+         *     - `CUSTOM`: `{ "type": "CUSTOM", "id": "<encoded-role-id>" }`
+         */
+        OrganizationRoleAssignmentRequest: components["schemas"]["OrganizationPredefinedRoleAssignmentRequest"] | components["schemas"]["OrganizationCustomRoleAssignmentRequest"];
+        /** @description A predefined space role assignment in a write request (strict form of PredefinedRoleAssignment). */
+        PredefinedRoleAssignmentRequest: {
+            /**
+             * @description Discriminator identifying this as a predefined role assignment. Must be `PREDEFINED`. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "PREDEFINED";
+            name: components["schemas"]["UserSpaceRole"];
+        };
+        /** @description A custom RBAC role assignment in a write request (strict form of CustomRoleAssignment). */
+        CustomRoleAssignmentRequest: {
+            /**
+             * @description Discriminator identifying this as a custom RBAC role assignment. Must be `CUSTOM`. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "CUSTOM";
+            /** @description The unique identifier of the custom RBAC role. */
+            id: components["schemas"]["Id"];
+        };
+        /**
+         * @description Strict request form of SpaceRoleAssignment. Used in write request bodies.
+         *     - `PREDEFINED`: `{ "type": "PREDEFINED", "name": "ADMIN" | "MEMBER" | "READ_ONLY" | "ANNOTATOR" }`
+         *     - `CUSTOM`: `{ "type": "CUSTOM", "id": "<encoded-role-id>" }`
+         */
+        SpaceRoleAssignmentRequest: components["schemas"]["PredefinedRoleAssignmentRequest"] | components["schemas"]["CustomRoleAssignmentRequest"];
         ListDatasetsResponse: {
             /** @description A list of datasets */
             datasets: components["schemas"]["Dataset"][];
@@ -10836,11 +11038,20 @@ export interface components {
          * @description The kind of span (OpenInference span kind).
          * @enum {string}
          */
-        SpanKind: "LLM" | "CHAIN" | "RETRIEVER" | "EMBEDDING" | "AGENT" | "TOOL" | "RERANKER" | "GUARDRAIL" | "EVALUATOR" | "PROMPT" | "UNKNOWN";
+        SpanKind: "LLM" | "CHAIN" | "RETRIEVER" | "EMBEDDING" | "AGENT" | "TOOL" | "RERANKER" | "GUARDRAIL" | "EVALUATOR" | "PROMPT" | "DECISION" | "UNKNOWN";
         ListSpansResponse: {
-            /** @description A list of spans */
+            /**
+             * @description A list of spans ordered by `start_time` from newest to oldest. Spans
+             *     with the same start time use their trace and span identifiers for a
+             *     stable order.
+             */
             spans: components["schemas"]["Span"][];
-            /** @description Pagination metadata for cursor-based navigation */
+            /**
+             * @description Pagination metadata for cursor-based navigation. A cursor keeps the
+             *     resolved time window fixed. It is valid only for the same project,
+             *     filter, column selection, and sort order. A page walk is not a snapshot:
+             *     data that arrives after the first request can affect later pages.
+             */
             pagination: components["schemas"]["PaginationMetadata"];
         };
         /**
@@ -11645,7 +11856,33 @@ export interface components {
                  *           "redacted_key": "ak-aaa...bbb",
                  *           "created_by_user_id": "VXNlcjoxMDAxOm5OYkM=",
                  *           "created_at": "2024-01-10T08:00:00Z",
-                 *           "expires_at": "2025-01-10T08:00:00Z"
+                 *           "expires_at": "2025-01-10T08:00:00Z",
+                 *           "bot_user": {
+                 *             "id": "VXNlcjo5MDAxOm5OYkM=",
+                 *             "name": "My API Key 2 [bot]",
+                 *             "account_role": {
+                 *               "type": "PREDEFINED",
+                 *               "name": "MEMBER"
+                 *             },
+                 *             "organizations": [
+                 *               {
+                 *                 "org_id": "T3JnYW5pemF0aW9uOjEwMDE6eFl6Vw",
+                 *                 "role": {
+                 *                   "type": "PREDEFINED",
+                 *                   "name": "READ_ONLY"
+                 *                 },
+                 *                 "spaces": [
+                 *                   {
+                 *                     "space_id": "U3BhY2U6MjAwMTphQmNE",
+                 *                     "role": {
+                 *                       "type": "PREDEFINED",
+                 *                       "name": "MEMBER"
+                 *                     }
+                 *                   }
+                 *                 ]
+                 *               }
+                 *             ]
+                 *           }
                  *         }
                  *       ],
                  *       "pagination": {
@@ -14193,10 +14430,12 @@ export interface components {
          */
         OrgIdPathParam: components["schemas"]["Id"];
         /**
-         * @description Filter the results to a specific resource type.
-         *     When omitted, restrictions of all supported types are returned.
+         * @description Filter restrictions to a single resource type.
          *     - `PROJECT` — Return only restricted projects.
          *     - `DASHBOARD` — Return only restricted dashboards.
+         *     - `PROMPT` — Return only restricted prompts.
+         *
+         *     When not specified, restrictions of all supported types are returned in one merged list.
          * @example PROJECT
          */
         ResourceRestrictionTypeQueryParam: components["schemas"]["ResourceRestrictionType"];
@@ -16584,6 +16823,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -16758,6 +16998,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
             429: components["responses"]["RateLimitExceeded"];
         };
     };
@@ -18126,10 +18367,12 @@ export interface operations {
         parameters: {
             query?: {
                 /**
-                 * @description Filter the results to a specific resource type.
-                 *     When omitted, restrictions of all supported types are returned.
+                 * @description Filter restrictions to a single resource type.
                  *     - `PROJECT` — Return only restricted projects.
                  *     - `DASHBOARD` — Return only restricted dashboards.
+                 *     - `PROMPT` — Return only restricted prompts.
+                 *
+                 *     When not specified, restrictions of all supported types are returned in one merged list.
                  * @example PROJECT
                  */
                 resource_type?: components["parameters"]["ResourceRestrictionTypeQueryParam"];

@@ -36,6 +36,18 @@ export type ListSpansParams = WithClient<
      * always returned. Cannot be used with `includedColumns`.
      */
     excludedColumns?: string[];
+    /**
+     * When set, every string value inside each returned span's `attributes`
+     * object, including strings nested at any depth in objects and arrays, is
+     * shortened to at most this many Unicode code points. Strings longer than
+     * the limit are cut and end with a single ellipsis character `…`, which
+     * counts toward the limit; strings at or under the limit are unchanged.
+     * Only `attributes` string values are affected; span IDs, names, kinds,
+     * status, timestamps, annotations, evaluations, events, and pagination are
+     * never truncated. Omitted means no truncation. Must be a positive integer;
+     * `0` or a negative value is rejected by the server.
+     */
+    truncateStringLength?: number;
   }
 >;
 
@@ -50,6 +62,8 @@ export type ListSpansParams = WithClient<
  * @param filter - An optional filter expression using SQL-like syntax (e.g., `status_code = 'ERROR'`).
  * @param includedColumns - Optional full dotted column paths to return.
  * @param excludedColumns - Optional full dotted column paths to omit.
+ * @param truncateStringLength - Optional maximum length for string values in
+ *   each span's `attributes` (see {@link ListSpansParams.truncateStringLength}).
  * @param limit - An optional limit on the number of spans to return.
  * @param cursor - An optional cursor for pagination.
  * @returns A paginated list of {@link Span} objects.
@@ -63,7 +77,12 @@ export type ListSpansParams = WithClient<
  *
  * // By project name (requires space)
  * const spans = await listSpans({ project: "My Project", space: "my-space" });
- * console.log(spans);
+ *
+ * const truncated = await listSpans({
+ *   project: "your_project_id",
+ *   truncateStringLength: 200,
+ * });
+ * console.log(truncated);
  * ```
  */
 export async function listSpans(
@@ -79,6 +98,7 @@ export async function listSpans(
     filter,
     includedColumns,
     excludedColumns,
+    truncateStringLength,
     limit = DEFAULT_LIST_LIMIT,
     cursor,
   } = params;
@@ -102,6 +122,9 @@ export async function listSpans(
       }),
       ...(excludedColumns !== undefined && {
         excluded_columns: excludedColumns,
+      }),
+      ...(truncateStringLength !== undefined && {
+        truncate_string_length: truncateStringLength,
       }),
     },
   });

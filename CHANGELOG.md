@@ -1,5 +1,12 @@
 # @arizeai/ax-client
 
+## [1.31.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.30.1...arize-js-sdk/v1.31.0) (2026-10-13)
+
+
+### 🎁 New Features
+
+* adding preview truncation to list spans ([#89694](https://github.com/Arize-ai/arize/issues/89694)) ([71202f9](https://github.com/Arize-ai/arize/commit/71202f9163d0d1466cec70bb6d64bb8f23e47c85))
+
 ## [1.30.1](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.30.0...arize-js-sdk/v1.30.1) (2026-09-30)
 
 

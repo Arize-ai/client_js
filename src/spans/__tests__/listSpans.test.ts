@@ -27,6 +27,11 @@ describe("listSpans", () => {
       projection: { excludedColumns: ["attributes.embedding.vectors"] },
       body: { excluded_columns: ["attributes.embedding.vectors"] },
     },
+    {
+      name: "truncate string length",
+      projection: { truncateStringLength: 200 },
+      body: { truncate_string_length: 200 },
+    },
   ])("should send $name", async ({ projection, body }) => {
     const post = vi.fn().mockResolvedValue({
       data: {
@@ -52,5 +57,24 @@ describe("listSpans", () => {
         ...body,
       },
     });
+  });
+
+  it("should not send truncate_string_length when omitted", async () => {
+    const post = vi.fn().mockResolvedValue({
+      data: {
+        spans: [],
+        pagination: { has_more: false },
+      },
+    });
+    const client = { POST: post } as unknown as ArizeClient;
+
+    await listSpans({
+      client,
+      project: "UHJvamVjdDox",
+    });
+
+    expect(post.mock.calls[0]?.[1]?.body).not.toHaveProperty(
+      "truncate_string_length",
+    );
   });
 });

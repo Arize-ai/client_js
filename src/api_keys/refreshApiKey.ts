@@ -2,7 +2,7 @@ import { createClient } from "../client";
 import { ApiKeyRefreshed, WithClient } from "../types";
 import { warnPreRelease } from "../utils/warning";
 import { handleApiError } from "../errors";
-import { transformApiKey } from "./utils";
+import { transformRefreshedApiKey } from "./utils";
 import { RawRefreshApiKey } from "../types/internal";
 
 export type RefreshApiKeyParams = WithClient<{
@@ -61,6 +61,5 @@ export async function refreshApiKey({
   if (response.error) {
     return handleApiError(response);
   }
-  const { key, ...metadata } = response.data as unknown as RawRefreshApiKey;
-  return { ...transformApiKey(metadata), key };
+  return transformRefreshedApiKey(response.data as unknown as RawRefreshApiKey);
 }

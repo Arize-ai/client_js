@@ -974,12 +974,17 @@ const byName = await listSpans({ project: "My Project", space: "my-space" });
 
 Set `includedColumns` to return only selected columns. Set `excludedColumns`
 to omit selected columns, such as a large embedding vector. Do not set both.
-Fixed span fields are always returned.
+Fixed span fields are always returned. Set `truncateStringLength` to shorten
+long string values inside each span's `attributes` object. Strings longer
+than the limit are cut and end with `…`, which counts toward the limit. Span
+IDs, names, status, timestamps, annotations, evaluations, and events are not
+truncated.
 
 ```typescript
 const spans = await listSpans({
   project: "your_project_id",
   excludedColumns: ["attributes.embedding.vectors"],
+  truncateStringLength: 200,
 });
 ```
 
@@ -1589,6 +1594,12 @@ const { data: byUser } = await listApiKeys({
   spaceId: "U3BhY2U6MTIzNDU=",
   userId: "VXNlcjoxMjM0NQ==",
 });
+
+// Each service key entry carries the same botUser detail createApiKey returns —
+// use botUser.id as the userId when creating a role binding for the key.
+for (const key of serviceKeys) {
+  console.log(key.botUser?.id);
+}
 ```
 
 ## Revoking an API key

@@ -16,7 +16,7 @@ import { transformResourceRestriction } from "./utils";
 
 export type ListResourceRestrictionsParams = WithClient<
   PaginationParams & {
-    /** Optional filter. When omitted, restrictions of all supported types (PROJECT and DASHBOARD) are returned. */
+    /** Optional filter. When omitted, restrictions of all supported types (PROJECT, DASHBOARD, and PROMPT) are returned. */
     resourceType?: ResourceRestrictionResourceType;
   }
 >;
@@ -29,7 +29,7 @@ export type ListResourceRestrictionsParams = WithClient<
  *
  * @param client - An optional ArizeClient instance to use for the request.
  * @param resourceType - Optional filter. When omitted, restrictions of all supported
- *   types (PROJECT and DASHBOARD) are returned in one merged list.
+ *   types (PROJECT, DASHBOARD, and PROMPT) are returned in one merged list.
  * @param limit - An optional limit on the number of restrictions to return.
  * @param cursor - An optional cursor for pagination.
  * @returns A paginated list of {@link ResourceRestriction} objects.
