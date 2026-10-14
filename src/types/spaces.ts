@@ -2,6 +2,7 @@ import { components } from "../__generated__/api/v2";
 
 export type Space = {
   id: string;
+  organizationId?: string;
   name: string;
   description: string;
   isPrivate: boolean;

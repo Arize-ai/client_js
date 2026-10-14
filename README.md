@@ -1968,14 +1968,23 @@ for (const r of results) {
 
 The `@arizeai/ax-client` package allows you to create and manage spaces.
 
+Space responses from list, get, create, and update include `organizationId`,
+the ID of the parent organization, when the server supports this field.
+Older server versions may omit it.
+
 ## Listing spaces
 
 ```typescript
 import { listSpaces } from "@arizeai/ax-client";
 
-const spaces = await listSpaces();
+const spaces = await listSpaces({
+  organizationId: "QWNjb3VudE9yZ2FuaXphdGlvbjox",
+});
 console.log(spaces);
 ```
+
+Omit `organizationId` to list accessible spaces from all organizations. The SDK
+sends this value as the REST query parameter `org_id`.
 
 ## Getting a space
 

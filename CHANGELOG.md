@@ -1,5 +1,13 @@
 # @arizeai/ax-client
 
+## [1.31.1](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.31.0...arize-js-sdk/v1.31.1) (2026-10-14)
+
+
+### 🐛 Bug Fixes
+
+* **spaces:** return space organization IDs without changing filters ([#89713](https://github.com/Arize-ai/arize/issues/89713)) ([a95ed00](https://github.com/Arize-ai/arize/commit/a95ed00f704bb471428ec7b69b401567e9ce8354))
+* align version 404 details; fix createUser SDK docstring ([#90536](https://github.com/Arize-ai/arize/issues/90536)) ([392dada](https://github.com/Arize-ai/arize/commit/392dada930819c712a662b0e9909efc62eb8370e))
+
 ## [1.31.0](https://github.com/Arize-ai/arize/compare/arize-js-sdk/v1.30.1...arize-js-sdk/v1.31.0) (2026-10-13)
 
 

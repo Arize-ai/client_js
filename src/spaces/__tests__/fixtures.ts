@@ -7,6 +7,7 @@ const mockDescription = "A test space";
 
 export const mockSpace: RawSpace = {
   id: mockSpaceId,
+  organization_id: "QWNjb3VudE9yZ2FuaXphdGlvbjox",
   name: mockSpaceName,
   description: mockDescription,
   created_at: mockDateString,

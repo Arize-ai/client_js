@@ -40,7 +40,7 @@ export type CreateUserParams = WithClient<{
  * | `expired` | {@link UserCreated} (201) |
  * | `inactive` | 409 Conflict (terminal — cannot be re-invited) |
  *
- * Requires account admin role or USER_CREATE permission.
+ * Requires account admin or member role, or USER_CREATE permission.
  *
  * @param client - An optional ArizeClient instance to use for the request.
  * @param name - The full name of the new user.

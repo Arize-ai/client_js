@@ -8471,6 +8471,8 @@ export interface components {
         Space: {
             /** @description Unique identifier for the space */
             id: string;
+            /** @description The unique identifier of the organization that contains the space. Older server versions may omit this field. */
+            organization_id?: components["schemas"]["Id"];
             /** @description Name of the space */
             name: string;
             /** @description A brief description of the space's purpose */
@@ -13114,6 +13116,7 @@ export interface components {
                  *       "spaces": [
                  *         {
                  *           "id": "spc_001",
+                 *           "organization_id": "QWNjb3VudE9yZ2FuaXphdGlvbjox",
                  *           "name": "LLM Evaluation",
                  *           "description": "Space for evaluating LLM performance",
                  *           "created_at": "2024-01-01T12:00:00Z",
@@ -13121,6 +13124,7 @@ export interface components {
                  *         },
                  *         {
                  *           "id": "spc_002",
+                 *           "organization_id": "QWNjb3VudE9yZ2FuaXphdGlvbjox",
                  *           "name": "Customer Support Bot",
                  *           "description": "Production chatbot monitoring",
                  *           "created_at": "2024-01-02T12:00:00Z",
@@ -13128,6 +13132,7 @@ export interface components {
                  *         },
                  *         {
                  *           "id": "spc_003",
+                 *           "organization_id": "QWNjb3VudE9yZ2FuaXphdGlvbjoy",
                  *           "name": "RAG Pipeline",
                  *           "description": "Retrieval-augmented generation experiments",
                  *           "created_at": "2024-01-03T12:00:00Z",
@@ -13159,6 +13164,7 @@ export interface components {
                 /**
                  * @example {
                  *       "id": "spc_001",
+                 *       "organization_id": "QWNjb3VudE9yZ2FuaXphdGlvbjox",
                  *       "name": "LLM Evaluation",
                  *       "description": "Space for evaluating LLM performance",
                  *       "created_at": "2024-01-01T12:00:00Z",
